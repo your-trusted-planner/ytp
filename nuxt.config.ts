@@ -41,5 +41,12 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
+  },
+
+  // Nitro config
+  nitro: {
+    experimental: {
+      tasks: true
+    }
   }
 })
