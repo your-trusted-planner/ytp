@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #0A2540;
+    --color-accent: #C41E3A;
+    --color-navy-900: #0A2540;
+    --color-navy-800: #243b53;
+    --color-navy-700: #334e68;
+    --color-accent-500: #C41E3A;
+    --color-accent-600: #b01a32;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-500 text-white hover:bg-accent-600 px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-navy-700 text-white hover:bg-navy-800 px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-primary {
+    color: var(--color-primary);
+  }
+  
+  .text-accent {
+    color: var(--color-accent);
+  }
+  
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+}
+

@@ -1,0 +1,16 @@
+name = "ytp-client-portal"
+compatibility_date = "2025-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ytp-portal-db"
+database_id = "local"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "ytp-uploads"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "local"
+
