@@ -4,7 +4,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxthub/core',
     '@nuxt/eslint',
-    '@nuxtjs/tailwindcss'
+    '@nuxtjs/tailwindcss',
+    'nuxt-auth-utils'
   ],
 
   // https://devtools.nuxt.com

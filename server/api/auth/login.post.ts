@@ -25,10 +25,13 @@ export default defineEventHandler(async (event) => {
   
   // Use mock database for local testing
   if (!isDatabaseAvailable()) {
+    console.log('🔧 Using mock database for login')
     await initMockDb()
     const user = mockDb.users.findByEmail(email)
+    console.log('🔍 Looking for user:', email, 'Found:', !!user)
     
     if (!user) {
+      console.log('❌ User not found in mock database')
       throw createError({
         statusCode: 401,
         message: 'Invalid credentials'
