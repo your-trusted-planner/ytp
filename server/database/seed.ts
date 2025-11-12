@@ -58,8 +58,9 @@ export async function seedDatabase() {
   console.log('✅ Created template folder')
   
   // Create sample template
+  const templateId = generateId()
   await db.insert(schema.documentTemplates).values({
-    id: generateId(),
+    id: templateId,
     name: 'Simple Will',
     description: 'Basic will template',
     category: 'Will',
@@ -68,10 +69,109 @@ export async function seedDatabase() {
     variables: JSON.stringify([
       { name: 'fullName', description: 'Full legal name' },
       { name: 'address', description: 'Current address' }
-    ])
+    ]),
+    requiresNotary: false
   })
   
   console.log('✅ Created sample template')
+  
+  // Create engagement letter template
+  const engagementTemplateId = generateId()
+  await db.insert(schema.documentTemplates).values({
+    id: engagementTemplateId,
+    name: 'Engagement Agreement - WAPA',
+    description: 'Wyoming Asset Protection Trust engagement letter',
+    category: 'Engagement Letter',
+    folderId,
+    content: '<h1>Engagement Agreement</h1><p>Client: {{clientName}}</p><p>Service: {{serviceName}}</p><p>Fee: {{fee}}</p>',
+    variables: JSON.stringify([
+      { name: 'clientName', description: 'Client full name' },
+      { name: 'serviceName', description: 'Service description' },
+      { name: 'fee', description: 'Total fee amount' }
+    ]),
+    requiresNotary: false
+  })
+  
+  console.log('✅ Created engagement letter template')
+  
+  // Create sample matters (products/services)
+  const matter1Id = generateId()
+  await db.insert(schema.matters).values({
+    id: matter1Id,
+    name: 'Wyoming Asset Protection Trust',
+    description: 'Complete trust formation with asset protection',
+    category: 'Trust Formation',
+    type: 'SINGLE',
+    price: 1850000, // $18,500 in cents
+    engagementLetterId: engagementTemplateId
+  })
+  
+  const matter2Id = generateId()
+  await db.insert(schema.matters).values({
+    id: matter2Id,
+    name: 'Annual Trust Maintenance',
+    description: 'Ongoing trust administration and compliance',
+    category: 'Maintenance',
+    type: 'RECURRING',
+    price: 50000, // $500 in cents
+    duration: 'ANNUALLY'
+  })
+  
+  const matter3Id = generateId()
+  await db.insert(schema.matters).values({
+    id: matter3Id,
+    name: 'LLC Formation - Wyoming',
+    description: 'Wyoming LLC formation and setup',
+    category: 'Entity Formation',
+    type: 'SINGLE',
+    price: 250000 // $2,500 in cents
+  })
+  
+  console.log('✅ Created sample matters')
+  
+  // Create sample consultation questionnaire
+  const questionnaireId = generateId()
+  await db.insert(schema.questionnaires).values({
+    id: questionnaireId,
+    name: 'Initial Consultation Questionnaire',
+    description: 'Pre-consultation questions for prospects',
+    questions: JSON.stringify([
+      {
+        id: 'q1',
+        type: 'text',
+        question: 'What is your primary reason for seeking asset protection?',
+        required: true
+      },
+      {
+        id: 'q2',
+        type: 'number',
+        question: 'Estimated net worth (USD)',
+        required: true
+      },
+      {
+        id: 'q3',
+        type: 'select',
+        question: 'What type of assets do you need to protect?',
+        options: ['Real Estate', 'Business Assets', 'Investment Portfolio', 'Cryptocurrency', 'Other'],
+        required: true
+      },
+      {
+        id: 'q4',
+        type: 'text',
+        question: 'Do you currently have any legal structures in place (trusts, LLCs, etc.)?',
+        required: false
+      },
+      {
+        id: 'q5',
+        type: 'select',
+        question: 'What is your timeline for implementation?',
+        options: ['Immediate (within 1 month)', '1-3 months', '3-6 months', '6+ months'],
+        required: true
+      }
+    ])
+  })
+  
+  console.log('✅ Created sample questionnaire')
   
   console.log('🎉 Database seeded successfully!')
 }

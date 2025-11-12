@@ -16,7 +16,13 @@ export default defineNuxtConfig({
       appName: 'Your Trusted Planner - Client Portal'
     },
     // Private keys (only available on the server)
-    jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+    jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    pandaDocApiKey: process.env.PANDADOC_API_KEY || '',
+    pandaDocSandbox: process.env.PANDADOC_SANDBOX === 'true',
+    lawPayApiKey: process.env.LAWPAY_API_KEY || '',
+    lawPayMerchantId: process.env.LAWPAY_MERCHANT_ID || '',
+    googleCalendarApiKey: process.env.GOOGLE_CALENDAR_API_KEY || '',
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID || ''
   },
   
   compatibilityDate: '2024-11-12',

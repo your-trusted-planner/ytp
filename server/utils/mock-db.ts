@@ -65,13 +65,82 @@ export async function initMockDb() {
       { name: 'address', description: 'Current address' }
     ]),
     isActive: true,
+    requiresNotary: false,
     order: 0,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })
+  
+  // Create engagement letter template
+  mockTemplates.push({
+    id: 'template-2',
+    name: 'Engagement Agreement - WAPA',
+    description: 'Wyoming Asset Protection Trust engagement letter',
+    category: 'Engagement Letter',
+    content: '<h1>Engagement Agreement</h1><p>Client: {{clientName}}</p><p>Service: {{serviceName}}</p><p>Fee: {{fee}}</p>',
+    variables: JSON.stringify([
+      { name: 'clientName', description: 'Client full name' },
+      { name: 'serviceName', description: 'Service description' },
+      { name: 'fee', description: 'Total fee amount' }
+    ]),
+    isActive: true,
+    requiresNotary: false,
+    order: 1,
     createdAt: new Date(),
     updatedAt: new Date()
   })
   
   isInitialized = true
   console.log('✅ Mock database initialized with test data')
+}
+
+let mockMatters: any[] = []
+let mockClientMatters: any[] = []
+let mockQuestionnaires: any[] = []
+
+// Initialize mock matters
+export async function initMockMatters() {
+  if (mockMatters.length > 0) return
+  
+  mockMatters.push({
+    id: 'matter-1',
+    name: 'Wyoming Asset Protection Trust',
+    description: 'Complete trust formation with asset protection',
+    category: 'Trust Formation',
+    type: 'SINGLE',
+    price: 1850000, // $18,500
+    engagementLetterId: 'template-2',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })
+  
+  mockMatters.push({
+    id: 'matter-2',
+    name: 'Annual Trust Maintenance',
+    description: 'Ongoing trust administration and compliance',
+    category: 'Maintenance',
+    type: 'RECURRING',
+    price: 50000, // $500
+    duration: 'ANNUALLY',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })
+  
+  mockMatters.push({
+    id: 'matter-3',
+    name: 'LLC Formation - Wyoming',
+    description: 'Wyoming LLC formation and setup',
+    category: 'Entity Formation',
+    type: 'SINGLE',
+    price: 250000, // $2,500
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })
+  
+  console.log('✅ Mock matters initialized')
 }
 
 export const mockDb = {
@@ -115,6 +184,22 @@ export const mockDb = {
   },
   templates: {
     getAll: () => mockTemplates
+  },
+  matters: {
+    getAll: async () => {
+      await initMockMatters()
+      return mockMatters
+    },
+    create: (matter: any) => {
+      mockMatters.push(matter)
+      return matter
+    },
+    update: (id: string, data: any) => {
+      const index = mockMatters.findIndex(m => m.id === id)
+      if (index !== -1) {
+        mockMatters[index] = { ...mockMatters[index], ...data, updatedAt: new Date() }
+      }
+    }
   },
   appointments: {
     getAll: () => mockAppointments,

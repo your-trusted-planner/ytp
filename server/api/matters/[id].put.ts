@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { useDrizzle, schema } from '../../database'
+import { isDatabaseAvailable } from '../../database'
 import { requireRole } from '../../utils/auth'
+import { mockDb } from '../../utils/mock-db'
 
 const updateMatterSchema = z.object({
   name: z.string().optional(),
@@ -34,7 +35,6 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const db = useDrizzle()
   const { price, ...rest } = result.data
   
   const updateData: any = {
@@ -46,6 +46,16 @@ export default defineEventHandler(async (event) => {
     updateData.price = Math.round(price * 100)
   }
   
+  // Use mock database for local testing
+  if (!isDatabaseAvailable()) {
+    mockDb.matters.update(id, updateData)
+    return { success: true }
+  }
+  
+  // Real database
+  const { useDrizzle, schema } = await import('../../database')
+  const db = useDrizzle()
+  
   await db
     .update(schema.matters)
     .set(updateData)
@@ -53,4 +63,6 @@ export default defineEventHandler(async (event) => {
   
   return { success: true }
 })
+
+
 
