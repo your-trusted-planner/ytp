@@ -27,8 +27,8 @@ export default defineNitroPlugin(async () => {
       console.log('🔧 Initializing database...')
     }
     
-    // Read and execute migration
-    const migrationPath = join(process.cwd(), 'server/database/migrations/0000_small_warhawk.sql')
+    // Read and execute latest migration
+    const migrationPath = join(process.cwd(), 'server/database/migrations/0001_oval_banshee.sql')
     const migration = readFileSync(migrationPath, 'utf-8')
     
     // Split by statement breakpoint and execute each statement

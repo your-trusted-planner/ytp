@@ -12,7 +12,13 @@ export function useDrizzle() {
 }
 
 export function isDatabaseAvailable() {
-  return typeof hubDatabase !== 'undefined'
+  try {
+    if (typeof hubDatabase === 'undefined') return false
+    const db = hubDatabase()
+    return !!db
+  } catch (e) {
+    return false
+  }
 }
 
 export type User = typeof schema.users.$inferSelect

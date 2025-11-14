@@ -31,3 +31,6 @@ lerna-debug.log*
 
 # Playwright
 .playwright-mcp
+
+# Claude
+.claude
