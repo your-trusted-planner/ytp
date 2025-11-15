@@ -55,5 +55,16 @@ export default defineNuxtConfig({
     experimental: {
       tasks: true
     }
+  },
+
+  // Disable auto-import of password functions from nuxt-auth-utils
+  // We use our own bcryptjs implementations instead
+  imports: {
+    presets: [
+      {
+        from: 'nuxt-auth-utils',
+        imports: ['getUserSession', 'setUserSession', 'clearUserSession', 'requireUserSession']
+      }
+    ]
   }
 })
