@@ -73,13 +73,20 @@ export default defineEventHandler(async (event) => {
     .get()
   
   if (!user) {
+    console.log('[Login] User not found:', email)
     throw createError({
       statusCode: 401,
       message: 'Invalid credentials'
     })
   }
-  
+
+  console.log('[Login] User found:', email)
+  console.log('[Login] Password hash starts with:', user.password?.substring(0, 10))
+  console.log('[Login] Testing password verification...')
+
   const isValid = await verifyPassword(password, user.password)
+  console.log('[Login] Password verification result:', isValid)
+
   if (!isValid) {
     throw createError({
       statusCode: 401,
