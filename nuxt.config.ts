@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     },
     // Private keys (only available on the server)
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    seedToken: process.env.NUXT_SEED_TOKEN || '',
     pandaDocApiKey: process.env.PANDADOC_API_KEY || '',
     pandaDocSandbox: process.env.PANDADOC_SANDBOX === 'true',
     lawPayApiKey: process.env.LAWPAY_API_KEY || '',
