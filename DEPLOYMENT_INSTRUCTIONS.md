@@ -254,6 +254,33 @@ npx nuxthub open
 # Navigate to "Database" tab
 ```
 
+### Seeding Preview/Production Database
+
+The database plugin only auto-seeds in development mode. For preview/production:
+
+**Option 1: Export Local & Import (Recommended)**
+```bash
+# 1. Export local database to SQL
+npx nuxthub database export > seed.sql
+
+# 2. Connect to preview database shell
+npx nuxthub database shell --preview
+
+# 3. Run the INSERT statements from seed.sql manually
+# (Copy/paste the INSERT statements)
+```
+
+**Option 2: Use Database Shell**
+```bash
+# Connect to preview database
+npx nuxthub database shell --preview
+
+# Manually run INSERT statements for test users
+INSERT INTO users (id, email, name, password, role, createdAt, updatedAt)
+VALUES ('test-lawyer-id', 'lawyer@yourtrustedplanner.com', 'Test Lawyer',
+        '$2a$10$hashedpassword', 'LAWYER', datetime('now'), datetime('now'));
+```
+
 ### Run SQL Queries
 
 In the NuxtHub dashboard > Database:
@@ -273,7 +300,7 @@ SELECT * FROM documents;
 
 ```bash
 # Export database
-npx nuxthub database export
+npx nuxthub database export > backup.sql
 
 # Import database
 npx nuxthub database import backup.sql

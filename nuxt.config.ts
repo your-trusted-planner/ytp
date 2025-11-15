@@ -8,6 +8,17 @@ export default defineNuxtConfig({
     'nuxt-auth-utils'
   ],
 
+  // Disable auto-import of password functions from nuxt-auth-utils
+  // We use our own bcryptjs implementations instead
+  imports: {
+    presets: [
+      {
+        from: 'nuxt-auth-utils',
+        imports: ['getUserSession', 'setUserSession', 'clearUserSession', 'requireUserSession']
+      }
+    ]
+  },
+
   // https://devtools.nuxt.com
   devtools: { enabled: true },
 
@@ -24,6 +35,15 @@ export default defineNuxtConfig({
     lawPayMerchantId: process.env.LAWPAY_MERCHANT_ID || '',
     googleCalendarApiKey: process.env.GOOGLE_CALENDAR_API_KEY || '',
     googleCalendarId: process.env.GOOGLE_CALENDAR_ID || ''
+  },
+
+  // Nitro config
+  nitro: {
+    compatibilityDate: '2024-11-12',
+    experimental: {
+      tasks: true,
+      openAPI: true
+    }
   },
 
   // https://hub.nuxt.com/docs/getting-started/installation#options
@@ -46,25 +66,5 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
-  },
-
-  // Nitro config
-  nitro: {
-    compatibilityDate: '2024-11-12',
-    experimental: {
-      tasks: true,
-      openAPI: true
-    }
-  },
-
-  // Disable auto-import of password functions from nuxt-auth-utils
-  // We use our own bcryptjs implementations instead
-  imports: {
-    presets: [
-      {
-        from: 'nuxt-auth-utils',
-        imports: ['getUserSession', 'setUserSession', 'clearUserSession', 'requireUserSession']
-      }
-    ]
   }
 })
