@@ -53,9 +53,9 @@ export default defineNuxtConfig({
   // Nitro config
   nitro: {
     experimental: {
-      tasks: true
-    },
-    preset: 'cloudflare-pages'
+      tasks: true,
+      openAPI: true
+    }
   },
 
   // Disable auto-import of password functions from nuxt-auth-utils
