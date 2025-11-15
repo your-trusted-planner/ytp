@@ -53,7 +53,8 @@ export default defineNuxtConfig({
   // Nitro config
   nitro: {
     experimental: {
-      tasks: true
+      tasks: true,
+      openAPI: true
     }
   },
 
