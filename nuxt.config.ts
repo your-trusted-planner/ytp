@@ -25,8 +25,6 @@ export default defineNuxtConfig({
     googleCalendarApiKey: process.env.GOOGLE_CALENDAR_API_KEY || '',
     googleCalendarId: process.env.GOOGLE_CALENDAR_ID || ''
   },
-  
-  compatibilityDate: '2024-11-12',
 
   // https://hub.nuxt.com/docs/getting-started/installation#options
   hub: {
@@ -52,6 +50,7 @@ export default defineNuxtConfig({
 
   // Nitro config
   nitro: {
+    compatibilityDate: '2024-11-12',
     experimental: {
       tasks: true,
       openAPI: true
