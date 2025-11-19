@@ -24,7 +24,7 @@ lerna-debug.log*
 .idea
 
 # Local env files
-.env
+.env*
 .env.*
 !.env.example
 .dev.vars
