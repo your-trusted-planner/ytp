@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { 
-  IconLoader, IconMap, IconFolder, IconMapPin, IconChevronRight
+  Loader as IconLoader, Map as IconMap, Folder as IconFolder, MapPin as IconMapPin, ChevronRight as IconChevronRight
 } from 'lucide-vue-next'
 
 definePageMeta({

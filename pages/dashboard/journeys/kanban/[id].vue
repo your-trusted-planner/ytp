@@ -174,8 +174,8 @@
 
 <script setup lang="ts">
 import { 
-  IconArrowLeft, IconLoader, IconCircleDot, IconRepeat, IconRefreshCw,
-  IconFolder, IconClock, IconAlertCircle
+  ArrowLeft as IconArrowLeft, Loader as IconLoader, CircleDot as IconCircleDot, Repeat as IconRepeat, RefreshCw as IconRefreshCw,
+  Folder as IconFolder, Clock as IconClock, AlertCircle as IconAlertCircle
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 

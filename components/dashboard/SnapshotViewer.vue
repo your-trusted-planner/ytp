@@ -159,7 +159,7 @@
 
 <script setup lang="ts">
 import { 
-  IconEdit, IconCheck, IconCheckCircle, IconMessageSquare
+  Edit as IconEdit, Check as IconCheck, CheckCircle as IconCheckCircle, MessageSquare as IconMessageSquare
 } from 'lucide-vue-next'
 
 const props = defineProps({

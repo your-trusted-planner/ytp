@@ -232,11 +232,11 @@ function convertToTemplate(html: string): string {
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   
-  // Only admins can seed
-  if (user.role !== 'ADMIN') {
+  // Only admins and lawyers can seed
+  if (user.role !== 'ADMIN' && user.role !== 'LAWYER') {
     throw createError({
       statusCode: 403,
-      message: 'Unauthorized - admin only'
+      message: 'Unauthorized - admin or lawyer only'
     })
   }
 

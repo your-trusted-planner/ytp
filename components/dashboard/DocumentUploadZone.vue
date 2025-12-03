@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { IconUpload, IconAlertCircle, IconCheck } from 'lucide-vue-next'
+import { Upload as IconUpload, AlertCircle as IconAlertCircle, Check as IconCheck } from 'lucide-vue-next'
 
 const props = defineProps({
   clientJourneyId: {

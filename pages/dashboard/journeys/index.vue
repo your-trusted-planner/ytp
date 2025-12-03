@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { IconPlus, IconLoader, IconMap, IconFolder, IconList, IconUsers, IconClock } from 'lucide-vue-next'
+import { Plus as IconPlus, Loader as IconLoader, Map as IconMap, Folder as IconFolder, List as IconList, Users as IconUsers, Clock as IconClock } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: ['auth'],

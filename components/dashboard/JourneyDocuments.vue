@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { IconPlus, IconLoader, IconFileText, IconShield } from 'lucide-vue-next'
+import { Plus as IconPlus, Loader as IconLoader, FileText as IconFileText, Shield as IconShield } from 'lucide-vue-next'
 
 const props = defineProps({
   clientJourneyId: {

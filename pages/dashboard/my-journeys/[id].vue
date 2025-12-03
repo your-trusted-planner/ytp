@@ -164,8 +164,8 @@
 
 <script setup lang="ts">
 import { 
-  IconArrowLeft, IconLoader, IconCheck, IconCircleDot, IconRepeat,
-  IconHelpCircle, IconCheckCircle, IconArrowDown
+  ArrowLeft as IconArrowLeft, Loader as IconLoader, Check as IconCheck, CircleDot as IconCircleDot, Repeat as IconRepeat,
+  HelpCircle as IconHelpCircle, CheckCircle as IconCheckCircle, ArrowDown as IconArrowDown
 } from 'lucide-vue-next'
 
 definePageMeta({

@@ -259,9 +259,9 @@
 
 <script setup lang="ts">
 import { 
-  IconArrowLeft, IconEye, IconPlus, IconLoader, IconGitBranch,
-  IconGripVertical, IconCircleDot, IconRepeat, IconArrowDown,
-  IconHelpCircle
+  ArrowLeft as IconArrowLeft, Eye as IconEye, Plus as IconPlus, Loader as IconLoader, GitBranch as IconGitBranch,
+  GripVertical as IconGripVertical, CircleDot as IconCircleDot, Repeat as IconRepeat, ArrowDown as IconArrowDown,
+  HelpCircle as IconHelpCircle
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 
