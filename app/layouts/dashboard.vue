@@ -57,7 +57,8 @@ import {
   FileText, 
   Calendar, 
   UserCircle, 
-  Settings 
+  Settings,
+  Map
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -70,6 +71,7 @@ const lawyerNavigation = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/clients', label: 'Clients', icon: Users },
   { path: '/dashboard/matters', label: 'Matters', icon: FileText },
+  { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
   { path: '/dashboard/documents', label: 'Documents', icon: FileText },
   { path: '/dashboard/templates', label: 'Templates', icon: FileText },
   { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar },
@@ -79,6 +81,7 @@ const lawyerNavigation = [
 
 const clientNavigation = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map },
   { path: '/dashboard/documents', label: 'My Documents', icon: FileText },
   { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle }
