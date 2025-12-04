@@ -1,43 +1,44 @@
-import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
-import { requireRole } from '../../utils/auth'
-
+// Get a specific client by ID
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
+  const { user } = await requireUserSession(event)
+  const clientId = getRouterParam(event, 'id')
   
-  const id = getRouterParam(event, 'id')
-  if (!id) {
+  // Only lawyers/admins can view client details
+  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
     throw createError({
-      statusCode: 400,
-      message: 'Client ID required'
+      statusCode: 403,
+      message: 'Unauthorized'
     })
   }
-  
-  const db = useDrizzle()
-  
-  const client = await db
-    .select({
-      id: schema.users.id,
-      email: schema.users.email,
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      phone: schema.users.phone,
-      status: schema.users.status,
-      createdAt: schema.users.createdAt,
-      profile: schema.clientProfiles
+
+  if (!clientId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Client ID is required'
     })
-    .from(schema.users)
-    .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
-    .where(eq(schema.users.id, id))
-    .get()
+  }
+
+  const db = hubDatabase()
   
+  // Get client
+  const client = await db.prepare(`
+    SELECT * FROM users WHERE id = ? AND role = 'CLIENT'
+  `).bind(clientId).first()
+
   if (!client) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
     })
   }
-  
-  return client
-})
 
+  // Get client profile
+  const profile = await db.prepare(`
+    SELECT * FROM client_profiles WHERE user_id = ?
+  `).bind(clientId).first()
+
+  return {
+    client,
+    profile: profile || null
+  }
+})

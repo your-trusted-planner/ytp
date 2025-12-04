@@ -173,6 +173,23 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>) {
   
   console.log('✅ Created sample questionnaire')
   
+  // Create a sample document for the client to sign
+  const sampleDocId = generateId()
+  await db.insert(schema.documents).values({
+    id: sampleDocId,
+    title: 'Trust Purpose Questionnaire',
+    description: 'Please fill out and sign this document',
+    templateId,
+    matterId: matter1Id,
+    content: '<h1>Trust Purpose Declaration</h1><p>I, {{fullName}}, declare that the purpose of this trust is: {{trustPurpose}}</p><p>Address: {{address}}</p><p>Date: {{date}}</p>',
+    variableValues: null,
+    clientId,
+    status: 'SENT',
+    sentAt: new Date()
+  })
+  
+  console.log('✅ Created sample document for client to sign')
+  
   console.log('🎉 Database seeded successfully!')
 }
 
