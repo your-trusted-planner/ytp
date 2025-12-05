@@ -8,12 +8,12 @@
   },
   "routes": [
     {
-      "pattern": "app.businessandlegacy.com/*",
+      "pattern": "app.businessandlegacy.com",
       "zone_name": "businessandlegacy.com",
       "custom_domain": true
     },
     {
-      "pattern": "app.trustandlegacy.com/*",
+      "pattern": "app.trustandlegacy.com",
       "zone_name": "trustandlegacy.com",
       "custom_domain": true
     }
