@@ -1,0 +1,154 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ytp",
+  "main": "dist/server/index.mjs",
+  "assets": {
+    "directory": "dist/public",
+    "binding": "ASSETS"
+  },
+  "routes": [
+    {
+      "pattern": "app.trustandlegacy.com/*",
+      "zone_name": "trustandlegacy.com"
+    }
+  ],
+  "compatibility_date": "2024-09-21",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // NuxtHub will automatically bind these resources when you enable them
+  // After creating resources with wrangler, uncomment and add your IDs below
+
+  // D1 Database
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ytp-db",
+      "database_id": "b33ecbc5-12b6-49c4-9a6a-235f9d4a5b14",
+      "migrations_dir": "server/database/migrations"
+    }
+  ],
+
+  // KV Namespaces
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "3c921ff16b5c459c8377aaa7ce74476e"
+    },
+    {
+      "binding": "CACHE",
+      "id": "06ceff031c4a409490f9cc7cd7c2cfb1"
+    }
+  ],
+
+  // R2 Bucket
+  "r2_buckets": [
+    {
+      "binding": "BLOB",
+      "bucket_name": "ytp-blob"
+    }
+  ],
+
+  // Cloudflare Queues for document processing
+  "queues": {
+    "producers": [
+      {
+        "queue": "document-template-processing",
+        "binding": "TEMPLATE_PROCESSING_QUEUE"
+      },
+      {
+        "queue": "document-generation",
+        "binding": "DOCUMENT_GENERATION_QUEUE"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "document-template-processing",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
+      },
+      {
+        "queue": "document-generation",
+        "max_batch_size": 5,
+        "max_batch_timeout": 2
+      }
+    ]
+  },
+
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+  },
+
+  // Environment variables (non-secret)
+  "vars": {
+    "PANDADOC_SANDBOX": "true"
+  },
+
+  // Preview environment (for non-production branches)
+  "env": {
+    "preview": {
+      "name": "ytp-preview",
+      "routes": [
+        {
+          "pattern": "app-preview.trustandlegacy.com/*",
+          "zone_name": "trustandlegacy.com"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ytp-preview",
+          "database_id": "b870e2f5-7d57-4216-af08-9a93ced6c363",
+          "migrations_dir": "server/database/migrations"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "711a6f9cf81e42d2940f21e34321fcb1"
+        },
+        {
+          "binding": "CACHE",
+          "id": "9c78f773de144fc7b7736083b34ec5e9"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BLOB",
+          "bucket_name": "ytp-blob-preview"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "queue": "document-template-processing-preview",
+            "binding": "TEMPLATE_PROCESSING_QUEUE"
+          },
+          {
+            "queue": "document-generation-preview",
+            "binding": "DOCUMENT_GENERATION_QUEUE"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "document-template-processing-preview",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          },
+          {
+            "queue": "document-generation-preview",
+            "max_batch_size": 5,
+            "max_batch_timeout": 2
+          }
+        ]
+      },
+      "vars": {
+        "PANDADOC_SANDBOX": "true"
+      }
+    }
+  }
+}

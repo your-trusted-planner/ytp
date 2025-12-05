@@ -1,56 +1,59 @@
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { drizzle } from 'drizzle-orm/d1'
 import { seedDatabase } from '../database/seed'
+import { schema } from '../database'
 
 let isInitialized = false
 
 export default defineNitroPlugin(async () => {
   if (isInitialized) return
-  
+
+  // Note: This plugin only works when hubDatabase() is available (in production or with nuxthub dev)
+  // For local development with 'nuxt dev', use the /api/_dev/seed endpoint instead
+
   try {
-    // Check if we have D1 binding available
-    if (typeof hubDatabase === 'undefined') {
-      console.log('⚠️  D1 database not available. Run with: npx nuxthub dev')
-      return
-    }
-    
-    const db = hubDatabase()
-    
-    // Check if users table exists
+    // Try to get database instance
+    let db
     try {
-      await db.prepare('SELECT 1 FROM users LIMIT 1').run()
-      console.log('✅ Database already initialized')
-      isInitialized = true
-      return
+      db = hubDatabase()
     } catch (e) {
-      // Table doesn't exist, need to initialize
-      console.log('🔧 Initializing database...')
+      // Database not available - this is normal in local dev with 'nuxt dev'
+      // App will use mock database or the /api/_dev/seed endpoint
+      return
     }
-    
-    // Read and execute latest migration
-    const migrationPath = join(process.cwd(), 'server/database/migrations/0001_oval_banshee.sql')
-    const migration = readFileSync(migrationPath, 'utf-8')
-    
-    // Split by statement breakpoint and execute each statement
-    const statements = migration
-      .split('--> statement-breakpoint')
-      .map(s => s.trim())
-      .filter(s => s && !s.startsWith('--'))
-    
-    for (const statement of statements) {
-      await db.exec(statement)
+
+    if (!db) return
+
+    const drizzleDb = drizzle(db, { schema })
+
+    // Check if database has data
+    try {
+      const result = await db.prepare('SELECT COUNT(*) as count FROM users').run()
+      const count = result.results?.[0]?.count || 0
+
+      if (count > 0) {
+        console.log('✅ Database already has data')
+        isInitialized = true
+        return
+      }
+    } catch (e) {
+      // Tables don't exist - NuxtHub will handle migrations automatically
+      console.log('⚠️  Database tables not found - NuxtHub should handle migrations')
     }
-    
-    console.log('✅ Database migrations applied')
-    
-    // Seed database
-    await seedDatabase()
-    
+
+    // Seed database in development only
+    if (process.dev) {
+      try {
+        await seedDatabase(drizzleDb)
+        console.log('✅ Database seeded successfully')
+      } catch (seedError: any) {
+        console.error('❌ Seeding failed:', seedError.message)
+      }
+    }
+
     isInitialized = true
-    console.log('🎉 Database initialization complete!')
   } catch (error: any) {
-    console.error('❌ Database initialization error:', error.message)
-    console.log('💡 Tip: Run the app with "npx nuxthub dev" for full database support')
+    // Silently fail - app will use mock DB or manual seeding
+    console.log('⚠️  Database plugin skipped:', error.message)
   }
 })
 

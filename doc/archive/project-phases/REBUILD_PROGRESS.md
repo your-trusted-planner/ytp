@@ -1,21 +1,26 @@
-# Nuxt 3 + NuxtHub + Cloudflare Rebuild Progress
+# Nuxt 4 + NuxtHub + Cloudflare Rebuild Progress
 
 ## ✅ COMPLETED
 
 ### 1. Core Infrastructure
-- ✓ Nuxt 3 project with NuxtHub integration
+- ✓ Nuxt 4 migration with NuxtHub integration
 - ✓ Tailwind CSS with exact brand colors (navy #0A2540, burgundy #C41E3A)
 - ✓ TypeScript, ESLint configured
 - ✓ Drizzle ORM for Cloudflare D1
 - ✓ Database schema migrated from Prisma (9 tables)
 - ✓ Local development environment working
+- ✓ NuxtHub Workers deployment configuration
+- ✓ Nitro compatibility date set correctly (2024-11-12)
+- ✓ OpenAPI experimental feature enabled
 
 ### 2. Authentication & Security
 - ✓ Login/logout/register API endpoints
-- ✓ Bcrypt password hashing
-- ✓ Session management
+- ✓ Bcryptjs password hashing (fixed broken nuxt-auth-utils scrypt)
+- ✓ Session management with nuxt-auth-utils
 - ✓ Auth middleware for protected routes
 - ✓ Login page (identical design to original)
+- ✓ Selective auto-imports configured (session only, not password functions)
+- ✓ 401 authentication errors resolved
 
 ### 3. UI Components (Vue 3)
 - ✓ Button component
@@ -39,6 +44,23 @@
 - ✓ `/api/client/stats` - Client statistics
 - ✓ `/api/client/documents` - Document list
 - ✓ `/api/client/appointments` - Appointments
+- ✓ `/api/_dev/seed` - Development database seeding endpoint
+
+### 6. Database & Seeding
+- ✓ Database seeding architecture redesigned
+- ✓ Server plugin for auto-seeding in development
+- ✓ API endpoint for manual local seeding
+- ✓ Dual seeding approach (plugin + API)
+- ✓ Database initialization fixed for NuxtHub standards
+- ✓ Migration handling removed (NuxtHub manages this)
+
+### 7. Deployment Configuration
+- ✓ GitHub Actions workflow configured
+- ✓ Project key updated (ytp-a9xf)
+- ✓ wrangler.toml conflicts resolved
+- ✓ Nitro preset configuration corrected (removed cloudflare-pages)
+- ✓ Compatibility date moved to nitro config
+- ✓ __STATIC_CONTENT_MANIFEST error resolved
 
 ---
 
@@ -49,24 +71,37 @@
 - [ ] Appointment scheduling pages & API
 - [ ] Cloudflare R2 file upload integration
 - [ ] Full E2E testing
-- [ ] Deployment to Cloudflare
+- [x] Deployment configuration (completed)
+- [ ] Preview deployment with seeded data
+- [ ] Production deployment
 
 ---
 
 ## 🚀 HOW TO RUN LOCALLY
 
-### Option 1: Without Database (UI Testing Only)
+### Option 1: Local Development (pnpm dev)
 ```bash
-cd nuxt-portal
 pnpm install
 pnpm dev
+pnpm db:seed  # Seed local database via API
 ```
-Visit: http://localhost:3000 (or whatever port it shows)
+Visit: http://localhost:3000
 
-**Note:** Database features won't work without Cloudflare D1 binding
+**Note:** `hubDatabase()` not available in standard dev mode. Use for UI testing.
 
-### Option 2: With Full Database Support
-Deploy to Cloudflare first, then database will work automatically with NuxtHub.
+### Option 2: NuxtHub Development (Full Cloudflare Features)
+```bash
+npx nuxthub dev
+```
+
+This connects to real Cloudflare D1, KV, and R2 resources. Database auto-seeds if empty.
+
+### Option 3: Production Deploy
+```bash
+npx nuxthub deploy
+```
+
+Then manually seed preview database using SQL export/import.
 
 ---
 
@@ -153,22 +188,31 @@ nuxt-portal/
 
 ---
 
-## 🐛 KNOWN ISSUES
+## 🐛 KNOWN ISSUES & SOLUTIONS
 
-1. **Database not available locally** - NuxtHub/Cloudflare D1 requires deployment or remote connection. Local dev works for UI but not data operations.
+1. **Database not available in pnpm dev** - `hubDatabase()` requires deployment or `npx nuxthub dev`.
+   - Solution: Use `npx nuxthub dev` for full features or `pnpm db:seed` for local seeding
 
-2. **Nuxt 4 compatibility** - Initially used Nuxt 4 compat mode which caused routing issues. Now running in Nuxt 3 mode (stable).
+2. **nuxt-auth-utils password functions broken** - Scrypt implementation cannot verify passwords it hashes.
+   - Solution: Using custom bcryptjs implementation in `server/utils/auth.ts`
+
+3. **Preview database seeding** - Plugin only seeds in development mode.
+   - Solution: Manual SQL import recommended for preview/production
+
+4. ~~Nuxt 4 compatibility issues~~ - **RESOLVED** with proper configuration
 
 ---
 
 ## 📝 NEXT STEPS
 
-1. Build document template management pages
-2. Build appointment scheduling interface  
-3. Integrate Cloudflare R2 for file uploads
-4. Complete end-to-end testing
-5. Deploy to Cloudflare via NuxtHub
-6. Test with seeded data in production environment
+1. Deploy to preview environment (`npx nuxthub deploy`)
+2. Seed preview database manually via SQL export/import
+3. Build document template management pages
+4. Build appointment scheduling interface
+5. Integrate Cloudflare R2 for file uploads
+6. Complete end-to-end testing
+7. Production deployment with custom domain
+8. Production data migration strategy
 
 ---
 

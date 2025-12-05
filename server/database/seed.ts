@@ -1,8 +1,8 @@
-import { useDrizzle, schema } from './index'
+import { schema } from './index'
 import { hashPassword, generateId } from '../utils/auth'
+import type { DrizzleD1Database } from 'drizzle-orm/d1'
 
-export async function seedDatabase() {
-  const db = useDrizzle()
+export async function seedDatabase(db: DrizzleD1Database<typeof schema>) {
   
   console.log('🌱 Seeding database...')
   

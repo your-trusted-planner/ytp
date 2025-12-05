@@ -24,8 +24,8 @@ lerna-debug.log*
 .idea
 
 # Local env files
+.env
 .env*
-.env.*
 !.env.example
 .dev.vars
 
@@ -34,3 +34,33 @@ lerna-debug.log*
 
 # Claude
 .claude
+
+# Cloudflare/Wrangler
+.wrangler
+wrangler.toml.local
+
+# NuxtHub local storage (D1, R2, KV)
+.data/hub/
+
+# Legacy Vercel (no longer used)
+.vercel
+
+# Scripts with backup/temp files
+scripts/*.bak
+scripts/*.backup
+scripts/*.tmp
+
+# Database files (local development)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+!server/database/migrations/*.sql
+
+# IDE & Editor
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db

@@ -13,10 +13,16 @@ export function useDrizzle() {
 
 export function isDatabaseAvailable() {
   try {
-    if (typeof hubDatabase === 'undefined') return false
+    if (typeof hubDatabase === 'undefined') {
+      console.log('[isDatabaseAvailable] hubDatabase is undefined')
+      return false
+    }
     const db = hubDatabase()
-    return !!db
-  } catch (e) {
+    const available = !!db
+    console.log('[isDatabaseAvailable] Database available:', available)
+    return available
+  } catch (e: any) {
+    console.log('[isDatabaseAvailable] Error:', e.message)
     return false
   }
 }
