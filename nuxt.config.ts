@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // Use app/ directory for Nuxt 4 structure
+  srcDir: 'app',
+
   // https://nuxt.com/modules
   modules: [
     '@nuxthub/core',
@@ -32,22 +35,25 @@ export default defineNuxtConfig({
     seedToken: process.env.NUXT_SEED_TOKEN || '',
     pandaDocApiKey: process.env.PANDADOC_API_KEY || '',
     pandaDocSandbox: process.env.PANDADOC_SANDBOX === 'true',
-    lawPayApiKey: process.env.LAWPAY_API_KEY || '',
-    lawPayMerchantId: process.env.LAWPAY_MERCHANT_ID || '',
-    googleCalendarApiKey: process.env.GOOGLE_CALENDAR_API_KEY || '',
-    googleCalendarId: process.env.GOOGLE_CALENDAR_ID || ''
+    // LawPay OAuth2 credentials
+    lawPayClientId: process.env.LAWPAY_CLIENT_ID || '',
+    lawPayClientSecret: process.env.LAWPAY_CLIENT_SECRET || '',
+    lawPayRedirectUri: process.env.LAWPAY_REDIRECT_URI || '',
+    // Google Calendar service account (domain-wide delegation)
+    googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
+    googleServiceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || ''
   },
 
   // Nitro config
   nitro: {
-    compatibilityDate: '2024-11-12',
+    preset: 'cloudflare-module', // Deploy to Cloudflare Workers
     experimental: {
       tasks: true,
       openAPI: true
     }
   },
 
-  // https://hub.nuxt.com/docs/getting-started/installation#options
+  // NuxtHub configuration for Cloudflare D1, KV, and R2
   hub: {
     database: true,
     blob: true,

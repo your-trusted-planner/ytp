@@ -1,4 +1,4 @@
-# Your Trusted Planner - Client Portal (Nuxt 3 + NuxtHub)
+# Your Trusted Planner - Client Portal (Nuxt 4 + NuxtHub)
 
 ## 🚀 Quick Start
 
@@ -22,17 +22,18 @@ The login page is fully functional at `/login` with identical design to the orig
 
 ## ⚠️ Important Notes
 
-### Database Not Available Locally
-The app uses **Cloudflare D1** (edge SQLite database) which requires deployment to Cloudflare to function. 
+### Local Development Fully Functional
+The app uses **NuxtHub Core** which provides local development support for Cloudflare services (D1, R2, KV) via Miniflare.
 
 In local development:
 - ✅ All pages load correctly
 - ✅ UI components work
-- ❌ API calls will fail (no database)
-- ❌ Login won't work (requires database)
+- ✅ Database works locally (SQLite via Miniflare)
+- ✅ Login and authentication work
+- ✅ File uploads to R2 work locally
+- ✅ Full feature parity with production
 
-### To Test With Full Database:
-Deploy to Cloudflare using NuxtHub - database will be automatically available.
+Run migrations locally with: `pnpm db:migrate`
 
 ## 📦 What's Been Rebuilt
 
@@ -47,29 +48,36 @@ Deploy to Cloudflare using NuxtHub - database will be automatically available.
 
 ## 🔧 Tech Stack
 
-- **Framework:** Nuxt 3
+- **Framework:** Nuxt 4
 - **Database:** Cloudflare D1 (SQLite at edge)
 - **Storage:** Cloudflare R2 (for files)
 - **Hosting:** Cloudflare Pages + Workers
-- **Platform:** NuxtHub
+- **Platform:** NuxtHub Core (local dev + deployment)
 - **ORM:** Drizzle
 - **Styling:** Tailwind CSS
 - **Language:** TypeScript
+- **Document Processing:** Custom DOCX parser (fflate + fast-xml-parser) for Cloudflare Workers compatibility
 
 ## 📁 Key Directories
 
-- `/pages/` - Application pages (login, dashboard, etc.)
-- `/components/` - Vue components
-- `/server/api/` - API endpoints
-- `/server/database/` - Database schema & migrations
-- `/layouts/` - Page layouts
-- `/middleware/` - Route guards
+- `app/pages/` - Application pages (login, dashboard, etc.)
+- `app/components/` - Vue components
+- `app/layouts/` - Page layouts
+- `server/api/` - API endpoints
+- `server/database/` - Database schema & migrations
+- `server/middleware/` - Route guards
+- `doc/` - Technical documentation
 
 ## 🎨 Brand Colors
 
 - **Navy:** #0A2540
 - **Burgundy/Accent:** #C41E3A
 
-## 📝 Next Steps
+## 📚 Documentation
 
-See `REBUILD_PROGRESS.md` for detailed status and remaining work.
+- **COMPLETE_IMPLEMENTATION_SUMMARY.md** - Comprehensive project overview
+- **FINAL_STATUS_COMPLETE.md** - Current implementation status
+- **doc/DOCUMENTATION_CLEANUP_ANALYSIS.md** - Documentation organization guide
+- **CLOUDFLARE_SETUP.md** - Deployment instructions
+- **doc/wydapt-seeding-production.md** - WYDAPT document seeding guide
+- **doc/docx-processing-architecture.md** - Custom DOCX parser implementation

@@ -394,3 +394,54 @@ export const clientMarketingAttribution = sqliteTable('client_marketing_attribut
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
 
+// ===================================
+// DOCUMENT PROCESSING
+// ===================================
+
+// Uploaded Documents - Track DOCX files uploaded for processing
+export const uploadedDocuments = sqliteTable('uploaded_documents', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  filename: text('filename').notNull(),
+  blobPath: text('blob_path').notNull(), // R2 storage path
+
+  // Processing status
+  status: text('status', { enum: ['processing', 'completed', 'failed'] }).notNull().default('processing'),
+
+  // Extracted content (populated after processing)
+  contentText: text('content_text'),
+  contentHtml: text('content_html'),
+  paragraphCount: integer('paragraph_count'),
+
+  // Error handling
+  errorMessage: text('error_message'),
+  retryCount: integer('retry_count').notNull().default(0),
+
+  // Metadata
+  fileSize: integer('file_size'), // bytes
+  mimeType: text('mime_type'),
+
+  // Timestamps
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  processedAt: integer('processed_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// ===================================
+// PAYMENT INTEGRATIONS
+// ===================================
+
+// LawPay OAuth2 Connections - Store LawPay authorization metadata
+// Note: Access tokens are cached in KV store for performance
+export const lawpayConnections = sqliteTable('lawpay_connections', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  merchantPublicKey: text('merchant_public_key').notNull(),
+  merchantName: text('merchant_name'),
+  scope: text('scope').notNull(), // OAuth scope (e.g., "payments")
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(), // When access token expires
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }), // When connection was revoked
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+

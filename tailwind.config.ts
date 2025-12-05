@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss'
 
 export default {
   content: [
+    './app/**/*.{js,vue,ts}',
     './components/**/*.{js,vue,ts}',
     './layouts/**/*.vue',
     './pages/**/*.vue',
@@ -40,7 +41,9 @@ export default {
         },
         // Keep burgundy as alias for compatibility
         burgundy: {
-          500: '#C41E3A'
+          500: '#C41E3A',
+          600: '#b01a32',
+          700: '#9c1629'
         },
         // Primary color pointing to navy
         primary: {

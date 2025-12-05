@@ -1,9 +1,16 @@
-// API endpoint to seed WYDAPT documents
-import { readdir } from 'fs/promises'
-import { join } from 'path'
+/**
+ * API endpoint to seed WYDAPT documents from R2
+ *
+ * Prerequisites: Documents must be uploaded to R2 first using /api/admin/upload-seed-documents
+ *
+ * This endpoint:
+ * 1. Creates the WYDAPT matter and journey
+ * 2. Reads uploaded DOCX files from R2
+ * 3. Parses them using our Cloudflare-compatible parser
+ * 4. Creates document templates
+ */
+
 import { nanoid } from 'nanoid'
-import mammoth from 'mammoth'
-import { readFile } from 'fs/promises'
 
 interface DocumentGroup {
   name: string
@@ -19,7 +26,7 @@ interface DocumentGroup {
 const DOCUMENT_GROUPS: DocumentGroup[] = [
   {
     name: 'General Documents',
-    path: 'General Documents',
+    path: 'General-Documents',
     journeyStepName: 'Engagement & Initial Setup',
     stepOrder: 1,
     stepType: 'MILESTONE',
@@ -29,7 +36,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Trust Documents',
-    path: 'Trust Documents',
+    path: 'Trust-Documents',
     journeyStepName: 'Trust Formation - Review & Sign',
     stepOrder: 2,
     stepType: 'BRIDGE',
@@ -39,7 +46,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Wyoming Private Family Trust Documents',
-    path: 'Wyoming Private Family Trust Documents',
+    path: 'Wyoming-Private-Family-Trust-Documents',
     journeyStepName: 'Private Trust Company Setup',
     stepOrder: 3,
     stepType: 'MILESTONE',
@@ -49,7 +56,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Non Charitable Specific Purpose Trust Documents',
-    path: 'Non Charitable Specific Purpose Trust Documents',
+    path: 'Non-Charitable-Specific-Purpose-Trust-Documents',
     journeyStepName: 'Special Purpose Trust (if applicable)',
     stepOrder: 4,
     stepType: 'MILESTONE',
@@ -59,7 +66,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Investment Decisions',
-    path: 'Investment Decisions',
+    path: 'Investment-Decisions',
     journeyStepName: 'Investment Committee Formation',
     stepOrder: 5,
     stepType: 'MILESTONE',
@@ -69,7 +76,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Contributions to Trust',
-    path: 'Contributions to Trust',
+    path: 'Contributions-to-Trust',
     journeyStepName: 'Asset Contribution Process',
     stepOrder: 6,
     stepType: 'BRIDGE',
@@ -79,7 +86,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   },
   {
     name: 'Distributions From Trust',
-    path: 'Distributions From Trust',
+    path: 'Distributions-From-Trust',
     journeyStepName: 'Distribution Management (Ongoing)',
     stepOrder: 7,
     stepType: 'BRIDGE',
@@ -89,75 +96,9 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
   }
 ]
 
-// Standard variable mappings
-const VARIABLE_MAP: Record<string, string> = {
-  'client': 'clientFirstName',
-  'clientname': 'clientFirstName',
-  'name': 'clientFirstName',
-  'firstname': 'clientFirstName',
-  'lastname': 'clientLastName',
-  'fullname': 'clientFullName',
-  'address': 'clientAddress',
-  'city': 'clientCity',
-  'state': 'clientState',
-  'zip': 'clientZipCode',
-  'zipcode': 'clientZipCode',
-  'email': 'clientEmail',
-  'phone': 'clientPhone',
-  'spouse': 'spouseName',
-  'spousename': 'spouseName',
-  'spousefirstname': 'spouseFirstName',
-  'spouselastname': 'spouseLastName',
-  'trust': 'trustName',
-  'trustname': 'trustName',
-  'trustee': 'trusteeName',
-  'trusteename': 'trusteeName',
-  'trustee1': 'trustee1Name',
-  'trustee2': 'trustee2Name',
-  'settlor': 'settlorName',
-  'settlorname': 'settlorName',
-  'grantor': 'grantorName',
-  'grantorname': 'grantorName',
-  'grantor1': 'grantor1Name',
-  'grantor2': 'grantor2Name',
-  'beneficiary': 'beneficiaryName',
-  'date': 'currentDate',
-  'signaturedate': 'signatureDate',
-  'today': 'currentDate',
-  'trustdate': 'trustCreationDate',
-  'contribution': 'contributionAmount',
-  'distribution': 'distributionAmount',
-  'amount': 'amount',
-  'property': 'propertyDescription',
-  'asset': 'assetDescription',
-  'notary': 'notaryName',
-  'notaryname': 'notaryName',
-  'commission': 'notaryCommissionNumber',
-  'expiration': 'notaryExpirationDate',
-  'ddc': 'ddcName',
-  'wapa': 'wapaName',
-  'ptc': 'ptcName',
-  'pftc': 'pftcName',
-  'investmentcommittee': 'investmentCommitteeName',
-  'member1': 'investmentCommitteeMember1',
-  'member2': 'investmentCommitteeMember2',
-  'member3': 'investmentCommitteeMember3'
-}
-
-async function parseDocx(filePath: string): Promise<{ html: string; text: string }> {
-  const buffer = await readFile(filePath)
-  const result = await mammoth.convertToHtml({ buffer })
-  const textResult = await mammoth.extractRawText({ buffer })
-  return {
-    html: result.value,
-    text: textResult.value
-  }
-}
-
 function extractVariables(text: string): Set<string> {
   const variables = new Set<string>()
-  
-  // These documents use Jinja-style templating, so we need to extract {{ variable }} patterns
+
   // Pattern 1: {{ variable }} or {{ variable.subfield }}
   const pattern1 = /\{\{\s*([^}]+?)\s*\}\}/g
   let match
@@ -168,19 +109,19 @@ function extractVariables(text: string): Set<string> {
       variables.add(varName)
     }
   }
-  
+
   // Pattern 2: [[Variable]]
   const pattern2 = /\[\[([^\]]+)\]\]/g
   while ((match = pattern2.exec(text)) !== null) {
     variables.add(match[1].trim())
   }
-  
+
   // Pattern 3: <<Variable>>
   const pattern3 = /<<([^>]+)>>/g
   while ((match = pattern3.exec(text)) !== null) {
     variables.add(match[1].trim())
   }
-  
+
   // Pattern 4: Underscores (blank fill-in fields)
   const underscoreMatches = text.match(/_{5,}/g)
   if (underscoreMatches && underscoreMatches.length > 0) {
@@ -188,50 +129,26 @@ function extractVariables(text: string): Set<string> {
       variables.add(`blankField${i + 1}`)
     }
   }
-  
+
   // Common fields in legal documents
   if (text.toLowerCase().includes('signature') || text.toLowerCase().includes('sign')) {
     variables.add('clientSignature')
     variables.add('signatureDate')
   }
-  
+
   if (text.toLowerCase().includes('notary')) {
     variables.add('notaryName')
     variables.add('notaryCommissionNumber')
     variables.add('notaryExpirationDate')
     variables.add('notaryState')
   }
-  
-  return variables
-}
 
-function convertToTemplate(html: string): string {
-  // These documents already use Jinja/Django templating syntax {{ variable }}
-  // We'll keep that format and just ensure it's clean
-  let template = html
-  
-  // The documents already have {{ variable }} format, which is compatible with our system
-  // We just need to ensure they're properly formatted
-  
-  // Replace [[Variable]] with {{variable}} if any exist
-  template = template.replace(/\[\[([^\]]+)\]\]/g, (match, varName) => {
-    return `{{${varName.trim()}}}`
-  })
-  
-  // Replace <<Variable>> with {{variable}} if any exist
-  template = template.replace(/<<([^>]+)>>/g, (match, varName) => {
-    return `{{${varName.trim()}}}`
-  })
-  
-  // Keep Jinja {% if %} and {{ variable }} syntax as-is
-  // Our template parser will need to handle these
-  
-  return template
+  return variables
 }
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  
+
   // Only admins and lawyers can seed
   if (user.role !== 'ADMIN' && user.role !== 'LAWYER') {
     throw createError({
@@ -241,12 +158,25 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = hubDatabase()
-  const WYDAPT_DOCS_PATH = join(process.cwd(), '..', 'WYDAPT DOCS')
-  
+  const blob = hubBlob()
+
   const log: string[] = []
-  log.push('🚀 Starting WYDAPT Document Seeding...')
-  
+  log.push('🚀 Starting WYDAPT Document Seeding from R2...')
+
   try {
+    // Check if WYDAPT matter already exists
+    const existingMatter = await db.prepare(`
+      SELECT id FROM matters WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
+    `).first()
+
+    if (existingMatter) {
+      return {
+        success: false,
+        message: 'WYDAPT matter already exists. Delete it first if you want to re-seed.',
+        matterId: existingMatter.id
+      }
+    }
+
     // 1. Create WYDAPT Matter
     log.push('📋 Creating WYDAPT Matter...')
     const matterId = nanoid()
@@ -266,7 +196,7 @@ export default defineEventHandler(async (event) => {
       Date.now()
     ).run()
     log.push(`✅ Matter created: ${matterId}`)
-    
+
     // 2. Create WYDAPT Journey
     log.push('🗺️  Creating WYDAPT Journey...')
     const journeyId = nanoid()
@@ -286,13 +216,15 @@ export default defineEventHandler(async (event) => {
       Date.now()
     ).run()
     log.push(`✅ Journey created: ${journeyId}`)
-    
+
     // 3. Process each document group
     let totalDocs = 0
+    const errors: string[] = []
+
     for (const group of DOCUMENT_GROUPS) {
       log.push(`\n📂 Processing: ${group.name}`)
       log.push(`   Creating step: ${group.journeyStepName}`)
-      
+
       // Create journey step
       const stepId = nanoid()
       await db.prepare(`
@@ -315,119 +247,134 @@ export default defineEventHandler(async (event) => {
         Date.now()
       ).run()
       log.push(`   ✅ Step created: ${stepId}`)
-      
-      // Get all DOCX files in this group
-      const groupPath = join(WYDAPT_DOCS_PATH, group.path)
-      const files = await readdir(groupPath)
-      const docxFiles = files.filter(f => f.endsWith('.docx')).sort()
-      
-      log.push(`   Found ${docxFiles.length} documents to import`)
-      
-      // Process each document
-      for (const filename of docxFiles) {
-        const filePath = join(groupPath, filename)
-        log.push(`   📄 Parsing: ${filename}`)
-        
-        try {
-          // Parse DOCX
-          const { html, text } = await parseDocx(filePath)
-          
-          // Extract variables using the enhanced renderer
-          const renderer = useTemplateRenderer()
-          const variables = renderer.extractVariableNames(text)
-          log.push(`      Variables found: ${variables.size}`)
-          
-          // Log some sample variables for debugging
-          if (variables.size > 0) {
-            const sampleVars = Array.from(variables).slice(0, 5)
-            log.push(`      Sample: ${sampleVars.join(', ')}`)
+
+      // List all files in this group's R2 path
+      const groupPath = `seed-documents/${group.path}/`
+
+      try {
+        // R2 list operation - get all blobs with the prefix
+        const result = await blob.list({ prefix: groupPath })
+        const blobs = result.blobs || []
+
+        log.push(`   Found ${blobs.length} documents in R2`)
+
+        // Process each document
+        for (const obj of blobs) {
+          const filename = obj.pathname.split('/').pop() || obj.pathname
+          if (!filename.endsWith('.docx')) continue
+
+          log.push(`   📄 Parsing: ${filename}`)
+
+          try {
+            // Fetch document from R2
+            const file = await blob.get(obj.pathname)
+            if (!file) {
+              errors.push(`File not found: ${obj.pathname}`)
+              continue
+            }
+
+            const buffer = await file.arrayBuffer()
+
+            // Parse DOCX using our Cloudflare-compatible parser
+            const { text, html, paragraphs } = parseDocx(buffer)
+
+            // Extract variables
+            const variables = extractVariables(text)
+            log.push(`      Variables found: ${variables.size}`)
+
+            // Determine document metadata
+            const lowerFilename = filename.toLowerCase()
+            const lowerText = text.toLowerCase()
+
+            const requiresSignature =
+              lowerText.includes('signature') ||
+              lowerText.includes('signed by') ||
+              lowerFilename.includes('agreement') ||
+              lowerFilename.includes('affidavit') ||
+              lowerFilename.includes('trust')
+
+            const requiresNotary =
+              lowerText.includes('notary') ||
+              lowerText.includes('notarized') ||
+              lowerFilename.includes('affidavit') ||
+              lowerFilename.includes('certification')
+
+            let category = 'Trust'
+            if (lowerFilename.includes('operating agreement')) category = 'LLC'
+            else if (lowerFilename.includes('meeting') || lowerFilename.includes('minutes')) category = 'Meeting Minutes'
+            else if (lowerFilename.includes('questionnaire')) category = 'Questionnaire'
+            else if (lowerFilename.includes('affidavit')) category = 'Affidavit'
+            else if (lowerFilename.includes('certification')) category = 'Certificate'
+            else if (lowerFilename.includes('engagement')) category = 'Engagement'
+
+            // Create document template
+            const templateId = nanoid()
+            await db.prepare(`
+              INSERT INTO document_templates (
+                id, name, description, category, content, variables, requires_notary,
+                is_active, original_file_name, file_extension, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+              templateId,
+              filename.replace('.docx', ''),
+              `From ${group.name}`,
+              category,
+              html, // Keep the HTML content with {{ variable }} syntax
+              JSON.stringify(Array.from(variables)),
+              requiresNotary ? 1 : 0,
+              1,
+              filename,
+              'docx',
+              Date.now(),
+              Date.now()
+            ).run()
+
+            log.push(`      ✅ Template created: ${templateId}`)
+            log.push(`         - Paragraphs: ${paragraphs.length}`)
+            log.push(`         - Requires Notary: ${requiresNotary}`)
+            totalDocs++
+          } catch (error) {
+            const errorMsg = `Error parsing ${filename}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            log.push(`      ❌ ${errorMsg}`)
+            errors.push(errorMsg)
           }
-          
-          // For Jinja-templated documents, we keep the original HTML
-          // They already have {{ variable }} and {% if %} syntax
-          const templateContent = html
-          
-          // Determine document metadata
-          const lowerFilename = filename.toLowerCase()
-          const lowerText = text.toLowerCase()
-          
-          const requiresSignature = 
-            lowerText.includes('signature') ||
-            lowerText.includes('signed by') ||
-            lowerFilename.includes('agreement') ||
-            lowerFilename.includes('affidavit') ||
-            lowerFilename.includes('trust')
-          
-          const requiresNotary = 
-            lowerText.includes('notary') ||
-            lowerText.includes('notarized') ||
-            lowerFilename.includes('affidavit') ||
-            lowerFilename.includes('certification')
-          
-          let category = 'Trust'
-          if (lowerFilename.includes('operating agreement')) category = 'LLC'
-          else if (lowerFilename.includes('meeting') || lowerFilename.includes('minutes')) category = 'Meeting Minutes'
-          else if (lowerFilename.includes('questionnaire')) category = 'Questionnaire'
-          else if (lowerFilename.includes('affidavit')) category = 'Affidavit'
-          else if (lowerFilename.includes('certification')) category = 'Certificate'
-          else if (lowerFilename.includes('engagement')) category = 'Engagement'
-          
-          // Create document template
-          const templateId = nanoid()
-          await db.prepare(`
-            INSERT INTO document_templates (
-              id, name, description, category, content, variables, requires_notary,
-              is_active, original_file_name, file_extension, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            templateId,
-            filename.replace('.docx', ''),
-            `From ${group.name}`,
-            category,
-            templateContent,
-            JSON.stringify(Array.from(variables)),
-            requiresNotary ? 1 : 0,
-            1,
-            filename,
-            'docx',
-            Date.now(),
-            Date.now()
-          ).run()
-          
-          log.push(`      ✅ Template created: ${templateId}`)
-          log.push(`         - Requires Notary: ${requiresNotary}`)
-          totalDocs++
-          
-        } catch (error) {
-          log.push(`      ❌ Error parsing ${filename}: ${error.message}`)
         }
+
+        log.push(`   ✅ Completed ${group.name}`)
+      } catch (error) {
+        const errorMsg = `Error listing files for ${group.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        log.push(`   ❌ ${errorMsg}`)
+        errors.push(errorMsg)
       }
-      
-      log.push(`   ✅ Completed ${group.name}`)
     }
-    
+
     log.push('\n\n🎉 WYDAPT Document Seeding Complete!')
     log.push(`\n📊 Summary:`)
     log.push(`   - Matter ID: ${matterId}`)
     log.push(`   - Journey ID: ${journeyId}`)
     log.push(`   - Steps Created: ${DOCUMENT_GROUPS.length}`)
     log.push(`   - Total Documents: ${totalDocs}`)
-    
+
+    if (errors.length > 0) {
+      log.push(`\n⚠️  Errors (${errors.length}):`)
+      errors.forEach(err => log.push(`   - ${err}`))
+    }
+
     return {
       success: true,
       matterId,
       journeyId,
       stepsCreated: DOCUMENT_GROUPS.length,
       documentsImported: totalDocs,
+      errors: errors.length > 0 ? errors : undefined,
       log: log.join('\n')
     }
-    
   } catch (error) {
-    log.push(`\n❌ Seeding failed: ${error.message}`)
+    log.push(`\n❌ Seeding failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     throw createError({
       statusCode: 500,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Seeding failed',
+      data: { log: log.join('\n') }
     })
   }
 })
-

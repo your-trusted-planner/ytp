@@ -1,0 +1,19 @@
+# Local development environment variables
+# Copy this to .dev.vars and fill in your values
+# .dev.vars is gitignored and used by Wrangler for local development
+
+JWT_SECRET=your-secret-key-change-in-production
+NUXT_SEED_TOKEN=your-seed-token
+PANDADOC_API_KEY=
+PANDADOC_SANDBOX=true
+
+# LawPay OAuth2 credentials (get from https://developers.8am.com/)
+LAWPAY_CLIENT_ID=
+LAWPAY_CLIENT_SECRET=
+LAWPAY_REDIRECT_URI=https://yourdomain.com/api/auth/lawpay/callback
+
+# Google Calendar Service Account (with Domain-Wide Delegation)
+# Get these from Google Cloud Console > Service Accounts
+# Requires Google Workspace admin to enable domain-wide delegation
+GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour\nPrivate\nKey\nHere\n-----END PRIVATE KEY-----\n"
