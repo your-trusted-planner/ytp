@@ -9,7 +9,7 @@
   "routes": [
     {
       "pattern": "app.businessandlegacy.com/*",
-      "zone_name": "trustandlegacy.com"
+      "zone_name": "businessandlegacy.com"
     },
     {
       "pattern": "app.trustandlegacy.com/*",
@@ -99,7 +99,7 @@
       "routes": [
         {
           "pattern": "app-preview.businessandlegacy.com/*",
-          "zone_name": "trustandlegacy.com"
+          "zone_name": "businessandlegacy.com"
         },
         {
           "pattern": "app-preview.trustandlegacy.com/*",
