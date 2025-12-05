@@ -8,6 +8,10 @@
   },
   "routes": [
     {
+      "pattern": "app.businessandlegacy.com/*",
+      "zone_name": "trustandlegacy.com"
+    },
+    {
       "pattern": "app.trustandlegacy.com/*",
       "zone_name": "trustandlegacy.com"
     }
@@ -93,6 +97,10 @@
     "preview": {
       "name": "ytp-preview",
       "routes": [
+        {
+          "pattern": "app-preview.businessandlegacy.com/*",
+          "zone_name": "trustandlegacy.com"
+        },
         {
           "pattern": "app-preview.trustandlegacy.com/*",
           "zone_name": "trustandlegacy.com"
