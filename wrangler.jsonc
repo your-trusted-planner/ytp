@@ -9,11 +9,13 @@
   "routes": [
     {
       "pattern": "app.businessandlegacy.com/*",
-      "zone_name": "businessandlegacy.com"
+      "zone_name": "businessandlegacy.com",
+      "custom_domain": true
     },
     {
       "pattern": "app.trustandlegacy.com/*",
-      "zone_name": "trustandlegacy.com"
+      "zone_name": "trustandlegacy.com",
+      "custom_domain": true
     }
   ],
   "compatibility_date": "2024-09-21",
@@ -99,11 +101,13 @@
       "routes": [
         {
           "pattern": "app-preview.businessandlegacy.com/*",
-          "zone_name": "businessandlegacy.com"
+          "zone_name": "businessandlegacy.com",
+          "custom_domain": true
         },
         {
           "pattern": "app-preview.trustandlegacy.com/*",
-          "zone_name": "trustandlegacy.com"
+          "zone_name": "trustandlegacy.com",
+          "custom_domain": true
         }
       ],
       "d1_databases": [
