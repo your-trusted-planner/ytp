@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
+  "workers_dev": false,
   "name": "ytp",
   "main": "dist/server/index.mjs",
   "assets": {
