@@ -51,14 +51,15 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  Calendar, 
-  UserCircle, 
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Calendar,
+  UserCircle,
   Settings,
-  Map
+  Map,
+  HelpCircle
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -76,7 +77,8 @@ const lawyerNavigation = [
   { path: '/dashboard/templates', label: 'Templates', icon: FileText },
   { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar },
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
-  { path: '/dashboard/settings', label: 'Settings', icon: Settings }
+  { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
 ]
 
 const clientNavigation = [
@@ -84,7 +86,8 @@ const clientNavigation = [
   { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map },
   { path: '/dashboard/documents', label: 'My Documents', icon: FileText },
   { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle }
+  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
+  { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
 ]
 
 const navigationItems = computed(() => {

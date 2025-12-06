@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Documents</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold text-gray-900">Documents</h1>
+        <UiHelpLink :topic="isLawyer ? 'documents' : 'client-documents'" title="Learn about documents" />
+      </div>
       <p class="text-gray-600 mt-1">View and manage your documents</p>
     </div>
 
@@ -53,12 +56,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { formatDate } from '~/utils/format'
 
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
+})
+
+const { data: sessionData } = await useFetch('/api/auth/session')
+const isLawyer = computed(() => {
+  const role = sessionData.value?.user?.role
+  return role === 'LAWYER' || role === 'ADMIN'
 })
 
 const documents = ref<any[]>([])

@@ -2,7 +2,10 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Clients</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="text-3xl font-bold text-gray-900">Clients</h1>
+          <UiHelpLink topic="managing-clients" title="Learn about managing clients" />
+        </div>
         <p class="text-gray-600 mt-1">Manage your client list</p>
       </div>
       <UiButton @click="showAddModal = true">

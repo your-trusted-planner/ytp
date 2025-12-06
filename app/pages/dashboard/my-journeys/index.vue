@@ -2,7 +2,10 @@
   <div class="space-y-6">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">My Journeys</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-bold text-gray-900">My Journeys</h1>
+        <UiHelpLink topic="client-journeys" title="Learn about your journeys" />
+      </div>
       <p class="text-gray-600 mt-1">Track your progress through each service</p>
     </div>
 

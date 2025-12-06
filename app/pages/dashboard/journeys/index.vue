@@ -3,7 +3,10 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Client Journeys</h1>
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold text-gray-900">Client Journeys</h1>
+          <UiHelpLink topic="journeys-workflows" title="Learn about journeys and workflows" />
+        </div>
         <p class="text-gray-600 mt-1">Manage workflows and client experiences</p>
       </div>
       <UiButton @click="showCreateModal = true">

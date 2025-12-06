@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Document Templates</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold text-gray-900">Document Templates</h1>
+        <UiHelpLink topic="documents" title="Learn about documents and templates" />
+      </div>
       <p class="text-gray-600 mt-1">Manage your legal document templates</p>
     </div>
 
