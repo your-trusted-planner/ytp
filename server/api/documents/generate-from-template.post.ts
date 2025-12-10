@@ -44,11 +44,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Build context for template rendering
+  const clientFullName = `${client.first_name || ''} ${client.last_name || ''}`.trim()
   const context: any = {
     // Client info
     clientFirstName: client.first_name || '',
     clientLastName: client.last_name || '',
-    clientFullName: `${client.first_name || ''} ${client.last_name || ''}`.trim(),
+    clientFullName,
+    clientName: clientFullName, // Alias for templates that use clientName
     clientAddress: client.address || '',
     clientCity: client.city || '',
     clientState: client.state || '',
@@ -60,6 +62,15 @@ export default defineEventHandler(async (event) => {
     spouseName: client.spouse_name || '',
     spouseFirstName: client.spouse_name?.split(' ')[0] || '',
     spouseLastName: client.spouse_name?.split(' ').slice(1).join(' ') || '',
+    
+    // Service/Matter info (for engagement letters)
+    serviceName: template.name || 'Legal Services',
+    matterName: body.matterName || template.name || 'Legal Services',
+    
+    // Fee info (for engagement letters) - placeholder values
+    fee: '$[To be determined]',
+    retainerFee: '$[To be determined]',
+    hourlyRate: '$[To be determined]',
     
     // Dates
     currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
