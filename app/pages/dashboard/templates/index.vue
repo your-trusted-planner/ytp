@@ -179,9 +179,23 @@ const useTemplateForm = ref({
 const templateVariables = computed(() => {
   const template = selectedTemplate.value || viewingTemplate.value
   if (!template || !template.variables) return []
+  
   try {
-    return JSON.parse(template.variables)
-  } catch {
+    const parsed = JSON.parse(template.variables)
+    // Handle both array of strings and array of objects
+    if (Array.isArray(parsed)) {
+      return parsed.map(v => {
+        // If it's an object, try to extract the name/key
+        if (typeof v === 'object' && v !== null) {
+          return v.name || v.key || v.variable || JSON.stringify(v)
+        }
+        // If it's a string, return as is
+        return String(v)
+      })
+    }
+    return []
+  } catch (error) {
+    console.error('Error parsing template variables:', error, template.variables)
     return []
   }
 })

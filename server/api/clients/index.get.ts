@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   
   // Get all users who are clients
-  const clients = await db
+  const clientsData = await db
     .select({
       id: schema.users.id,
       email: schema.users.email,
@@ -24,6 +24,20 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.users.role, 'CLIENT'))
     .all()
   
-  return clients
+  // Transform to match frontend expectations
+  const clients = clientsData.map(client => ({
+    id: client.id,
+    email: client.email,
+    first_name: client.firstName,
+    last_name: client.lastName,
+    firstName: client.firstName,
+    lastName: client.lastName,
+    phone: client.phone,
+    status: client.status,
+    createdAt: client.createdAt,
+    profile: client.profile
+  }))
+  
+  return { clients }
 })
 

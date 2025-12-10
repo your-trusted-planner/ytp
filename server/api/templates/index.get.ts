@@ -13,6 +13,25 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(schema.documentTemplates.createdAt))
     .all()
   
-  return templates
+  // Transform to camelCase for frontend compatibility
+  return templates.map(template => ({
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    category: template.category,
+    folderId: template.folderId,
+    content: template.content,
+    variables: template.variables, // Keep as JSON string
+    requiresNotary: template.requiresNotary,
+    isActive: template.isActive,
+    order: template.order,
+    originalFileName: template.originalFileName,
+    fileExtension: template.fileExtension,
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt,
+    // Add snake_case versions for backwards compatibility
+    requires_notary: template.requiresNotary,
+    is_active: template.isActive
+  }))
 })
 
