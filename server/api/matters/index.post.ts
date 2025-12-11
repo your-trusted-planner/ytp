@@ -1,17 +1,14 @@
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../database'
 import { requireRole, generateId } from '../../utils/auth'
-import { mockDb } from '../../utils/mock-db'
 
 const createMatterSchema = z.object({
-  name: z.string().min(1),
+  title: z.string().min(1),
+  clientId: z.string().min(1),
+  matterNumber: z.string().optional(),
   description: z.string().optional(),
-  category: z.string().optional(),
-  type: z.enum(['SINGLE', 'RECURRING']),
-  price: z.number().min(0), // Price in dollars (will convert to cents)
-  duration: z.string().optional(), // MONTHLY, ANNUALLY, QUARTERLY
-  engagementLetterId: z.string().optional(),
-  workflowSteps: z.array(z.string()).optional()
+  status: z.enum(['OPEN', 'CLOSED', 'PENDING']).default('OPEN'),
+  contractDate: z.string().optional(), // ISO date string
 })
 
 export default defineEventHandler(async (event) => {
@@ -28,30 +25,21 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const { price, workflowSteps, ...rest } = result.data
-  
   const newMatter = {
     id: generateId(),
-    ...rest,
-    price: Math.round(price * 100), // Convert dollars to cents
-    workflowSteps: workflowSteps ? JSON.stringify(workflowSteps) : null,
+    ...result.data,
+    contractDate: result.data.contractDate ? new Date(result.data.contractDate) : undefined,
     createdAt: new Date(),
     updatedAt: new Date()
   }
   
-  // Use mock database for local testing
   if (!isDatabaseAvailable()) {
-    mockDb.matters.create(newMatter)
-    return { success: true, matter: newMatter }
+    return { success: true, matter: newMatter } // Mock response
   }
   
-  // Real database
   const { useDrizzle, schema } = await import('../../database')
   const db = useDrizzle()
   await db.insert(schema.matters).values(newMatter)
   
   return { success: true, matter: newMatter }
 })
-
-
-

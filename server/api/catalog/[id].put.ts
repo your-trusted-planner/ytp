@@ -2,13 +2,16 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../database'
 import { requireRole } from '../../utils/auth'
+import { mockDb } from '../../utils/mock-db'
 
-const updateMatterSchema = z.object({
-  title: z.string().optional(),
-  matterNumber: z.string().optional(),
+const updateCatalogItemSchema = z.object({
+  name: z.string().optional(),
   description: z.string().optional(),
-  status: z.enum(['OPEN', 'CLOSED', 'PENDING']).optional(),
-  contractDate: z.string().optional(),
+  category: z.string().optional(),
+  type: z.enum(['SINGLE', 'RECURRING']).optional(),
+  price: z.number().optional(),
+  duration: z.string().optional(),
+  isActive: z.boolean().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -18,12 +21,12 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      message: 'Matter ID required'
+      message: 'Catalog Item ID required'
     })
   }
   
   const body = await readBody(event)
-  const result = updateMatterSchema.safeParse(body)
+  const result = updateCatalogItemSchema.safeParse(body)
   
   if (!result.success) {
     throw createError({
@@ -32,26 +35,31 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  const { price, ...rest } = result.data
+  
   const updateData: any = {
-    ...result.data,
+    ...rest,
     updatedAt: new Date()
   }
-
-  if (result.data.contractDate) {
-    updateData.contractDate = new Date(result.data.contractDate)
+  
+  if (price !== undefined) {
+    updateData.price = Math.round(price * 100)
   }
   
+  // Use mock database for local testing
   if (!isDatabaseAvailable()) {
-    return { success: true } // Mock response
+    mockDb.matters.update(id, updateData)
+    return { success: true }
   }
   
+  // Real database
   const { useDrizzle, schema } = await import('../../database')
   const db = useDrizzle()
   
   await db
-    .update(schema.matters)
+    .update(schema.serviceCatalog)
     .set(updateData)
-    .where(eq(schema.matters.id, id))
+    .where(eq(schema.serviceCatalog.id, id))
   
   return { success: true }
 })

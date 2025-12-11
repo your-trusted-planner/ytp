@@ -173,7 +173,7 @@ const formatPrice = (cents: number) => {
 
 const fetchMatters = async () => {
   try {
-    matters.value = await $fetch('/api/matters')
+    matters.value = await $fetch('/api/catalog')
   } catch (error) {
     console.error('Failed to fetch matters:', error)
   }
@@ -194,7 +194,7 @@ const editMatter = (matter: any) => {
 
 const toggleMatterStatus = async (matter: any) => {
   try {
-    await $fetch(`/api/matters/${matter.id}`, {
+    await $fetch(`/api/catalog/${matter.id}`, {
       method: 'PUT',
       body: { isActive: !matter.isActive }
     })
@@ -213,12 +213,12 @@ const handleSaveMatter = async () => {
     }
     
     if (editingMatter.value) {
-      await $fetch(`/api/matters/${editingMatter.value.id}`, {
+      await $fetch(`/api/catalog/${editingMatter.value.id}`, {
         method: 'PUT',
         body: payload
       })
     } else {
-      await $fetch('/api/matters', {
+      await $fetch('/api/catalog', {
         method: 'POST',
         body: payload
       })

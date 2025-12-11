@@ -91,7 +91,8 @@ export const documents = sqliteTable('documents', {
   description: text('description'),
   status: text('status', { enum: ['DRAFT', 'SENT', 'VIEWED', 'SIGNED', 'COMPLETED'] }).notNull().default('DRAFT'),
   templateId: text('template_id').references(() => documentTemplates.id),
-  matterId: text('matter_id').references(() => matters.id), // Link to matter/product
+  serviceId: text('service_id').references(() => services.id), // Link to service
+  matterId: text('matter_id').references(() => matters.id), // Link to case (matter)
   content: text('content').notNull(),
   filePath: text('file_path'),
   fileSize: integer('file_size'),
@@ -138,8 +139,8 @@ export const settings = sqliteTable('settings', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
 
-// Matters table (products/services)
-export const matters = sqliteTable('matters', {
+// Service Catalog (formerly matters - products/services definitions)
+export const serviceCatalog = sqliteTable('service_catalog', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
@@ -154,19 +155,34 @@ export const matters = sqliteTable('matters', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
 
-// Client Matters (engaged services)
-export const clientMatters = sqliteTable('client_matters', {
+// Matters (Client Cases - grouping entity)
+export const matters = sqliteTable('matters', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  matterId: text('matter_id').notNull().references(() => matters.id),
+  title: text('title').notNull(), // e.g., "Smith Family Trust 2024"
+  matterNumber: text('matter_number'),
+  description: text('description'),
+  status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
+  contractDate: integer('contract_date', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Services (formerly client_matters - specific engaged services)
+export const services = sqliteTable('services', {
+  id: text('id').primaryKey(),
+  matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
+  catalogId: text('catalog_id').notNull().references(() => serviceCatalog.id), // Link to product definition
+  journeyId: text('journey_id').references(() => journeys.id), // Optional: link to active journey
   engagementLetterDocId: text('engagement_letter_doc_id').references(() => documents.id),
   status: text('status', { enum: ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED'] }).notNull().default('PENDING'),
   startDate: integer('start_date', { mode: 'timestamp' }),
-  endDate: integer('end_date', { mode: 'timestamp' }), // For single matters when completed
-  renewalDate: integer('renewal_date', { mode: 'timestamp' }), // For recurring matters
+  endDate: integer('end_date', { mode: 'timestamp' }), // For single services when completed
+  renewalDate: integer('renewal_date', { mode: 'timestamp' }), // For recurring services
   totalPaid: integer('total_paid').notNull().default(0), // Total paid in cents
-  totalPrice: integer('total_price').notNull(), // Expected total in cents
+  fee: integer('fee').notNull(), // Actual fee charged (can differ from catalog price)
   paymentStatus: text('payment_status', { enum: ['UNPAID', 'PARTIAL', 'PAID'] }).notNull().default('UNPAID'),
+  assignedAttorneyId: text('assigned_attorney_id').references(() => users.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
@@ -176,7 +192,7 @@ export const questionnaires = sqliteTable('questionnaires', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
-  matterId: text('matter_id').references(() => matters.id), // Optional: link to specific matter
+  serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Optional: link to specific service type
   questions: text('questions').notNull(), // JSON array of questions
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -200,7 +216,7 @@ export const questionnaireResponses = sqliteTable('questionnaire_responses', {
 // Journeys - The overall journey/workflow (replaces "pipeline" concept)
 export const journeys = sqliteTable('journeys', {
   id: text('id').primaryKey(),
-  matterId: text('matter_id').references(() => matters.id), // Which matter this journey is for
+  serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Which product/service this journey is for
   name: text('name').notNull(), // e.g., "Trust Formation Journey", "Annual Maintenance Journey"
   description: text('description'),
   isTemplate: integer('is_template', { mode: 'boolean' }).notNull().default(false), // Template vs. active

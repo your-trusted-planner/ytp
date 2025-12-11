@@ -1,23 +1,26 @@
 import { desc } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../database'
 import { requireRole } from '../../utils/auth'
+import { mockDb, initMockMatters } from '../../utils/mock-db'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
   
-  // Real database check only - mock support to be added if needed
+  // Use mock database for local testing
   if (!isDatabaseAvailable()) {
-    return []
+    await initMockMatters()
+    return await mockDb.matters.getAll()
   }
   
+  // Real database
   const { useDrizzle, schema } = await import('../../database')
   const db = useDrizzle()
   
-  const matters = await db
+  const catalog = await db
     .select()
-    .from(schema.matters)
-    .orderBy(desc(schema.matters.createdAt))
+    .from(schema.serviceCatalog)
+    .orderBy(desc(schema.serviceCatalog.createdAt))
     .all()
   
-  return matters
+  return catalog
 })
