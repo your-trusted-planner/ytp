@@ -2,11 +2,11 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Matters & Services</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Services</h1>
         <p class="text-gray-600 mt-1">Manage your service offerings and product inventory</p>
       </div>
       <UiButton @click="showAddModal = true">
-        Add Matter
+        Add New Service
       </UiButton>
     </div>
 
@@ -69,11 +69,11 @@
     </div>
 
     <!-- Add/Edit Matter Modal -->
-    <UiModal v-model="showAddModal" :title="editingMatter ? 'Edit Matter' : 'Add New Matter'" size="lg">
+    <UiModal v-model="showAddModal" :title="editingMatter ? 'Edit Service' : 'Add New Service'" size="lg">
       <form @submit.prevent="handleSaveMatter" class="space-y-4">
         <UiInput
           v-model="matterForm.name"
-          label="Matter Name"
+          label="Service Name"
           placeholder="e.g., Wyoming Asset Protection Trust"
           required
         />
@@ -86,19 +86,24 @@
         />
         
         <div class="grid grid-cols-2 gap-4">
-          <UiInput
+          <UiSelect
             v-model="matterForm.category"
             label="Category"
-            placeholder="e.g., Trust, LLC Formation"
-          />
+            required
+          >
+            <option value="">Select category</option>
+            <option value="Trust">Trust</option>
+            <option value="LLC Formation">LLC Formation</option>
+            <option value="Other">Other</option>
+          </UiSelect>
           
           <UiSelect
             v-model="matterForm.type"
             label="Type"
             required
           >
-            <option value="SINGLE">Single Matter (One-time)</option>
-            <option value="RECURRING">Recurring Matter (Ongoing)</option>
+            <option value="SINGLE">Single Service (One-time)</option>
+            <option value="RECURRING">Recurring Service (Ongoing)</option>
           </UiSelect>
         </div>
         
@@ -130,7 +135,7 @@
           Cancel
         </UiButton>
         <UiButton @click="handleSaveMatter" :is-loading="saving">
-          {{ editingMatter ? 'Update' : 'Create' }} Matter
+          {{ editingMatter ? 'Update' : 'Create' }} Service
         </UiButton>
       </template>
     </UiModal>
@@ -195,7 +200,7 @@ const toggleMatterStatus = async (matter: any) => {
     })
     await fetchMatters()
   } catch (error) {
-    alert('Failed to update matter status')
+    alert('Failed to update service status')
   }
 }
 
@@ -222,7 +227,7 @@ const handleSaveMatter = async () => {
     closeModal()
     await fetchMatters()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to save matter')
+    alert(error.data?.message || 'Failed to save service')
   } finally {
     saving.value = false
   }

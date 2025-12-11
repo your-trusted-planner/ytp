@@ -71,7 +71,7 @@ const isLoggingOut = ref(false)
 const lawyerNavigation = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/clients', label: 'Clients', icon: Users },
-  { path: '/dashboard/matters', label: 'Matters', icon: FileText },
+  { path: '/dashboard/matters', label: 'Services', icon: FileText },
   { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
   { path: '/dashboard/documents', label: 'Documents', icon: FileText },
   { path: '/dashboard/templates', label: 'Templates', icon: FileText },

@@ -133,7 +133,8 @@ const newClient = ref({
 const fetchClients = async () => {
   loading.value = true
   try {
-    clients.value = await $fetch('/api/clients')
+    const response = await $fetch<{ clients: any[] }>('/api/clients')
+    clients.value = response.clients
   } catch (error) {
     console.error('Failed to fetch clients:', error)
   } finally {
