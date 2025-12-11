@@ -24,25 +24,38 @@
 
     <div class="flex">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)]">
+      <aside 
+        class="bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] transition-all duration-300 relative"
+        :class="isSidebarCollapsed ? 'w-20' : 'w-64'"
+      >
+        <!-- Collapse Toggle -->
+        <button 
+          @click="isSidebarCollapsed = !isSidebarCollapsed"
+          class="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 text-gray-500 hover:text-gray-700 shadow-sm z-10"
+        >
+          <component :is="isSidebarCollapsed ? ChevronRight : ChevronLeft" class="w-4 h-4" />
+        </button>
+
         <nav class="p-4 space-y-1">
           <NuxtLink
             v-for="item in navigationItems"
             :key="item.path"
             :to="item.path"
             class="flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-            :class="isActive(item.path) 
-              ? 'bg-burgundy-50 text-burgundy-600' 
-              : 'text-gray-700 hover:bg-gray-50'"
+            :class="[
+              isActive(item.path) ? 'bg-burgundy-50 text-burgundy-600' : 'text-gray-700 hover:bg-gray-50',
+              isSidebarCollapsed ? 'justify-center px-2' : ''
+            ]"
+            :title="isSidebarCollapsed ? item.label : ''"
           >
-            <component :is="item.icon" class="w-5 h-5 mr-3" />
-            {{ item.label }}
+            <component :is="item.icon" class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
+            <span v-if="!isSidebarCollapsed">{{ item.label }}</span>
           </NuxtLink>
         </nav>
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 p-8">
+      <main class="flex-1 p-8 transition-all duration-300">
         <slot />
       </main>
     </div>
@@ -59,7 +72,13 @@ import {
   UserCircle,
   Settings,
   Map,
-  HelpCircle
+  HelpCircle,
+  Briefcase,
+  ShoppingBag,
+  File,
+  Copy,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -67,15 +86,16 @@ const route = useRoute()
 const { data: sessionData } = await useFetch('/api/auth/session')
 const user = computed(() => sessionData.value?.user)
 const isLoggingOut = ref(false)
+const isSidebarCollapsed = ref(false)
 
 const lawyerNavigation = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/clients', label: 'Clients', icon: Users },
-  { path: '/dashboard/cases', label: 'Matters', icon: FileText },
-  { path: '/dashboard/matters', label: 'Services', icon: FileText },
+  { path: '/dashboard/cases', label: 'Matters', icon: Briefcase },
+  { path: '/dashboard/matters', label: 'Services', icon: ShoppingBag },
   { path: '/dashboard/journeys', label: 'Journeys', icon: Map },
-  { path: '/dashboard/documents', label: 'Documents', icon: FileText },
-  { path: '/dashboard/templates', label: 'Templates', icon: FileText },
+  { path: '/dashboard/documents', label: 'Documents', icon: File },
+  { path: '/dashboard/templates', label: 'Templates', icon: Copy },
   { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar },
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -85,8 +105,8 @@ const lawyerNavigation = [
 const clientNavigation = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map },
-  { path: '/dashboard/my-matters', label: 'My Matters', icon: FileText },
-  { path: '/dashboard/documents', label: 'My Documents', icon: FileText },
+  { path: '/dashboard/my-matters', label: 'My Matters', icon: Briefcase },
+  { path: '/dashboard/documents', label: 'My Documents', icon: File },
   { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
   { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
