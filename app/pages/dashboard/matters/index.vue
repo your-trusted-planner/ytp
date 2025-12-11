@@ -102,8 +102,8 @@
             label="Type"
             required
           >
-            <option value="SINGLE">Single Service (One-time)</option>
-            <option value="RECURRING">Recurring Service (Ongoing)</option>
+            <option value="SINGLE">Single Service</option>
+            <option value="RECURRING">Recurring Service</option>
           </UiSelect>
         </div>
         
