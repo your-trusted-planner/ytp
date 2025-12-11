@@ -42,7 +42,10 @@ export default defineEventHandler(async (event) => {
   // If fee is not provided, fetch it from the catalog
   let serviceFee = fee
   if (serviceFee === undefined) {
-    const catalogItem = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).get()
+    // Note: D1 query structure depends on driver. Using .all() then [0] is safer than .get() across drivers.
+    const results = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).all()
+    const catalogItem = results[0]
+    
     if (!catalogItem) {
         throw createError({ statusCode: 404, message: 'Service not found in catalog' })
     }
