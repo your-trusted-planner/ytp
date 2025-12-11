@@ -115,6 +115,49 @@
             type="date"
           />
         </div>
+
+        <!-- Services Section (Only when editing) -->
+        <div v-if="editingMatter" class="border-t pt-4 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Associated Services</h3>
+                <UiButton size="sm" variant="secondary" @click="showAddService = true" type="button">
+                    Add Service
+                </UiButton>
+            </div>
+
+            <div v-if="loadingServices" class="text-center py-4">
+                <p class="text-sm text-gray-500">Loading services...</p>
+            </div>
+            <div v-else-if="services.length === 0" class="text-center py-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-500">No services associated with this matter</p>
+            </div>
+            <div v-else class="space-y-3">
+                <div v-for="service in services" :key="service.id" class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-900">{{ service.name }}</div>
+                        <div class="text-xs text-gray-500">{{ formatPrice(service.fee) }} • {{ service.status }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Service Inline Form -->
+            <div v-if="showAddService" class="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <h4 class="text-sm font-medium text-gray-900 mb-3">Add New Service</h4>
+                <div class="space-y-3">
+                    <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
+                        <option value="">Choose a service...</option>
+                        <option v-for="item in catalog" :key="item.id" :value="item.id">
+                            {{ item.name }} ({{ formatPrice(item.price) }})
+                        </option>
+                    </UiSelect>
+                    
+                    <div class="flex justify-end space-x-2">
+                        <UiButton size="sm" variant="ghost" @click="showAddService = false">Cancel</UiButton>
+                        <UiButton size="sm" @click="handleAddService" :is-loading="addingService">Add</UiButton>
+                    </div>
+                </div>
+            </div>
+        </div>
       </form>
       
       <template #footer>
@@ -139,10 +182,20 @@ definePageMeta({
 
 const matters = ref<any[]>([])
 const clients = ref<any[]>([])
+const catalog = ref<any[]>([])
+const services = ref<any[]>([])
 const loading = ref(true)
 const showAddModal = ref(false)
 const saving = ref(false)
 const editingMatter = ref<any>(null)
+
+// Services management
+const loadingServices = ref(false)
+const showAddService = ref(false)
+const addingService = ref(false)
+const newServiceForm = ref({
+    catalogId: ''
+})
 
 const matterForm = ref({
   title: '',
@@ -174,6 +227,47 @@ const fetchClients = async () => {
   }
 }
 
+const fetchCatalog = async () => {
+  try {
+    const response = await $fetch<any[]>('/api/catalog')
+    catalog.value = response
+  } catch (error) {
+    console.error('Failed to fetch catalog:', error)
+  }
+}
+
+const fetchMatterServices = async (matterId: string) => {
+    loadingServices.value = true
+    try {
+        const response = await $fetch<{ services: any[] }>(`/api/matters/${matterId}/services`)
+        services.value = response.services
+    } catch (error) {
+        console.error('Failed to fetch services:', error)
+    } finally {
+        loadingServices.value = false
+    }
+}
+
+const handleAddService = async () => {
+    if (!newServiceForm.value.catalogId || !editingMatter.value) return
+    
+    addingService.value = true
+    try {
+        await $fetch(`/api/matters/${editingMatter.value.id}/services`, {
+            method: 'POST',
+            body: { catalogId: newServiceForm.value.catalogId }
+        })
+        await fetchMatterServices(editingMatter.value.id)
+        showAddService.value = false
+        newServiceForm.value.catalogId = ''
+    } catch (error) {
+        console.error('Failed to add service:', error)
+        alert('Failed to add service')
+    } finally {
+        addingService.value = false
+    }
+}
+
 const getClientName = (clientId: string) => {
     const client = clients.value.find(c => c.id === clientId)
     return client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
@@ -192,7 +286,14 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
 
-const editMatter = (matter: any) => {
+const formatPrice = (cents: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(cents / 100)
+}
+
+const editMatter = async (matter: any) => {
   editingMatter.value = matter
   matterForm.value = {
     title: matter.title,
@@ -203,6 +304,9 @@ const editMatter = (matter: any) => {
     contractDate: matter.contractDate ? new Date(matter.contractDate).toISOString().split('T')[0] : ''
   }
   showAddModal.value = true
+  
+  // Load services for this matter
+  await fetchMatterServices(matter.id)
 }
 
 const handleSaveMatter = async () => {
@@ -234,6 +338,8 @@ const handleSaveMatter = async () => {
 const closeModal = () => {
   showAddModal.value = false
   editingMatter.value = null
+  services.value = []
+  showAddService.value = false
   matterForm.value = {
     title: '',
     clientId: '',
@@ -245,6 +351,6 @@ const closeModal = () => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchMatters(), fetchClients()])
+  await Promise.all([fetchMatters(), fetchClients(), fetchCatalog()])
 })
 </script>
