@@ -5,7 +5,7 @@ import { requireRole, generateId } from '../../../utils/auth'
 
 const addServiceSchema = z.object({
   catalogId: z.string().min(1),
-  fee: z.number().optional(), // Optional override of catalog price
+  fee: z.number().optional(), // Optional override of catalog price (in dollars, will be converted to cents)
 })
 
 export default defineEventHandler(async (event) => {
@@ -40,8 +40,8 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
 
   // If fee is not provided, fetch it from the catalog
-  let serviceFee = fee
-  if (serviceFee === undefined) {
+  let serviceFee: number
+  if (fee === undefined) {
     // Note: D1 query structure depends on driver. Using .all() then [0] is safer than .get() across drivers.
     const results = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).all()
     const catalogItem = results[0]
@@ -49,7 +49,10 @@ export default defineEventHandler(async (event) => {
     if (!catalogItem) {
         throw createError({ statusCode: 404, message: 'Service not found in catalog' })
     }
-    serviceFee = catalogItem.price
+    serviceFee = catalogItem.price // Already in cents from catalog
+  } else {
+    // Convert dollars to cents if fee is provided
+    serviceFee = Math.round(fee * 100)
   }
 
   const newService = {
@@ -66,3 +69,4 @@ export default defineEventHandler(async (event) => {
   
   return { success: true, service: newService }
 })
+
