@@ -1,9 +1,15 @@
 <template>
   <div class="space-y-6">
     <div>
-      <div class="flex items-center gap-2">
-        <h1 class="text-3xl font-bold text-gray-900">Document Templates</h1>
-        <UiHelpLink topic="documents" title="Learn about documents and templates" />
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <h1 class="text-3xl font-bold text-gray-900">Document Templates</h1>
+          <UiHelpLink topic="documents" title="Learn about documents and templates" />
+        </div>
+        <UiButton @click="showUploadModal = true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload Template
+        </UiButton>
       </div>
       <p class="text-gray-600 mt-1">Manage your legal document templates</p>
     </div>
@@ -97,6 +103,88 @@
       </div>
     </UiModal>
 
+    <!-- Upload Template Modal -->
+    <UiModal v-model="showUploadModal" title="Upload New Template" size="lg">
+      <form @submit.prevent="handleUpload" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Upload Document (DOCX) *
+          </label>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".docx"
+            @change="handleFileSelect"
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-burgundy-50 file:text-burgundy-700 hover:file:bg-burgundy-100"
+            required
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Upload a Word document (.docx) with personalization fields like {{ "{{clientName}}" }}, [[TrustName]], or &lt;&lt;Address&gt;&gt;
+          </p>
+        </div>
+
+        <UiInput
+          v-model="uploadForm.name"
+          label="Template Name"
+          placeholder="Leave blank to use filename"
+        />
+
+        <UiTextarea
+          v-model="uploadForm.description"
+          label="Description"
+          placeholder="Brief description of this template..."
+          rows="2"
+        />
+
+        <UiSelect v-model="uploadForm.category" label="Category">
+          <option value="General">General</option>
+          <option value="Trust">Trust</option>
+          <option value="LLC">LLC</option>
+          <option value="Engagement">Engagement Letter</option>
+          <option value="Affidavit">Affidavit</option>
+          <option value="Certificate">Certificate</option>
+          <option value="Meeting Minutes">Meeting Minutes</option>
+          <option value="Questionnaire">Questionnaire</option>
+        </UiSelect>
+
+        <div v-if="uploadResult" class="bg-green-50 border border-green-200 rounded p-4">
+          <h4 class="font-semibold text-green-900 mb-2">✅ Template Created Successfully!</h4>
+          <div class="text-sm text-green-800 space-y-1">
+            <p><strong>Name:</strong> {{ uploadResult.name }}</p>
+            <p><strong>Category:</strong> {{ uploadResult.category }}</p>
+            <p><strong>Variables Found:</strong> {{ uploadResult.variableCount }}</p>
+            <p v-if="uploadResult.requiresNotary" class="text-burgundy-700">
+              ⚠️ This template requires notarization
+            </p>
+            <div v-if="uploadResult.variables.length > 0" class="mt-2">
+              <p class="font-medium mb-1">Personalization Fields:</p>
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="variable in uploadResult.variables.slice(0, 10)"
+                  :key="variable"
+                  class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono"
+                >
+                  {{ variable }}
+                </span>
+                <span v-if="uploadResult.variables.length > 10" class="text-xs text-green-700">
+                  +{{ uploadResult.variables.length - 10 }} more
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4">
+          <UiButton type="button" variant="ghost" @click="closeUploadModal">
+            {{ uploadResult ? 'Done' : 'Cancel' }}
+          </UiButton>
+          <UiButton v-if="!uploadResult" type="submit" :loading="uploading">
+            Upload & Extract Variables
+          </UiButton>
+        </div>
+      </form>
+    </UiModal>
+
     <!-- View Template Modal -->
     <UiModal v-model="showViewTemplateModal" title="Template Preview" size="xl">
       <div v-if="viewingTemplate" class="space-y-4">
@@ -165,15 +253,26 @@ const templates = ref<any[]>([])
 const clients = ref<any[]>([])
 const loading = ref(true)
 const generating = ref(false)
+const uploading = ref(false)
 const showUseTemplateModal = ref(false)
 const showViewTemplateModal = ref(false)
+const showUploadModal = ref(false)
 const selectedTemplate = ref<any>(null)
 const viewingTemplate = ref<any>(null)
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const uploadResult = ref<any>(null)
 
 const useTemplateForm = ref({
   clientId: '',
   title: '',
   description: ''
+})
+
+const uploadForm = ref({
+  name: '',
+  description: '',
+  category: 'General'
 })
 
 const templateVariables = computed(() => {
@@ -251,6 +350,63 @@ function openUseTemplateFromView() {
   showUseTemplateModal.value = true
 }
 
+// Handle file selection
+function handleFileSelect(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    selectedFile.value = target.files[0]
+  }
+}
+
+// Upload template
+async function handleUpload() {
+  if (!selectedFile.value) {
+    alert('Please select a file')
+    return
+  }
+
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+    formData.append('name', uploadForm.value.name)
+    formData.append('description', uploadForm.value.description)
+    formData.append('category', uploadForm.value.category)
+
+    const result = await $fetch('/api/templates/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    uploadResult.value = result.template
+    
+    // Refresh templates list
+    await fetchTemplates()
+  } catch (error: any) {
+    console.error('Failed to upload template:', error)
+    alert(`Error uploading template: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    uploading.value = false
+  }
+}
+
+// Close upload modal and reset
+function closeUploadModal() {
+  showUploadModal.value = false
+  setTimeout(() => {
+    uploadForm.value = {
+      name: '',
+      description: '',
+      category: 'General'
+    }
+    selectedFile.value = null
+    uploadResult.value = null
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+  }, 300)
+}
+
 // Generate document from template
 async function generateDocument() {
   if (!useTemplateForm.value.clientId) {
@@ -274,9 +430,9 @@ async function generateDocument() {
     
     // Navigate to document detail page
     router.push(`/dashboard/documents/${document.id}`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to generate document:', error)
-    alert(`Error generating document: ${error.message || 'Unknown error'}`)
+    alert(`Error generating document: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     generating.value = false
   }
