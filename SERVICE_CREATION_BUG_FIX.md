@@ -46,7 +46,6 @@ if (serviceFee === undefined) {
 // If fee is not provided, fetch it from the catalog
 let serviceFee: number
 if (fee === undefined) {
-  // Note: D1 query structure depends on driver. Using .all() then [0] is safer than .get() across drivers.
   const results = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).all()
   const catalogItem = results[0]
   
@@ -58,6 +57,18 @@ if (fee === undefined) {
   // Convert dollars to cents if fee is provided
   serviceFee = Math.round(fee * 100)
 }
+
+const newService = {
+  id: generateId(),
+  matterId,
+  catalogId,
+  fee: serviceFee,
+  status: 'PENDING' as const,
+  totalPaid: 0,                    // ← Added: Explicitly set default
+  paymentStatus: 'UNPAID' as const, // ← Added: Explicitly set default
+  createdAt: new Date(),
+  updatedAt: new Date()
+}
 ```
 
 **Changes Made:**
@@ -65,6 +76,8 @@ if (fee === undefined) {
 2. ✅ Added conversion logic: `Math.round(fee * 100)` when fee is provided
 3. ✅ Added clarifying comment about catalog price already being in cents
 4. ✅ Updated schema comment to indicate fee should be in dollars
+5. ✅ Added `totalPaid: 0` - explicitly provide default value
+6. ✅ Added `paymentStatus: 'UNPAID'` - explicitly provide default value
 
 ## 📊 Impact
 

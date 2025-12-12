@@ -60,7 +60,9 @@ export default defineEventHandler(async (event) => {
     matterId,
     catalogId,
     fee: serviceFee,
-    status: 'PENDING',
+    status: 'PENDING' as const,
+    totalPaid: 0,
+    paymentStatus: 'UNPAID' as const,
     createdAt: new Date(),
     updatedAt: new Date()
   }
