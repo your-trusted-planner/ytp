@@ -119,7 +119,7 @@
             required
           />
           <p class="mt-1 text-xs text-gray-500">
-            Upload a Word document (.docx) with personalization fields like {{ "{{clientName}}" }}, [[TrustName]], or &lt;&lt;Address&gt;&gt;
+            Upload a Word document (.docx) with personalization fields like &#123;&#123;clientName&#125;&#125;, [[TrustName]], or &lt;&lt;Address&gt;&gt;
           </p>
         </div>
 
