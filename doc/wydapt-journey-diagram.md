@@ -34,7 +34,7 @@ sequenceDiagram
     A->>C: Conduct Zoom consultation
     A->>S: Enter selected service options (Packages 1-4)
     S->>S: Generate engagement letter from template
-    S->>C: Send engagement letter via PandaDoc
+    S->>C: Send engagement letter for eSign
 
     Note over C,E: STEP 2b: Pay & Sign (CONVERSION POINT)
     C->>C: Review engagement letter + service summary
@@ -127,7 +127,7 @@ sequenceDiagram
 | Attorney | Conduct Zoom consultation | offline | International client base |
 | Attorney | Enter selected service options | data entry | Packages 1-4 |
 | System | Generate engagement letter | document generation | Template with selections |
-| System | Send for e-signature | e-sign | Via PandaDoc |
+| System | Send for e-signature | e-sign | internal e-sign |
 
 **Produces**: Engagement letter with selected packages
 

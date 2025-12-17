@@ -26,7 +26,7 @@ C4Context
     System_Ext(pandadoc, "PandaDoc", "Document signing, templates, and notarization services")
     System_Ext(lawpay, "LawPay", "Legal-specific payment processing and trust accounting")
     System_Ext(google, "Google Calendar", "Attorney calendar integration for appointments and availability")
-    System_Ext(openai, "OpenAI API", "AI-powered client assistance and FAQ responses")
+    System_Ext(anthropic, "Anthropic API", "AI-powered client assistance and FAQ responses")
     System_Ext(cloudflare, "Cloudflare Platform", "Edge hosting, database, storage, and message queues")
 
     Rel(attorney, ytp, "Manages clients & journeys", "HTTPS")
@@ -36,7 +36,7 @@ C4Context
     Rel(ytp, pandadoc, "Creates documents, sends for signature, requests notarization", "REST API")
     Rel(ytp, lawpay, "Processes payments, retrieves merchant credentials", "OAuth2/REST")
     Rel(ytp, google, "Manages calendar events, checks availability", "REST API")
-    Rel(ytp, openai, "Generates AI responses for client questions", "REST API")
+    Rel(ytp, anthropic, "Generates AI responses for client questions", "REST API")
     Rel(ytp, cloudflare, "Deploys to, stores data in", "Workers/D1/R2/KV")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
@@ -55,7 +55,7 @@ C4Context
 - **PandaDoc** provides document template management, electronic signature collection, and remote online notarization (RON) services.
 - **LawPay** handles payment processing with legal-industry-specific features like trust accounting compliance.
 - **Google Calendar** enables attorneys to manage appointments and allows the system to check availability for scheduling.
-- **OpenAI API** powers the AI assistant that helps clients with common questions during their journey.
+- **Anthropic API** powers the AI assistant that helps clients with common questions during their journey.
 - **Cloudflare Platform** provides the infrastructure including edge computing (Workers), database (D1), object storage (R2), and caching (KV).
 
 ---
@@ -83,7 +83,7 @@ C4Container
     System_Ext(pandadoc, "PandaDoc", "E-signatures & notarization")
     System_Ext(lawpay, "LawPay", "Payment processing")
     System_Ext(google, "Google Calendar", "Scheduling")
-    System_Ext(openai, "OpenAI", "AI assistance")
+    System_Ext(anthropic, "anthropic", "AI assistance")
 
     Rel(attorney, webapp, "Uses", "HTTPS")
     Rel(client, webapp, "Uses", "HTTPS")
@@ -97,7 +97,7 @@ C4Container
     Rel(api, pandadoc, "Document operations", "REST/Webhooks")
     Rel(api, lawpay, "Payment operations", "OAuth2/REST")
     Rel(api, google, "Calendar operations", "REST/JWT")
-    Rel(api, openai, "AI queries", "REST")
+    Rel(api, anthropic, "AI queries", "REST")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
@@ -149,7 +149,7 @@ C4Component
         Component(pandadocSvc, "PandaDoc Service", "TypeScript", "Document creation, sending, signing, notarization")
         Component(lawpaySvc, "LawPay Service", "TypeScript", "OAuth flow, token management, payment processing")
         Component(calendarSvc, "Calendar Service", "TypeScript", "Google Calendar integration via service account")
-        Component(aiSvc, "AI Agent Service", "TypeScript", "OpenAI integration for client Q&A")
+        Component(aiSvc, "AI Agent Service", "TypeScript", "anthropic integration for client Q&A")
         Component(docProcessor, "Document Processor", "TypeScript", "DOCX parsing and content extraction")
 
         Component(queueConsumer, "Queue Consumer", "TypeScript", "Processes async document tasks from queue")
@@ -163,7 +163,7 @@ C4Component
     System_Ext(pandadoc, "PandaDoc API", "")
     System_Ext(lawpay, "LawPay API", "")
     System_Ext(google, "Google Calendar API", "")
-    System_Ext(openai, "OpenAI API", "")
+    System_Ext(anthropic, "Anthropic API", "")
 
     Rel(auth, database, "Validates credentials")
     Rel(auth, cache, "Stores sessions")
@@ -189,7 +189,7 @@ C4Component
     Rel(calendarSvc, google, "REST calls")
 
     Rel(journeys, aiSvc, "Uses")
-    Rel(aiSvc, openai, "REST calls")
+    Rel(aiSvc, anthropic, "REST calls")
 
     Rel(queueConsumer, queue, "Consumes")
     Rel(queueConsumer, docProcessor, "Uses")
@@ -222,7 +222,7 @@ C4Component
 | **PandaDoc Service** | PandaDoc API | Create documents from templates, send for signature, request notarization, check status, download signed PDFs, handle webhooks |
 | **LawPay Service** | LawPay API | OAuth2 authorization flow, token exchange and refresh, gateway credential retrieval, merchant deauthorization |
 | **Calendar Service** | Google Calendar API | Service account JWT authentication, event CRUD, free/busy queries, domain-wide delegation support |
-| **AI Agent Service** | OpenAI API | Context-aware question answering, FAQ integration, journey-specific responses |
+| **AI Agent Service** | Anthropic API | Context-aware question answering, FAQ integration, journey-specific responses |
 | **Document Processor** | Internal | DOCX parsing, text/HTML extraction, variable detection in templates |
 
 #### Background Processing
@@ -421,7 +421,7 @@ C4Deployment
 | `LAWPAY_REDIRECT_URI` | OAuth callback URL |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Calendar service account |
 | `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Calendar auth key |
-| `OPENAI_API_KEY` | AI assistant API key |
+| `anthropic_API_KEY` | AI assistant API key |
 | `NUXT_SEED_TOKEN` | Database seeding auth |
 
 ---
@@ -441,4 +441,4 @@ The architecture follows modern serverless patterns on Cloudflare's edge platfor
 - File storage (R2)
 - Caching (KV)
 - Async processing (Queues)
-- External integrations (PandaDoc, LawPay, Google, OpenAI)
+- External integrations (PandaDoc, LawPay, Google, anthropic)
