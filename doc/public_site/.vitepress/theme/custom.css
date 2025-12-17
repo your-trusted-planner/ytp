@@ -1,0 +1,108 @@
+/* Make mermaid diagrams visually indicate they're clickable */
+.mermaid svg {
+  cursor: zoom-in;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border-radius: 8px;
+}
+
+.mermaid svg:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.01);
+}
+
+/* Add a subtle hint badge */
+.mermaid {
+  position: relative;
+}
+
+.mermaid::after {
+  content: 'Click to expand';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.mermaid:hover::after {
+  opacity: 1;
+}
+
+/* ============================================
+   Collapsible Sidebar Drawer
+   ============================================ */
+
+/* Sidebar transition */
+.VPSidebar {
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease !important;
+}
+
+/* When sidebar is collapsed */
+.sidebar-collapsed .VPSidebar {
+  transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Content area adjustments */
+.VPDoc {
+  transition: padding-left 0.3s ease !important;
+}
+
+.sidebar-collapsed .VPDoc {
+  padding-left: 0 !important;
+}
+
+/* Adjust the main content container when sidebar is collapsed */
+.sidebar-collapsed .VPContent.has-sidebar {
+  padding-left: 0 !important;
+}
+
+/* Local nav (breadcrumb area) adjustment */
+.VPLocalNav {
+  transition: padding-left 0.3s ease, left 0.3s ease !important;
+}
+
+.sidebar-collapsed .VPLocalNav {
+  left: 0 !important;
+  padding-left: 24px !important;
+}
+
+/* Make content use full width when sidebar collapsed */
+.sidebar-collapsed .VPDoc.has-sidebar .container {
+  max-width: 100% !important;
+}
+
+.sidebar-collapsed .VPDoc.has-sidebar.has-aside .content-container {
+  max-width: 100% !important;
+}
+
+/* Aside (table of contents) can stay visible */
+.VPDocAside {
+  transition: opacity 0.3s ease !important;
+}
+
+/* Hide the sidebar backdrop when collapsed (mobile consideration) */
+.sidebar-collapsed .VPBackdrop {
+  display: none;
+}
+
+/* Desktop-only styles for the sidebar width variable */
+@media (min-width: 960px) {
+  .sidebar-collapsed .VPSidebar {
+    width: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .sidebar-collapsed .VPNavBar .title {
+    padding-left: 24px;
+  }
+}

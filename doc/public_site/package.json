@@ -1,0 +1,18 @@
+{
+  "name": "ytp-docs",
+  "version": "1.0.0",
+  "description": "Your Trusted Planner Documentation Site",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "deploy": "pnpm run build && pnpm wrangler pages deploy"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "mermaid": "^11.4.0",
+    "dayjs": "^1.11.13"
+  }
+}
