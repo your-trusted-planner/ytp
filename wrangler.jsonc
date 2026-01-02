@@ -21,6 +21,7 @@
   ],
   "compatibility_date": "2024-09-21",
   "compatibility_flags": ["nodejs_compat"],
+  "preview_urls": true,
 
   // NuxtHub will automatically bind these resources when you enable them
   // After creating resources with wrangler, uncomment and add your IDs below
