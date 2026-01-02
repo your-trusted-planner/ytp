@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   
   const journey = {
     id: nanoid(),
-    matter_id: body.matterId || null,
+    service_catalog_id: body.serviceCatalogId || null,
     name: body.name,
     description: body.description || null,
     is_template: body.isTemplate ? 1 : 0,
@@ -29,12 +29,12 @@ export default defineEventHandler(async (event) => {
 
   await db.prepare(`
     INSERT INTO journeys (
-      id, matter_id, name, description, is_template, is_active, 
+      id, service_catalog_id, name, description, is_template, is_active,
       estimated_duration_days, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     journey.id,
-    journey.matter_id,
+    journey.service_catalog_id,
     journey.name,
     journey.description,
     journey.is_template,

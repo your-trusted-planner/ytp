@@ -40,7 +40,7 @@ Each journey contains ordered steps. Steps come in two types:
    - **Type**: Milestone or Bridge
    - **Responsible Party**:
      - CLIENT: Client must complete
-     - COUNCIL: Your staff completes
+     - COUNSEL: Your staff completes
      - BOTH: Requires action from both parties
    - **Expected Duration**: Days for this step
    - **Help Content**: Instructions shown to the client
@@ -59,8 +59,8 @@ The pre-configured WYDAPT journey includes these steps:
 |-------|------|------|-------------|
 | 1 | Engagement & Initial Setup | Milestone | Both |
 | 2 | Trust Formation - Review & Sign | Bridge | Both |
-| 3 | Private Trust Company Setup | Milestone | Council |
-| 4 | Special Purpose Trust (if applicable) | Milestone | Council |
+| 3 | Private Trust Company Setup | Milestone | Counsel |
+| 4 | Special Purpose Trust (if applicable) | Milestone | Counsel |
 | 5 | Investment Committee Formation | Milestone | Client |
 | 6 | Asset Contribution Process | Bridge | Both |
 | 7 | Distribution Management (Ongoing) | Bridge | Both |

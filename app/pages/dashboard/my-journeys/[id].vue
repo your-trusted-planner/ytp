@@ -140,11 +140,11 @@
                   </div>
                   <div class="flex items-center space-x-2 text-sm">
                     <IconCheckCircle
-                      :class="step.council_approved ? 'text-green-500' : 'text-gray-300'"
+                      :class="step.counsel_approved ? 'text-green-500' : 'text-gray-300'"
                       class="w-5 h-5"
                     />
-                    <span :class="step.council_approved ? 'text-green-700 font-medium' : 'text-gray-600'">
-                      Council Approved
+                    <span :class="step.counsel_approved ? 'text-green-700 font-medium' : 'text-gray-600'">
+                      Counsel Approved
                     </span>
                   </div>
                 </div>
@@ -182,8 +182,8 @@ const steps = ref([])
 const completedSteps = computed(() => 
   steps.value.filter(s => s.progress_status === 'COMPLETE').length
 )
-const inProgressSteps = computed(() => 
-  steps.value.filter(s => ['IN_PROGRESS', 'WAITING_CLIENT', 'WAITING_COUNCIL'].includes(s.progress_status)).length
+const inProgressSteps = computed(() =>
+  steps.value.filter(s => ['IN_PROGRESS', 'WAITING_CLIENT', 'WAITING_COUNSEL'].includes(s.progress_status)).length
 )
 const pendingSteps = computed(() => 
   steps.value.filter(s => s.progress_status === 'PENDING').length
@@ -213,7 +213,7 @@ function formatProgressStatus(status: string) {
     'PENDING': 'Not Started',
     'IN_PROGRESS': 'In Progress',
     'WAITING_CLIENT': 'Waiting on You',
-    'WAITING_COUNCIL': 'Waiting on Council',
+    'WAITING_COUNSEL': 'Waiting on Counsel',
     'COMPLETE': 'Completed',
     'SKIPPED': 'Skipped'
   }

@@ -1,9 +1,9 @@
-// Approve a snapshot (client or council)
+// Approve a snapshot (client or counsel)
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const snapshotId = getRouterParam(event, 'id')
   const body = await readBody(event)
-  
+
   if (!snapshotId) {
     throw createError({
       statusCode: 400,
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = hubDatabase()
-  
+
   // Get snapshot
   const snapshot = await db.prepare(`
     SELECT sv.*, cj.client_id
@@ -29,9 +29,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const isClient = user.id === snapshot.client_id
-  const isCouncil = user.role === 'LAWYER' || user.role === 'ADMIN'
+  const isCounsel = user.role === 'LAWYER' || user.role === 'ADMIN'
 
-  if (!isClient && !isCouncil) {
+  if (!isClient && !isCounsel) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
@@ -42,11 +42,11 @@ export default defineEventHandler(async (event) => {
   if (isClient) {
     await db.prepare(`
       UPDATE snapshot_versions
-      SET 
+      SET
         approved_by_client = 1,
         client_feedback = ?,
-        status = CASE 
-          WHEN approved_by_council = 1 THEN 'APPROVED'
+        status = CASE
+          WHEN approved_by_counsel = 1 THEN 'APPROVED'
           ELSE 'UNDER_REVISION'
         END,
         updated_at = ?
@@ -56,13 +56,13 @@ export default defineEventHandler(async (event) => {
       Date.now(),
       snapshotId
     ).run()
-  } else if (isCouncil) {
+  } else if (isCounsel) {
     await db.prepare(`
       UPDATE snapshot_versions
-      SET 
-        approved_by_council = 1,
-        council_notes = ?,
-        status = CASE 
+      SET
+        approved_by_counsel = 1,
+        counsel_notes = ?,
+        status = CASE
           WHEN approved_by_client = 1 THEN 'APPROVED'
           ELSE 'UNDER_REVISION'
         END,
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
     SELECT * FROM snapshot_versions WHERE id = ?
   `).bind(snapshotId).first()
 
-  if (updated.approved_by_client && updated.approved_by_council) {
+  if (updated.approved_by_client && updated.approved_by_counsel) {
     // Both approved - mark as APPROVED and set approved_at
     await db.prepare(`
       UPDATE snapshot_versions
@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
     `).bind(Date.now(), Date.now(), snapshotId).run()
   }
 
-  return { success: true, bothApproved: updated.approved_by_client && updated.approved_by_council }
+  return { success: true, bothApproved: updated.approved_by_client && updated.approved_by_counsel }
 })
 
 

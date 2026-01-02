@@ -251,7 +251,7 @@ export const journeySteps = sqliteTable('journey_steps', {
   name: text('name').notNull(), // e.g., "Homework Assigned", "Snapshot Review & Revision"
   description: text('description'),
   stepOrder: integer('step_order').notNull().default(0), // Position in journey sequence
-  responsibleParty: text('responsible_party', { enum: ['CLIENT', 'COUNCIL', 'STAFF', 'BOTH'] }).notNull().default('CLIENT'),
+  responsibleParty: text('responsible_party', { enum: ['CLIENT', 'COUNSEL', 'STAFF', 'BOTH'] }).notNull().default('CLIENT'),
   expectedDurationDays: integer('expected_duration_days'), // Expected time to complete this step
   automationConfig: text('automation_config'), // JSON: automation rules for this step
   helpContent: text('help_content'), // Markdown/HTML help content for this step
@@ -280,11 +280,11 @@ export const journeyStepProgress = sqliteTable('journey_step_progress', {
   id: text('id').primaryKey(),
   clientJourneyId: text('client_journey_id').notNull().references(() => clientJourneys.id, { onDelete: 'cascade' }),
   stepId: text('step_id').notNull().references(() => journeySteps.id, { onDelete: 'cascade' }),
-  status: text('status', { enum: ['PENDING', 'IN_PROGRESS', 'WAITING_CLIENT', 'WAITING_COUNCIL', 'COMPLETE', 'SKIPPED'] }).notNull().default('PENDING'),
+  status: text('status', { enum: ['PENDING', 'IN_PROGRESS', 'WAITING_CLIENT', 'WAITING_COUNSEL', 'COMPLETE', 'SKIPPED'] }).notNull().default('PENDING'),
   clientApproved: integer('client_approved', { mode: 'boolean' }).notNull().default(false),
-  councilApproved: integer('council_approved', { mode: 'boolean' }).notNull().default(false),
+  counselApproved: integer('counsel_approved', { mode: 'boolean' }).notNull().default(false),
   clientApprovedAt: integer('client_approved_at', { mode: 'timestamp' }),
-  councilApprovedAt: integer('council_approved_at', { mode: 'timestamp' }),
+  counselApprovedAt: integer('counsel_approved_at', { mode: 'timestamp' }),
   iterationCount: integer('iteration_count').notNull().default(0), // For BRIDGE steps - tracks revision #
   notes: text('notes'), // Internal notes about this step's progress
   startedAt: integer('started_at', { mode: 'timestamp' }),
@@ -303,7 +303,7 @@ export const actionItems = sqliteTable('action_items', {
   description: text('description'),
   config: text('config'), // JSON: type-specific configuration
   status: text('status', { enum: ['PENDING', 'IN_PROGRESS', 'COMPLETE', 'SKIPPED'] }).notNull().default('PENDING'),
-  assignedTo: text('assigned_to', { enum: ['CLIENT', 'COUNCIL', 'STAFF'] }).notNull().default('CLIENT'),
+  assignedTo: text('assigned_to', { enum: ['CLIENT', 'COUNSEL', 'STAFF'] }).notNull().default('CLIENT'),
   dueDate: integer('due_date', { mode: 'timestamp' }),
   priority: text('priority', { enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }).notNull().default('MEDIUM'),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
@@ -373,9 +373,9 @@ export const snapshotVersions = sqliteTable('snapshot_versions', {
   sentAt: integer('sent_at', { mode: 'timestamp' }),
   approvedAt: integer('approved_at', { mode: 'timestamp' }),
   approvedByClient: integer('approved_by_client', { mode: 'boolean' }).notNull().default(false),
-  approvedByCouncil: integer('approved_by_council', { mode: 'boolean' }).notNull().default(false),
+  approvedByCounsel: integer('approved_by_counsel', { mode: 'boolean' }).notNull().default(false),
   clientFeedback: text('client_feedback'), // JSON: structured feedback from client
-  councilNotes: text('council_notes'),
+  counselNotes: text('counsel_notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })

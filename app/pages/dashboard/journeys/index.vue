@@ -50,9 +50,9 @@
         </div>
 
         <div class="space-y-2 text-sm">
-          <div v-if="journey.matter_name" class="flex items-center text-gray-600">
+          <div v-if="journey.service_name" class="flex items-center text-gray-600">
             <IconFolder class="w-4 h-4 mr-2" />
-            {{ journey.matter_name }}
+            {{ journey.service_name }}
           </div>
           <div class="flex items-center text-gray-600">
             <IconList class="w-4 h-4 mr-2" />
@@ -103,12 +103,12 @@
         />
 
         <UiSelect
-          v-model="form.matterId"
-          label="Associated Matter (Optional)"
+          v-model="form.serviceCatalogId"
+          label="Associated Service (Optional)"
         >
-          <option value="">-- Select Matter --</option>
-          <option v-for="matter in matters" :key="matter.id" :value="matter.id">
-            {{ matter.name }}
+          <option value="">-- Select Service --</option>
+          <option v-for="service in serviceCatalog" :key="service.id" :value="service.id">
+            {{ service.name }}
           </option>
         </UiSelect>
 
@@ -157,12 +157,12 @@ const loading = ref(true)
 const saving = ref(false)
 const showCreateModal = ref(false)
 const journeys = ref([])
-const matters = ref([])
+const serviceCatalog = ref([])
 
 const form = ref({
   name: '',
   description: '',
-  matterId: '',
+  serviceCatalogId: '',
   estimatedDurationDays: null,
   isTemplate: false
 })
@@ -180,13 +180,13 @@ async function fetchJourneys() {
   }
 }
 
-// Fetch matters for dropdown
-async function fetchMatters() {
+// Fetch service catalog for dropdown
+async function fetchServiceCatalog() {
   try {
-    const { matters: data } = await $fetch('/api/matters')
-    matters.value = data
+    const { catalog: data } = await $fetch('/api/service-catalog')
+    serviceCatalog.value = data
   } catch (error) {
-    console.error('Error fetching matters:', error)
+    console.error('Error fetching service catalog:', error)
   }
 }
 
@@ -224,7 +224,7 @@ async function duplicateJourney(journey: any) {
   form.value = {
     name: `${journey.name} (Copy)`,
     description: journey.description || '',
-    matterId: journey.matter_id || '',
+    serviceCatalogId: journey.service_catalog_id || '',
     estimatedDurationDays: journey.estimated_duration_days,
     isTemplate: Boolean(journey.is_template)
   }
@@ -233,7 +233,7 @@ async function duplicateJourney(journey: any) {
 
 onMounted(() => {
   fetchJourneys()
-  fetchMatters()
+  fetchServiceCatalog()
 })
 </script>
 

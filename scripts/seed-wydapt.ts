@@ -14,7 +14,7 @@ interface DocumentGroup {
   journeyStepName: string
   stepOrder: number
   stepType: 'MILESTONE' | 'BRIDGE'
-  responsibleParty: 'CLIENT' | 'COUNCIL' | 'BOTH'
+  responsibleParty: 'CLIENT' | 'COUNSEL' | 'BOTH'
   expectedDurationDays: number
   helpContent?: string
 }
@@ -46,7 +46,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Private Trust Company Setup',
     stepOrder: 3,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNCIL',
+    responsibleParty: 'COUNSEL',
     expectedDurationDays: 5,
     helpContent: 'Your Private Family Trust Company documents establish the trustee entity.'
   },
@@ -56,7 +56,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Special Purpose Trust (if applicable)',
     stepOrder: 4,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNCIL',
+    responsibleParty: 'COUNSEL',
     expectedDurationDays: 5,
     helpContent: 'Special purpose trust documents (only if your plan includes this structure).'
   },
@@ -237,15 +237,15 @@ async function seedWYDAPTDocuments() {
   const db = new Database(dbPath)
   
   try {
-    // 1. Create WYDAPT Matter
-    console.log('📋 Creating WYDAPT Matter...')
-    const matterId = nanoid()
+    // 1. Create WYDAPT Service Catalog Entry
+    console.log('📋 Creating WYDAPT Service Catalog Entry...')
+    const catalogId = nanoid()
     db.prepare(`
-      INSERT INTO matters (
+      INSERT INTO service_catalog (
         id, name, description, category, type, price, is_active, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      matterId,
+      catalogId,
       'Wyoming Asset Protection Trust (WYDAPT)',
       'Comprehensive asset protection trust formation and ongoing management for Wyoming Asset Protection Trusts',
       'Trust Formation',
@@ -255,18 +255,18 @@ async function seedWYDAPTDocuments() {
       Date.now(),
       Date.now()
     )
-    console.log(`✅ Matter created: ${matterId}\n`)
-    
+    console.log(`✅ Service catalog entry created: ${catalogId}\n`)
+
     // 2. Create WYDAPT Journey
     console.log('🗺️  Creating WYDAPT Journey...')
     const journeyId = nanoid()
     db.prepare(`
       INSERT INTO journeys (
-        id, matter_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
+        id, service_catalog_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       journeyId,
-      matterId,
+      catalogId,
       'Wyoming Asset Protection Trust Journey',
       'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
       1, // This is a template

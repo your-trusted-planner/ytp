@@ -18,7 +18,7 @@ interface DocumentGroup {
   journeyStepName: string
   stepOrder: number
   stepType: 'MILESTONE' | 'BRIDGE'
-  responsibleParty: 'CLIENT' | 'COUNCIL' | 'BOTH'
+  responsibleParty: 'CLIENT' | 'COUNSEL' | 'BOTH'
   expectedDurationDays: number
   helpContent?: string
 }
@@ -50,7 +50,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Private Trust Company Setup',
     stepOrder: 3,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNCIL',
+    responsibleParty: 'COUNSEL',
     expectedDurationDays: 5,
     helpContent: 'Your Private Family Trust Company documents establish the trustee entity.'
   },
@@ -60,7 +60,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Special Purpose Trust (if applicable)',
     stepOrder: 4,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNCIL',
+    responsibleParty: 'COUNSEL',
     expectedDurationDays: 5,
     helpContent: 'Special purpose trust documents (only if your plan includes this structure).'
   },
@@ -164,28 +164,28 @@ export default defineEventHandler(async (event) => {
   log.push('🚀 Starting WYDAPT Document Seeding from R2...')
 
   try {
-    // Check if WYDAPT matter already exists
-    const existingMatter = await db.prepare(`
-      SELECT id FROM matters WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
+    // Check if WYDAPT service catalog entry already exists
+    const existingCatalog = await db.prepare(`
+      SELECT id FROM service_catalog WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
     `).first()
 
-    if (existingMatter) {
+    if (existingCatalog) {
       return {
         success: false,
-        message: 'WYDAPT matter already exists. Delete it first if you want to re-seed.',
-        matterId: existingMatter.id
+        message: 'WYDAPT service catalog entry already exists. Delete it first if you want to re-seed.',
+        catalogId: existingCatalog.id
       }
     }
 
-    // 1. Create WYDAPT Matter
-    log.push('📋 Creating WYDAPT Matter...')
-    const matterId = nanoid()
+    // 1. Create WYDAPT Service Catalog Entry
+    log.push('📋 Creating WYDAPT Service Catalog Entry...')
+    const catalogId = nanoid()
     await db.prepare(`
-      INSERT INTO matters (
+      INSERT INTO service_catalog (
         id, name, description, category, type, price, is_active, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      matterId,
+      catalogId,
       'Wyoming Asset Protection Trust (WYDAPT)',
       'Comprehensive asset protection trust formation and ongoing management for Wyoming Asset Protection Trusts',
       'Trust Formation',
@@ -195,18 +195,18 @@ export default defineEventHandler(async (event) => {
       Date.now(),
       Date.now()
     ).run()
-    log.push(`✅ Matter created: ${matterId}`)
+    log.push(`✅ Service catalog entry created: ${catalogId}`)
 
     // 2. Create WYDAPT Journey
     log.push('🗺️  Creating WYDAPT Journey...')
     const journeyId = nanoid()
     await db.prepare(`
       INSERT INTO journeys (
-        id, matter_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
+        id, service_catalog_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       journeyId,
-      matterId,
+      catalogId,
       'Wyoming Asset Protection Trust Journey',
       'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
       1, // This is a template
@@ -350,7 +350,7 @@ export default defineEventHandler(async (event) => {
 
     log.push('\n\n🎉 WYDAPT Document Seeding Complete!')
     log.push(`\n📊 Summary:`)
-    log.push(`   - Matter ID: ${matterId}`)
+    log.push(`   - Service Catalog ID: ${catalogId}`)
     log.push(`   - Journey ID: ${journeyId}`)
     log.push(`   - Steps Created: ${DOCUMENT_GROUPS.length}`)
     log.push(`   - Total Documents: ${totalDocs}`)
@@ -362,7 +362,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      matterId,
+      catalogId,
       journeyId,
       stepsCreated: DOCUMENT_GROUPS.length,
       documentsImported: totalDocs,

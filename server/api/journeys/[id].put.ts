@@ -22,11 +22,11 @@ export default defineEventHandler(async (event) => {
   const db = hubDatabase()
 
   await db.prepare(`
-    UPDATE journeys 
-    SET 
+    UPDATE journeys
+    SET
       name = ?,
       description = ?,
-      matter_id = ?,
+      service_catalog_id = ?,
       is_template = ?,
       is_active = ?,
       estimated_duration_days = ?,
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   `).bind(
     body.name,
     body.description || null,
-    body.matterId || null,
+    body.serviceCatalogId || null,
     body.isTemplate ? 1 : 0,
     body.isActive ? 1 : 0,
     body.estimatedDurationDays || null,

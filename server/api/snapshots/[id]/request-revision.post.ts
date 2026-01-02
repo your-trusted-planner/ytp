@@ -30,9 +30,9 @@ export default defineEventHandler(async (event) => {
 
   // Check if user has permission
   const isClient = user.id === snapshot.client_id
-  const isCouncil = user.role === 'LAWYER' || user.role === 'ADMIN'
+  const isCounsel = user.role === 'LAWYER' || user.role === 'ADMIN'
 
-  if (!isClient && !isCouncil) {
+  if (!isClient && !isCounsel) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
@@ -42,9 +42,9 @@ export default defineEventHandler(async (event) => {
   // Update snapshot with revision request
   await db.prepare(`
     UPDATE snapshot_versions
-    SET 
+    SET
       status = 'UNDER_REVISION',
-      ${isClient ? 'client_feedback' : 'council_notes'} = ?,
+      ${isClient ? 'client_feedback' : 'counsel_notes'} = ?,
       updated_at = ?
     WHERE id = ?
   `).bind(

@@ -213,9 +213,9 @@
           required
         >
           <option value="CLIENT">Client</option>
-          <option value="COUNCIL">Council/Lawyer</option>
+          <option value="COUNSEL">Counsel/Lawyer</option>
           <option value="STAFF">Staff</option>
-          <option value="BOTH">Both (Client & Council)</option>
+          <option value="BOTH">Both (Client & Counsel)</option>
         </UiSelect>
 
         <UiInput
@@ -415,9 +415,9 @@ async function reorderSteps() {
 function formatResponsibleParty(party: string) {
   const map = {
     CLIENT: 'Client',
-    COUNCIL: 'Council/Lawyer',
+    COUNSEL: 'Counsel/Lawyer',
     STAFF: 'Staff',
-    BOTH: 'Client & Council'
+    BOTH: 'Client & Counsel'
   }
   return map[party] || party
 }

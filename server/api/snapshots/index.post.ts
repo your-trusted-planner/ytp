@@ -34,9 +34,9 @@ export default defineEventHandler(async (event) => {
     sent_at: null,
     approved_at: null,
     approved_by_client: 0,
-    approved_by_council: 0,
+    approved_by_counsel: 0,
     client_feedback: null,
-    council_notes: body.councilNotes || null,
+    counsel_notes: body.counselNotes || null,
     created_at: Date.now(),
     updated_at: Date.now()
   }
@@ -44,8 +44,8 @@ export default defineEventHandler(async (event) => {
   await db.prepare(`
     INSERT INTO snapshot_versions (
       id, client_journey_id, version_number, content, generated_pdf_path, status,
-      sent_at, approved_at, approved_by_client, approved_by_council,
-      client_feedback, council_notes, created_at, updated_at
+      sent_at, approved_at, approved_by_client, approved_by_counsel,
+      client_feedback, counsel_notes, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     snapshot.id,
@@ -57,9 +57,9 @@ export default defineEventHandler(async (event) => {
     snapshot.sent_at,
     snapshot.approved_at,
     snapshot.approved_by_client,
-    snapshot.approved_by_council,
+    snapshot.approved_by_counsel,
     snapshot.client_feedback,
-    snapshot.council_notes,
+    snapshot.counsel_notes,
     snapshot.created_at,
     snapshot.updated_at
   ).run()

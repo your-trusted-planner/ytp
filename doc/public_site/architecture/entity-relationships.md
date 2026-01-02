@@ -291,7 +291,7 @@ erDiagram
         text name
         text description
         integer stepOrder
-        text responsibleParty "CLIENT|COUNCIL|STAFF|BOTH"
+        text responsibleParty "CLIENT|COUNSEL|STAFF|BOTH"
         integer expectedDurationDays
         text automationConfig "JSON"
         text helpContent
@@ -324,11 +324,11 @@ erDiagram
         text id PK
         text clientJourneyId FK
         text stepId FK
-        text status "PENDING|IN_PROGRESS|WAITING_CLIENT|WAITING_COUNCIL|COMPLETE|SKIPPED"
+        text status "PENDING|IN_PROGRESS|WAITING_CLIENT|WAITING_COUNSEL|COMPLETE|SKIPPED"
         boolean clientApproved
-        boolean councilApproved
+        boolean counselApproved
         timestamp clientApprovedAt
-        timestamp councilApprovedAt
+        timestamp counselApprovedAt
         integer iterationCount
         text notes
         timestamp startedAt
@@ -349,7 +349,7 @@ erDiagram
         text description
         text config "JSON"
         text status "PENDING|IN_PROGRESS|COMPLETE|SKIPPED"
-        text assignedTo "CLIENT|COUNCIL|STAFF"
+        text assignedTo "CLIENT|COUNSEL|STAFF"
         timestamp dueDate
         text priority "LOW|MEDIUM|HIGH|URGENT"
         timestamp completedAt
@@ -431,9 +431,9 @@ erDiagram
         timestamp sentAt
         timestamp approvedAt
         boolean approvedByClient
-        boolean approvedByCouncil
+        boolean approvedByCounsel
         text clientFeedback "JSON"
-        text councilNotes
+        text counselNotes
         timestamp createdAt
         timestamp updatedAt
     }

@@ -37,11 +37,11 @@ export default defineEventHandler(async (event) => {
 
   // Get all steps and their progress
   const stepsWithProgress = await db.prepare(`
-    SELECT 
+    SELECT
       js.*,
       jsp.status as progress_status,
       jsp.client_approved,
-      jsp.council_approved,
+      jsp.counsel_approved,
       jsp.iteration_count,
       jsp.started_at as progress_started_at,
       jsp.completed_at as progress_completed_at

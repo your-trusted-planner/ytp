@@ -14,12 +14,12 @@ export default defineEventHandler(async (event) => {
   
   // Get journey details
   const journey = await db.prepare(`
-    SELECT 
+    SELECT
       j.*,
-      m.name as matter_name,
-      m.category as matter_category
+      sc.name as service_name,
+      sc.category as service_category
     FROM journeys j
-    LEFT JOIN matters m ON j.matter_id = m.id
+    LEFT JOIN service_catalog sc ON j.service_catalog_id = sc.id
     WHERE j.id = ?
   `).bind(journeyId).first()
 

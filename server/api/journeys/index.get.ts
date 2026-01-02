@@ -12,16 +12,16 @@ export default defineEventHandler(async (event) => {
 
   const db = hubDatabase()
   
-  // Get all journeys with their associated matter info
+  // Get all journeys with their associated service catalog info
   const journeys = await db.prepare(`
-    SELECT 
+    SELECT
       j.*,
-      m.name as matter_name,
-      m.category as matter_category,
+      sc.name as service_name,
+      sc.category as service_category,
       (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id) as step_count,
       (SELECT COUNT(*) FROM client_journeys WHERE journey_id = j.id AND status = 'IN_PROGRESS') as active_clients
     FROM journeys j
-    LEFT JOIN matters m ON j.matter_id = m.id
+    LEFT JOIN service_catalog sc ON j.service_catalog_id = sc.id
     WHERE j.is_active = 1
     ORDER BY j.created_at DESC
   `).all()

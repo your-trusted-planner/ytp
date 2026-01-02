@@ -21,35 +21,35 @@ export default defineEventHandler(async (event) => {
   try {
     log.push('🧹 Starting WYDAPT cleanup...')
 
-    // Find WYDAPT matter
-    const matter = await db.prepare(`
-      SELECT id FROM matters WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
+    // Find WYDAPT service catalog entry
+    const serviceCatalog = await db.prepare(`
+      SELECT id FROM service_catalog WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
     `).first()
 
-    if (!matter) {
+    if (!serviceCatalog) {
       return {
         success: true,
-        message: 'No WYDAPT matter found - nothing to clean up',
+        message: 'No WYDAPT service catalog entry found - nothing to clean up',
         log: log.join('\n')
       }
     }
 
-    const matterId = matter.id
-    log.push(`📋 Found WYDAPT matter: ${matterId}`)
+    const catalogId = serviceCatalog.id
+    log.push(`📋 Found WYDAPT service catalog entry: ${catalogId}`)
 
     // Delete journey steps (cascade should handle this, but being explicit)
     const stepsResult = await db.prepare(`
       DELETE FROM journey_steps
       WHERE journey_id IN (
-        SELECT id FROM journeys WHERE matter_id = ?
+        SELECT id FROM journeys WHERE service_catalog_id = ?
       )
-    `).bind(matterId).run()
+    `).bind(catalogId).run()
     log.push(`✅ Deleted ${stepsResult.meta.changes || 0} journey steps`)
 
     // Delete journeys
     const journeysResult = await db.prepare(`
-      DELETE FROM journeys WHERE matter_id = ?
-    `).bind(matterId).run()
+      DELETE FROM journeys WHERE service_catalog_id = ?
+    `).bind(catalogId).run()
     log.push(`✅ Deleted ${journeysResult.meta.changes || 0} journeys`)
 
     // Delete document templates with "Wyoming Asset Protection Trust" in description
@@ -64,17 +64,17 @@ export default defineEventHandler(async (event) => {
     `).run()
     log.push(`✅ Deleted ${templatesResult.meta.changes || 0} document templates`)
 
-    // Delete the matter
-    const matterResult = await db.prepare(`
-      DELETE FROM matters WHERE id = ?
-    `).bind(matterId).run()
-    log.push(`✅ Deleted matter`)
+    // Delete the service catalog entry
+    const catalogResult = await db.prepare(`
+      DELETE FROM service_catalog WHERE id = ?
+    `).bind(catalogId).run()
+    log.push(`✅ Deleted service catalog entry`)
 
     log.push('\n✨ Cleanup complete! You can now re-run the seed process.')
 
     return {
       success: true,
-      matterId,
+      catalogId,
       stepsDeleted: stepsResult.meta.changes || 0,
       journeysDeleted: journeysResult.meta.changes || 0,
       templatesDeleted: templatesResult.meta.changes || 0,

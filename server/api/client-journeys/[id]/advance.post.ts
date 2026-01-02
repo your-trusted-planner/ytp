@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     const progressId = nanoid()
     await db.prepare(`
       INSERT INTO journey_step_progress (
-        id, client_journey_id, step_id, status, client_approved, council_approved,
+        id, client_journey_id, step_id, status, client_approved, counsel_approved,
         iteration_count, started_at, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
