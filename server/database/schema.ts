@@ -34,6 +34,7 @@ export const clientProfiles = sqliteTable('client_profiles', {
   businessType: text('business_type'),
   hasWill: integer('has_will', { mode: 'boolean' }).notNull().default(false),
   hasTrust: integer('has_trust', { mode: 'boolean' }).notNull().default(false),
+  grantorType: text('grantor_type', { enum: ['SINGLE', 'ADDITIONAL'] }).notNull().default('SINGLE'), // Single or Additional Grantor
   lastUpdated: integer('last_updated', { mode: 'timestamp' }),
   assignedLawyerId: text('assigned_lawyer_id').references(() => users.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -50,6 +51,9 @@ export const appointments = sqliteTable('appointments', {
   status: text('status', { enum: ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] }).notNull().default('PENDING'),
   location: text('location'),
   notes: text('notes'),
+  preCallNotes: text('pre_call_notes'), // Attorney notes before the call
+  callNotes: text('call_notes'), // Attorney notes during/after the call
+  callNotesUpdatedAt: integer('call_notes_updated_at', { mode: 'timestamp' }),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
@@ -75,6 +79,7 @@ export const documentTemplates = sqliteTable('document_templates', {
   folderId: text('folder_id').references(() => templateFolders.id),
   content: text('content').notNull(),
   variables: text('variables').notNull(), // JSON string
+  grantorType: text('grantor_type', { enum: ['SINGLE', 'TWO_GRANTORS', 'BOTH'] }).notNull().default('BOTH'), // Which grantor type uses this
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   order: integer('order').notNull().default(0),
@@ -98,9 +103,15 @@ export const documents = sqliteTable('documents', {
   fileSize: integer('file_size'),
   mimeType: text('mime_type'),
   variableValues: text('variable_values'), // JSON string
+  grantorType: text('grantor_type', { enum: ['SINGLE', 'TWO_GRANTORS'] }).notNull().default('SINGLE'), // For proper document selection
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false),
   notarizationStatus: text('notarization_status', { enum: ['NOT_REQUIRED', 'PENDING', 'SCHEDULED', 'COMPLETED'] }),
-  pandaDocRequestId: text('pandadoc_request_id'), // PandaDoc API request ID
+  pandaDocRequestId: text('pandadoc_request_id'), // Deprecated - moving to offline notary
+  attorneyApproved: integer('attorney_approved', { mode: 'boolean' }).notNull().default(false),
+  attorneyApprovedAt: integer('attorney_approved_at', { mode: 'timestamp' }),
+  attorneyApprovedBy: text('attorney_approved_by').references(() => users.id),
+  readyForSignature: integer('ready_for_signature', { mode: 'boolean' }).notNull().default(false),
+  readyForSignatureAt: integer('ready_for_signature_at', { mode: 'timestamp' }),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   signedAt: integer('signed_at', { mode: 'timestamp' }),
   signatureData: text('signature_data'),
@@ -148,6 +159,8 @@ export const serviceCatalog = sqliteTable('service_catalog', {
   type: text('type', { enum: ['SINGLE', 'RECURRING'] }).notNull().default('SINGLE'),
   price: integer('price').notNull(), // Price in cents
   duration: text('duration'), // For recurring: 'MONTHLY', 'ANNUALLY', 'QUARTERLY'
+  consultationFee: integer('consultation_fee').default(37500), // Configurable consultation fee in cents
+  consultationFeeEnabled: integer('consultation_fee_enabled', { mode: 'boolean' }).notNull().default(true),
   engagementLetterId: text('engagement_letter_id').references(() => documentTemplates.id),
   workflowSteps: text('workflow_steps'), // JSON array of workflow steps
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
@@ -183,6 +196,8 @@ export const services = sqliteTable('services', {
   fee: integer('fee').notNull(), // Actual fee charged (can differ from catalog price)
   paymentStatus: text('payment_status', { enum: ['UNPAID', 'PARTIAL', 'PAID'] }).notNull().default('UNPAID'),
   assignedAttorneyId: text('assigned_attorney_id').references(() => users.id),
+  requiresPaymentToActivate: integer('requires_payment_to_activate', { mode: 'boolean' }).notNull().default(false), // For maintenance packages
+  parentServiceId: text('parent_service_id').references((): any => services.id), // Link maintenance to WYDAPT
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
@@ -206,6 +221,8 @@ export const questionnaireResponses = sqliteTable('questionnaire_responses', {
   appointmentId: text('appointment_id').references(() => appointments.id),
   userId: text('user_id').references(() => users.id), // If user is logged in
   responses: text('responses').notNull(), // JSON object of question/answer pairs
+  attorneyNotes: text('attorney_notes'), // Notes taken by attorney before/during call
+  attorneyNotesUpdatedAt: integer('attorney_notes_updated_at', { mode: 'timestamp' }),
   submittedAt: integer('submitted_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })
 
@@ -457,6 +474,130 @@ export const lawpayConnections = sqliteTable('lawpay_connections', {
   scope: text('scope').notNull(), // OAuth scope (e.g., "payments")
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(), // When access token expires
   revokedAt: integer('revoked_at', { mode: 'timestamp' }), // When connection was revoked
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// ===================================
+// WYDAPT WORKFLOW ENHANCEMENTS
+// ===================================
+
+// Additional Grantors - Support for "Single or Additional Grantor" system
+export const additionalGrantors = sqliteTable('additional_grantors', {
+  id: text('id').primaryKey(),
+  primaryUserId: text('primary_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  grantorUserId: text('grantor_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  relationship: text('relationship', { enum: ['SPOUSE', 'CO_TRUSTEE', 'PARTNER', 'OTHER'] }).notNull().default('SPOUSE'),
+  matterId: text('matter_id').references(() => matters.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Attorney Calendars - Multiple Google Calendar support per attorney
+export const attorneyCalendars = sqliteTable('attorney_calendars', {
+  id: text('id').primaryKey(),
+  attorneyId: text('attorney_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  calendarId: text('calendar_id').notNull(), // Google Calendar ID
+  calendarName: text('calendar_name').notNull(),
+  calendarEmail: text('calendar_email').notNull(),
+  isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(false),
+  serviceAccountKey: text('service_account_key'), // Encrypted JSON
+  timezone: text('timezone').notNull().default('America/New_York'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Document Summaries - Pre-payment document choice summary
+export const documentSummaries = sqliteTable('document_summaries', {
+  id: text('id').primaryKey(),
+  clientJourneyId: text('client_journey_id').notNull().references(() => clientJourneys.id, { onDelete: 'cascade' }),
+  summaryData: text('summary_data').notNull(), // JSON: document choices
+  isFinal: integer('is_final', { mode: 'boolean' }).notNull().default(false),
+  generatedAt: integer('generated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  viewedAt: integer('viewed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Service Packages - Configurable WYDAPT packages (1-4)
+export const servicePackages = sqliteTable('service_packages', {
+  id: text('id').primaryKey(),
+  serviceCatalogId: text('service_catalog_id').notNull().references(() => serviceCatalog.id, { onDelete: 'cascade' }),
+  packageNumber: integer('package_number').notNull(),
+  packageName: text('package_name').notNull(),
+  packageDescription: text('package_description'),
+  includedDocuments: text('included_documents').notNull(), // JSON array of template IDs
+  additionalFee: integer('additional_fee').notNull().default(0),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Client Selected Packages - Track which packages client chose
+export const clientSelectedPackages = sqliteTable('client_selected_packages', {
+  id: text('id').primaryKey(),
+  serviceId: text('service_id').notNull().references(() => services.id, { onDelete: 'cascade' }),
+  packageId: text('package_id').notNull().references(() => servicePackages.id, { onDelete: 'cascade' }),
+  selectedAt: integer('selected_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Service Payments - Track individual payment installments
+export const servicePayments = sqliteTable('service_payments', {
+  id: text('id').primaryKey(),
+  serviceId: text('service_id').notNull().references(() => services.id, { onDelete: 'cascade' }),
+  paymentType: text('payment_type', { enum: ['CONSULTATION', 'DEPOSIT_50', 'FINAL_50', 'MAINTENANCE', 'CUSTOM'] }).notNull(),
+  amount: integer('amount').notNull(),
+  paymentMethod: text('payment_method', { enum: ['LAWPAY', 'CHECK', 'WIRE', 'CREDIT_CARD', 'ACH', 'OTHER'] }),
+  lawpayTransactionId: text('lawpay_transaction_id'),
+  status: text('status', { enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED'] }).notNull().default('PENDING'),
+  paidAt: integer('paid_at', { mode: 'timestamp' }),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Notary Documents - Offline notarization workflow (download/upload)
+export const notaryDocuments = sqliteTable('notary_documents', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  clientJourneyId: text('client_journey_id').notNull().references(() => clientJourneys.id, { onDelete: 'cascade' }),
+  stepProgressId: text('step_progress_id').references(() => journeyStepProgress.id, { onDelete: 'cascade' }),
+  status: text('status', { enum: ['PENDING', 'DOWNLOADED', 'NOTARIZED', 'UPLOADED', 'COMPLETED'] }).notNull().default('PENDING'),
+  downloadedAt: integer('downloaded_at', { mode: 'timestamp' }),
+  downloadedBy: text('downloaded_by').references(() => users.id),
+  notarizedPdfPath: text('notarized_pdf_path'),
+  uploadedAt: integer('uploaded_at', { mode: 'timestamp' }),
+  uploadedBy: text('uploaded_by').references(() => users.id),
+  notaryName: text('notary_name'),
+  notaryCommissionNumber: text('notary_commission_number'),
+  notaryState: text('notary_state'),
+  notaryExpirationDate: integer('notary_expiration_date', { mode: 'timestamp' }),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+})
+
+// Public Bookings - Pre-account booking system
+export const publicBookings = sqliteTable('public_bookings', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  phone: text('phone'),
+  questionnaireId: text('questionnaire_id').references(() => questionnaires.id),
+  questionnaireResponses: text('questionnaire_responses'), // JSON
+  consultationFeePaid: integer('consultation_fee_paid', { mode: 'boolean' }).notNull().default(false),
+  paymentId: text('payment_id'),
+  paymentAmount: integer('payment_amount'),
+  attorneyId: text('attorney_id').references(() => users.id),
+  calendarId: text('calendar_id').references(() => attorneyCalendars.id),
+  appointmentId: text('appointment_id').references(() => appointments.id),
+  userId: text('user_id').references(() => users.id),
+  status: text('status', { enum: ['PENDING_PAYMENT', 'PENDING_BOOKING', 'BOOKED', 'CONVERTED', 'CANCELLED'] }).notNull().default('PENDING_PAYMENT'),
+  bookingCompletedAt: integer('booking_completed_at', { mode: 'timestamp' }),
+  convertedToClientAt: integer('converted_to_client_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
 })

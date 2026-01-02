@@ -229,8 +229,8 @@ const fetchClients = async () => {
 
 const fetchCatalog = async () => {
   try {
-    const response = await $fetch<any[]>('/api/catalog')
-    catalog.value = response
+    const response = await $fetch<any>('/api/catalog')
+    catalog.value = response.services || response || []
   } catch (error) {
     console.error('Failed to fetch catalog:', error)
   }
@@ -354,3 +354,5 @@ onMounted(async () => {
   await Promise.all([fetchMatters(), fetchClients(), fetchCatalog()])
 })
 </script>
+
+

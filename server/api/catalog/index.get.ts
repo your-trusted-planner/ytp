@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
   // Use mock database for local testing
   if (!isDatabaseAvailable()) {
     await initMockMatters()
-    return await mockDb.matters.getAll()
+    const matters = await mockDb.matters.getAll()
+    return { services: matters }
   }
   
   // Real database
@@ -22,5 +23,7 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(schema.serviceCatalog.createdAt))
     .all()
   
-  return catalog
+  return { services: catalog }
 })
+
+

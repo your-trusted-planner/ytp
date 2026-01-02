@@ -39,3 +39,5 @@ ALTER TABLE `questionnaires` RENAME COLUMN `matter_id` TO `service_catalog_id`;
 ALTER TABLE `documents` RENAME COLUMN `matter_id` TO `service_catalog_id`;
 ALTER TABLE `documents` ADD COLUMN `service_id` text REFERENCES `services`(`id`);
 ALTER TABLE `documents` ADD COLUMN `matter_id` text REFERENCES `matters`(`id`);
+
+

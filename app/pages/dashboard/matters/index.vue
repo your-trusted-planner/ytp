@@ -173,7 +173,8 @@ const formatPrice = (cents: number) => {
 
 const fetchMatters = async () => {
   try {
-    matters.value = await $fetch('/api/catalog')
+    const response = await $fetch('/api/catalog')
+    matters.value = response.services || response || []
   } catch (error) {
     console.error('Failed to fetch matters:', error)
   }
