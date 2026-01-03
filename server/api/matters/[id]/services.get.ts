@@ -20,25 +20,28 @@ export default defineEventHandler(async (event) => {
   
   const { useDrizzle, schema } = await import('../../../database')
   const db = useDrizzle()
-  
-  // Fetch services associated with this matter, joining with catalog to get names
+
+  // Fetch services associated with this matter from junction table
   const services = await db
     .select({
-      id: schema.services.id,
-      matterId: schema.services.matterId,
-      catalogId: schema.services.catalogId,
-      status: schema.services.status,
-      fee: schema.services.fee,
-      createdAt: schema.services.createdAt,
+      matterId: schema.mattersToServices.matterId,
+      catalogId: schema.mattersToServices.catalogId,
+      status: schema.mattersToServices.status,
+      engagedAt: schema.mattersToServices.engagedAt,
+      startDate: schema.mattersToServices.startDate,
+      endDate: schema.mattersToServices.endDate,
+      assignedAttorneyId: schema.mattersToServices.assignedAttorneyId,
       name: schema.serviceCatalog.name,
       description: schema.serviceCatalog.description,
-      type: schema.serviceCatalog.type
+      type: schema.serviceCatalog.type,
+      price: schema.serviceCatalog.price,
+      category: schema.serviceCatalog.category
     })
-    .from(schema.services)
-    .leftJoin(schema.serviceCatalog, eq(schema.services.catalogId, schema.serviceCatalog.id))
-    .where(eq(schema.services.matterId, matterId))
+    .from(schema.mattersToServices)
+    .leftJoin(schema.serviceCatalog, eq(schema.mattersToServices.catalogId, schema.serviceCatalog.id))
+    .where(eq(schema.mattersToServices.matterId, matterId))
     .all()
-  
+
   return { services }
 })
 

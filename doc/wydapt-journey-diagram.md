@@ -6,8 +6,8 @@
 
 ## Journey Overview
 
-- **Service**: Wyoming Asset Protection Trust (WYDAPT) - $18,500
-- **Payment**: 50% at engagement ($9,250), 50% before signing ($9,250)
+- **Service**: Wyoming Asset Protection Trust (WYDAPT) - $15,000
+- **Payment**: 50% at engagement ($7,500), 50% before signing ($7,500)
 - **Consultation Fee**: $375 (non-refundable, not credited to service)
 - **Conversion Point**: PROSPECT → CLIENT when engagement letter is signed AND first payment received
 
@@ -38,7 +38,7 @@ sequenceDiagram
 
     Note over C,E: STEP 2b: Pay & Sign (CONVERSION POINT)
     C->>C: Review engagement letter + service summary
-    C->>S: Pay 50% ($9,250) + E-sign engagement letter
+    C->>S: Pay 50% ($7,500) + E-sign engagement letter
     S->>S: Process payment atomically
     S->>S: Convert PROSPECT → CLIENT
     Note right of S: User is now CLIENT
@@ -66,7 +66,7 @@ sequenceDiagram
 
     Note over C,E: STEP 5: Ready for Signature
     S->>C: Send multi-channel notification (Email/SMS/Matrix)
-    C->>S: Pay remaining 50% ($9,250)
+    C->>S: Pay remaining 50% ($7,500)
     S->>S: Unlock signing flow
 
     Note over C,E: STEP 6: Document Signing
@@ -138,7 +138,7 @@ sequenceDiagram
 | Actor | Action | Type | Notes |
 |-------|--------|------|-------|
 | Client | Review engagement letter + service cart | review | Combined UI |
-| Client | Pay 50% ($9,250) | payment | — |
+| Client | Pay 50% ($7,500) | payment | — |
 | Client | E-sign engagement letter | e-sign | — |
 | System | Process payment + signature atomically | transaction | No partial states |
 | System | Convert PROSPECT → CLIENT | status change | — |
@@ -201,7 +201,7 @@ sequenceDiagram
 | Attorney | Mark document package "ready to sign" | approval | Triggers client notification |
 | System | Send multi-channel notification | notification | Email, SMS, Matrix |
 | Client | Receive notification | — | — |
-| Client | Pay remaining 50% ($9,250) | payment | Required before signing |
+| Client | Pay remaining 50% ($7,500) | payment | Required before signing |
 | System | Unlock signing flow | gate | Payment must clear first |
 
 ---

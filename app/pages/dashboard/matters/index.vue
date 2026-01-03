@@ -82,7 +82,7 @@
           v-model="matterForm.description"
           label="Description"
           placeholder="Detailed description of this service..."
-          rows="3"
+          :rows="3"
         />
         
         <div class="grid grid-cols-2 gap-4">

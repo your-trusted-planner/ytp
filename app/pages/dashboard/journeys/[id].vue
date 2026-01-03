@@ -12,10 +12,12 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
+        <!-- Preview feature disabled for now - not on critical path
         <UiButton variant="ghost" @click="showPreview = true">
           <IconEye class="w-4 h-4 mr-2" />
           Preview
         </UiButton>
+        -->
         <UiButton @click="addStep">
           <IconPlus class="w-4 h-4 mr-2" />
           Add Step
@@ -204,7 +206,7 @@
           v-model="stepForm.description"
           label="Description"
           placeholder="Describe what happens in this step..."
-          rows="3"
+          :rows="3"
         />
 
         <UiSelect
@@ -229,7 +231,7 @@
           v-model="stepForm.helpContent"
           label="Help Content"
           placeholder="Instructions or help text for clients..."
-          rows="4"
+          :rows="4"
         />
 
         <div v-if="stepForm.stepType === 'BRIDGE'" class="flex items-center">
@@ -258,8 +260,8 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  ArrowLeft as IconArrowLeft, Eye as IconEye, Plus as IconPlus, Loader as IconLoader, GitBranch as IconGitBranch,
+import {
+  ArrowLeft as IconArrowLeft, Plus as IconPlus, Loader as IconLoader, GitBranch as IconGitBranch,
   GripVertical as IconGripVertical, CircleDot as IconCircleDot, Repeat as IconRepeat, ArrowDown as IconArrowDown,
   HelpCircle as IconHelpCircle
 } from 'lucide-vue-next'
@@ -274,7 +276,6 @@ const route = useRoute()
 const loading = ref(true)
 const savingStep = ref(false)
 const showStepModal = ref(false)
-const showPreview = ref(false)
 const editingStep = ref(null)
 
 const journey = ref(null)
@@ -426,4 +427,3 @@ onMounted(() => {
   fetchJourney()
 })
 </script>
-

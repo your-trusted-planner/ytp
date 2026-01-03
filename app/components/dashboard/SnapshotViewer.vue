@@ -118,7 +118,7 @@
           v-model="revisionFeedback"
           label="What changes would you like to request?"
           placeholder="Please describe the changes you'd like to see..."
-          rows="6"
+          :rows="6"
           required
         />
         <div class="flex justify-end space-x-3 pt-4">
@@ -142,7 +142,7 @@
           v-model="approvalNotes"
           label="Additional Notes (Optional)"
           placeholder="Any additional comments..."
-          rows="3"
+          :rows="3"
         />
         <div class="flex justify-end space-x-3 pt-4">
           <UiButton type="button" variant="ghost" @click="showApproveModal = false">

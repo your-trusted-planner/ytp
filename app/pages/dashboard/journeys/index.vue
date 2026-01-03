@@ -99,7 +99,7 @@
           v-model="form.description"
           label="Description"
           placeholder="Describe the purpose of this journey..."
-          rows="3"
+          :rows="3"
         />
 
         <UiSelect
@@ -215,8 +215,7 @@ function openJourney(id: string) {
 
 // Edit journey
 function editJourney(journey: any) {
-  // TODO: Implement edit modal
-  console.log('Edit journey:', journey)
+  router.push(`/dashboard/journeys/${journey.id}`)
 }
 
 // Duplicate journey

@@ -130,37 +130,45 @@ erDiagram
         text id PK
         text clientId FK
         text title
-        text matterNumber
+        text matterNumber "Auto-generated YYYY-NNN"
         text description
         text status "OPEN|CLOSED|PENDING"
-        timestamp contractDate
+        timestamp contractDate "Engagement letter signing date"
         timestamp createdAt
         timestamp updatedAt
     }
 
     users ||--o{ matters : "has matters"
 
-    services {
-        text id PK
-        text matterId FK
-        text catalogId FK
-        text journeyId FK
-        text engagementLetterDocId FK
+    mattersToServices {
+        text matterId FK,PK
+        text catalogId FK,PK
+        timestamp engagedAt
+        text assignedAttorneyId FK
         text status "PENDING|ACTIVE|COMPLETED|CANCELLED"
         timestamp startDate
         timestamp endDate
-        timestamp renewalDate
-        integer totalPaid "cents"
-        integer fee "cents"
-        text paymentStatus "UNPAID|PARTIAL|PAID"
-        text assignedAttorneyId FK
+    }
+
+    matters ||--o{ mattersToServices : "engages services"
+    serviceCatalog ||--o{ mattersToServices : "engaged in matters"
+    users ||--o{ mattersToServices : "assigned attorney"
+
+    payments {
+        text id PK
+        text matterId FK
+        text paymentType "CONSULTATION|DEPOSIT_50|FINAL_50|MAINTENANCE|CUSTOM"
+        integer amount "cents"
+        text paymentMethod "LAWPAY|CHECK|WIRE|CREDIT_CARD|ACH|OTHER"
+        text lawpayTransactionId
+        text status "PENDING|PROCESSING|COMPLETED|FAILED|REFUNDED"
+        timestamp paidAt
+        text notes
         timestamp createdAt
         timestamp updatedAt
     }
 
-    matters ||--o{ services : "contains services"
-    serviceCatalog ||--o{ services : "catalog item"
-    users ||--o{ services : "assigned attorney"
+    matters ||--o{ payments : "has payments"
 
     %% ===================================
     %% DOCUMENTS
@@ -172,8 +180,8 @@ erDiagram
         text description
         text status "DRAFT|SENT|VIEWED|SIGNED|COMPLETED"
         text templateId FK
-        text serviceId FK
         text matterId FK
+        text catalogId FK
         text content
         text filePath
         integer fileSize
@@ -192,10 +200,10 @@ erDiagram
     }
 
     documentTemplates ||--o{ documents : "generated from"
-    services ||--o{ documents : "related to service"
+    mattersToServices ||--o{ documents : "related to engagement"
     matters ||--o{ documents : "related to matter"
     users ||--o{ documents : "belongs to client"
-    services ||--o| documents : "engagement letter doc"
+    serviceCatalog ||--o{ documents : "engagement letter template"
 
     %% ===================================
     %% NOTES & ACTIVITIES
@@ -282,7 +290,6 @@ erDiagram
     }
 
     serviceCatalog ||--o{ journeys : "has journeys"
-    journeys ||--o{ services : "active journey"
 
     journeySteps {
         text id PK
@@ -305,6 +312,8 @@ erDiagram
     clientJourneys {
         text id PK
         text clientId FK
+        text matterId FK
+        text catalogId FK
         text journeyId FK
         text currentStepId FK
         text status "NOT_STARTED|IN_PROGRESS|COMPLETED|PAUSED|CANCELLED"
@@ -319,6 +328,7 @@ erDiagram
     users ||--o{ clientJourneys : "enrolled in"
     journeys ||--o{ clientJourneys : "instances of"
     journeySteps ||--o{ clientJourneys : "current step"
+    mattersToServices ||--o{ clientJourneys : "tracks progress for"
 
     journeyStepProgress {
         text id PK
@@ -554,8 +564,9 @@ erDiagram
 
 ### Service Catalog & Matters
 - **serviceCatalog** - Product/service definitions (Trust Formation, LLC, etc.)
-- **matters** - Client cases that group related services
-- **services** - Specific engaged services linked to a matter
+- **matters** - Client engagements that group related services (auto-generated matter numbers: YYYY-NNN)
+- **mattersToServices** - Junction table linking matters to engaged services with status tracking
+- **payments** - Payment tracking at the matter level
 
 ### Questionnaires
 - **questionnaires** - Pre-consultation questionnaire definitions
@@ -586,8 +597,10 @@ erDiagram
 ## Key Relationships
 
 1. **Users** are the central entity - they can be lawyers, clients, admins, leads, or prospects
-2. **Matters** group multiple **Services** for a client (e.g., "Smith Family Trust 2024" matter contains Trust Formation and Annual Maintenance services)
-3. **Services** are instances of **ServiceCatalog** items purchased by clients
-4. **Journeys** define workflows with **JourneySteps** that clients progress through via **ClientJourneys**
-5. **Documents** can be generated from **DocumentTemplates** and linked to both **Services** and **Matters**
-6. **ActionItems** define tasks that need completion, either at the template level (linked to steps) or instance level (linked to client journeys)
+2. **Matters** represent client engagements with auto-generated matter numbers (YYYY-NNN format)
+3. **MattersToServices** is a junction table creating many-to-many relationships between matters and service catalog items (e.g., "Smith Family Trust 2024" matter engages both WYDAPT and Annual Maintenance)
+4. **Payments** are tracked at the matter level, not per-service, simplifying financial reporting
+5. **ClientJourneys** track client progress through service workflows, referencing the engagement via composite foreign key (matterId, catalogId)
+6. **Journeys** define workflows with **JourneySteps** that clients progress through
+7. **Documents** can be generated from **DocumentTemplates** and linked to matters and specific service engagements
+8. **ActionItems** define tasks that need completion, either at the template level (linked to steps) or instance level (linked to client journeys)

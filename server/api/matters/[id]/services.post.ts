@@ -5,7 +5,7 @@ import { requireRole, generateId } from '../../../utils/auth'
 
 const addServiceSchema = z.object({
   catalogId: z.string().min(1),
-  fee: z.number().optional(), // Optional override of catalog price (in dollars, will be converted to cents)
+  assignedAttorneyId: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const { catalogId, fee } = result.data
+  const { catalogId, assignedAttorneyId } = result.data
 
   if (!isDatabaseAvailable()) {
     return { success: true } // Mock response
@@ -39,36 +39,41 @@ export default defineEventHandler(async (event) => {
   const { useDrizzle, schema } = await import('../../../database')
   const db = useDrizzle()
 
-  // If fee is not provided, fetch it from the catalog
-  let serviceFee: number
-  if (fee === undefined) {
-    // Note: D1 query structure depends on driver. Using .all() then [0] is safer than .get() across drivers.
-    const results = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).all()
-    const catalogItem = results[0]
-    
-    if (!catalogItem) {
-        throw createError({ statusCode: 404, message: 'Service not found in catalog' })
-    }
-    serviceFee = catalogItem.price // Already in cents from catalog
-  } else {
-    // Convert dollars to cents if fee is provided
-    serviceFee = Math.round(fee * 100)
+  // Verify the catalog item exists
+  const results = await db.select().from(schema.serviceCatalog).where(eq(schema.serviceCatalog.id, catalogId)).all()
+  const catalogItem = results[0]
+
+  if (!catalogItem) {
+    throw createError({ statusCode: 404, message: 'Service not found in catalog' })
   }
 
-  const newService = {
-    id: generateId(),
+  // Check if this engagement already exists
+  const existing = await db
+    .select()
+    .from(schema.mattersToServices)
+    .where(eq(schema.mattersToServices.matterId, matterId))
+    .where(eq(schema.mattersToServices.catalogId, catalogId))
+    .all()
+
+  if (existing.length > 0) {
+    throw createError({
+      statusCode: 409,
+      message: 'This service is already engaged for this matter'
+    })
+  }
+
+  const newEngagement = {
     matterId,
     catalogId,
-    fee: serviceFee,
+    engagedAt: new Date(),
+    assignedAttorneyId: assignedAttorneyId || null,
     status: 'PENDING' as const,
-    totalPaid: 0,
-    paymentStatus: 'UNPAID' as const,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    startDate: null,
+    endDate: null
   }
-  
-  await db.insert(schema.services).values(newService)
-  
-  return { success: true, service: newService }
+
+  await db.insert(schema.mattersToServices).values(newEngagement)
+
+  return { success: true, engagement: newEngagement }
 })
 

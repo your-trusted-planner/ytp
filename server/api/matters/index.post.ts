@@ -1,13 +1,13 @@
 import { z } from 'zod'
+import { sql } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../database'
 import { requireRole, generateId } from '../../utils/auth'
 
 const createMatterSchema = z.object({
   title: z.string().min(1),
   clientId: z.string().min(1),
-  matterNumber: z.string().optional(),
   description: z.string().optional(),
-  status: z.enum(['OPEN', 'CLOSED', 'PENDING']).default('OPEN'),
+  status: z.enum(['OPEN', 'CLOSED', 'PENDING']).default('PENDING'),
   contractDate: z.string().optional(), // ISO date string
 })
 
@@ -25,21 +25,46 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  if (!isDatabaseAvailable()) {
+    const mockMatter = {
+      id: generateId(),
+      ...result.data,
+      matterNumber: `${new Date().getFullYear()}-001`,
+      contractDate: result.data.contractDate ? new Date(result.data.contractDate) : undefined,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    return { success: true, matter: mockMatter } // Mock response
+  }
+
+  const { useDrizzle, schema } = await import('../../database')
+  const db = useDrizzle()
+
+  // Auto-generate matter number: YYYY-NNN format
+  const currentYear = new Date().getFullYear()
+  const yearStart = new Date(currentYear, 0, 1)
+  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59)
+
+  // Count matters created this year
+  const yearMatters = await db
+    .select()
+    .from(schema.matters)
+    .where(sql`created_at >= ${yearStart.getTime() / 1000} AND created_at <= ${yearEnd.getTime() / 1000}`)
+    .all()
+
+  const nextNumber = (yearMatters.length + 1).toString().padStart(3, '0')
+  const matterNumber = `${currentYear}-${nextNumber}`
+
   const newMatter = {
     id: generateId(),
     ...result.data,
+    matterNumber,
     contractDate: result.data.contractDate ? new Date(result.data.contractDate) : undefined,
     createdAt: new Date(),
     updatedAt: new Date()
   }
-  
-  if (!isDatabaseAvailable()) {
-    return { success: true, matter: newMatter } // Mock response
-  }
-  
-  const { useDrizzle, schema } = await import('../../database')
-  const db = useDrizzle()
+
   await db.insert(schema.matters).values(newMatter)
-  
+
   return { success: true, matter: newMatter }
 })

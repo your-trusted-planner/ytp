@@ -108,7 +108,7 @@ C4Container
 |-----------|------------|---------|
 | **Web Application** | Nuxt 4, Vue 3, Tailwind CSS | Server-side rendered frontend providing role-based dashboards for attorneys, clients, and administrators. Includes pages for journey management, document handling, appointments, and client communication. |
 | **API Server** | Nitro, TypeScript, H3 | Backend server handling authentication (session-based with JWT), authorization (role-based), business logic, and integration orchestration. Deployed as Cloudflare Workers. |
-| **Database** | Cloudflare D1 (SQLite) | Relational database storing all application data including users, client profiles, matters, services, documents, journeys, progress tracking, and audit logs. Accessed via Drizzle ORM. |
+| **Database** | Cloudflare D1 (SQLite) | Relational database storing all application data including users, client profiles, matters, service engagements (mattersToServices junction), payments, documents, journeys, progress tracking, and audit logs. Accessed via Drizzle ORM. |
 | **File Storage** | Cloudflare R2 | Object storage for uploaded documents (DOCX, PDF), generated documents, document templates, and client uploads. Provides S3-compatible API. |
 | **Cache** | Cloudflare KV | Key-value store for session data, OAuth tokens (LawPay), and frequently accessed configuration. Provides fast edge-located reads. |
 | **Message Queues** | Cloudflare Queues | Asynchronous processing for document template parsing, document generation, and other background tasks. Supports batch processing with configurable concurrency. |
@@ -139,7 +139,7 @@ C4Component
         Component(authz, "Authorization Middleware", "TypeScript", "Role-based access control (ADMIN, LAWYER, CLIENT, LEAD, PROSPECT)")
 
         Component(clients, "Clients API", "H3 Handlers", "Client management, profiles, notes, and document listing")
-        Component(matters, "Matters API", "H3 Handlers", "Case/matter management and service linking")
+        Component(matters, "Matters API", "H3 Handlers", "Matter management with auto-generated matter numbers and service engagement via junction table")
         Component(documents, "Documents API", "H3 Handlers", "Document upload, generation, signing, and status tracking")
         Component(journeys, "Journeys API", "H3 Handlers", "Journey templates, steps, client enrollment, and progress tracking")
         Component(appointments, "Appointments API", "H3 Handlers", "Scheduling, calendar sync, and availability")
@@ -208,7 +208,7 @@ C4Component
 | **Authentication Module** | `/api/auth/*` | User login/logout, registration, session management, password hashing (bcryptjs), JWT token handling |
 | **Authorization Middleware** | (applied to all) | `requireAuth()` and `requireRole()` middleware for protecting endpoints |
 | **Clients API** | `/api/clients/*` | Client CRUD, profile management, notes, document listing per client |
-| **Matters API** | `/api/matters/*` | Case/matter management, linking services to matters |
+| **Matters API** | `/api/matters/*`, `/api/matters/[id]/services` | Matter CRUD with auto-generated matter numbers (YYYY-NNN), service engagement via mattersToServices junction, payment tracking at matter level |
 | **Documents API** | `/api/documents/*` | Document upload, template generation, signing workflow, status tracking |
 | **Journeys API** | `/api/journeys/*`, `/api/journey-steps/*`, `/api/client-journeys/*` | Journey template management, step ordering, client enrollment, progress tracking |
 | **Appointments API** | `/api/appointments/*` | Appointment CRUD, calendar synchronization |

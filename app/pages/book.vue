@@ -109,7 +109,7 @@
               v-else-if="question.type === 'textarea'"
               v-model="responses[question.id]"
               :required="question.required"
-              rows="4"
+              :rows="4"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
             ></textarea>
 

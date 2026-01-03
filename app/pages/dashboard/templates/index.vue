@@ -82,7 +82,7 @@
             v-model="useTemplateForm.description"
             label="Description (Optional)"
             placeholder="Additional notes about this document..."
-            rows="2"
+            :rows="2"
           />
 
           <div class="bg-blue-50 border border-blue-200 rounded p-3">
@@ -133,7 +133,7 @@
           v-model="uploadForm.description"
           label="Description"
           placeholder="Brief description of this template..."
-          rows="2"
+          :rows="2"
         />
 
         <UiSelect v-model="uploadForm.category" label="Category">

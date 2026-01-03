@@ -147,7 +147,7 @@
             <UiTextarea
               v-model="newNote"
               placeholder="Add a note about this client..."
-              rows="3"
+              :rows="3"
             />
             <UiButton @click="addNote" :loading="savingNote" size="sm">
               Add Note

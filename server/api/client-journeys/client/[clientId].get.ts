@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   
   // Get all active journeys for this client
   const journeys = await db.prepare(`
-    SELECT 
+    SELECT
       cj.*,
       j.name as journey_name,
       j.description as journey_description,
@@ -31,11 +31,14 @@ export default defineEventHandler(async (event) => {
       js.step_type as current_step_type,
       js.step_order as current_step_order,
       (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id) as total_steps,
-      m.name as matter_name
+      sc.name as service_name,
+      m.title as matter_title,
+      m.matter_number as matter_number
     FROM client_journeys cj
     JOIN journeys j ON cj.journey_id = j.id
     LEFT JOIN journey_steps js ON cj.current_step_id = js.id
-    LEFT JOIN matters m ON j.matter_id = m.id
+    LEFT JOIN service_catalog sc ON j.service_catalog_id = sc.id
+    LEFT JOIN matters m ON cj.matter_id = m.id
     WHERE cj.client_id = ?
     AND cj.status != 'CANCELLED'
     ORDER BY cj.priority DESC, cj.created_at DESC

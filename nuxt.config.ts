@@ -1,7 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  compatibilityDate: '2026-01-02',
   // Use app/ directory for Nuxt 4 structure
-  srcDir: 'app',
+  // srcDir: 'app',
 
   // https://nuxt.com/modules
   modules: [

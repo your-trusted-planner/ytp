@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, blob } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, blob, primaryKey, foreignKey } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
 // Users table
@@ -12,8 +12,8 @@ export const users = sqliteTable('users', {
   phone: text('phone'),
   avatar: text('avatar'),
   status: text('status', { enum: ['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Client Profiles table
@@ -37,8 +37,8 @@ export const clientProfiles = sqliteTable('client_profiles', {
   grantorType: text('grantor_type', { enum: ['SINGLE', 'ADDITIONAL'] }).notNull().default('SINGLE'), // Single or Additional Grantor
   lastUpdated: integer('last_updated', { mode: 'timestamp' }),
   assignedLawyerId: text('assigned_lawyer_id').references(() => users.id),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Appointments table
@@ -55,8 +55,8 @@ export const appointments = sqliteTable('appointments', {
   callNotes: text('call_notes'), // Attorney notes during/after the call
   callNotesUpdatedAt: integer('call_notes_updated_at', { mode: 'timestamp' }),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Template Folders table
@@ -66,8 +66,8 @@ export const templateFolders = sqliteTable('template_folders', {
   description: text('description'),
   parentId: text('parent_id').references((): any => templateFolders.id),
   order: integer('order').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Document Templates table
@@ -85,8 +85,8 @@ export const documentTemplates = sqliteTable('document_templates', {
   order: integer('order').notNull().default(0),
   originalFileName: text('original_file_name'),
   fileExtension: text('file_extension'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Documents table
@@ -117,8 +117,8 @@ export const documents = sqliteTable('documents', {
   signatureData: text('signature_data'),
   viewedAt: integer('viewed_at', { mode: 'timestamp' }),
   sentAt: integer('sent_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Notes table
@@ -126,8 +126,8 @@ export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),
   content: text('content').notNull(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Activities table
@@ -137,7 +137,7 @@ export const activities = sqliteTable('activities', {
   description: text('description').notNull(),
   metadata: text('metadata'), // JSON string
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Settings table
@@ -146,8 +146,8 @@ export const settings = sqliteTable('settings', {
   key: text('key').notNull().unique(),
   value: text('value').notNull(),
   description: text('description'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Service Catalog (formerly matters - products/services definitions)
@@ -164,8 +164,8 @@ export const serviceCatalog = sqliteTable('service_catalog', {
   engagementLetterId: text('engagement_letter_id').references(() => documentTemplates.id),
   workflowSteps: text('workflow_steps'), // JSON array of workflow steps
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Matters (Client Cases - grouping entity)
@@ -177,11 +177,41 @@ export const matters = sqliteTable('matters', {
   description: text('description'),
   status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
   contractDate: integer('contract_date', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Matters to Services - Junction table (many:many)
+export const mattersToServices = sqliteTable('matters_to_services', {
+  matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
+  catalogId: text('catalog_id').notNull().references(() => serviceCatalog.id, { onDelete: 'cascade' }),
+  engagedAt: integer('engaged_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  assignedAttorneyId: text('assigned_attorney_id').references(() => users.id),
+  status: text('status', { enum: ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED'] }).notNull().default('PENDING'),
+  startDate: integer('start_date', { mode: 'timestamp' }),
+  endDate: integer('end_date', { mode: 'timestamp' })
+}, (table) => ({
+  pk: primaryKey({ columns: [table.matterId, table.catalogId] })
+}))
+
+// Payments - Track all payments at matter level
+export const payments = sqliteTable('payments', {
+  id: text('id').primaryKey(),
+  matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
+  paymentType: text('payment_type', { enum: ['CONSULTATION', 'DEPOSIT_50', 'FINAL_50', 'MAINTENANCE', 'CUSTOM'] }).notNull(),
+  amount: integer('amount').notNull(),
+  paymentMethod: text('payment_method', { enum: ['LAWPAY', 'CHECK', 'WIRE', 'CREDIT_CARD', 'ACH', 'OTHER'] }),
+  lawpayTransactionId: text('lawpay_transaction_id'),
+  status: text('status', { enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED'] }).notNull().default('PENDING'),
+  paidAt: integer('paid_at', { mode: 'timestamp' }),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Services (formerly client_matters - specific engaged services)
+// NOTE: This table is being phased out in favor of matters_to_services junction table
+// Keeping it temporarily for backward compatibility during migration
 export const services = sqliteTable('services', {
   id: text('id').primaryKey(),
   matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
@@ -198,8 +228,8 @@ export const services = sqliteTable('services', {
   assignedAttorneyId: text('assigned_attorney_id').references(() => users.id),
   requiresPaymentToActivate: integer('requires_payment_to_activate', { mode: 'boolean' }).notNull().default(false), // For maintenance packages
   parentServiceId: text('parent_service_id').references((): any => services.id), // Link maintenance to WYDAPT
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Pre-Consultation Questionnaires
@@ -210,8 +240,8 @@ export const questionnaires = sqliteTable('questionnaires', {
   serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Optional: link to specific service type
   questions: text('questions').notNull(), // JSON array of questions
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Questionnaire Responses
@@ -223,7 +253,7 @@ export const questionnaireResponses = sqliteTable('questionnaire_responses', {
   responses: text('responses').notNull(), // JSON object of question/answer pairs
   attorneyNotes: text('attorney_notes'), // Notes taken by attorney before/during call
   attorneyNotesUpdatedAt: integer('attorney_notes_updated_at', { mode: 'timestamp' }),
-  submittedAt: integer('submitted_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  submittedAt: integer('submitted_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // ===================================
@@ -239,8 +269,8 @@ export const journeys = sqliteTable('journeys', {
   isTemplate: integer('is_template', { mode: 'boolean' }).notNull().default(false), // Template vs. active
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   estimatedDurationDays: integer('estimated_duration_days'), // Total expected duration
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Journey Steps - Individual steps in a journey (can be MILESTONE or BRIDGE)
@@ -256,14 +286,16 @@ export const journeySteps = sqliteTable('journey_steps', {
   automationConfig: text('automation_config'), // JSON: automation rules for this step
   helpContent: text('help_content'), // Markdown/HTML help content for this step
   allowMultipleIterations: integer('allow_multiple_iterations', { mode: 'boolean' }).notNull().default(false), // For BRIDGE steps
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Client Journeys - Tracks which clients are on which journeys
 export const clientJourneys = sqliteTable('client_journeys', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  matterId: text('matter_id'), // Links to the specific matter (engagement)
+  catalogId: text('catalog_id'), // Links to the service catalog item
   journeyId: text('journey_id').notNull().references(() => journeys.id),
   currentStepId: text('current_step_id').references(() => journeySteps.id), // Current position
   status: text('status', { enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'PAUSED', 'CANCELLED'] }).notNull().default('NOT_STARTED'),
@@ -271,9 +303,15 @@ export const clientJourneys = sqliteTable('client_journeys', {
   startedAt: integer('started_at', { mode: 'timestamp' }),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   pausedAt: integer('paused_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
-})
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, (table) => ({
+  // Composite foreign key to matters_to_services (engagement)
+  engagementFk: foreignKey({
+    columns: [table.matterId, table.catalogId],
+    foreignColumns: [mattersToServices.matterId, mattersToServices.catalogId]
+  })
+}))
 
 // Journey Step Progress - Tracks progress through each step for each client
 export const journeyStepProgress = sqliteTable('journey_step_progress', {
@@ -289,8 +327,8 @@ export const journeyStepProgress = sqliteTable('journey_step_progress', {
   notes: text('notes'), // Internal notes about this step's progress
   startedAt: integer('started_at', { mode: 'timestamp' }),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Action Items - Tasks that must be completed as part of a journey step
@@ -308,8 +346,8 @@ export const actionItems = sqliteTable('action_items', {
   priority: text('priority', { enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }).notNull().default('MEDIUM'),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   completedBy: text('completed_by').references(() => users.id), // Who completed it
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Bridge Conversations - Chat/messaging within bridge steps
@@ -320,7 +358,7 @@ export const bridgeConversations = sqliteTable('bridge_conversations', {
   message: text('message').notNull(),
   isAiResponse: integer('is_ai_response', { mode: 'boolean' }).notNull().default(false),
   metadata: text('metadata'), // JSON: additional data (attachments, reactions, etc.)
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // FAQ Library - Knowledge base for AI agent and help content
@@ -336,8 +374,8 @@ export const faqLibrary = sqliteTable('faq_library', {
   helpfulCount: integer('helpful_count').notNull().default(0), // User feedback
   unhelpfulCount: integer('unhelpful_count').notNull().default(0),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Document Uploads - Client-uploaded documents
@@ -358,8 +396,8 @@ export const documentUploads = sqliteTable('document_uploads', {
   reviewNotes: text('review_notes'),
   version: integer('version').notNull().default(1), // Version control
   replacesUploadId: text('replaces_upload_id').references((): any => documentUploads.id), // Self-reference for versions
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Snapshot Versions - Track snapshot document revisions
@@ -376,8 +414,8 @@ export const snapshotVersions = sqliteTable('snapshot_versions', {
   approvedByCounsel: integer('approved_by_counsel', { mode: 'boolean' }).notNull().default(false),
   clientFeedback: text('client_feedback'), // JSON: structured feedback from client
   counselNotes: text('counsel_notes'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Automations - Journey automation rules
@@ -393,8 +431,8 @@ export const automations = sqliteTable('automations', {
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   lastExecutedAt: integer('last_executed_at', { mode: 'timestamp' }),
   executionCount: integer('execution_count').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Marketing Sources - Track where clients come from
@@ -406,8 +444,8 @@ export const marketingSources = sqliteTable('marketing_sources', {
   utmCampaign: text('utm_campaign'),
   acquisitionCost: integer('acquisition_cost'), // in cents
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Client Marketing Attribution - Track individual client sources
@@ -424,7 +462,7 @@ export const clientMarketingAttribution = sqliteTable('client_marketing_attribut
   landingPage: text('landing_page'),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // ===================================
@@ -455,9 +493,9 @@ export const uploadedDocuments = sqliteTable('uploaded_documents', {
   mimeType: text('mime_type'),
 
   // Timestamps
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   processedAt: integer('processed_at', { mode: 'timestamp' }),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // ===================================
@@ -474,8 +512,8 @@ export const lawpayConnections = sqliteTable('lawpay_connections', {
   scope: text('scope').notNull(), // OAuth scope (e.g., "payments")
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(), // When access token expires
   revokedAt: integer('revoked_at', { mode: 'timestamp' }), // When connection was revoked
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // ===================================
@@ -489,8 +527,8 @@ export const additionalGrantors = sqliteTable('additional_grantors', {
   grantorUserId: text('grantor_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   relationship: text('relationship', { enum: ['SPOUSE', 'CO_TRUSTEE', 'PARTNER', 'OTHER'] }).notNull().default('SPOUSE'),
   matterId: text('matter_id').references(() => matters.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Attorney Calendars - Multiple Google Calendar support per attorney
@@ -504,8 +542,8 @@ export const attorneyCalendars = sqliteTable('attorney_calendars', {
   serviceAccountKey: text('service_account_key'), // Encrypted JSON
   timezone: text('timezone').notNull().default('America/New_York'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Document Summaries - Pre-payment document choice summary
@@ -514,10 +552,10 @@ export const documentSummaries = sqliteTable('document_summaries', {
   clientJourneyId: text('client_journey_id').notNull().references(() => clientJourneys.id, { onDelete: 'cascade' }),
   summaryData: text('summary_data').notNull(), // JSON: document choices
   isFinal: integer('is_final', { mode: 'boolean' }).notNull().default(false),
-  generatedAt: integer('generated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  generatedAt: integer('generated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   viewedAt: integer('viewed_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Service Packages - Configurable WYDAPT packages (1-4)
@@ -530,33 +568,29 @@ export const servicePackages = sqliteTable('service_packages', {
   includedDocuments: text('included_documents').notNull(), // JSON array of template IDs
   additionalFee: integer('additional_fee').notNull().default(0),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Client Selected Packages - Track which packages client chose
 export const clientSelectedPackages = sqliteTable('client_selected_packages', {
   id: text('id').primaryKey(),
-  serviceId: text('service_id').notNull().references(() => services.id, { onDelete: 'cascade' }),
+  serviceId: text('service_id').references(() => services.id, { onDelete: 'cascade' }), // Legacy - being phased out
+  matterId: text('matter_id'), // New: links to specific matter
+  catalogId: text('catalog_id'), // New: links to service catalog item
   packageId: text('package_id').notNull().references(() => servicePackages.id, { onDelete: 'cascade' }),
-  selectedAt: integer('selected_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
-})
+  selectedAt: integer('selected_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, (table) => ({
+  // Composite foreign key to matters_to_services (engagement)
+  engagementFk: foreignKey({
+    columns: [table.matterId, table.catalogId],
+    foreignColumns: [mattersToServices.matterId, mattersToServices.catalogId]
+  })
+}))
 
-// Service Payments - Track individual payment installments
-export const servicePayments = sqliteTable('service_payments', {
-  id: text('id').primaryKey(),
-  serviceId: text('service_id').notNull().references(() => services.id, { onDelete: 'cascade' }),
-  paymentType: text('payment_type', { enum: ['CONSULTATION', 'DEPOSIT_50', 'FINAL_50', 'MAINTENANCE', 'CUSTOM'] }).notNull(),
-  amount: integer('amount').notNull(),
-  paymentMethod: text('payment_method', { enum: ['LAWPAY', 'CHECK', 'WIRE', 'CREDIT_CARD', 'ACH', 'OTHER'] }),
-  lawpayTransactionId: text('lawpay_transaction_id'),
-  status: text('status', { enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED'] }).notNull().default('PENDING'),
-  paidAt: integer('paid_at', { mode: 'timestamp' }),
-  notes: text('notes'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
-})
+// NOTE: servicePayments table has been replaced by the payments table (matter-level)
+// This table definition has been removed - see payments table above
 
 // Notary Documents - Offline notarization workflow (download/upload)
 export const notaryDocuments = sqliteTable('notary_documents', {
@@ -575,8 +609,8 @@ export const notaryDocuments = sqliteTable('notary_documents', {
   notaryState: text('notary_state'),
   notaryExpirationDate: integer('notary_expiration_date', { mode: 'timestamp' }),
   notes: text('notes'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Public Bookings - Pre-account booking system
@@ -598,7 +632,7 @@ export const publicBookings = sqliteTable('public_bookings', {
   status: text('status', { enum: ['PENDING_PAYMENT', 'PENDING_BOOKING', 'BOOKED', 'CONVERTED', 'CANCELLED'] }).notNull().default('PENDING_PAYMENT'),
   bookingCompletedAt: integer('booking_completed_at', { mode: 'timestamp' }),
   convertedToClientAt: integer('converted_to_client_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`)
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 

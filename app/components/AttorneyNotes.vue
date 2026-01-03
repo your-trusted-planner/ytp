@@ -18,7 +18,7 @@
         </label>
         <textarea
           v-model="localPreCallNotes"
-          rows="4"
+          :rows="4"
           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
           placeholder="Review questionnaire responses and note key points to discuss..."
           @blur="saveNotes"
@@ -38,7 +38,7 @@
         </label>
         <textarea
           v-model="localCallNotes"
-          rows="6"
+          :rows="6"
           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
           placeholder="Document discussion points, client goals, concerns, decisions made..."
           @blur="saveNotes"

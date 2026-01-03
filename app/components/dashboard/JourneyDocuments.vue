@@ -125,7 +125,7 @@
           v-model="newDocForm.description"
           label="Description (Optional)"
           placeholder="Additional notes about this document..."
-          rows="3"
+          :rows="3"
         />
 
         <div class="flex justify-end space-x-3 pt-4">

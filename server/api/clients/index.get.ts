@@ -17,13 +17,14 @@ export default defineEventHandler(async (event) => {
       phone: schema.users.phone,
       status: schema.users.status,
       createdAt: schema.users.createdAt,
+      updatedAt: schema.users.updatedAt,
       profile: schema.clientProfiles
     })
     .from(schema.users)
     .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
     .where(eq(schema.users.role, 'CLIENT'))
     .all()
-  
+
   // Transform to match frontend expectations
   const clients = clientsData.map(client => ({
     id: client.id,
@@ -34,10 +35,10 @@ export default defineEventHandler(async (event) => {
     lastName: client.lastName,
     phone: client.phone,
     status: client.status,
-    createdAt: client.createdAt,
+    createdAt: client.createdAt instanceof Date ? client.createdAt.getTime() : client.createdAt,
+    updatedAt: client.updatedAt instanceof Date ? client.updatedAt.getTime() : client.updatedAt,
     profile: client.profile
   }))
   
   return { clients }
 })
-

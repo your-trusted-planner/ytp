@@ -1,6 +1,6 @@
-# Managing Clients
+# Managing Clients & Matters
 
-Learn how to add, manage, and track your clients effectively.
+Learn how to add, manage, and track your clients and their engagements effectively.
 
 ## Adding a New Client
 
@@ -36,20 +36,189 @@ Click on any client to see their full profile:
 | **Active** | Full portal access |
 | **Inactive** | Account disabled |
 
-## Starting a Service for a Client
+---
 
-From the client detail page:
+## Understanding Matters & Services
 
-1. Click **Start New Journey**
-2. Select the journey template (e.g., "Wyoming Asset Protection Trust")
-3. Set priority level if needed
-4. Click **Start Journey**
+### What is a Matter?
 
-The client will now see this journey in their portal and can begin working through the steps.
+A **matter** represents a client engagement - the overall business relationship and scope of work. Think of it like a statement of work (SOW) or consulting engagement.
+
+**Key Points:**
+- Each matter has an auto-generated number (e.g., "2024-001")
+- Matters start in "Pending" status until the engagement letter is signed
+- One matter can include multiple services
+- The engagement letter date marks when the client formally engages
+
+**Example:**
+```
+Matter: "Smith Family Trust 2024"
+Number: 2024-001
+Status: Pending → Open (when letter signed)
+Services: WYDAPT, Annual Maintenance
+```
+
+### What are Services?
+
+**Services** are the specific products/offerings engaged within a matter (e.g., WYDAPT formation, Annual Maintenance). Each service has a workflow (journey) that guides the client through completion.
+
+---
+
+## Creating a New Matter
+
+1. Go to **Matters** in the sidebar
+2. Click **Add New Matter**
+3. Fill in:
+   - **Matter Title**: Descriptive title (e.g., "Smith Family Trust 2024")
+   - **Client**: Select from dropdown
+   - **Description**: Brief overview of the engagement
+   - **Status**: Usually starts as "Pending"
+   - **Engagement Letter Date**: Leave blank until letter is signed
+   - **Services**: Check the services to include (optional, can add later)
+4. Click **Create Matter**
+
+**The system automatically:**
+- Generates a unique matter number (YYYY-###)
+- Creates service engagements for any selected services
+- Sets up journeys for each engaged service
+
+## Managing Matter Services
+
+### Adding Services to an Existing Matter
+
+From the matter detail page:
+1. Click **Edit** on the matter
+2. Scroll to "Associated Services"
+3. Click **Add Service**
+4. Select the service from the catalog
+5. Click **Add**
+
+### Service Statuses
+
+| Status | Meaning |
+|--------|---------|
+| **Pending** | Service engaged but not yet started |
+| **Active** | Work in progress |
+| **Completed** | Service delivered |
+| **Cancelled** | Service cancelled |
+
+### Assigning Services
+
+You can assign different attorneys to different services within the same matter. This allows for specialization and workload distribution.
+
+---
+
+## Starting a Client Journey
+
+When you engage a service, the system automatically creates a journey (workflow) for that service:
+
+1. Go to the client's profile or the matter page
+2. The journey appears under "Active Journeys"
+3. Click on the journey to see progress
+4. Guide the client through each step
+
+The client will see this journey in their portal and can work through the steps.
+
+## Matter Lifecycle
+
+### 1. Creation (Pending)
+- Create the matter with basic details
+- Select services to engage
+- Matter status: **Pending**
+
+### 2. Engagement (Open)
+- Client signs engagement letter
+- Update the "Engagement Letter Date"
+- Change matter status to **Open**
+- Journeys become active
+
+### 3. Service Delivery (Active)
+- Clients work through journey steps
+- Documents are generated and signed
+- Track progress in real-time
+- Services complete individually
+
+### 4. Completion (Closed)
+- All services completed
+- Final deliverables provided
+- Change matter status to **Closed**
+
+---
+
+## Tracking & Payments
+
+### Payment Tracking
+
+Payments are tracked at the **matter level**, not per-service. This simplifies financial tracking when a matter includes multiple services.
+
+**Payment Types:**
+- Consultation Fee
+- 50% Deposit
+- Final 50% Payment
+- Maintenance Fees
+- Custom Payments
+
+**To record a payment:** *(Feature coming soon)*
+1. Go to the matter page
+2. Click "Record Payment"
+3. Enter amount, type, and method
+4. Save
+
+### Reporting
+
+View all matters and their status from the Matters dashboard:
+- Filter by status (Pending, Open, Closed)
+- Search by matter number or client name
+- See engagement dates and services
+
+---
 
 ## Best Practices
 
-- Keep client notes up to date
-- Set appropriate priority levels for journeys
-- Follow up promptly on pending documents
-- Use the activity feed to track engagement
+### Matter Management
+
+✓ **Use descriptive titles** - e.g., "Smith Family Trust 2024", not just "Smith"
+✓ **Update engagement letter date** - Mark when client actually engages
+✓ **Start with PENDING status** - Don't mark OPEN until letter is signed
+✓ **Engage all services upfront** - Or add as scope expands
+
+### Client Communication
+
+✓ **Keep notes up to date** - Document all client interactions
+✓ **Set appropriate priorities** - High priority for urgent matters
+✓ **Follow up promptly** - Respond to pending documents quickly
+✓ **Use the activity feed** - Track all client engagement
+
+### Journey Management
+
+✓ **Guide clients through steps** - Don't just set it and forget it
+✓ **Review bridge steps carefully** - These require back-and-forth
+✓ **Mark milestones complete** - Keep the journey moving
+✓ **Pause when needed** - Better than leaving stale
+
+---
+
+## Common Questions
+
+**Q: Can one matter have multiple services?**
+A: Yes! For example, a client might engage both WYDAPT formation and Annual Maintenance in the same matter.
+
+**Q: Why do matter numbers reset each year?**
+A: Matter numbers follow the format YYYY-NNN (e.g., 2024-001). This makes it easy to track matters by year while keeping numbers manageable.
+
+**Q: What's the difference between matter status and service status?**
+A: Matter status is the overall engagement (Pending → Open → Closed). Service status tracks individual services within that matter (Pending → Active → Completed).
+
+**Q: When should I update the engagement letter date?**
+A: Update it when the client actually signs the engagement letter. This may be days or weeks after creating the matter.
+
+**Q: Can I change which services are engaged?**
+A: Yes, you can add services to a matter at any time. Removing services is more complex and should be done with caution.
+
+---
+
+## Need More Help?
+
+- See [Journeys & Workflows](/help/attorney/journeys-workflows) for journey management
+- See [Documents](/help/attorney/documents) for document generation
+- Contact support for specific questions
