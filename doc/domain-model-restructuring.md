@@ -48,7 +48,7 @@ erDiagram
     }
 
     service_catalog ||--o{ matters_to_services : "engaged_in"
-    service_catalog ||--|| journeys : "has_workflow"
+    service_catalog ||--o{ journeys : "has_workflow"
     service_catalog {
         string id PK
         string name
@@ -70,7 +70,6 @@ erDiagram
         string status
         timestamp startDate
         timestamp endDate
-        PK matterId_catalogId
     }
 
     journeys ||--o{ journey_steps : "contains"
@@ -100,7 +99,7 @@ erDiagram
 
     matters ||--o{ client_journeys : "has_progress"
     matters ||--o{ payments : "has_payments"
-    client_journeys ||--|| journey_steps : "at_step"
+    journey_steps ||--o{ client_journeys : "current_step"
     client_journeys {
         string id PK
         string clientId FK

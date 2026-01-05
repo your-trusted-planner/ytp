@@ -36,16 +36,18 @@
       >
         <div class="flex items-start justify-between mb-4">
           <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ journey.name }}</h3>
+            <!-- Inline editable journey name -->
+            <UiEditableText
+              v-model="journey.name"
+              tag="h3"
+              display-class="text-lg font-semibold text-gray-900 mb-1"
+              input-class="text-lg font-semibold"
+              :custom-cursor="pencilCursor"
+              :transform="(v) => v.toString().trim()"
+              @save="saveJourneyName(journey, $event)"
+              @click.stop
+            />
             <p v-if="journey.description" class="text-sm text-gray-600">{{ journey.description }}</p>
-          </div>
-          <div
-            :class="[
-              'px-2 py-1 rounded text-xs font-medium',
-              journey.is_template ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
-            ]"
-          >
-            {{ journey.is_template ? 'Template' : 'Active' }}
           </div>
         </div>
 
@@ -85,7 +87,7 @@
       </div>
     </div>
 
-    <!-- Create/Edit Journey Modal -->
+    <!-- Create Journey Modal -->
     <UiModal v-model="showCreateModal" title="Create Journey" size="lg">
       <form @submit.prevent="createJourney" class="space-y-4">
         <UiInput
@@ -119,18 +121,6 @@
           placeholder="e.g., 30"
         />
 
-        <div class="flex items-center">
-          <input
-            v-model="form.isTemplate"
-            type="checkbox"
-            id="isTemplate"
-            class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-          />
-          <label for="isTemplate" class="ml-2 block text-sm text-gray-900">
-            This is a template (not an active journey)
-          </label>
-        </div>
-
         <div class="flex justify-end space-x-3 pt-4">
           <UiButton type="button" variant="ghost" @click="showCreateModal = false">
             Cancel
@@ -141,30 +131,46 @@
         </div>
       </form>
     </UiModal>
+
+    <!-- Edit Journey Modal -->
+    <JourneyEditModal
+      v-model="showEditModal"
+      :journey="editingJourney"
+      :service-catalog="serviceCatalog"
+      @save="handleJourneySaved"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { Plus as IconPlus, Loader as IconLoader, Map as IconMap, Folder as IconFolder, List as IconList, Users as IconUsers, Clock as IconClock } from 'lucide-vue-next'
+import { createSquarePenCursor } from '~/utils/createCursor'
 
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
 })
 
+// Create custom pencil cursor
+const pencilCursor = createSquarePenCursor({
+  color: '#101010',
+  size: 20
+})
+
 const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
 const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const journeys = ref([])
 const serviceCatalog = ref([])
+const editingJourney = ref(null)
 
 const form = ref({
   name: '',
   description: '',
   serviceCatalogId: '',
-  estimatedDurationDays: null,
-  isTemplate: false
+  estimatedDurationDays: null
 })
 
 // Fetch journeys
@@ -213,9 +219,22 @@ function openJourney(id: string) {
   router.push(`/dashboard/journeys/${id}`)
 }
 
-// Edit journey
+// Edit journey - open edit modal
 function editJourney(journey: any) {
-  router.push(`/dashboard/journeys/${journey.id}`)
+  editingJourney.value = journey
+  showEditModal.value = true
+}
+
+// Handle journey saved from modal
+async function handleJourneySaved(journey: any, data: any) {
+  // Update local state
+  journey.name = data.name
+  journey.description = data.description
+  journey.service_catalog_id = data.serviceCatalogId
+  journey.estimated_duration_days = data.estimatedDurationDays
+
+  // Refresh to get updated service name
+  await fetchJourneys()
 }
 
 // Duplicate journey
@@ -224,10 +243,29 @@ async function duplicateJourney(journey: any) {
     name: `${journey.name} (Copy)`,
     description: journey.description || '',
     serviceCatalogId: journey.service_catalog_id || '',
-    estimatedDurationDays: journey.estimated_duration_days,
-    isTemplate: Boolean(journey.is_template)
+    estimatedDurationDays: journey.estimated_duration_days
   }
   showCreateModal.value = true
+}
+
+// Save journey name (called by EditableText component)
+async function saveJourneyName(journey: any, newName: string | number) {
+  try {
+    await $fetch(`/api/journeys/${journey.id}`, {
+      method: 'PUT',
+      body: {
+        name: newName.toString(),
+        description: journey.description,
+        serviceCatalogId: journey.service_catalog_id,
+        isActive: Boolean(journey.is_active),
+        estimatedDurationDays: journey.estimated_duration_days
+      }
+    })
+  } catch (error) {
+    console.error('Error updating journey name:', error)
+    // Revert to old name on error
+    journey.name = journey.name
+  }
 }
 
 onMounted(() => {
@@ -235,4 +273,3 @@ onMounted(() => {
   fetchServiceCatalog()
 })
 </script>
-

@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { cn } from '~/utils/cn'
 
 interface Props {
@@ -51,7 +51,7 @@ const emit = defineEmits<{
   focus: [event: Event]
 }>()
 
-const inputId = computed(() => `input-${Math.random().toString(36).substring(7)}`)
+const inputId = `input-${useId()}`
 
 const inputClasses = computed(() => {
   return cn(

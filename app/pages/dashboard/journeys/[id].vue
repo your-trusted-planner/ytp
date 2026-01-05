@@ -18,6 +18,10 @@
           Preview
         </UiButton>
         -->
+        <UiButton variant="outline" @click="showEditModal = true">
+          <IconEdit class="w-4 h-4 mr-2" />
+          Edit Journey
+        </UiButton>
         <UiButton @click="addStep">
           <IconPlus class="w-4 h-4 mr-2" />
           Add Step
@@ -256,6 +260,14 @@
         </div>
       </form>
     </UiModal>
+
+    <!-- Edit Journey Modal -->
+    <JourneyEditModal
+      v-model="showEditModal"
+      :journey="journey"
+      :service-catalog="serviceCatalog"
+      @save="handleJourneySaved"
+    />
   </div>
 </template>
 
@@ -263,7 +275,7 @@
 import {
   ArrowLeft as IconArrowLeft, Plus as IconPlus, Loader as IconLoader, GitBranch as IconGitBranch,
   GripVertical as IconGripVertical, CircleDot as IconCircleDot, Repeat as IconRepeat, ArrowDown as IconArrowDown,
-  HelpCircle as IconHelpCircle
+  HelpCircle as IconHelpCircle, Edit as IconEdit
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 
@@ -276,10 +288,12 @@ const route = useRoute()
 const loading = ref(true)
 const savingStep = ref(false)
 const showStepModal = ref(false)
+const showEditModal = ref(false)
 const editingStep = ref(null)
 
 const journey = ref(null)
 const steps = ref([])
+const serviceCatalog = ref([])
 
 const stepForm = ref({
   stepType: 'MILESTONE',
@@ -423,7 +437,24 @@ function formatResponsibleParty(party: string) {
   return map[party] || party
 }
 
+// Fetch service catalog for dropdown
+async function fetchServiceCatalog() {
+  try {
+    const { catalog: data } = await $fetch('/api/service-catalog')
+    serviceCatalog.value = data
+  } catch (error) {
+    console.error('Error fetching service catalog:', error)
+  }
+}
+
+// Handle journey saved from modal
+async function handleJourneySaved() {
+  // Refresh journey data to get updated values
+  await fetchJourney()
+}
+
 onMounted(() => {
   fetchJourney()
+  fetchServiceCatalog()
 })
 </script>

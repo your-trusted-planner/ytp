@@ -14,7 +14,42 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const db = hubDatabase()
-  
+
+  // Validate that matter and catalog are provided
+  if (!body.matterId || !body.catalogId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Matter and service are required to start a journey'
+    })
+  }
+
+  // Validate that the service is engaged for this matter
+  const engagement = await db.prepare(`
+    SELECT * FROM matters_to_services
+    WHERE matter_id = ? AND catalog_id = ?
+  `).bind(body.matterId, body.catalogId).first()
+
+  if (!engagement) {
+    throw createError({
+      statusCode: 400,
+      message: 'This service is not engaged for the selected matter. Please engage the service first.'
+    })
+  }
+
+  // Check if a journey already exists for this engagement
+  const existingJourney = await db.prepare(`
+    SELECT * FROM client_journeys
+    WHERE matter_id = ? AND catalog_id = ?
+    AND status != 'CANCELLED'
+  `).bind(body.matterId, body.catalogId).first()
+
+  if (existingJourney) {
+    throw createError({
+      statusCode: 400,
+      message: 'A journey already exists for this service engagement'
+    })
+  }
+
   // Get the first step of the journey
   const firstStep = await db.prepare(`
     SELECT id FROM journey_steps
@@ -26,6 +61,8 @@ export default defineEventHandler(async (event) => {
   const clientJourney = {
     id: nanoid(),
     client_id: body.clientId,
+    matter_id: body.matterId,
+    catalog_id: body.catalogId,
     journey_id: body.journeyId,
     current_step_id: firstStep?.id || null,
     status: 'IN_PROGRESS',
@@ -39,12 +76,14 @@ export default defineEventHandler(async (event) => {
 
   await db.prepare(`
     INSERT INTO client_journeys (
-      id, client_id, journey_id, current_step_id, status, priority,
+      id, client_id, matter_id, catalog_id, journey_id, current_step_id, status, priority,
       started_at, completed_at, paused_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     clientJourney.id,
     clientJourney.client_id,
+    clientJourney.matter_id,
+    clientJourney.catalog_id,
     clientJourney.journey_id,
     clientJourney.current_step_id,
     clientJourney.status,

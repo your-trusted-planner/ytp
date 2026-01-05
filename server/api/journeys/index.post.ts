@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
     service_catalog_id: body.serviceCatalogId || null,
     name: body.name,
     description: body.description || null,
-    is_template: body.isTemplate ? 1 : 0,
     is_active: 1,
     estimated_duration_days: body.estimatedDurationDays || null,
     created_at: Date.now(),
@@ -29,15 +28,14 @@ export default defineEventHandler(async (event) => {
 
   await db.prepare(`
     INSERT INTO journeys (
-      id, service_catalog_id, name, description, is_template, is_active,
+      id, service_catalog_id, name, description, is_active,
       estimated_duration_days, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     journey.id,
     journey.service_catalog_id,
     journey.name,
     journey.description,
-    journey.is_template,
     journey.is_active,
     journey.estimated_duration_days,
     journey.created_at,
