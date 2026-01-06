@@ -22,6 +22,83 @@
   - `/app/layouts/dashboard.vue` - Added People menu item
 - **Pattern Established**: ORM-layer serialization via Drizzle custom types (reusable for other JSON data)
 
+#### Action Items & Task Management System (2026-01-06)
+- **Status**: Complete and working ✅
+- **What**: Comprehensive task management system integrated into journey builder with "ring the bell" philosophy
+- **Implementation**:
+  - Created migration `0053_enhance_action_items_and_journey_steps.sql`
+  - Extended action types: 14 types total including AUTOMATION, THIRD_PARTY, OFFLINE_TASK, EXPENSE, FORM, DRAFT_DOCUMENT
+  - Added system integration tracking (calendar, payment, document, manual)
+  - Implemented "ring the bell" service delivery verification fields
+  - Enhanced journey steps with final step verification
+  - Converted 6 action-items API endpoints to Drizzle ORM
+  - Built complete UI with action type selector and configuration modals
+- **Key Features**:
+  - Every journey step must have ≥1 action item (enforced with validation)
+  - Visual action type selector with 14 types (icons + descriptions)
+  - Type-specific configuration forms (Meeting, Upload, Payment, E-Signature, Draft Document, Questionnaire)
+  - System integration toggles for calendar/payment/document features
+  - Service delivery verification with objective criteria and evidence
+  - Real-time validation warnings showing steps without action items
+  - Expandable action items sections within each journey step
+- **Action Types Available**:
+  - QUESTIONNAIRE, DECISION, UPLOAD, REVIEW, ESIGN, NOTARY
+  - PAYMENT, MEETING, KYC
+  - AUTOMATION, THIRD_PARTY, OFFLINE_TASK
+  - EXPENSE, FORM, DRAFT_DOCUMENT
+- **Files Created/Modified**:
+  - `/server/database/migrations/0053_enhance_action_items_and_journey_steps.sql`
+  - `/server/database/schema.ts` - Enhanced actionItems and journeySteps tables
+  - `/server/api/action-items/*.ts` - 6 endpoints (POST, PUT, DELETE, GET by step, GET by journey, complete)
+  - `/server/api/journeys/[id]/validate.get.ts` - Journey validation endpoint
+  - `/app/components/journey/ActionItemModal.vue` - Action item configuration modal (NEW)
+  - `/app/pages/dashboard/journeys/[id].vue` - Enhanced with action items display and validation
+- **Plan Document**: `/doc/action-items-task-management-plan.md` (comprehensive)
+- **Draft Document Action Type**: Stubbed with integration hooks for future document generation system
+  - Configuration: document name, template ID, drafting notes
+  - Integration toggle for document system
+  - Blue info banner indicating future integration
+
+#### Currency Formatting Refactored (2026-01-06)
+- **Status**: Complete
+- **What**: Consolidated all price formatting into centralized utility
+- **Implementation**:
+  - Created `formatCurrency()` in `/app/utils/format.ts`
+  - Correctly converts cents → dollars (divides by 100)
+  - Refactored 7 components to use centralized utility
+  - Fixed bugs in ServicesTable and PaymentsTable (were missing /100 division)
+- **Files Modified**:
+  - `/app/utils/format.ts` - Added formatCurrency function
+  - `/app/components/matter/ServicesTable.vue` - Bug fixed
+  - `/app/components/matter/PaymentsTable.vue` - Bug fixed
+  - `/app/pages/dashboard/service-catalog/index.vue`
+  - `/app/pages/dashboard/matters/index.vue`
+  - `/app/pages/dashboard/matters/[id].vue`
+  - `/app/pages/matters/index.vue`
+
+#### Matters API Route Structure Fixed (2026-01-06)
+- **Status**: Complete
+- **What**: Fixed route conflicts caused by inconsistent parameter naming
+- **Problem**: Both `[id]` and `[matterId]` directories causing 404 errors
+- **Solution**: Consolidated to `[id]` with consistent parameter names
+- **Files Modified**:
+  - Moved `/api/matters/[matterId]/relationships/` → `/api/matters/[id]/relationships/`
+  - Renamed relationship endpoints to use `[relationshipId]` instead of nested `[id]`
+  - Updated all `getRouterParam` calls for consistency
+
+#### Edit Matter Functionality Added (2026-01-06)
+- **Status**: Complete
+- **What**: Added edit functionality to matter detail page
+- **Why**: Users needed ability to change matter status (PENDING → OPEN) from detail view
+- **Implementation**:
+  - Added "Edit Matter" button to matter detail page header
+  - Created modal with fields: title, description, status, contract date
+  - Status dropdown: PENDING, OPEN, CLOSED
+  - Auto-populates form with current matter data
+  - Saves changes and refreshes matter view
+- **Files Modified**:
+  - `/app/pages/dashboard/matters/[id].vue` - Added edit modal and handler
+
 ### Currently In Progress 🔄
 
 #### UI Restructuring Plan: Matter-Centric Architecture
@@ -70,7 +147,7 @@ Document (N) ──→ Matter (1)
 ### Technology Stack
 
 **Backend**:
-- Nuxt 3 + NuxtHub (Cloudflare-based)
+- Nuxt 4 + NuxtHub (Cloudflare-based)
 - Drizzle ORM with custom types
 - SQLite (D1) database
 - API routes in `/server/api/`
@@ -115,7 +192,6 @@ Document (N) ──→ Matter (1)
 
 ### 4. Journey-Matter Workflow Fix (Phase 4)
 - **Status**: Database supports it, UI doesn't enforce it
-- **Need**: Start Journey modal should require matter selection, auto-populate engaged services
 - **Validation**: Verify matter-service engagement exists before creating journey
 
 ### 5. Enhanced Matter List View (Phase 5)
@@ -134,6 +210,7 @@ Document (N) ──→ Matter (1)
 - **THIS FILE** (`CURRENT_STATUS.md`) - Up-to-date project status
 - `USAGE.md` - How to run the project
 - `API_AUDIT_REPORT.md` - Comprehensive API endpoint documentation
+- `action-items-task-management-plan.md` - Action items & task management system (comprehensive)
 - `future-schema-extraction-architecture.md` - Future feature planning
 - `entity-relationship-diagram.md` - Current database schema
 - `domain-model-final.md` - Domain model documentation

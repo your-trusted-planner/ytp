@@ -18,6 +18,9 @@
           </div>
         </div>
       </div>
+      <UiButton v-if="matter" @click="showEditModal = true" variant="outline">
+        Edit Matter
+      </UiButton>
     </div>
 
     <!-- Loading -->
@@ -98,7 +101,7 @@
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Total Payments</span>
-                  <span class="font-semibold">{{ formatPrice(totalPayments) }}</span>
+                  <span class="font-semibold">{{ formatCurrency(totalPayments) }}</span>
                 </div>
               </div>
             </UiCard>
@@ -188,7 +191,7 @@
         <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
           <option value="">Choose a service...</option>
           <option v-for="item in catalog" :key="item.id" :value="item.id">
-            {{ item.name }} ({{ formatPrice(item.price) }})
+            {{ item.name }} ({{ formatCurrency(item.price) }})
           </option>
         </UiSelect>
       </form>
@@ -203,12 +206,54 @@
       </template>
     </UiModal>
 
+    <!-- Edit Matter Modal -->
+    <UiModal v-model="showEditModal" title="Edit Matter" size="md">
+      <form @submit.prevent="handleEditMatter" class="space-y-4">
+        <UiInput
+          v-model="editForm.title"
+          label="Matter Title"
+          required
+        />
+
+        <UiTextarea
+          v-model="editForm.description"
+          label="Description"
+          :rows="3"
+        />
+
+        <UiSelect
+          v-model="editForm.status"
+          label="Status"
+          required
+        >
+          <option value="PENDING">Pending</option>
+          <option value="OPEN">Open</option>
+          <option value="CLOSED">Closed</option>
+        </UiSelect>
+
+        <UiInput
+          v-model="editForm.contractDate"
+          label="Engagement Letter Date (Optional)"
+          type="date"
+        />
+      </form>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showEditModal = false">
+          Cancel
+        </UiButton>
+        <UiButton @click="handleEditMatter" :is-loading="saving">
+          Save Changes
+        </UiButton>
+      </template>
+    </UiModal>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft, Plus, Loader } from 'lucide-vue-next'
+import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
   middleware: ['auth'],
@@ -222,6 +267,8 @@ const matterId = route.params.id as string
 const loading = ref(true)
 const activeTab = ref('overview')
 const showAddServiceModal = ref(false)
+const showEditModal = ref(false)
+const saving = ref(false)
 
 const matter = ref<any>(null)
 const services = ref<any[]>([])
@@ -233,6 +280,14 @@ const catalog = ref<any[]>([])
 const addingService = ref(false)
 const newServiceForm = ref({
   catalogId: ''
+})
+
+// Edit matter state
+const editForm = ref({
+  title: '',
+  description: '',
+  status: '',
+  contractDate: ''
 })
 
 const tabs = [
@@ -250,6 +305,20 @@ const clientName = computed(() => {
 
 const totalPayments = computed(() => {
   return payments.value.reduce((sum, p) => sum + (p.amount || 0), 0)
+})
+
+// Populate edit form when modal opens
+watch(showEditModal, (newValue) => {
+  if (newValue && matter.value) {
+    editForm.value = {
+      title: matter.value.title,
+      description: matter.value.description || '',
+      status: matter.value.status,
+      contractDate: matter.value.contract_date
+        ? new Date(matter.value.contract_date * 1000).toISOString().split('T')[0]
+        : ''
+    }
+  }
 })
 
 // Fetch matter data
@@ -324,6 +393,32 @@ async function handleAddService() {
   }
 }
 
+// Edit matter
+async function handleEditMatter() {
+  if (!editForm.value.title || !editForm.value.status) return
+
+  saving.value = true
+  try {
+    await $fetch(`/api/matters/${matterId}`, {
+      method: 'PUT',
+      body: {
+        title: editForm.value.title,
+        description: editForm.value.description,
+        status: editForm.value.status,
+        contract_date: editForm.value.contractDate ? new Date(editForm.value.contractDate).getTime() / 1000 : null
+      }
+    })
+
+    // Close modal and refresh matter data
+    showEditModal.value = false
+    await fetchMatter()
+  } catch (error: any) {
+    console.error('Failed to update matter:', error)
+    alert(error.data?.message || 'Failed to update matter')
+  } finally {
+    saving.value = false
+  }
+}
 
 function viewJourney(journeyId: string) {
   router.push(`/dashboard/my-journeys/${journeyId}`)
@@ -338,14 +433,6 @@ function formatDate(timestamp: number) {
   })
 }
 
-function formatPrice(price: number): string {
-  if (!price) return '$0'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(price)
-}
 
 function getStatusVariant(status: string): 'success' | 'primary' | 'default' | 'danger' {
   switch (status) {

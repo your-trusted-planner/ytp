@@ -305,6 +305,12 @@ export const journeySteps = sqliteTable('journey_steps', {
   automationConfig: text('automation_config'), // JSON: automation rules for this step
   helpContent: text('help_content'), // Markdown/HTML help content for this step
   allowMultipleIterations: integer('allow_multiple_iterations', { mode: 'boolean' }).notNull().default(false), // For BRIDGE steps
+
+  // Final step verification ("ring the bell")
+  isFinalStep: integer('is_final_step', { mode: 'boolean' }).notNull().default(false),
+  completionRequirements: text('completion_requirements'), // JSON: objective requirements for completion
+  requiresVerification: integer('requires_verification', { mode: 'boolean' }).notNull().default(false),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -355,7 +361,13 @@ export const actionItems = sqliteTable('action_items', {
   id: text('id').primaryKey(),
   stepId: text('step_id').references(() => journeySteps.id, { onDelete: 'cascade' }), // Template-level action
   clientJourneyId: text('client_journey_id').references(() => clientJourneys.id, { onDelete: 'cascade' }), // Instance-level action
-  actionType: text('action_type', { enum: ['QUESTIONNAIRE', 'DECISION', 'UPLOAD', 'REVIEW', 'ESIGN', 'NOTARY', 'PAYMENT', 'MEETING', 'KYC'] }).notNull(),
+  actionType: text('action_type', {
+    enum: [
+      'QUESTIONNAIRE', 'DECISION', 'UPLOAD', 'REVIEW', 'ESIGN',
+      'NOTARY', 'PAYMENT', 'MEETING', 'KYC',
+      'AUTOMATION', 'THIRD_PARTY', 'OFFLINE_TASK', 'EXPENSE', 'FORM', 'DRAFT_DOCUMENT'
+    ]
+  }).notNull(),
   title: text('title').notNull(),
   description: text('description'),
   config: text('config'), // JSON: type-specific configuration
@@ -363,6 +375,17 @@ export const actionItems = sqliteTable('action_items', {
   assignedTo: text('assigned_to', { enum: ['CLIENT', 'COUNSEL', 'STAFF'] }).notNull().default('CLIENT'),
   dueDate: integer('due_date', { mode: 'timestamp' }),
   priority: text('priority', { enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }).notNull().default('MEDIUM'),
+
+  // System integration tracking
+  systemIntegrationType: text('system_integration_type', { enum: ['calendar', 'payment', 'document', 'manual'] }),
+  resourceId: text('resource_id'), // ID of calendar event, payment, document, etc.
+  automationHandler: text('automation_handler'), // For AUTOMATION action types
+
+  // Service delivery verification ("ring the bell")
+  isServiceDeliveryVerification: integer('is_service_delivery_verification', { mode: 'boolean' }).notNull().default(false),
+  verificationCriteria: text('verification_criteria'), // JSON: objective completion criteria
+  verificationEvidence: text('verification_evidence'), // JSON: proof of completion
+
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   completedBy: text('completed_by').references(() => users.id), // Who completed it
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

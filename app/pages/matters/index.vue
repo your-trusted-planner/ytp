@@ -36,7 +36,7 @@
           <div class="space-y-2 border-t border-gray-200 pt-4">
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Price:</span>
-              <span class="font-semibold text-gray-900">{{ formatPrice(matter.price) }}</span>
+              <span class="font-semibold text-gray-900">{{ formatCurrency(matter.price) }}</span>
             </div>
             <div v-if="matter.type === 'RECURRING' && matter.duration" class="flex justify-between text-sm">
               <span class="text-gray-600">Billing:</span>
@@ -139,6 +139,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
   middleware: 'auth',
@@ -159,12 +160,6 @@ const matterForm = ref({
   duration: ''
 })
 
-const formatPrice = (cents: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(cents / 100)
-}
 
 const fetchMatters = async () => {
   try {

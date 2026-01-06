@@ -1,4 +1,7 @@
 // Get all action items for a client journey
+import { eq, desc, asc } from 'drizzle-orm'
+import { useDrizzle, schema } from '../../../database'
+
 export default defineEventHandler(async (event) => {
   const clientJourneyId = getRouterParam(event, 'clientJourneyId')
 
@@ -9,12 +12,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const db = useDrizzle()
 
   // Get client journey to check authorization
-  const clientJourney = await db.prepare(`
-    SELECT * FROM client_journeys WHERE id = ?
-  `).bind(clientJourneyId).first()
+  const clientJourney = await db
+    .select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -24,22 +29,37 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check authorization - clients can only view their own journey's action items
-  requireClientAccess(event, clientJourney.client_id)
+  requireClientAccess(event, clientJourney.clientId)
 
-  // Get all action items for this client journey
-  const actionItems = await db.prepare(`
-    SELECT 
-      ai.*,
-      u.first_name as completed_by_first_name,
-      u.last_name as completed_by_last_name
-    FROM action_items ai
-    LEFT JOIN users u ON ai.completed_by = u.id
-    WHERE ai.client_journey_id = ?
-    ORDER BY ai.priority DESC, ai.due_date ASC, ai.created_at ASC
-  `).bind(clientJourneyId).all()
+  // Get all action items for this client journey with completed user info
+  const actionItems = await db
+    .select({
+      actionItem: schema.actionItems,
+      completedByUser: {
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName
+      }
+    })
+    .from(schema.actionItems)
+    .leftJoin(schema.users, eq(schema.actionItems.completedBy, schema.users.id))
+    .where(eq(schema.actionItems.clientJourneyId, clientJourneyId))
+    .orderBy(
+      desc(schema.actionItems.priority),
+      asc(schema.actionItems.dueDate),
+      asc(schema.actionItems.createdAt)
+    )
+    .all()
 
   return {
-    actionItems: actionItems.results || []
+    actionItems: actionItems.map((row) => ({
+      ...row.actionItem,
+      dueDate: row.actionItem.dueDate?.getTime() || null,
+      completedAt: row.actionItem.completedAt?.getTime() || null,
+      createdAt: row.actionItem.createdAt?.getTime() || Date.now(),
+      updatedAt: row.actionItem.updatedAt?.getTime() || Date.now(),
+      completedByFirstName: row.completedByUser?.firstName || null,
+      completedByLastName: row.completedByUser?.lastName || null
+    }))
   }
 })
 

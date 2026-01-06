@@ -2,7 +2,7 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
-  const matterId = getRouterParam(event, 'matterId')
+  const matterId = getRouterParam(event, 'id')
   if (!matterId) {
     throw createError({
       statusCode: 400,

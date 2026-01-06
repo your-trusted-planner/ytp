@@ -2,8 +2,8 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
-  const matterId = getRouterParam(event, 'matterId')
-  const relationshipId = getRouterParam(event, 'id')
+  const matterId = getRouterParam(event, 'id')
+  const relationshipId = getRouterParam(event, 'relationshipId')
 
   if (!matterId || !relationshipId) {
     throw createError({

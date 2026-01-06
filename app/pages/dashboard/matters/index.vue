@@ -143,7 +143,7 @@
                         />
                         <div class="flex-1">
                             <div class="text-sm font-medium text-gray-900">{{ item.name }}</div>
-                            <div class="text-xs text-gray-500">{{ formatPrice(item.price) }}</div>
+                            <div class="text-xs text-gray-500">{{ formatCurrency(item.price) }}</div>
                         </div>
                     </label>
                 </div>
@@ -175,7 +175,7 @@
                 <div v-for="service in services" :key="`${service.matterId}-${service.catalogId}`" class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <div>
                         <div class="font-medium text-gray-900">{{ service.name }}</div>
-                        <div class="text-xs text-gray-500">{{ formatPrice(service.price) }} • {{ service.status }}</div>
+                        <div class="text-xs text-gray-500">{{ formatCurrency(service.price) }} • {{ service.status }}</div>
                     </div>
                 </div>
             </div>
@@ -187,7 +187,7 @@
                     <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
                         <option value="">Choose a service...</option>
                         <option v-for="item in catalog" :key="item.id" :value="item.id">
-                            {{ item.name }} ({{ formatPrice(item.price) }})
+                            {{ item.name }} ({{ formatCurrency(item.price) }})
                         </option>
                     </UiSelect>
 
@@ -215,6 +215,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
   middleware: 'auth',
@@ -353,12 +354,6 @@ const formatDate = (dateInput: string | Date | number) => {
   return date.toLocaleDateString()
 }
 
-const formatPrice = (cents: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(cents / 100)
-}
 
 const editMatter = async (matter: any) => {
   editingMatter.value = matter
