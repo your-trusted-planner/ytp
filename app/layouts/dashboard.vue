@@ -115,7 +115,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Wrench
+  Wrench,
+  Contact
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -129,6 +130,7 @@ const lawyerNavigation = ref([
   // Frequent Use - Client Activity
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/clients', label: 'Clients', icon: Users },
+  { path: '/dashboard/people', label: 'People', icon: Contact },
   { path: '/dashboard/matters', label: 'Matters', icon: Briefcase },
   { path: '/dashboard/documents', label: 'Documents', icon: File },
   { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar },

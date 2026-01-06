@@ -1,8 +1,7 @@
 // Review a document upload (approve/reject)
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  const uploadId = getRouterParam(event, 'id')
-  
+  const user = getAuthUser(event)
+
   // Only lawyers/admins can review uploads
   if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
     throw createError({
@@ -10,6 +9,8 @@ export default defineEventHandler(async (event) => {
       message: 'Unauthorized'
     })
   }
+
+  const uploadId = getRouterParam(event, 'id')
 
   if (!uploadId) {
     throw createError({

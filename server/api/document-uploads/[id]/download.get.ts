@@ -1,8 +1,9 @@
 // Download a document upload
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  const user = getAuthUser(event)
+
   const uploadId = getRouterParam(event, 'id')
-  
+
   if (!uploadId) {
     throw createError({
       statusCode: 400,

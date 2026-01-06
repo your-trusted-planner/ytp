@@ -122,16 +122,13 @@
         <!-- Journeys Tab -->
         <div v-if="activeTab === 'journeys'">
           <UiCard>
-            <div class="flex justify-between items-center mb-4">
+            <div class="mb-4">
               <h3 class="text-lg font-semibold text-gray-900">Client Journeys</h3>
-              <UiButton size="sm" @click="showStartJourneyModal = true">
-                <Plus class="w-4 h-4 mr-1" />
-                Start Journey
-              </UiButton>
+              <p class="text-sm text-gray-500 mt-1">Journeys are automatically created when you add a service with an associated journey template</p>
             </div>
 
             <div v-if="journeys.length === 0" class="text-center py-8 text-gray-500">
-              No journeys started yet
+              No journeys started yet. Add a service to begin.
             </div>
 
             <div v-else class="space-y-3">
@@ -187,23 +184,25 @@
 
     <!-- Add Service Modal -->
     <UiModal v-model="showAddServiceModal" title="Add Service to Matter" size="md">
-      <p class="text-sm text-gray-500 mb-4">Service engagement will be fully implemented in a future phase</p>
-      <div class="flex justify-end">
-        <UiButton variant="ghost" @click="showAddServiceModal = false">
-          Close
+      <form @submit.prevent="handleAddService" class="space-y-4">
+        <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
+          <option value="">Choose a service...</option>
+          <option v-for="item in catalog" :key="item.id" :value="item.id">
+            {{ item.name }} ({{ formatPrice(item.price) }})
+          </option>
+        </UiSelect>
+      </form>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showAddServiceModal = false">
+          Cancel
         </UiButton>
-      </div>
+        <UiButton @click="handleAddService" :is-loading="addingService">
+          Add Service
+        </UiButton>
+      </template>
     </UiModal>
 
-    <!-- Start Journey Modal -->
-    <UiModal v-model="showStartJourneyModal" title="Start Journey for Matter" size="md">
-      <p class="text-sm text-gray-500 mb-4">Journey initiation from matter context will be fully implemented in Phase 4</p>
-      <div class="flex justify-end">
-        <UiButton variant="ghost" @click="showStartJourneyModal = false">
-          Close
-        </UiButton>
-      </div>
-    </UiModal>
   </div>
 </template>
 
@@ -223,12 +222,18 @@ const matterId = route.params.id as string
 const loading = ref(true)
 const activeTab = ref('overview')
 const showAddServiceModal = ref(false)
-const showStartJourneyModal = ref(false)
 
 const matter = ref<any>(null)
 const services = ref<any[]>([])
 const journeys = ref<any[]>([])
 const payments = ref<any[]>([])
+const catalog = ref<any[]>([])
+
+// Service addition state
+const addingService = ref(false)
+const newServiceForm = ref({
+  catalogId: ''
+})
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -272,6 +277,53 @@ async function fetchMatter() {
     loading.value = false
   }
 }
+
+// Fetch service catalog
+async function fetchCatalog() {
+  try {
+    const response = await $fetch<any>('/api/catalog')
+    catalog.value = response.services || response || []
+  } catch (error) {
+    console.error('Failed to fetch catalog:', error)
+  }
+}
+
+// Add service to matter
+async function handleAddService() {
+  if (!newServiceForm.value.catalogId) return
+
+  addingService.value = true
+  try {
+    const response = await $fetch(`/api/matters/${matterId}/services`, {
+      method: 'POST',
+      body: { catalogId: newServiceForm.value.catalogId }
+    })
+
+    // Refresh services list
+    const { services: servicesData } = await $fetch(`/api/matters/${matterId}/services`)
+    services.value = servicesData || []
+
+    // Reset form and close modal
+    showAddServiceModal.value = false
+    newServiceForm.value.catalogId = ''
+
+    console.log('Service engaged successfully:', response.engagement)
+  } catch (error: any) {
+    console.error('Failed to add service:', error)
+
+    // Handle specific error cases
+    if (error.statusCode === 409) {
+      alert('This service is already engaged for this matter')
+    } else if (error.statusCode === 404) {
+      alert('Service not found in catalog')
+    } else {
+      alert(error.data?.message || 'Failed to add service')
+    }
+  } finally {
+    addingService.value = false
+  }
+}
+
 
 function viewJourney(journeyId: string) {
   router.push(`/dashboard/my-journeys/${journeyId}`)
@@ -327,5 +379,6 @@ function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'defau
 
 onMounted(() => {
   fetchMatter()
+  fetchCatalog()
 })
 </script>

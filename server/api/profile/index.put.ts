@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../database'
-import { requireAuth } from '../../utils/auth'
 
 const updateProfileSchema = z.object({
   firstName: z.string().optional(),
@@ -10,7 +9,8 @@ const updateProfileSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
+  const user = getAuthUser(event)
+
   const body = await readBody(event)
   
   const result = updateProfileSchema.safeParse(body)

@@ -1,14 +1,6 @@
 // Get all journeys
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  
-  // Only lawyers/admins can view all journeys
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
   const db = hubDatabase()
   

@@ -1,11 +1,10 @@
 import { eq, desc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../database'
-import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
+  const user = getAuthUser(event)
   const db = useDrizzle()
-  
+
   // If lawyer/admin, get all appointments. If client, get only their appointments
   let appointments
   if (user.role === 'LAWYER' || user.role === 'ADMIN') {

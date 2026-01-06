@@ -1,14 +1,6 @@
 // Reorder journey steps
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  
-  // Only lawyers/admins can reorder steps
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
   const body = await readBody(event)
   const db = hubDatabase()

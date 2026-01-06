@@ -1,8 +1,7 @@
 import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
-  // Require authenticated user
-  const session = await requireUserSession(event)
+  const user = getAuthUser(event)
 
   // Read multipart form data
   const form = await readMultipartFormData(event)
@@ -46,7 +45,7 @@ export default defineEventHandler(async (event) => {
     const db = hubDatabase()
 
     // Upload original DOCX to R2
-    const blobPath = `documents/${session.user.id}/${documentId}.docx`
+    const blobPath = `documents/${user.id}/${documentId}.docx`
     await blob.put(blobPath, file.data)
 
     // Create pending document record in database
@@ -56,7 +55,7 @@ export default defineEventHandler(async (event) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `).bind(
       documentId,
-      session.user.id,
+      user.id,
       file.filename || 'document.docx',
       blobPath,
       'processing',
@@ -68,7 +67,7 @@ export default defineEventHandler(async (event) => {
     // @ts-expect-error - DOCUMENT_QUEUE is bound in wrangler.jsonc
     await event.context.cloudflare.env.DOCUMENT_QUEUE.send({
       documentId,
-      userId: session.user.id,
+      userId: user.id,
       blobPath
     })
 

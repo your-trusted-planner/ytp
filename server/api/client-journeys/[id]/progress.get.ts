@@ -1,8 +1,7 @@
 // Get detailed progress for a client journey
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const clientJourneyId = getRouterParam(event, 'id')
-  
+
   if (!clientJourneyId) {
     throw createError({
       statusCode: 400,
@@ -11,7 +10,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = hubDatabase()
-  
+
   // Get client journey
   const clientJourney = await db.prepare(`
     SELECT cj.*, j.name as journey_name, j.description as journey_description
@@ -27,13 +26,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check authorization
-  if (user.role === 'CLIENT' && user.id !== clientJourney.client_id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  // Check authorization - clients can only view their own journeys
+  requireClientAccess(event, clientJourney.client_id)
 
   // Get all steps and their progress
   const stepsWithProgress = await db.prepare(`

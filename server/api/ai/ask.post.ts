@@ -1,6 +1,7 @@
 // AI agent endpoint for answering client questions
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  const user = getAuthUser(event)
+
   const body = await readBody(event)
   const aiAgent = useAIAgent()
   const db = hubDatabase()

@@ -1,15 +1,8 @@
 // Send a reminder to client about their current step
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const clientJourneyId = getRouterParam(event, 'id')
-  
-  // Only lawyers/admins can send reminders
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
 
   if (!clientJourneyId) {
     throw createError({

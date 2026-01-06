@@ -1,52 +1,47 @@
 import { nanoid } from 'nanoid'
 import { requireRole } from '../../utils/auth'
 
-// Extract variables from text content
+// Extract variables from text content using handlebars syntax only
 function extractVariables(text: string): Set<string> {
   const variables = new Set<string>()
 
-  // Pattern 1: {{ variable }} or {{ variable.subfield }}
-  const pattern1 = /\{\{\s*([^}]+?)\s*\}\}/g
+  // Only handlebars: {{ variable }}
+  const pattern = /\{\{\s*([^}]+?)\s*\}\}/g
   let match
-  while ((match = pattern1.exec(text)) !== null) {
+  while ((match = pattern.exec(text)) !== null) {
     const varName = match[1].trim()
     // Don't include Jinja control statements
-    if (!varName.includes('%') && !varName.startsWith('if ') && !varName.startsWith('for ')) {
+    if (!varName.includes('%') &&
+        !varName.startsWith('if ') &&
+        !varName.startsWith('for ') &&
+        !varName.startsWith('end')) {
       variables.add(varName)
     }
   }
 
-  // Pattern 2: [[Variable]]
-  const pattern2 = /\[\[([^\]]+)\]\]/g
-  while ((match = pattern2.exec(text)) !== null) {
-    variables.add(match[1].trim())
-  }
+  return variables
+}
 
-  // Pattern 3: <<Variable>>
-  const pattern3 = /<<([^>]+)>>/g
-  while ((match = pattern3.exec(text)) !== null) {
-    variables.add(match[1].trim())
-  }
+// Validate variable names - only allow letters, numbers, underscores, and hyphens
+function validateVariableNames(variables: Set<string>): { valid: boolean, invalidVars: string[], message?: string } {
+  const invalidVars: string[] = []
+  const validPattern = /^[a-zA-Z0-9_-]+$/
 
-  // Pattern 4: Underscores (blank fill-in fields)
-  const underscoreMatches = text.match(/_{5,}/g)
-  if (underscoreMatches && underscoreMatches.length > 0) {
-    for (let i = 0; i < underscoreMatches.length; i++) {
-      variables.add(`blankField${i + 1}`)
+  for (const variable of variables) {
+    if (!validPattern.test(variable)) {
+      invalidVars.push(variable)
     }
   }
 
-  // Common fields in legal documents
-  if (text.toLowerCase().includes('signature') || text.toLowerCase().includes('sign')) {
-    variables.add('clientSignature')
-    variables.add('signatureDate')
+  if (invalidVars.length > 0) {
+    return {
+      valid: false,
+      invalidVars,
+      message: `Invalid variable names found. Variables can only contain letters, numbers, underscores (_), and hyphens (-). Please remove special characters like pipes (|), dots (.), spaces, or other symbols.`
+    }
   }
 
-  if (text.toLowerCase().includes('date')) {
-    variables.add('currentDate')
-  }
-
-  return variables
+  return { valid: true, invalidVars: [] }
 }
 
 export default defineEventHandler(async (event) => {
@@ -106,6 +101,15 @@ export default defineEventHandler(async (event) => {
     // Extract variables from the content
     const variables = extractVariables(text)
 
+    // Validate variable names
+    const validation = validateVariableNames(variables)
+    if (!validation.valid) {
+      throw createError({
+        statusCode: 400,
+        message: `${validation.message}\n\nInvalid variables found:\n${validation.invalidVars.map(v => `  • {{${v}}}`).join('\n')}\n\nPlease update your template and use only letters, numbers, underscores, and hyphens in variable names.\n\nExample: {{trustee_name}} or {{trustee-name}} instead of {{trustee|name}}`
+      })
+    }
+
     // Determine if requires notary
     const lowerText = text.toLowerCase()
     const lowerFilename = filename.toLowerCase()
@@ -134,22 +138,27 @@ export default defineEventHandler(async (event) => {
     const db = hubDatabase()
     const templateId = nanoid()
 
+    // Store original DOCX file in blob storage
+    const blobKey = `templates/${templateId}/${filename}`
+    await hubBlob().put(blobKey, buffer)
+
     await db.prepare(`
       INSERT INTO document_templates (
         id, name, description, category, content, variables, requires_notary,
-        is_active, original_file_name, file_extension, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        is_active, original_file_name, file_extension, docx_blob_key, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       templateId,
       templateName,
       description || `Imported from ${filename}`,
       category,
-      html, // Store HTML content with variable placeholders
+      html, // Store HTML content for preview
       JSON.stringify(Array.from(variables)),
       requiresNotary ? 1 : 0,
       1, // Active by default
       filename,
       'docx',
+      blobKey, // Store blob storage path
       Date.now(),
       Date.now()
     ).run()

@@ -1,15 +1,8 @@
 // Update a journey
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const journeyId = getRouterParam(event, 'id')
-  
-  // Only lawyers/admins can update journeys
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
 
   if (!journeyId) {
     throw createError({

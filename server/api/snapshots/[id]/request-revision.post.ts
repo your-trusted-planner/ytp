@@ -1,9 +1,10 @@
 // Request revision on a snapshot
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  const user = getAuthUser(event)
+
   const snapshotId = getRouterParam(event, 'id')
   const body = await readBody(event)
-  
+
   if (!snapshotId) {
     throw createError({
       statusCode: 400,

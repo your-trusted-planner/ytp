@@ -1,37 +1,30 @@
-import { desc } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
-import { requireRole } from '../../utils/auth'
-
+// Get all document templates
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
-  
-  const db = useDrizzle()
-  
-  const templates = await db
-    .select()
-    .from(schema.documentTemplates)
-    .orderBy(desc(schema.documentTemplates.createdAt))
-    .all()
-  
-  // Transform to camelCase for frontend compatibility
-  return templates.map(template => ({
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
+  const db = hubDatabase()
+
+  const templates = await db.prepare(`
+    SELECT * FROM document_templates
+    ORDER BY created_at DESC
+  `).all()
+
+  return (templates.results || []).map((template: any) => ({
     id: template.id,
     name: template.name,
     description: template.description,
     category: template.category,
-    folderId: template.folderId,
     content: template.content,
-    variables: template.variables, // Keep as JSON string
-    requiresNotary: template.requiresNotary,
-    isActive: template.isActive,
-    order: template.order,
-    originalFileName: template.originalFileName,
-    fileExtension: template.fileExtension,
-    createdAt: template.createdAt,
-    updatedAt: template.updatedAt,
+    variables: template.variables,
+    requiresNotary: template.requires_notary === 1,
+    isActive: template.is_active === 1,
+    originalFileName: template.original_file_name,
+    fileExtension: template.file_extension,
+    createdAt: template.created_at,
+    updatedAt: template.updated_at,
     // Add snake_case versions for backwards compatibility
-    requires_notary: template.requiresNotary,
-    is_active: template.isActive
+    requires_notary: template.requires_notary === 1,
+    is_active: template.is_active === 1
   }))
 })
 

@@ -1,6 +1,5 @@
 export default defineEventHandler(async (event) => {
-  // Require authenticated user
-  const session = await requireUserSession(event)
+  const user = getAuthUser(event)
 
   // Get document ID from route params
   const documentId = getRouterParam(event, 'id')
@@ -29,7 +28,7 @@ export default defineEventHandler(async (event) => {
         processed_at
       FROM uploaded_documents
       WHERE id = ? AND user_id = ?
-    `).bind(documentId, session.user.id).first()
+    `).bind(documentId, user.id).first()
 
     if (!doc) {
       throw createError({

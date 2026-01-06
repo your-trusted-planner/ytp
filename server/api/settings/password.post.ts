@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../database'
-import { requireAuth, verifyPassword, hashPassword } from '../../utils/auth'
+import { verifyPassword, hashPassword } from '../../utils/auth'
 
 const changePasswordSchema = z.object({
   currentPassword: z.string(),
@@ -9,7 +9,8 @@ const changePasswordSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
+  const user = getAuthUser(event)
+
   const body = await readBody(event)
   
   const result = changePasswordSchema.safeParse(body)

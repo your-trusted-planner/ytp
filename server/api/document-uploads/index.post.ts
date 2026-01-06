@@ -2,8 +2,8 @@
 import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  
+  const user = getAuthUser(event)
+
   // Get form data
   const form = await readMultipartFormData(event)
   if (!form) {

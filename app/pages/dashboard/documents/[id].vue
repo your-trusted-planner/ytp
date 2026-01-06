@@ -8,17 +8,58 @@
         <h1 class="text-3xl font-bold text-gray-900">{{ document?.title || 'Document' }}</h1>
         <p v-if="document?.description" class="text-gray-600 mt-1">{{ document.description }}</p>
       </div>
-      <UiBadge
-        v-if="document"
-        :variant="
-          document.status === 'SIGNED' || document.status === 'COMPLETED' ? 'success' :
-          document.status === 'SENT' || document.status === 'VIEWED' ? 'warning' :
-          'default'
-        "
-        size="lg"
-      >
-        {{ document.status }}
-      </UiBadge>
+      <div class="flex items-center gap-3">
+        <!-- Actions Dropdown -->
+        <div v-if="document && document.docxBlobKey" class="relative actions-dropdown">
+          <UiButton
+            variant="secondary"
+            size="sm"
+            @click.stop="showActionsDropdown = !showActionsDropdown"
+          >
+            Actions
+            <ChevronDownIcon class="w-4 h-4 ml-1" />
+          </UiButton>
+
+          <!-- Dropdown Menu -->
+          <div
+            v-if="showActionsDropdown"
+            @click="showActionsDropdown = false"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50"
+          >
+            <button
+              @click="showPreviewModal = true"
+              class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <Eye class="w-4 h-4 mr-2" />
+              Preview Document
+            </button>
+            <button
+              @click="downloadDocx"
+              class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+            >
+              <Download class="w-4 h-4 mr-2" />
+              Download DOCX
+            </button>
+          </div>
+        </div>
+        <select
+          v-if="document"
+          v-model="selectedStatus"
+          @change="updateStatus"
+          class="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-500"
+          :class="{
+            'bg-green-50 text-green-700 border-green-300': selectedStatus === 'SIGNED' || selectedStatus === 'COMPLETED',
+            'bg-yellow-50 text-yellow-700 border-yellow-300': selectedStatus === 'SENT' || selectedStatus === 'VIEWED',
+            'bg-gray-50 text-gray-700': selectedStatus === 'DRAFT'
+          }"
+        >
+          <option value="DRAFT">DRAFT</option>
+          <option value="SENT">SENT</option>
+          <option value="VIEWED">VIEWED</option>
+          <option value="SIGNED">SIGNED</option>
+          <option value="COMPLETED">COMPLETED</option>
+        </select>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-12">
@@ -30,29 +71,63 @@
     </div>
 
     <template v-else>
-      <!-- Document Content -->
-      <UiCard title="Document Content">
-        <div class="prose max-w-none" v-html="renderedContent"></div>
-      </UiCard>
-
-      <!-- Variables Form (if document has unfilled variables) -->
-      <UiCard v-if="needsVariables && !isSigned" title="Fill Required Information">
-        <form @submit.prevent="handleFillVariables" class="space-y-4">
-          <div v-for="variable in documentVariables" :key="variable.name">
-            <UiInput
-              v-model="variableValues[variable.name]"
-              :label="variable.description || variable.name"
-              :placeholder="`Enter ${variable.description || variable.name}`"
-              required
-            />
+      <!-- Sticky Controls Section -->
+      <div class="sticky top-0 z-10 bg-gray-50 space-y-4 pb-4">
+        <!-- Document Metadata (Collapsible) -->
+        <UiCard>
+          <div class="flex justify-between items-center cursor-pointer" @click="showMetadata = !showMetadata">
+            <h3 class="text-lg font-semibold text-gray-900">Document Information</h3>
+            <component :is="showMetadata ? ChevronUp : ChevronDown" class="w-5 h-5 text-gray-500" />
           </div>
-          <div class="flex justify-end">
-            <UiButton type="submit" :is-loading="savingVariables">
-              Update Document
+          <div v-if="showMetadata" class="grid grid-cols-2 gap-4 text-sm mt-4">
+            <div>
+              <p class="text-gray-600">Created:</p>
+              <p class="font-medium text-gray-900">{{ formatDate(document.createdAt) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Status:</p>
+              <p class="font-medium text-gray-900">{{ document.status }}</p>
+            </div>
+            <div v-if="document.sentAt">
+              <p class="text-gray-600">Sent:</p>
+              <p class="font-medium text-gray-900">{{ formatDateTime(document.sentAt) }}</p>
+            </div>
+            <div v-if="document.viewedAt">
+              <p class="text-gray-600">First Viewed:</p>
+              <p class="font-medium text-gray-900">{{ formatDateTime(document.viewedAt) }}</p>
+            </div>
+          </div>
+        </UiCard>
+
+        <!-- Variables Display (Read-only overview) -->
+        <UiCard v-if="needsVariables && !isSigned">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Document Variables</h3>
+            <UiButton @click="showEditVariablesModal = true" size="sm" variant="outline">
+              Edit Variables
             </UiButton>
           </div>
-        </form>
-      </UiCard>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="variable in documentVariables" :key="variable.name" class="space-y-1">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  {{ variable.description || variable.name }}
+                </label>
+                <span
+                  v-if="isVariableMapped(variable.name)"
+                  class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full"
+                >
+                  {{ getMappingSourceLabel(variable.name) }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-900 font-medium">
+                {{ variableValues[variable.name] || '(Not set)' }}
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </div>
 
       <!-- Signature Section (if not signed yet) -->
       <UiCard v-if="!isSigned && document.status === 'SENT'" title="Sign Document">
@@ -116,34 +191,75 @@
         </div>
       </UiCard>
 
-      <!-- Document Metadata -->
-      <UiCard title="Document Information">
-        <div class="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p class="text-gray-600">Created:</p>
-            <p class="font-medium text-gray-900">{{ formatDate(document.createdAt) }}</p>
-          </div>
-          <div>
-            <p class="text-gray-600">Status:</p>
-            <p class="font-medium text-gray-900">{{ document.status }}</p>
-          </div>
-          <div v-if="document.sentAt">
-            <p class="text-gray-600">Sent:</p>
-            <p class="font-medium text-gray-900">{{ formatDateTime(document.sentAt) }}</p>
-          </div>
-          <div v-if="document.viewedAt">
-            <p class="text-gray-600">First Viewed:</p>
-            <p class="font-medium text-gray-900">{{ formatDateTime(document.viewedAt) }}</p>
+    </template>
+
+    <!-- Edit Variables Modal -->
+    <UiModal v-model="showEditVariablesModal" title="Edit Document Variables" size="lg">
+      <form @submit.prevent="handleFillVariables" class="space-y-4">
+        <div class="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+          <div v-for="variable in documentVariables" :key="variable.name" class="space-y-1">
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-medium text-gray-700">
+                {{ variable.description || variable.name }}
+              </label>
+              <span
+                v-if="isVariableMapped(variable.name)"
+                class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full"
+              >
+                {{ getMappingSourceLabel(variable.name) }}
+              </span>
+            </div>
+            <input
+              v-model="variableValues[variable.name]"
+              :placeholder="`Enter ${variable.description || variable.name}`"
+              :readonly="isVariableMapped(variable.name)"
+              :class="[
+                'block w-full rounded-md shadow-sm sm:text-sm',
+                isVariableMapped(variable.name)
+                  ? 'bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300'
+                  : 'border-gray-300 focus:ring-burgundy-500 focus:border-burgundy-500'
+              ]"
+              required
+            />
+            <p v-if="isVariableMapped(variable.name)" class="text-xs text-gray-500 italic">
+              This field is automatically populated from the database and cannot be edited.
+            </p>
           </div>
         </div>
-      </UiCard>
-    </template>
+      </form>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showEditVariablesModal = false">
+          Cancel
+        </UiButton>
+        <UiButton @click="handleFillVariables" :is-loading="savingVariables">
+          Update Document
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Preview Document Modal -->
+    <UiModal v-model="showPreviewModal" title="Document Preview" size="xl">
+      <div class="max-h-[70vh] overflow-y-auto">
+        <div class="prose max-w-none" v-html="renderedContent"></div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showPreviewModal = false">
+          Close
+        </UiButton>
+        <UiButton @click="downloadDocx">
+          <Download class="w-4 h-4 mr-2" />
+          Download DOCX
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { CheckCircle } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
 
 definePageMeta({
@@ -159,6 +275,17 @@ const loading = ref(true)
 const signing = ref(false)
 const savingVariables = ref(false)
 const variableValues = ref<Record<string, string>>({})
+const selectedStatus = ref<string>('DRAFT')
+
+// Modal state
+const showEditVariablesModal = ref(false)
+const showPreviewModal = ref(false)
+
+// Dropdown state
+const showActionsDropdown = ref(false)
+
+// Collapsible sections state
+const showMetadata = ref(true)
 
 const signatureCanvas = ref<HTMLCanvasElement | null>(null)
 const isDrawing = ref(false)
@@ -168,55 +295,84 @@ const isSigned = computed(() => {
   return document.value?.status === 'SIGNED' || document.value?.status === 'COMPLETED'
 })
 
-const documentVariables = computed(() => {
-  if (!document.value?.variableValues) return []
+// Get variable mappings from template
+const variableMappings = computed(() => {
+  if (!document.value?.template?.variableMappings) return {}
   try {
-    const template = document.value.template
-    if (!template?.variables) return []
-    return JSON.parse(template.variables)
+    return JSON.parse(document.value.template.variableMappings)
   } catch (e) {
+    console.error('Error parsing variable mappings:', e)
+    return {}
+  }
+})
+
+const documentVariables = computed(() => {
+  if (!document.value?.template?.variables) return []
+  try {
+    const templateVars = JSON.parse(document.value.template.variables)
+
+    // Return ALL variables so they can be edited
+    return templateVars.map((name: string) => ({
+      name,
+      description: name.replace(/([A-Z])/g, ' $1').trim() // Convert camelCase to Title Case
+    }))
+  } catch (e) {
+    console.error('Error parsing template variables:', e)
     return []
   }
 })
 
+// Check if a variable is mapped to a database field
+function isVariableMapped(variableName: string): boolean {
+  const mappings = variableMappings.value
+  return mappings[variableName]?.source && mappings[variableName]?.field
+}
+
+// Get human-readable label for mapping source
+function getMappingSourceLabel(variableName: string): string {
+  const mapping = variableMappings.value[variableName]
+  if (!mapping) return ''
+
+  const sourceLabels: Record<string, string> = {
+    client: 'From Client Record',
+    matter: 'From Matter Record',
+    journey: 'From Journey'
+  }
+
+  return sourceLabels[mapping.source] || 'Auto-filled'
+}
+
 const needsVariables = computed(() => {
-  return documentVariables.value.length > 0 && !document.value?.variableValues
+  return documentVariables.value.length > 0
 })
 
 const renderedContent = computed(() => {
-  if (!document.value?.content) return ''
-  let content = document.value.content
-  
-  // Replace variables with actual values if they exist
-  if (document.value.variableValues) {
-    try {
-      const values = JSON.parse(document.value.variableValues)
-      Object.keys(values).forEach(key => {
-        const regex = new RegExp(`{{${key}}}`, 'g')
-        content = content.replace(regex, values[key])
-      })
-    } catch (e) {
-      console.error('Error parsing variable values:', e)
-    }
-  }
-  
-  return content
+  // Content is already rendered by Handlebars on the server
+  // No need for client-side replacement
+  return document.value?.content || ''
 })
 
 const fetchDocument = async () => {
   loading.value = true
   try {
     document.value = await $fetch(`/api/documents/${documentId}`)
-    
+
+    // Initialize selected status
+    selectedStatus.value = document.value.status
+
     // Mark as viewed if not already
     if (document.value.status === 'SENT' && !document.value.viewedAt) {
       await $fetch(`/api/documents/${documentId}/view`, { method: 'POST' })
     }
-    
+
     // Initialize variable values if they exist
     if (document.value.variableValues) {
       variableValues.value = JSON.parse(document.value.variableValues)
     }
+
+    // Log variable mappings for debugging
+    console.log('[Document] Variable mappings:', variableMappings.value)
+    console.log('[Document] Current variable values:', variableValues.value)
   } catch (error) {
     console.error('Failed to fetch document:', error)
   } finally {
@@ -224,15 +380,40 @@ const fetchDocument = async () => {
   }
 }
 
+const updateStatus = async () => {
+  try {
+    await $fetch(`/api/documents/${documentId}/status`, {
+      method: 'PUT',
+      body: { status: selectedStatus.value }
+    })
+
+    // Update the local document status
+    if (document.value) {
+      document.value.status = selectedStatus.value
+    }
+  } catch (error) {
+    console.error('Failed to update status:', error)
+    alert('Failed to update document status')
+    // Revert the selection
+    selectedStatus.value = document.value?.status || 'DRAFT'
+  }
+}
+
 const handleFillVariables = async () => {
+  console.log('[Client] Variable values being submitted:', variableValues.value)
+  console.log('[Client] Document variables list:', documentVariables.value)
+
   savingVariables.value = true
+  showEditVariablesModal.value = false
   try {
     await $fetch(`/api/documents/${documentId}/variables`, {
       method: 'POST',
       body: { variables: variableValues.value }
     })
     await fetchDocument()
+    console.log('[Client] Variables saved successfully')
   } catch (error) {
+    console.error('[Client] Failed to save variables:', error)
     alert('Failed to save variables')
   } finally {
     savingVariables.value = false
@@ -284,16 +465,16 @@ const clearSignature = () => {
 
 const handleSign = async () => {
   if (!signatureCanvas.value) return
-  
+
   const signatureData = signatureCanvas.value.toDataURL('image/png')
-  
+
   signing.value = true
   try {
     await $fetch(`/api/documents/${documentId}/sign`, {
       method: 'POST',
       body: { signatureData }
     })
-    
+
     await fetchDocument()
     alert('Document signed successfully!')
   } catch (error: any) {
@@ -303,9 +484,62 @@ const handleSign = async () => {
   }
 }
 
+const downloadDocx = async () => {
+  console.log('Download button clicked, documentId:', documentId)
+  console.log('Document blob key:', document.value?.docxBlobKey)
+
+  try {
+    // Fetch the DOCX file
+    const response = await fetch(`/api/documents/${documentId}/download`)
+    console.log('Download response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Download failed with response:', errorText)
+      throw new Error(`Download failed: ${response.status} - ${errorText}`)
+    }
+
+    // Get the blob
+    const blob = await response.blob()
+    console.log('Downloaded blob size:', blob.size, 'bytes')
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `${document.value?.title || 'document'}.docx`
+
+    // Trigger download
+    window.document.body.appendChild(link)
+    link.click()
+
+    // Cleanup
+    window.document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    console.log('Download completed successfully')
+  } catch (error) {
+    console.error('Download error:', error)
+    alert(`Failed to download document: ${error.message || 'Unknown error'}`)
+  }
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.actions-dropdown')) {
+    showActionsDropdown.value = false
+  }
+}
+
 onMounted(() => {
   fetchDocument()
   initCanvas()
+  window.document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

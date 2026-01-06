@@ -1,9 +1,8 @@
 import { eq, and, gte } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../database'
-import { requireRole } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
+  requireRole(event, ['LAWYER', 'ADMIN'])
   
   const db = useDrizzle()
   const now = new Date()

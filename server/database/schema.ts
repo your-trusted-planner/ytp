@@ -1,5 +1,24 @@
-import { sqliteTable, text, integer, blob, primaryKey, foreignKey } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, blob, primaryKey, foreignKey, customType } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
+
+// Custom type for JSON string arrays
+const jsonArray = customType<{ data: string[]; driverData: string }>({
+  dataType() {
+    return 'text'
+  },
+  toDriver(value: string[]): string {
+    return JSON.stringify(value)
+  },
+  fromDriver(value: string): string[] {
+    if (!value) return []
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+})
 
 // Users table
 export const users = sqliteTable('users', {
@@ -632,6 +651,63 @@ export const publicBookings = sqliteTable('public_bookings', {
   status: text('status', { enum: ['PENDING_PAYMENT', 'PENDING_BOOKING', 'BOOKED', 'CONVERTED', 'CANCELLED'] }).notNull().default('PENDING_PAYMENT'),
   bookingCompletedAt: integer('booking_completed_at', { mode: 'timestamp' }),
   convertedToClientAt: integer('converted_to_client_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// PEOPLE AND RELATIONSHIPS
+// ===================================
+
+// People - Separates identity from authentication
+export const people = sqliteTable('people', {
+  id: text('id').primaryKey(),
+  // Personal Information
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  middleNames: jsonArray('middle_names'), // Custom type handles serialization
+  fullName: text('full_name'),
+  // Contact Information
+  email: text('email'),
+  phone: text('phone'),
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  zipCode: text('zip_code'),
+  // Additional Details
+  dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
+  ssnLast4: text('ssn_last_4'),
+  // For Corporate Entities
+  entityName: text('entity_name'),
+  entityType: text('entity_type'),
+  entityEin: text('entity_ein'),
+  // Notes
+  notes: text('notes'),
+  // Timestamps
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Client Relationships - Links clients to people
+export const clientRelationships = sqliteTable('client_relationships', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type').notNull(), // SPOUSE, CHILD, PARENT, etc.
+  ordinal: integer('ordinal').notNull().default(0),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Matter Relationships - Links matters to people
+export const matterRelationships = sqliteTable('matter_relationships', {
+  id: text('id').primaryKey(),
+  matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type').notNull(), // GRANTOR, TRUSTEE, BENEFICIARY, etc.
+  ordinal: integer('ordinal').notNull().default(0),
+  notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })

@@ -118,9 +118,20 @@
             class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-burgundy-50 file:text-burgundy-700 hover:file:bg-burgundy-100"
             required
           />
-          <p class="mt-1 text-xs text-gray-500">
-            Upload a Word document (.docx) with personalization fields like &#123;&#123;clientName&#125;&#125;, [[TrustName]], or &lt;&lt;Address&gt;&gt;
-          </p>
+          <div class="mt-2 text-xs space-y-1">
+            <p class="text-gray-600">
+              <strong>Variable Syntax:</strong> &#123;&#123;variableName&#125;&#125;
+            </p>
+            <p class="text-gray-600">
+              <strong>Allowed characters:</strong> Letters, numbers, underscores (_), hyphens (-)
+            </p>
+            <p class="text-red-600">
+              <strong>Not allowed:</strong> Pipes (|), dots (.), spaces, or other special characters
+            </p>
+            <p class="text-gray-500">
+              Example: &#123;&#123;trustee_name&#125;&#125; or &#123;&#123;trustee-name&#125;&#125; ✓
+            </p>
+          </div>
         </div>
 
         <UiInput
@@ -156,21 +167,87 @@
             <p v-if="uploadResult.requiresNotary" class="text-burgundy-700">
               ⚠️ This template requires notarization
             </p>
-            <div v-if="uploadResult.variables.length > 0" class="mt-2">
-              <p class="font-medium mb-1">Personalization Fields:</p>
-              <div class="flex flex-wrap gap-1">
-                <span
-                  v-for="variable in uploadResult.variables.slice(0, 10)"
-                  :key="variable"
-                  class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono"
+          </div>
+        </div>
+
+        <!-- Variable Mapping Interface -->
+        <div v-if="uploadResult && uploadResult.variables.length > 0" class="border border-gray-300 rounded-lg p-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="font-semibold text-gray-900">Map Variables to Database Fields</h4>
+            <button
+              @click="showMappingHelp = !showMappingHelp"
+              class="text-xs text-blue-600 hover:text-blue-800"
+            >
+              {{ showMappingHelp ? 'Hide Help' : 'Show Help' }}
+            </button>
+          </div>
+
+          <div v-if="showMappingHelp" class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+            <p class="font-medium mb-1">How Variable Mapping Works:</p>
+            <ul class="list-disc list-inside space-y-1 text-xs">
+              <li>Mapped variables automatically pull data from the database</li>
+              <li>Unmapped variables can be filled manually when generating documents</li>
+              <li>Mapped variables cannot be edited in documents (they stay in sync with the database)</li>
+              <li>You can change mappings anytime by editing the template</li>
+            </ul>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div
+              v-for="variable in uploadResult.variables"
+              :key="variable"
+              class="grid grid-cols-12 gap-3 items-center p-3 bg-gray-50 rounded"
+            >
+              <div class="col-span-3">
+                <code class="text-sm font-mono text-gray-900">{{ variable }}</code>
+              </div>
+
+              <div class="col-span-4">
+                <select
+                  v-model="variableMappings[variable].source"
+                  @change="onSourceChange(variable)"
+                  class="w-full text-sm border-gray-300 rounded-md"
                 >
-                  {{ variable }}
-                </span>
-                <span v-if="uploadResult.variables.length > 10" class="text-xs text-green-700">
-                  +{{ uploadResult.variables.length - 10 }} more
-                </span>
+                  <option value="">Not Mapped (Manual Entry)</option>
+                  <option value="client">Client Data</option>
+                  <option value="matter">Matter Data</option>
+                </select>
+              </div>
+
+              <div class="col-span-5">
+                <select
+                  v-model="variableMappings[variable].field"
+                  :disabled="!variableMappings[variable].source"
+                  class="w-full text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-500"
+                >
+                  <option value="">-- Select Field --</option>
+                  <optgroup v-if="variableMappings[variable].source === 'client'" label="Client Fields">
+                    <option value="firstName">First Name</option>
+                    <option value="lastName">Last Name</option>
+                    <option value="fullName">Full Name</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
+                    <option value="address">Address</option>
+                    <option value="city">City</option>
+                    <option value="state">State</option>
+                    <option value="zipCode">ZIP Code</option>
+                  </optgroup>
+                  <optgroup v-if="variableMappings[variable].source === 'matter'" label="Matter Fields">
+                    <option value="title">Matter Title</option>
+                    <option value="matterNumber">Matter Number</option>
+                    <option value="status">Status</option>
+                    <option value="contractDate">Contract Date</option>
+                    <option value="description">Description</option>
+                  </optgroup>
+                </select>
               </div>
             </div>
+          </div>
+
+          <div class="flex justify-end pt-3 border-t">
+            <UiButton @click="saveMappings" :loading="savingMappings" size="sm">
+              Save Mappings
+            </UiButton>
           </div>
         </div>
 
@@ -186,10 +263,18 @@
     </UiModal>
 
     <!-- View Template Modal -->
-    <UiModal v-model="showViewTemplateModal" title="Template Preview" size="xl">
+    <UiModal v-model="showViewTemplateModal" :title="editingTemplateDetails ? 'Edit Template Details' : 'Template Preview'" size="xl">
       <div v-if="viewingTemplate" class="space-y-4">
-        <div class="bg-gray-50 p-4 rounded">
-          <h4 class="font-semibold text-gray-900">{{ viewingTemplate.name }}</h4>
+        <div v-if="!editingTemplateDetails" class="bg-gray-50 p-4 rounded">
+          <div class="flex justify-between items-start">
+            <h4 class="font-semibold text-gray-900">{{ viewingTemplate.name }}</h4>
+            <button
+              @click="startEditingTemplate"
+              class="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Edit Details
+            </button>
+          </div>
           <div class="grid grid-cols-2 gap-4 mt-3 text-sm">
             <div>
               <span class="text-gray-600">Category:</span>
@@ -206,6 +291,55 @@
             <div v-if="viewingTemplate.requires_notary">
               <span class="text-burgundy-600 font-medium">⚠️ Requires Notarization</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div v-if="editingTemplateDetails" class="space-y-4 bg-gray-50 p-4 rounded">
+          <UiInput
+            v-model="templateEditForm.name"
+            label="Template Name"
+            placeholder="Enter template name"
+            required
+          />
+
+          <UiTextarea
+            v-model="templateEditForm.description"
+            label="Description"
+            placeholder="Brief description..."
+            :rows="2"
+          />
+
+          <UiSelect v-model="templateEditForm.category" label="Category">
+            <option value="General">General</option>
+            <option value="Trust">Trust</option>
+            <option value="LLC">LLC</option>
+            <option value="Engagement">Engagement Letter</option>
+            <option value="Affidavit">Affidavit</option>
+            <option value="Certificate">Certificate</option>
+            <option value="Meeting Minutes">Meeting Minutes</option>
+            <option value="Questionnaire">Questionnaire</option>
+          </UiSelect>
+
+          <div class="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              v-model="templateEditForm.isActive"
+              id="isActive"
+              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+            />
+            <label for="isActive" class="text-sm text-gray-700">
+              Active (available for use)
+            </label>
+          </div>
+
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <UiButton variant="ghost" @click="cancelEditingTemplate">
+              Cancel
+            </UiButton>
+            <UiButton @click="saveTemplateDetails" :loading="savingTemplateDetails">
+              Save Changes
+            </UiButton>
           </div>
         </div>
 
@@ -254,14 +388,26 @@ const clients = ref<any[]>([])
 const loading = ref(true)
 const generating = ref(false)
 const uploading = ref(false)
+const savingMappings = ref(false)
+const savingTemplateDetails = ref(false)
 const showUseTemplateModal = ref(false)
 const showViewTemplateModal = ref(false)
 const showUploadModal = ref(false)
+const showMappingHelp = ref(false)
+const editingTemplateDetails = ref(false)
 const selectedTemplate = ref<any>(null)
 const viewingTemplate = ref<any>(null)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadResult = ref<any>(null)
+const variableMappings = ref<Record<string, { source: string, field: string }>>({})
+
+const templateEditForm = ref({
+  name: '',
+  description: '',
+  category: 'General',
+  isActive: true
+})
 
 const useTemplateForm = ref({
   clientId: '',
@@ -324,7 +470,65 @@ async function fetchClients() {
 // View template details
 function viewTemplate(template: any) {
   viewingTemplate.value = template
+  editingTemplateDetails.value = false
   showViewTemplateModal.value = true
+}
+
+// Start editing template details
+function startEditingTemplate() {
+  if (!viewingTemplate.value) return
+
+  templateEditForm.value = {
+    name: viewingTemplate.value.name,
+    description: viewingTemplate.value.description || '',
+    category: viewingTemplate.value.category,
+    isActive: viewingTemplate.value.isActive
+  }
+  editingTemplateDetails.value = true
+}
+
+// Cancel editing template
+function cancelEditingTemplate() {
+  editingTemplateDetails.value = false
+  templateEditForm.value = {
+    name: '',
+    description: '',
+    category: 'General',
+    isActive: true
+  }
+}
+
+// Save template details
+async function saveTemplateDetails() {
+  if (!viewingTemplate.value || !templateEditForm.value.name) {
+    alert('Template name is required')
+    return
+  }
+
+  savingTemplateDetails.value = true
+  try {
+    await $fetch(`/api/templates/${viewingTemplate.value.id}`, {
+      method: 'PUT',
+      body: templateEditForm.value
+    })
+
+    // Update the viewing template
+    viewingTemplate.value.name = templateEditForm.value.name
+    viewingTemplate.value.description = templateEditForm.value.description
+    viewingTemplate.value.category = templateEditForm.value.category
+    viewingTemplate.value.isActive = templateEditForm.value.isActive
+
+    // Refresh templates list
+    await fetchTemplates()
+
+    editingTemplateDetails.value = false
+    alert('Template updated successfully!')
+  } catch (error: any) {
+    console.error('Failed to update template:', error)
+    alert(`Error updating template: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    savingTemplateDetails.value = false
+  }
 }
 
 // Open use template modal
@@ -379,7 +583,16 @@ async function handleUpload() {
     })
 
     uploadResult.value = result.template
-    
+
+    // Initialize variable mappings object
+    if (result.template.variables && result.template.variables.length > 0) {
+      const mappings: Record<string, { source: string, field: string }> = {}
+      result.template.variables.forEach((variable: string) => {
+        mappings[variable] = { source: '', field: '' }
+      })
+      variableMappings.value = mappings
+    }
+
     // Refresh templates list
     await fetchTemplates()
   } catch (error: any) {
@@ -387,6 +600,39 @@ async function handleUpload() {
     alert(`Error uploading template: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     uploading.value = false
+  }
+}
+
+// Handle source change - reset field selection
+function onSourceChange(variable: string) {
+  variableMappings.value[variable].field = ''
+}
+
+// Save variable mappings
+async function saveMappings() {
+  if (!uploadResult.value) return
+
+  savingMappings.value = true
+  try {
+    // Filter out unmapped variables
+    const mappings: Record<string, { source: string, field: string }> = {}
+    Object.entries(variableMappings.value).forEach(([variable, mapping]) => {
+      if (mapping.source && mapping.field) {
+        mappings[variable] = mapping
+      }
+    })
+
+    await $fetch(`/api/templates/${uploadResult.value.id}/mappings`, {
+      method: 'PUT',
+      body: { mappings }
+    })
+
+    alert('Variable mappings saved successfully!')
+  } catch (error: any) {
+    console.error('Failed to save mappings:', error)
+    alert(`Error saving mappings: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    savingMappings.value = false
   }
 }
 
@@ -401,6 +647,8 @@ function closeUploadModal() {
     }
     selectedFile.value = null
     uploadResult.value = null
+    variableMappings.value = {}
+    showMappingHelp.value = false
     if (fileInput.value) {
       fileInput.value.value = ''
     }

@@ -40,6 +40,7 @@ export default withMermaid(
               { text: 'Overview', link: '/architecture/' },
               { text: 'C4 Diagrams', link: '/architecture/c4-diagrams' },
               { text: 'Entity Relationships', link: '/architecture/entity-relationships' },
+              { text: 'Template System', link: '/architecture/template-system' },
               { text: 'DOCX Processing', link: '/architecture/docx-processing' }
             ]
           },

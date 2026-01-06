@@ -1,14 +1,6 @@
 // Get all service catalog entries
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-
-  // Only lawyers/admins can view service catalog
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
   const db = hubDatabase()
 

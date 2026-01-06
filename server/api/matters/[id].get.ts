@@ -1,6 +1,5 @@
 // Get a single matter by ID
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const matterId = getRouterParam(event, 'id')
 
   if (!matterId) {
@@ -32,12 +31,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can view any matter, clients can only view their own
-  if (user.role === 'CLIENT' && matter.client_id !== user.id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  requireClientAccess(event, matter.client_id)
 
   return {
     matter

@@ -438,6 +438,13 @@ const closeModal = () => {
 
 onMounted(async () => {
   await Promise.all([fetchMatters(), fetchClients(), fetchCatalog()])
+
+  // Check if we should auto-open the modal with a pre-filled client
+  const route = useRoute()
+  if (route.query.createNew === 'true' && route.query.clientId) {
+    matterForm.value.clientId = route.query.clientId as string
+    showAddModal.value = true
+  }
 })
 </script>
 

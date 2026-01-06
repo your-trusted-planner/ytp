@@ -2,9 +2,10 @@
 import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const clientJourneyId = getRouterParam(event, 'id')
-  
+
   if (!clientJourneyId) {
     throw createError({
       statusCode: 400,

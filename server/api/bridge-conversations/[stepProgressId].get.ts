@@ -1,8 +1,7 @@
 // Get conversation messages for a bridge step
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const stepProgressId = getRouterParam(event, 'stepProgressId')
-  
+
   if (!stepProgressId) {
     throw createError({
       statusCode: 400,

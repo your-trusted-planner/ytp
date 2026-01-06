@@ -1,9 +1,8 @@
 import { eq, gte, desc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../database'
-import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
+  const user = getAuthUser(event)
   const query = getQuery(event)
   const upcoming = query.upcoming === 'true'
   

@@ -1,199 +1,170 @@
-// Enhanced template renderer for Jinja-style variables
-// Handles {{ variable }}, {{ object.property }}, and {% if %} logic
+import Handlebars from 'handlebars'
 
+// Template context interface (flexible to accept any data)
 export interface TemplateContext {
-  // Client info
-  clientFirstName?: string
-  clientLastName?: string
-  clientFullName?: string
-  clientAddress?: string
-  clientCity?: string
-  clientState?: string
-  clientZipCode?: string
-  clientEmail?: string
-  clientPhone?: string
-  clientSignature?: string
-  
-  // Spouse info
-  spouseName?: string
-  spouseFirstName?: string
-  spouseLastName?: string
-  
-  // Trust info
-  trustName?: string
-  alternateCompanyName?: string // Alias for trust name
-  companyName?: string // Alias for trust name
-  settlorName?: string
-  grantorName?: string
-  grantor1Name?: string
-  grantor2Name?: string
-  trusteeName?: string
-  trustee1Name?: string
-  trustee2Name?: string
-  beneficiaryName?: string
-  trustCreationDate?: string
-  
-  // Committees and advisors
-  ddcName?: string
-  wapaName?: string
-  ptcName?: string
-  pftcName?: string
-  investmentCommitteeName?: string
-  investmentCommitteeMember1?: string
-  investmentCommitteeMember2?: string
-  investmentCommitteeMember3?: string
-  
-  // Financial
-  contributionAmount?: string | number
-  distributionAmount?: string | number
-  amount?: string | number
-  propertyDescription?: string
-  assetDescription?: string
-  
-  // Notary
-  notaryName?: string
-  notaryCommissionNumber?: string
-  notaryExpirationDate?: string
-  notaryState?: string
-  
-  // Dates
-  currentDate?: string
-  signatureDate?: string
-  today?: string
-  signedOn?: string
-  
-  // Signatures
-  signature?: string
-  
-  // Complex objects from questionnaires
-  questionnaireItems?: Record<string, any>
-  managers?: any[]
-  members?: any[]
-  memberCount?: number
-  
-  // Any other dynamic fields
   [key: string]: any
 }
 
 export class TemplateRenderer {
-  // Render a template with context data
+  private handlebars: typeof Handlebars
+
+  constructor() {
+    this.handlebars = Handlebars.create()
+    this.registerHelpers()
+  }
+
+  // Register custom Handlebars helpers
+  private registerHelpers() {
+    // Helper for formatting dates
+    this.handlebars.registerHelper('formatDate', (date: any) => {
+      if (!date) return ''
+      const d = new Date(date)
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    })
+
+    // Helper for formatting currency
+    this.handlebars.registerHelper('formatCurrency', (amount: any) => {
+      if (amount === null || amount === undefined) return ''
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num)
+    })
+
+    // Helper for uppercase
+    this.handlebars.registerHelper('uppercase', (str: any) => {
+      return str ? String(str).toUpperCase() : ''
+    })
+
+    // Helper for lowercase
+    this.handlebars.registerHelper('lowercase', (str: any) => {
+      return str ? String(str).toLowerCase() : ''
+    })
+
+    // Helper for default values
+    this.handlebars.registerHelper('default', (value: any, defaultValue: any) => {
+      return value !== null && value !== undefined && value !== '' ? value : defaultValue
+    })
+  }
+
+  // Preprocess template to fix common syntax issues
+  private preprocessTemplate(template: string): string {
+    let processed = template
+
+    // Convert Django/Jinja pipe syntax to Handlebars dot notation
+    // {{variable|filter}} -> {{variable.filter}}
+    processed = processed.replace(/\{\{\s*([^}|]+)\|([^}]+)\s*\}\}/g, (match, variable, filter) => {
+      const cleanVar = variable.trim()
+      const cleanFilter = filter.trim()
+      // Convert to dot notation for property access
+      return `{{${cleanVar}.${cleanFilter}}}`
+    })
+
+    return processed
+  }
+
+  // Render a template with context data using Handlebars
   render(template: string, context: TemplateContext): string {
-    let rendered = template
-    
-    // First, handle {% if %} conditionals
-    rendered = this.processConditionals(rendered, context)
-    
-    // Then, handle {% for %} loops
-    rendered = this.processLoops(rendered, context)
-    
-    // Finally, replace {{ variables }}
-    rendered = this.replaceVariables(rendered, context)
-    
-    return rendered
-  }
-
-  // Process {% if condition %} ... {% endif %} blocks
-  private processConditionals(template: string, context: TemplateContext): string {
-    const ifPattern = /\{%\s*if\s+([^%]+)\s*%\}(.*?)\{%\s*(?:endif|else)\s*%\}/gs
-    
-    return template.replace(ifPattern, (match, condition, content) => {
-      const conditionValue = this.evaluateCondition(condition.trim(), context)
-      return conditionValue ? content : ''
-    })
-  }
-
-  // Process {% for item in items %} ... {% endfor %} loops
-  private processLoops(template: string, context: TemplateContext): string {
-    const forPattern = /\{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%\}(.*?)\{%\s*endfor\s*%\}/gs
-    
-    return template.replace(forPattern, (match, itemName, arrayName, content) => {
-      const array = context[arrayName]
-      if (!Array.isArray(array)) return ''
-      
-      return array.map(item => {
-        const loopContext = { ...context, [itemName]: item }
-        return this.replaceVariables(content, loopContext)
-      }).join('')
-    })
-  }
-
-  // Evaluate a conditional expression
-  private evaluateCondition(condition: string, context: TemplateContext): boolean {
     try {
-      // Simple variable existence check
-      const varName = condition.trim()
-      const value = this.getNestedValue(varName, context)
-      return Boolean(value)
-    } catch {
-      return false
+      // Preprocess template to fix common syntax issues
+      const processedTemplate = this.preprocessTemplate(template)
+
+      const compiledTemplate = this.handlebars.compile(processedTemplate, {
+        noEscape: true, // Don't escape HTML in rendered output
+        strict: false   // Allow missing variables
+      })
+      return compiledTemplate(context)
+    } catch (error) {
+      console.error('Error rendering template:', error)
+
+      // Provide helpful error message
+      if (error instanceof Error && error.message.includes('Parse error')) {
+        throw new Error(`Template contains invalid Handlebars syntax. Please check your template for unsupported syntax like pipes (|) or other non-Handlebars constructs. Original error: ${error.message}`)
+      }
+
+      throw new Error(`Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
-  // Replace {{ variable }} and {{ object.property }} patterns
-  private replaceVariables(template: string, context: TemplateContext): string {
-    const varPattern = /\{\{\s*([^}]+?)\s*\}\}/g
-    
-    return template.replace(varPattern, (match, varName) => {
-      const value = this.getNestedValue(varName.trim(), context)
-      return value !== null && value !== undefined ? String(value) : match
-    })
-  }
-
-  // Get nested property value (e.g., "questionnaire_items.field_name[1]")
-  private getNestedValue(path: string, context: TemplateContext): any {
-    try {
-      // Handle array indexing like "questionnaire_items.field[1]"
-      const arrayMatch = path.match(/^(.+)\[(\d+)\]$/)
-      if (arrayMatch) {
-        const [, basePath, index] = arrayMatch
-        const array = this.getNestedValue(basePath, context)
-        return Array.isArray(array) ? array[parseInt(index)] : null
-      }
-      
-      // Handle dot notation
-      const parts = path.split('.')
-      let value: any = context
-      
-      for (const part of parts) {
-        if (value === null || value === undefined) return null
-        value = value[part]
-      }
-      
-      return value
-    } catch {
-      return null
-    }
-  }
-
-  // Extract all variable names from a template (for the variables list)
+  // Extract all variable names from a template using Handlebars AST
   extractVariableNames(template: string): Set<string> {
     const variables = new Set<string>()
-    
-    // Extract from {{ variable }} patterns
-    const varPattern = /\{\{\s*([^}]+?)\s*\}\}/g
-    let match
-    while ((match = varPattern.exec(template)) !== null) {
-      const varName = match[1].trim()
-      // Skip Jinja control flow
-      if (!varName.includes('%')) {
-        variables.add(varName)
+
+    try {
+      // Preprocess template first
+      const processedTemplate = this.preprocessTemplate(template)
+      const ast = this.handlebars.parse(processedTemplate)
+
+      // Traverse the AST to find all variable references
+      const traverse = (node: any) => {
+        if (!node) return
+
+        // MustacheStatement: {{ variable }}
+        if (node.type === 'MustacheStatement' && node.path) {
+          const varName = this.getPathString(node.path)
+          if (varName) variables.add(varName)
+        }
+
+        // BlockStatement: {{#if variable}} or {{#each items}}
+        if (node.type === 'BlockStatement' && node.path) {
+          const varName = this.getPathString(node.path)
+          if (varName && !this.isBuiltinHelper(varName)) {
+            variables.add(varName)
+          }
+        }
+
+        // PathExpression in params
+        if (node.params) {
+          for (const param of node.params) {
+            if (param.type === 'PathExpression') {
+              const varName = this.getPathString(param)
+              if (varName) variables.add(varName)
+            }
+          }
+        }
+
+        // Recursively traverse child nodes
+        if (node.program) traverse(node.program)
+        if (node.inverse) traverse(node.inverse)
+        if (node.body) {
+          for (const child of node.body) {
+            traverse(child)
+          }
+        }
+      }
+
+      traverse(ast)
+    } catch (error) {
+      console.error('Error parsing template for variables:', error)
+      // Fallback to regex if AST parsing fails
+      const varPattern = /\{\{\s*([^}#/]+?)\s*\}\}/g
+      let match
+      while ((match = varPattern.exec(template)) !== null) {
+        const varName = match[1].trim().split(/\s+/)[0] // Get first part before any spaces
+        if (varName && !this.isBuiltinHelper(varName)) {
+          variables.add(varName)
+        }
       }
     }
-    
-    // Extract from {% if variable %} patterns
-    const ifPattern = /\{%\s*if\s+([^%]+?)\s*%\}/g
-    while ((match = ifPattern.exec(template)) !== null) {
-      const condition = match[1].trim()
-      variables.add(condition)
-    }
-    
-    // Extract from {% for item in array %} patterns
-    const forPattern = /\{%\s*for\s+\w+\s+in\s+(\w+)\s*%\}/g
-    while ((match = forPattern.exec(template)) !== null) {
-      variables.add(match[1].trim())
-    }
-    
+
     return variables
+  }
+
+  // Convert a Handlebars path to a string (e.g., "user.name" from path object)
+  private getPathString(path: any): string | null {
+    if (!path) return null
+
+    if (path.type === 'PathExpression') {
+      // Handle simple paths and nested paths
+      if (path.original) return path.original
+      if (path.parts) return path.parts.join('.')
+    }
+
+    return null
+  }
+
+  // Check if a name is a built-in Handlebars helper
+  private isBuiltinHelper(name: string): boolean {
+    const builtins = ['if', 'unless', 'each', 'with', 'lookup', 'log', 'formatDate', 'formatCurrency', 'uppercase', 'lowercase', 'default']
+    return builtins.includes(name)
   }
 }
 

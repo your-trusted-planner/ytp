@@ -1,8 +1,7 @@
 // Get all document uploads for a client journey
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const clientJourneyId = getRouterParam(event, 'clientJourneyId')
-  
+
   if (!clientJourneyId) {
     throw createError({
       statusCode: 400,
@@ -11,7 +10,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = hubDatabase()
-  
+
   // Get client journey to check authorization
   const clientJourney = await db.prepare(`
     SELECT * FROM client_journeys WHERE id = ?
@@ -24,13 +23,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check authorization
-  if (user.role === 'CLIENT' && user.id !== clientJourney.client_id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  // Check authorization - clients can only view their own journey's uploads
+  requireClientAccess(event, clientJourney.client_id)
 
   // Get all uploads
   const uploads = await db.prepare(`

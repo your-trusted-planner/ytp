@@ -1,15 +1,8 @@
 // Get all client journeys for a specific matter
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  const matterId = getRouterParam(event, 'matterId')
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
-  // Only lawyers/admins can view matter journeys
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  const matterId = getRouterParam(event, 'matterId')
 
   if (!matterId) {
     throw createError({

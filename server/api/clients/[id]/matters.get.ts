@@ -1,15 +1,6 @@
 // Get all matters for a client with aggregated stats
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const clientId = getRouterParam(event, 'id')
-
-  // Authorization: lawyers/admins can view any client, clients can only view themselves
-  if (user.role === 'CLIENT' && user.id !== clientId) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
 
   if (!clientId) {
     throw createError({
@@ -17,6 +8,9 @@ export default defineEventHandler(async (event) => {
       message: 'Client ID is required'
     })
   }
+
+  // Authorization: lawyers/admins can view any client, clients can only view themselves
+  requireClientAccess(event, clientId)
 
   const db = hubDatabase()
 

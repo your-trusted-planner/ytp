@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../../database'
-import { requireRole } from '../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
+  requireRole(event, ['LAWYER', 'ADMIN'])
   
   const matterId = getRouterParam(event, 'id')
   if (!matterId) {

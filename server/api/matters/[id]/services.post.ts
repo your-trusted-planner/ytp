@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../../database'
-import { requireRole, generateId } from '../../../utils/auth'
+import { generateId } from '../../../utils/auth'
 
 const addServiceSchema = z.object({
   catalogId: z.string().min(1),
@@ -9,7 +9,7 @@ const addServiceSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
+  requireRole(event, ['LAWYER', 'ADMIN'])
   
   const matterId = getRouterParam(event, 'id')
   if (!matterId) {

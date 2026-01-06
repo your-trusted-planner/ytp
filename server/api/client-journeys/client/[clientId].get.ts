@@ -1,8 +1,7 @@
 // Get all journeys for a specific client
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
   const clientId = getRouterParam(event, 'clientId')
-  
+
   if (!clientId) {
     throw createError({
       statusCode: 400,
@@ -11,12 +10,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Clients can only view their own journeys
-  if (user.role === 'CLIENT' && user.id !== clientId) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  requireClientAccess(event, clientId)
 
   const db = hubDatabase()
   

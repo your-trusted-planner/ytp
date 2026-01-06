@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../database'
-import { requireAuth, generateId } from '../../utils/auth'
+import { generateId } from '../../utils/auth'
 
 const createAppointmentSchema = z.object({
   title: z.string().min(1),
@@ -12,7 +12,8 @@ const createAppointmentSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const body = await readBody(event)
   
   const result = createAppointmentSchema.safeParse(body)

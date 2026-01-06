@@ -1,15 +1,8 @@
 // Delete a journey step
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const stepId = getRouterParam(event, 'id')
-  
-  // Only lawyers/admins can delete journey steps
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
 
   if (!stepId) {
     throw createError({

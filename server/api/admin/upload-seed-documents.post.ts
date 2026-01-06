@@ -13,15 +13,7 @@
  *   - group: Document group name (e.g., "General Documents")
  */
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-
-  // Only admins and lawyers can upload seed documents
-  if (user.role !== 'ADMIN' && user.role !== 'LAWYER') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized - admin or lawyer only'
-    })
-  }
+  requireRole(event, ['ADMIN', 'LAWYER'])
 
   const form = await readMultipartFormData(event)
   if (!form || form.length === 0) {

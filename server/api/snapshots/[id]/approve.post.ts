@@ -1,6 +1,7 @@
 // Approve a snapshot (client or counsel)
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  const user = getAuthUser(event)
+
   const snapshotId = getRouterParam(event, 'id')
   const body = await readBody(event)
 

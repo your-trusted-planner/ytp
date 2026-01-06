@@ -1,8 +1,9 @@
 // Get a specific journey with all its steps
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const journeyId = getRouterParam(event, 'id')
-  
+
   if (!journeyId) {
     throw createError({
       statusCode: 400,

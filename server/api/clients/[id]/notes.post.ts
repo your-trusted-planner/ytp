@@ -2,16 +2,9 @@
 import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  requireRole(event, ['LAWYER', 'ADMIN'])
+
   const clientId = getRouterParam(event, 'id')
-  
-  // Only lawyers/admins can add notes
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
 
   if (!clientId) {
     throw createError({

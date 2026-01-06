@@ -1,8 +1,9 @@
 // Mark an action item as complete
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
+  const user = getAuthUser(event)
+
   const actionItemId = getRouterParam(event, 'id')
-  
+
   if (!actionItemId) {
     throw createError({
       statusCode: 400,

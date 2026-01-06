@@ -1,15 +1,8 @@
 // Update a client by ID
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  const clientId = getRouterParam(event, 'id')
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
-  // Only lawyers/admins can update client details
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  const clientId = getRouterParam(event, 'id')
 
   if (!clientId) {
     throw createError({

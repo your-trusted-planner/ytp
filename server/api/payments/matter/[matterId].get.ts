@@ -1,16 +1,9 @@
 // Get all payments for a specific matter
 // STUB: Full implementation in Phase 3
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event)
-  const matterId = getRouterParam(event, 'matterId')
+  requireRole(event, ['LAWYER', 'ADMIN'])
 
-  // Only lawyers/admins can view payments
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
-  }
+  const matterId = getRouterParam(event, 'matterId')
 
   if (!matterId) {
     throw createError({
