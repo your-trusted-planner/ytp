@@ -100,7 +100,8 @@
               v-model="form.systemIntegrationType"
               type="checkbox"
               id="calendar-integration"
-              value="calendar"
+              true-value="calendar"
+              false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
             />
             <label for="calendar-integration" class="ml-2 block text-sm text-gray-900">
@@ -127,7 +128,8 @@
               v-model="form.systemIntegrationType"
               type="checkbox"
               id="document-integration"
-              value="document"
+              true-value="document"
+              false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
             />
             <label for="document-integration" class="ml-2 block text-sm text-gray-900">
@@ -156,7 +158,8 @@
               v-model="form.systemIntegrationType"
               type="checkbox"
               id="payment-integration"
-              value="payment"
+              true-value="payment"
+              false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
             />
             <label for="payment-integration" class="ml-2 block text-sm text-gray-900">
@@ -203,7 +206,8 @@
               v-model="form.systemIntegrationType"
               type="checkbox"
               id="esign-integration"
-              value="document"
+              true-value="document"
+              false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
             />
             <label for="esign-integration" class="ml-2 block text-sm text-gray-900">
@@ -234,8 +238,9 @@
             <input
               v-model="form.systemIntegrationType"
               type="checkbox"
-              id="document-integration"
-              value="document"
+              id="draft-document-integration"
+              true-value="document"
+              false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
             />
             <label for="document-integration" class="ml-2 block text-sm text-gray-900">
