@@ -374,6 +374,35 @@
           </label>
         </div>
 
+        <!-- Step Completion Settings -->
+        <div class="border-t pt-4 space-y-3">
+          <h3 class="text-sm font-medium text-gray-900">Step Completion Settings</h3>
+
+          <div class="flex items-center">
+            <input
+              v-model="stepForm.isFinalStep"
+              type="checkbox"
+              id="isFinalStep"
+              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+            />
+            <label for="isFinalStep" class="ml-2 block text-sm text-gray-900">
+              Mark as final step
+            </label>
+          </div>
+
+          <div class="flex items-center">
+            <input
+              v-model="stepForm.requiresVerification"
+              type="checkbox"
+              id="requiresVerification"
+              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+            />
+            <label for="requiresVerification" class="ml-2 block text-sm text-gray-900">
+              Requires verification (allows "ring the bell" actions)
+            </label>
+          </div>
+        </div>
+
         <div class="flex justify-end space-x-3 pt-4 border-t">
           <UiButton type="button" variant="ghost" @click="showStepModal = false">
             Cancel
@@ -449,7 +478,9 @@ const stepForm = ref({
   responsibleParty: 'CLIENT',
   expectedDurationDays: null,
   helpContent: '',
-  allowMultipleIterations: true
+  allowMultipleIterations: true,
+  isFinalStep: false,
+  requiresVerification: false
 })
 
 // Fetch journey and steps
@@ -503,7 +534,9 @@ function addStep() {
     responsibleParty: 'CLIENT',
     expectedDurationDays: null,
     helpContent: '',
-    allowMultipleIterations: true
+    allowMultipleIterations: true,
+    isFinalStep: false,
+    requiresVerification: false
   }
   showStepModal.value = true
 }
@@ -518,7 +551,9 @@ function editStep(step: any) {
     responsibleParty: step.responsible_party,
     expectedDurationDays: step.expected_duration_days,
     helpContent: step.help_content || '',
-    allowMultipleIterations: Boolean(step.allow_multiple_iterations)
+    allowMultipleIterations: Boolean(step.allow_multiple_iterations),
+    isFinalStep: Boolean(step.is_final_step),
+    requiresVerification: Boolean(step.requires_verification)
   }
   showStepModal.value = true
 }
@@ -578,7 +613,9 @@ function duplicateStep(step: any) {
     responsibleParty: step.responsible_party,
     expectedDurationDays: step.expected_duration_days,
     helpContent: step.help_content || '',
-    allowMultipleIterations: Boolean(step.allow_multiple_iterations)
+    allowMultipleIterations: Boolean(step.allow_multiple_iterations),
+    isFinalStep: Boolean(step.is_final_step),
+    requiresVerification: Boolean(step.requires_verification)
   }
   showStepModal.value = true
 }
