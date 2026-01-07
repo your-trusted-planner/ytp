@@ -1,12 +1,19 @@
 <template>
   <UiModal v-model="isOpen" :title="editingItem ? 'Edit Action Item' : 'Add Action Item'" size="xl">
     <form @submit.prevent="handleSubmit" class="space-y-6">
+      <!-- Engagement Journey Banner -->
+      <div v-if="journeyType === 'ENGAGEMENT'" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-sm text-blue-800">
+          <strong>Engagement Journey:</strong> Only certain action types are available.
+        </p>
+      </div>
+
       <!-- Action Type Selector -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-3">Action Type</label>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
           <button
-            v-for="type in actionTypes"
+            v-for="type in availableActionTypes"
             :key="type.value"
             type="button"
             @click="form.actionType = type.value"
@@ -297,10 +304,12 @@ interface Props {
   modelValue: boolean
   step: any
   editingItem?: any | null
+  journeyType?: 'ENGAGEMENT' | 'SERVICE'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  editingItem: null
+  editingItem: null,
+  journeyType: 'SERVICE'
 })
 
 const emit = defineEmits<{
@@ -330,6 +339,21 @@ const actionTypes = [
   { value: 'OFFLINE_TASK', label: 'Offline Task', icon: ClipboardList, description: 'Manual offline work' },
   { value: 'EXPENSE', label: 'Expense', icon: DollarSign, description: 'Expense/fee tracking' }
 ]
+
+// Filter action types based on journey type
+const ALLOWED_ENGAGEMENT_ACTIONS = [
+  'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
+  'REVIEW', 'UPLOAD', 'DECISION'
+]
+
+const availableActionTypes = computed(() => {
+  if (props.journeyType === 'ENGAGEMENT') {
+    return actionTypes.filter(type =>
+      ALLOWED_ENGAGEMENT_ACTIONS.includes(type.value)
+    )
+  }
+  return actionTypes
+})
 
 const form = ref({
   actionType: 'QUESTIONNAIRE',

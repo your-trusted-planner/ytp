@@ -119,6 +119,38 @@
           />
         </div>
 
+        <!-- Engagement Details Section -->
+        <div class="border-t pt-4 mt-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Engagement Details</h3>
+
+          <div class="grid grid-cols-1 gap-4">
+            <UiSelect
+              v-model="matterForm.leadAttorneyId"
+              label="Lead Attorney (Optional)"
+            >
+              <option value="">-- Select Lead Attorney --</option>
+              <option v-for="lawyer in lawyers" :key="lawyer.id" :value="lawyer.id">
+                {{ lawyer.firstName }} {{ lawyer.lastName }}
+              </option>
+            </UiSelect>
+
+            <UiSelect
+              v-model="matterForm.engagementJourneyTemplateId"
+              label="Engagement Journey (Optional)"
+            >
+              <option value="">-- Select Engagement Journey --</option>
+              <option v-for="journey in engagementJourneys" :key="journey.id" :value="journey.id">
+                {{ journey.name }}
+                <span v-if="journey.step_count">({{ journey.step_count }} steps)</span>
+              </option>
+            </UiSelect>
+
+            <p class="text-sm text-gray-600">
+              Select an engagement journey template to guide the client through initial onboarding.
+            </p>
+          </div>
+        </div>
+
         <!-- Services Section -->
         <div class="border-t pt-4 mt-6">
             <div class="flex justify-between items-center mb-4">
@@ -247,8 +279,14 @@ const matterForm = ref({
   clientId: '',
   description: '',
   status: 'PENDING',
-  contractDate: ''
+  contractDate: '',
+  leadAttorneyId: '', // NEW
+  engagementJourneyTemplateId: '' // NEW
 })
+
+// NEW: refs for dropdowns
+const lawyers = ref<any[]>([])
+const engagementJourneys = ref<any[]>([])
 
 const fetchMatters = async () => {
   loading.value = true
@@ -362,7 +400,9 @@ const editMatter = async (matter: any) => {
     clientId: matter.clientId,
     description: matter.description || '',
     status: matter.status,
-    contractDate: matter.contractDate ? new Date(matter.contractDate).toISOString().split('T')[0] : ''
+    contractDate: matter.contractDate ? new Date(matter.contractDate).toISOString().split('T')[0] : '',
+    leadAttorneyId: matter.leadAttorneyId || '',
+    engagementJourneyTemplateId: matter.engagementJourneyId || ''
   }
   showAddModal.value = true
 
@@ -431,8 +471,34 @@ const closeModal = () => {
   }
 }
 
+// NEW: Fetch lawyers for lead attorney dropdown
+const fetchLawyers = async () => {
+  try {
+    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
+    lawyers.value = response.lawyers || []
+  } catch (error) {
+    console.error('Failed to fetch lawyers:', error)
+  }
+}
+
+// NEW: Fetch engagement journey templates
+const fetchEngagementJourneys = async () => {
+  try {
+    const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
+    engagementJourneys.value = response.engagementJourneys || []
+  } catch (error) {
+    console.error('Failed to fetch engagement journeys:', error)
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([fetchMatters(), fetchClients(), fetchCatalog()])
+  await Promise.all([
+    fetchMatters(),
+    fetchClients(),
+    fetchCatalog(),
+    fetchLawyers(),
+    fetchEngagementJourneys()
+  ])
 
   // Check if we should auto-open the modal with a pre-filled client
   const route = useRoute()

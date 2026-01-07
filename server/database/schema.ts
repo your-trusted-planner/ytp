@@ -196,6 +196,8 @@ export const matters = sqliteTable('matters', {
   description: text('description'),
   status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
   contractDate: integer('contract_date', { mode: 'timestamp' }),
+  leadAttorneyId: text('lead_attorney_id').references(() => users.id), // For engagement letter mapping
+  engagementJourneyId: text('engagement_journey_id').references(() => clientJourneys.id), // Track engagement journey
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -285,6 +287,7 @@ export const journeys = sqliteTable('journeys', {
   serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Which product/service this journey is for
   name: text('name').notNull(), // e.g., "Trust Formation Journey", "Annual Maintenance Journey"
   description: text('description'),
+  journeyType: text('journey_type', { enum: ['ENGAGEMENT', 'SERVICE'] }).notNull().default('SERVICE'), // Engagement vs service journey
   isTemplate: integer('is_template', { mode: 'boolean' }).notNull().default(false), // Template vs. active
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   estimatedDurationDays: integer('estimated_duration_days'), // Total expected duration

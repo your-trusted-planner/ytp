@@ -29,6 +29,19 @@
       </div>
     </div>
 
+    <!-- Engagement Journey Banner -->
+    <div v-if="!loading && journey?.journey_type === 'ENGAGEMENT'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="flex items-center">
+        <IconInfo class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
+        <div>
+          <h3 class="font-semibold text-blue-900">Engagement Journey</h3>
+          <p class="text-sm text-blue-800 mt-1">
+            This journey is for client onboarding. Only certain action types are available.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center py-12">
       <IconLoader class="w-8 h-8 animate-spin text-burgundy-600" />
@@ -385,6 +398,7 @@
       v-model="showActionItemModal"
       :step="currentStep"
       :editing-item="editingActionItem"
+      :journey-type="journey?.journey_type || 'SERVICE'"
       @save="handleActionItemSaved"
     />
   </div>
@@ -398,7 +412,7 @@ import {
   Trash as IconTrash, FileText as IconFileText, Upload as IconUpload, Eye as IconEye, PenTool as IconPenTool,
   CreditCard as IconCreditCard, Calendar as IconCalendar, UserCheck as IconUserCheck, Zap as IconZap,
   Users as IconUsers, ClipboardList as IconClipboardList, DollarSign as IconDollarSign, FormInput as IconFormInput,
-  AlertTriangle as IconAlertTriangle, FilePenLine as IconFilePenLine
+  AlertTriangle as IconAlertTriangle, FilePenLine as IconFilePenLine, Info as IconInfo
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 

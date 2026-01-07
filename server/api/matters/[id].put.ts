@@ -8,6 +8,7 @@ const updateMatterSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['OPEN', 'CLOSED', 'PENDING']).optional(),
   contractDate: z.string().optional(),
+  leadAttorneyId: z.string().optional(), // NEW
 })
 
 export default defineEventHandler(async (event) => {
@@ -38,6 +39,11 @@ export default defineEventHandler(async (event) => {
 
   if (result.data.contractDate) {
     updateData.contractDate = new Date(result.data.contractDate)
+  }
+
+  // Handle nullable leadAttorneyId updates
+  if (result.data.leadAttorneyId !== undefined) {
+    updateData.leadAttorneyId = result.data.leadAttorneyId || null
   }
   
   if (!isDatabaseAvailable()) {

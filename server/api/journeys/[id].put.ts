@@ -14,12 +14,21 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const db = hubDatabase()
 
+  // Validate journey type if provided
+  if (body.journeyType && !['ENGAGEMENT', 'SERVICE'].includes(body.journeyType)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid journey type. Must be ENGAGEMENT or SERVICE'
+    })
+  }
+
   await db.prepare(`
     UPDATE journeys
     SET
       name = ?,
       description = ?,
       service_catalog_id = ?,
+      journey_type = ?,
       is_active = ?,
       estimated_duration_days = ?,
       updated_at = ?
@@ -28,6 +37,7 @@ export default defineEventHandler(async (event) => {
     body.name,
     body.description || null,
     body.serviceCatalogId || null,
+    body.journeyType || 'SERVICE',
     body.isActive ? 1 : 0,
     body.estimatedDurationDays || null,
     Date.now(),

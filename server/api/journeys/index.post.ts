@@ -6,12 +6,22 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const db = hubDatabase()
-  
+
+  // Validate journey type
+  const journeyType = body.journeyType || 'SERVICE'
+  if (!['ENGAGEMENT', 'SERVICE'].includes(journeyType)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid journey type. Must be ENGAGEMENT or SERVICE'
+    })
+  }
+
   const journey = {
     id: nanoid(),
     service_catalog_id: body.serviceCatalogId || null,
     name: body.name,
     description: body.description || null,
+    journey_type: journeyType,
     is_active: 1,
     estimated_duration_days: body.estimatedDurationDays || null,
     created_at: Date.now(),
@@ -20,14 +30,15 @@ export default defineEventHandler(async (event) => {
 
   await db.prepare(`
     INSERT INTO journeys (
-      id, service_catalog_id, name, description, is_active,
+      id, service_catalog_id, name, description, journey_type, is_active,
       estimated_duration_days, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     journey.id,
     journey.service_catalog_id,
     journey.name,
     journey.description,
+    journey.journey_type,
     journey.is_active,
     journey.estimated_duration_days,
     journey.created_at,

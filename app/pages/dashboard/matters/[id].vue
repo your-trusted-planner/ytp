@@ -80,6 +80,23 @@
                   <span class="text-gray-600">Contract Date:</span>
                   <span class="ml-2">{{ formatDate(matter.contract_date) }}</span>
                 </div>
+                <div v-if="matter.lead_attorney_first_name">
+                  <span class="text-gray-600">Lead Attorney:</span>
+                  <span class="ml-2 font-medium">
+                    {{ matter.lead_attorney_first_name }} {{ matter.lead_attorney_last_name }}
+                  </span>
+                </div>
+                <div v-if="matter.engagement_journey_name">
+                  <span class="text-gray-600">Engagement Journey:</span>
+                  <span class="ml-2 font-medium">{{ matter.engagement_journey_name }}</span>
+                  <button
+                    v-if="matter.engagement_journey_id"
+                    @click="viewEngagementJourney(matter.engagement_journey_id)"
+                    class="ml-2 text-burgundy-600 hover:text-burgundy-800 text-sm"
+                  >
+                    View Progress →
+                  </button>
+                </div>
                 <div v-if="matter.description">
                   <span class="text-gray-600">Description:</span>
                   <p class="ml-2 mt-1">{{ matter.description }}</p>
@@ -422,6 +439,10 @@ async function handleEditMatter() {
 
 function viewJourney(journeyId: string) {
   router.push(`/dashboard/my-journeys/${journeyId}`)
+}
+
+function viewEngagementJourney(clientJourneyId: string) {
+  router.push(`/dashboard/my-journeys/${clientJourneyId}`)
 }
 
 function formatDate(timestamp: number) {
