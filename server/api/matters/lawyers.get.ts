@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
   const { useDrizzle, schema } = await import('../../database')
-  const { eq } = await import('drizzle-orm')
+  const { eq, or } = await import('drizzle-orm')
   const db = useDrizzle()
 
   const lawyers = await db
@@ -14,7 +14,12 @@ export default defineEventHandler(async (event) => {
       email: schema.users.email,
     })
     .from(schema.users)
-    .where(eq(schema.users.role, 'LAWYER'))
+    .where(
+      or(
+        eq(schema.users.role, 'LAWYER'),
+        eq(schema.users.role, 'ADMIN')
+      )
+    )
     .all()
 
   return { lawyers }

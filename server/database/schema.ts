@@ -195,7 +195,6 @@ export const matters = sqliteTable('matters', {
   matterNumber: text('matter_number'),
   description: text('description'),
   status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
-  contractDate: integer('contract_date', { mode: 'timestamp' }),
   leadAttorneyId: text('lead_attorney_id').references(() => users.id), // For engagement letter mapping
   engagementJourneyId: text('engagement_journey_id').references(() => clientJourneys.id), // Track engagement journey
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

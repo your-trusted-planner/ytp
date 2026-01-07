@@ -32,24 +32,15 @@
         :rows="3"
       />
 
-      <div class="grid grid-cols-2 gap-4">
-        <UiSelect
-          v-model="form.status"
-          label="Status"
-          required
-        >
-          <option value="PENDING">Pending</option>
-          <option value="OPEN">Open</option>
-          <option value="CLOSED">Closed</option>
-        </UiSelect>
-
-        <UiInput
-          v-model="form.contractDate"
-          label="Engagement Letter Date (Optional)"
-          type="date"
-          placeholder="Date letter was signed"
-        />
-      </div>
+      <UiSelect
+        v-model="form.status"
+        label="Status"
+        required
+      >
+        <option value="PENDING">Pending</option>
+        <option value="OPEN">Open</option>
+        <option value="CLOSED">Closed</option>
+      </UiSelect>
 
       <!-- Engagement Details Section -->
       <div class="border-t pt-4 mt-6">
@@ -150,7 +141,6 @@ interface Matter {
   clientId: string
   description?: string
   status: string
-  contract_date?: number
   leadAttorneyId?: string
   engagementJourneyId?: string
 }
@@ -187,7 +177,6 @@ const form = ref({
   clientId: '',
   description: '',
   status: 'PENDING',
-  contractDate: '',
   leadAttorneyId: '',
   engagementJourneyTemplateId: ''
 })
@@ -200,9 +189,6 @@ watch(() => props.editingMatter, (matter) => {
       clientId: matter.clientId,
       description: matter.description || '',
       status: matter.status,
-      contractDate: matter.contract_date
-        ? new Date(matter.contract_date * 1000).toISOString().split('T')[0]
-        : '',
       leadAttorneyId: matter.leadAttorneyId || '',
       engagementJourneyTemplateId: matter.engagementJourneyId || ''
     }
@@ -213,7 +199,6 @@ watch(() => props.editingMatter, (matter) => {
       clientId: '',
       description: '',
       status: 'PENDING',
-      contractDate: '',
       leadAttorneyId: '',
       engagementJourneyTemplateId: ''
     }
@@ -237,9 +222,6 @@ async function handleSubmit() {
           title: form.value.title,
           description: form.value.description,
           status: form.value.status,
-          contract_date: form.value.contractDate
-            ? new Date(form.value.contractDate).getTime() / 1000
-            : null,
           leadAttorneyId: form.value.leadAttorneyId || null,
           engagementJourneyTemplateId: form.value.engagementJourneyTemplateId || null
         }
@@ -253,7 +235,6 @@ async function handleSubmit() {
           clientId: form.value.clientId,
           description: form.value.description,
           status: form.value.status,
-          contractDate: form.value.contractDate || undefined,
           leadAttorneyId: form.value.leadAttorneyId || undefined,
           engagementJourneyTemplateId: form.value.engagementJourneyTemplateId || undefined,
           serviceIds: selectedServices.value

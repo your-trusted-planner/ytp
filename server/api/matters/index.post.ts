@@ -8,9 +8,8 @@ const createMatterSchema = z.object({
   clientId: z.string().min(1),
   description: z.string().optional(),
   status: z.enum(['OPEN', 'CLOSED', 'PENDING']).default('PENDING'),
-  contractDate: z.string().optional(), // ISO date string
-  leadAttorneyId: z.string().optional(), // NEW
-  engagementJourneyTemplateId: z.string().optional(), // NEW - journey template ID
+  leadAttorneyId: z.string().optional(),
+  engagementJourneyTemplateId: z.string().optional(), // Journey template ID
 })
 
 export default defineEventHandler(async (event) => {
@@ -32,7 +31,6 @@ export default defineEventHandler(async (event) => {
       id: generateId(),
       ...result.data,
       matterNumber: `${new Date().getFullYear()}-001`,
-      contractDate: result.data.contractDate ? new Date(result.data.contractDate) : undefined,
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -64,7 +62,6 @@ export default defineEventHandler(async (event) => {
     description: result.data.description,
     status: result.data.status,
     matterNumber,
-    contractDate: result.data.contractDate ? new Date(result.data.contractDate) : undefined,
     leadAttorneyId: result.data.leadAttorneyId || null,
     engagementJourneyId: null, // Will be set if engagement journey template is selected
     createdAt: new Date(),
