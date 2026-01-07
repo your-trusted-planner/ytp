@@ -120,6 +120,12 @@
                       <p v-if="step.description" class="text-sm text-gray-600 mt-1">{{ step.description }}</p>
                     </div>
                     <div class="flex items-center space-x-2 ml-4">
+                      <UiBadge
+                        v-if="step.is_final_step"
+                        variant="success"
+                      >
+                        Final Step
+                      </UiBadge>
                       <span
                         :class="[
                           'px-3 py-1 rounded-full text-xs font-medium',
@@ -545,6 +551,17 @@ async function saveStep() {
   savingStep.value = true
   try {
     if (editingStep.value) {
+      // When marking a step as final, check if there are steps after it
+      if (stepForm.value.isFinalStep && !editingStep.value.is_final_step) {
+        const stepsAfter = steps.value.filter(s => s.step_order > editingStep.value.step_order)
+        if (stepsAfter.length > 0) {
+          if (!confirm(`There are ${stepsAfter.length} step(s) after this one. Marking this as the final step means those steps should be removed or moved before this step. Continue anyway?`)) {
+            savingStep.value = false
+            return
+          }
+        }
+      }
+
       // Update existing step
       await $fetch(`/api/journey-steps/${editingStep.value.id}`, {
         method: 'PUT',
@@ -554,6 +571,14 @@ async function saveStep() {
         }
       })
     } else {
+      // Check if there's already a final step when creating a new step
+      const existingFinalStep = steps.value.find(s => s.is_final_step)
+      if (existingFinalStep) {
+        alert(`Cannot add a new step after the final step "${existingFinalStep.name}". Please remove the "final step" designation first.`)
+        savingStep.value = false
+        return
+      }
+
       // Create new step
       await $fetch('/api/journey-steps', {
         method: 'POST',
@@ -596,7 +621,7 @@ function duplicateStep(step: any) {
     expectedDurationDays: step.expected_duration_days,
     helpContent: step.help_content || '',
     allowMultipleIterations: Boolean(step.allow_multiple_iterations),
-    isFinalStep: Boolean(step.is_final_step),
+    isFinalStep: false, // Don't copy final step designation to avoid duplicates
     requiresVerification: Boolean(step.requires_verification)
   }
   showStepModal.value = true
