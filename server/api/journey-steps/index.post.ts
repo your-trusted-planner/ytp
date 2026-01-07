@@ -19,6 +19,8 @@ export default defineEventHandler(async (event) => {
     automation_config: body.automationConfig ? JSON.stringify(body.automationConfig) : null,
     help_content: body.helpContent || null,
     allow_multiple_iterations: body.allowMultipleIterations ? 1 : 0,
+    is_final_step: body.isFinalStep ? 1 : 0,
+    requires_verification: body.requiresVerification ? 1 : 0,
     created_at: Date.now(),
     updated_at: Date.now()
   }
@@ -27,8 +29,9 @@ export default defineEventHandler(async (event) => {
     INSERT INTO journey_steps (
       id, journey_id, step_type, name, description, step_order,
       responsible_party, expected_duration_days, automation_config,
-      help_content, allow_multiple_iterations, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      help_content, allow_multiple_iterations, is_final_step,
+      requires_verification, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     step.id,
     step.journey_id,
@@ -41,6 +44,8 @@ export default defineEventHandler(async (event) => {
     step.automation_config,
     step.help_content,
     step.allow_multiple_iterations,
+    step.is_final_step,
+    step.requires_verification,
     step.created_at,
     step.updated_at
   ).run()

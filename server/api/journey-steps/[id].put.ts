@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
   const db = hubDatabase()
 
   await db.prepare(`
-    UPDATE journey_steps 
-    SET 
+    UPDATE journey_steps
+    SET
       step_type = ?,
       name = ?,
       description = ?,
@@ -26,6 +26,8 @@ export default defineEventHandler(async (event) => {
       automation_config = ?,
       help_content = ?,
       allow_multiple_iterations = ?,
+      is_final_step = ?,
+      requires_verification = ?,
       updated_at = ?
     WHERE id = ?
   `).bind(
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
     body.automationConfig ? JSON.stringify(body.automationConfig) : null,
     body.helpContent || null,
     body.allowMultipleIterations ? 1 : 0,
+    body.isFinalStep ? 1 : 0,
+    body.requiresVerification ? 1 : 0,
     Date.now(),
     stepId
   ).run()

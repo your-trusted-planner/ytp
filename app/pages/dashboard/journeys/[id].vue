@@ -362,45 +362,27 @@
           :rows="4"
         />
 
-        <div v-if="stepForm.stepType === 'BRIDGE'" class="flex items-center">
-          <input
+        <div v-if="stepForm.stepType === 'BRIDGE'">
+          <UiToggle
             v-model="stepForm.allowMultipleIterations"
-            type="checkbox"
-            id="allowMultipleIterations"
-            class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+            label="Allow multiple iterations (revisions)"
           />
-          <label for="allowMultipleIterations" class="ml-2 block text-sm text-gray-900">
-            Allow multiple iterations (revisions)
-          </label>
         </div>
 
         <!-- Step Completion Settings -->
-        <div class="border-t pt-4 space-y-3">
+        <div class="border-t pt-4 space-y-4">
           <h3 class="text-sm font-medium text-gray-900">Step Completion Settings</h3>
 
-          <div class="flex items-center">
-            <input
-              v-model="stepForm.isFinalStep"
-              type="checkbox"
-              id="isFinalStep"
-              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="isFinalStep" class="ml-2 block text-sm text-gray-900">
-              Mark as final step
-            </label>
-          </div>
+          <UiToggle
+            v-model="stepForm.isFinalStep"
+            label="Mark as final step"
+          />
 
-          <div class="flex items-center">
-            <input
-              v-model="stepForm.requiresVerification"
-              type="checkbox"
-              id="requiresVerification"
-              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="requiresVerification" class="ml-2 block text-sm text-gray-900">
-              Requires verification (allows "ring the bell" actions)
-            </label>
-          </div>
+          <UiToggle
+            v-model="stepForm.requiresVerification"
+            label="Requires verification"
+            description="Allows &quot;ring the bell&quot; service delivery verification actions"
+          />
         </div>
 
         <div class="flex justify-end space-x-3 pt-4 border-t">
