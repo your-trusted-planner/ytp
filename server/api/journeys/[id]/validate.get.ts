@@ -60,14 +60,17 @@ export default defineEventHandler(async (event) => {
     warnings.push('No step is marked as the final step')
   }
 
-  // Check for service delivery verification
-  const hasVerification = await db.select().from(schema.actionItems)
-    .where(eq(schema.actionItems.isServiceDeliveryVerification, true))
-    .limit(1)
-    .get()
+  // Check for service delivery verification (only for SERVICE journeys)
+  // ENGAGEMENT journeys are for onboarding, not service delivery
+  if (journey.journeyType === 'SERVICE') {
+    const hasVerification = await db.select().from(schema.actionItems)
+      .where(eq(schema.actionItems.isServiceDeliveryVerification, true))
+      .limit(1)
+      .get()
 
-  if (!hasVerification) {
-    warnings.push('No action item is marked as service delivery verification ("ring the bell")')
+    if (!hasVerification) {
+      warnings.push('No action item is marked as service delivery verification ("ring the bell")')
+    }
   }
 
   const valid = stepsWithoutActions.length === 0
