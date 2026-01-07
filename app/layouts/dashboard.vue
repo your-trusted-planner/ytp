@@ -149,7 +149,16 @@ const lawyerNavigation = ref([
 
   // Personal & Help
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
-  { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+  {
+    label: 'Settings',
+    icon: Settings,
+    isOpen: false,
+    children: [
+      { path: '/dashboard/settings', label: 'General', icon: Settings },
+      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle },
+      { path: '/dashboard/settings/calendars', label: 'Calendars', icon: Calendar }
+    ]
+  },
   { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
 ])
 
