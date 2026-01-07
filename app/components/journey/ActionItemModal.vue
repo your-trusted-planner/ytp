@@ -402,6 +402,24 @@ watch(() => props.editingItem, (item) => {
   }
 }, { immediate: true })
 
+// Reset form when modal opens for new item creation
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen && !props.editingItem) {
+    // Clear form when opening modal for new item
+    form.value = {
+      actionType: 'QUESTIONNAIRE',
+      title: '',
+      description: '',
+      assignedTo: 'CLIENT',
+      priority: 'MEDIUM',
+      systemIntegrationType: null,
+      isServiceDeliveryVerification: false,
+      verificationCriteriaText: '',
+      config: {}
+    }
+  }
+})
+
 function getActionTypeLabel(type: string): string {
   const found = actionTypes.find(t => t.value === type)
   return found ? found.label : type
