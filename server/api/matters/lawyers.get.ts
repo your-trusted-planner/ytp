@@ -7,12 +7,7 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
 
   const lawyers = await db
-    .select({
-      id: schema.users.id,
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      email: schema.users.email,
-    })
+    .select()
     .from(schema.users)
     .where(
       or(
