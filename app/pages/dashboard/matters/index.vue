@@ -71,7 +71,7 @@
     <UiModal
       v-model="showAddModal"
       :title="editingMatter ? 'Edit Matter' : 'Add New Matter'"
-      size="lg"
+      size="xl"
     >
       <form @submit.prevent="handleSaveMatter" class="space-y-4">
         <!-- Matter Details -->
