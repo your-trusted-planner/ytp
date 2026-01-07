@@ -224,46 +224,16 @@
     </UiModal>
 
     <!-- Edit Matter Modal -->
-    <UiModal v-model="showEditModal" title="Edit Matter" size="md">
-      <form @submit.prevent="handleEditMatter" class="space-y-4">
-        <UiInput
-          v-model="editForm.title"
-          label="Matter Title"
-          required
-        />
-
-        <UiTextarea
-          v-model="editForm.description"
-          label="Description"
-          :rows="3"
-        />
-
-        <UiSelect
-          v-model="editForm.status"
-          label="Status"
-          required
-        >
-          <option value="PENDING">Pending</option>
-          <option value="OPEN">Open</option>
-          <option value="CLOSED">Closed</option>
-        </UiSelect>
-
-        <UiInput
-          v-model="editForm.contractDate"
-          label="Engagement Letter Date (Optional)"
-          type="date"
-        />
-      </form>
-
-      <template #footer>
-        <UiButton variant="outline" @click="showEditModal = false">
-          Cancel
-        </UiButton>
-        <UiButton @click="handleEditMatter" :is-loading="saving">
-          Save Changes
-        </UiButton>
-      </template>
-    </UiModal>
+    <MatterFormModal
+      v-model="showEditModal"
+      :editing-matter="matter"
+      :clients="clients"
+      :lawyers="lawyers"
+      :engagement-journeys="engagementJourneys"
+      :catalog="catalog"
+      @save="handleMatterSaved"
+      @cancel="showEditModal = false"
+    />
 
   </div>
 </template>
@@ -292,19 +262,14 @@ const services = ref<any[]>([])
 const journeys = ref<any[]>([])
 const payments = ref<any[]>([])
 const catalog = ref<any[]>([])
+const clients = ref<any[]>([])
+const lawyers = ref<any[]>([])
+const engagementJourneys = ref<any[]>([])
 
 // Service addition state
 const addingService = ref(false)
 const newServiceForm = ref({
   catalogId: ''
-})
-
-// Edit matter state
-const editForm = ref({
-  title: '',
-  description: '',
-  status: '',
-  contractDate: ''
 })
 
 const tabs = [
@@ -324,19 +289,6 @@ const totalPayments = computed(() => {
   return payments.value.reduce((sum, p) => sum + (p.amount || 0), 0)
 })
 
-// Populate edit form when modal opens
-watch(showEditModal, (newValue) => {
-  if (newValue && matter.value) {
-    editForm.value = {
-      title: matter.value.title,
-      description: matter.value.description || '',
-      status: matter.value.status,
-      contractDate: matter.value.contract_date
-        ? new Date(matter.value.contract_date * 1000).toISOString().split('T')[0]
-        : ''
-    }
-  }
-})
 
 // Fetch matter data
 async function fetchMatter() {
@@ -411,29 +363,38 @@ async function handleAddService() {
 }
 
 // Edit matter
-async function handleEditMatter() {
-  if (!editForm.value.title || !editForm.value.status) return
+async function handleMatterSaved() {
+  showEditModal.value = false
+  await fetchMatter()
+}
 
-  saving.value = true
+// Fetch clients for dropdown
+async function fetchClients() {
   try {
-    await $fetch(`/api/matters/${matterId}`, {
-      method: 'PUT',
-      body: {
-        title: editForm.value.title,
-        description: editForm.value.description,
-        status: editForm.value.status,
-        contract_date: editForm.value.contractDate ? new Date(editForm.value.contractDate).getTime() / 1000 : null
-      }
-    })
+    const response = await $fetch<{ clients: any[] }>('/api/clients')
+    clients.value = response.clients || response
+  } catch (error) {
+    console.error('Failed to fetch clients:', error)
+  }
+}
 
-    // Close modal and refresh matter data
-    showEditModal.value = false
-    await fetchMatter()
-  } catch (error: any) {
-    console.error('Failed to update matter:', error)
-    alert(error.data?.message || 'Failed to update matter')
-  } finally {
-    saving.value = false
+// Fetch lawyers for dropdown
+async function fetchLawyers() {
+  try {
+    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
+    lawyers.value = response.lawyers || []
+  } catch (error) {
+    console.error('Failed to fetch lawyers:', error)
+  }
+}
+
+// Fetch engagement journey templates
+async function fetchEngagementJourneys() {
+  try {
+    const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
+    engagementJourneys.value = response.engagementJourneys || []
+  } catch (error) {
+    console.error('Failed to fetch engagement journeys:', error)
   }
 }
 
@@ -485,8 +446,13 @@ function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'defau
   }
 }
 
-onMounted(() => {
-  fetchMatter()
-  fetchCatalog()
+onMounted(async () => {
+  await Promise.all([
+    fetchMatter(),
+    fetchCatalog(),
+    fetchClients(),
+    fetchLawyers(),
+    fetchEngagementJourneys()
+  ])
 })
 </script>
