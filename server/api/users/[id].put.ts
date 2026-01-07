@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const updateUserSchema = z.object({
-  role: z.enum(['ADMIN', 'LAWYER', 'CLIENT', 'LEAD', 'PROSPECT']).optional(),
+  role: z.enum(['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).optional(),
   status: z.enum(['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE']).optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),

@@ -5,6 +5,9 @@
         <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
         <p class="text-gray-600 mt-1">Manage user roles and permissions</p>
       </div>
+      <UiButton @click="openCreateModal">
+        Create User
+      </UiButton>
     </div>
 
     <!-- Users List -->
@@ -46,12 +49,18 @@
                   {{ user.status }}
                 </UiBadge>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                 <button
                   @click="editUser(user)"
                   class="text-burgundy-600 hover:text-burgundy-900"
                 >
                   Edit
+                </button>
+                <button
+                  @click="confirmDelete(user)"
+                  class="text-red-600 hover:text-red-900"
+                >
+                  Delete
                 </button>
               </td>
             </tr>
@@ -60,9 +69,25 @@
       </div>
     </UiCard>
 
-    <!-- Edit User Modal -->
-    <UiModal v-model="showEditModal" title="Edit User" size="md">
+    <!-- Create/Edit User Modal -->
+    <UiModal v-model="showEditModal" :title="editingUser ? 'Edit User' : 'Create User'" size="md">
       <form @submit.prevent="handleSaveUser" class="space-y-4">
+        <UiInput
+          v-if="!editingUser"
+          v-model="editForm.email"
+          label="Email"
+          type="email"
+          required
+        />
+
+        <UiInput
+          v-if="!editingUser"
+          v-model="editForm.password"
+          label="Password"
+          type="password"
+          required
+        />
+
         <UiInput
           v-model="editForm.firstName"
           label="First Name"
@@ -87,6 +112,7 @@
           <option value="PROSPECT">Prospect</option>
           <option value="LEAD">Lead</option>
           <option value="CLIENT">Client</option>
+          <option value="ADVISOR">Advisor</option>
           <option value="LAWYER">Lawyer</option>
           <option value="ADMIN">Admin</option>
         </UiSelect>
@@ -114,7 +140,30 @@
           Cancel
         </UiButton>
         <UiButton @click="handleSaveUser" :is-loading="saving">
-          Save Changes
+          {{ editingUser ? 'Save Changes' : 'Create User' }}
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UiModal v-model="showDeleteModal" title="Delete User" size="sm">
+      <div class="space-y-4">
+        <p class="text-gray-700">
+          Are you sure you want to delete <strong>{{ deletingUser?.firstName }} {{ deletingUser?.lastName }}</strong>?
+        </p>
+        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p class="text-sm text-red-800">
+            <strong>Warning:</strong> This action cannot be undone. All data associated with this user will be permanently deleted.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showDeleteModal = false">
+          Cancel
+        </UiButton>
+        <UiButton variant="danger" @click="handleDeleteUser" :is-loading="deleting">
+          Delete User
         </UiButton>
       </template>
     </UiModal>
@@ -130,10 +179,15 @@ definePageMeta({
 const users = ref<any[]>([])
 const loading = ref(true)
 const showEditModal = ref(false)
+const showDeleteModal = ref(false)
 const saving = ref(false)
+const deleting = ref(false)
 const editingUser = ref<any>(null)
+const deletingUser = ref<any>(null)
 
 const editForm = ref({
+  email: '',
+  password: '',
   firstName: '',
   lastName: '',
   phone: '',
@@ -153,9 +207,25 @@ async function fetchUsers() {
   }
 }
 
+function openCreateModal() {
+  editingUser.value = null
+  editForm.value = {
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    role: 'CLIENT',
+    status: 'ACTIVE'
+  }
+  showEditModal.value = true
+}
+
 function editUser(user: any) {
   editingUser.value = user
   editForm.value = {
+    email: user.email || '',
+    password: '',
     firstName: user.firstName || '',
     lastName: user.lastName || '',
     phone: user.phone || '',
@@ -166,28 +236,67 @@ function editUser(user: any) {
 }
 
 async function handleSaveUser() {
-  if (!editingUser.value) return
-
   saving.value = true
   try {
-    await $fetch(`/api/users/${editingUser.value.id}`, {
-      method: 'PUT',
-      body: {
-        firstName: editForm.value.firstName,
-        lastName: editForm.value.lastName,
-        phone: editForm.value.phone,
-        role: editForm.value.role,
-        status: editForm.value.status
-      }
-    })
+    if (editingUser.value) {
+      // Update existing user
+      await $fetch(`/api/users/${editingUser.value.id}`, {
+        method: 'PUT',
+        body: {
+          firstName: editForm.value.firstName,
+          lastName: editForm.value.lastName,
+          phone: editForm.value.phone,
+          role: editForm.value.role,
+          status: editForm.value.status
+        }
+      })
+    } else {
+      // Create new user
+      await $fetch('/api/users', {
+        method: 'POST',
+        body: {
+          email: editForm.value.email,
+          password: editForm.value.password,
+          firstName: editForm.value.firstName,
+          lastName: editForm.value.lastName,
+          phone: editForm.value.phone,
+          role: editForm.value.role,
+          status: editForm.value.status
+        }
+      })
+    }
 
     showEditModal.value = false
     await fetchUsers()
   } catch (error: any) {
-    console.error('Failed to update user:', error)
-    alert(error.data?.message || 'Failed to update user')
+    console.error('Failed to save user:', error)
+    alert(error.data?.message || 'Failed to save user')
   } finally {
     saving.value = false
+  }
+}
+
+function confirmDelete(user: any) {
+  deletingUser.value = user
+  showDeleteModal.value = true
+}
+
+async function handleDeleteUser() {
+  if (!deletingUser.value) return
+
+  deleting.value = true
+  try {
+    await $fetch(`/api/users/${deletingUser.value.id}`, {
+      method: 'DELETE'
+    })
+
+    showDeleteModal.value = false
+    await fetchUsers()
+  } catch (error: any) {
+    console.error('Failed to delete user:', error)
+    alert(error.data?.message || 'Failed to delete user')
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -199,6 +308,8 @@ function getRoleBadgeVariant(role: string) {
       return 'primary'
     case 'CLIENT':
       return 'success'
+    case 'ADVISOR':
+      return 'info'
     case 'LEAD':
       return 'warning'
     default:

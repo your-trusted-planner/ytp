@@ -73,17 +73,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 definePageMeta({
   layout: false
 })
 
 const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const password = ref('')
 const error = ref('')
 const isLoading = ref(false)
+
+// Check for session invalidation messages
+onMounted(() => {
+  const reason = route.query.reason as string
+  if (reason === 'deleted') {
+    error.value = 'Your account has been deleted. Please contact support for assistance.'
+  } else if (reason === 'disabled') {
+    error.value = 'Your account has been disabled. Please contact support for assistance.'
+  } else if (reason === 'invalid') {
+    error.value = 'Your session has expired. Please sign in again.'
+  }
+})
 
 const handleSubmit = async () => {
   error.value = ''
