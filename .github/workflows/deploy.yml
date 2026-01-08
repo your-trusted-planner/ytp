@@ -38,6 +38,9 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          NUXT_GIT_COMMIT: ${{ github.sha }}
+          NUXT_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
 
       - name: Apply Database Migrations (Preview)
         if: github.ref != 'refs/heads/main'
