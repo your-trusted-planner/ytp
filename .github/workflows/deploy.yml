@@ -45,7 +45,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply ytp-preview --remote
+          command: d1 migrations apply ytp-preview --env preview --remote
 
       - name: Deploy to Preview (non-main branches)
         if: github.ref != 'refs/heads/main'
