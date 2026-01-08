@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  
+
   // Only lawyers/admins can generate documents
   if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
     throw createError({
@@ -13,9 +13,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and, like } = await import('drizzle-orm')
+  const db = useDrizzle()
   const renderer = useTemplateRenderer()
-  
+
   const { clientJourneyId, stepId, customData = {}, questionnaireData = {} } = body
 
   if (!clientJourneyId || !stepId) {
@@ -25,26 +27,73 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get client journey and client data
-  const clientJourney = await db.prepare(`
-    SELECT cj.*, u.*, cp.*
-    FROM client_journeys cj
-    JOIN users u ON cj.client_id = u.id
-    LEFT JOIN client_profiles cp ON u.id = cp.user_id
-    WHERE cj.id = ?
-  `).bind(clientJourneyId).first()
+  // Get client journey
+  const clientJourneyRecord = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
-  if (!clientJourney) {
+  if (!clientJourneyRecord) {
     throw createError({
       statusCode: 404,
       message: 'Client journey not found'
     })
   }
 
+  // Get client data
+  const clientUser = await db.select()
+    .from(schema.users)
+    .where(eq(schema.users.id, clientJourneyRecord.clientId))
+    .get()
+
+  if (!clientUser) {
+    throw createError({
+      statusCode: 404,
+      message: 'Client not found'
+    })
+  }
+
+  // Get client profile if exists
+  const clientProfile = await db.select()
+    .from(schema.clientProfiles)
+    .where(eq(schema.clientProfiles.userId, clientUser.id))
+    .get()
+
+  // Merge client data for compatibility
+  const clientJourney = {
+    ...clientJourneyRecord,
+    ...clientUser,
+    ...(clientProfile || {}),
+    client_id: clientJourneyRecord.clientId,
+    first_name: clientUser.firstName,
+    last_name: clientUser.lastName
+  }
+
+  // Get spouse information from relationships system
+  let spouse: any = null
+  const spouseRelationship = await db.select()
+    .from(schema.people)
+    .innerJoin(
+      schema.clientRelationships,
+      eq(schema.people.id, schema.clientRelationships.personId)
+    )
+    .where(and(
+      eq(schema.clientRelationships.clientId, clientJourney.client_id),
+      eq(schema.clientRelationships.relationshipType, 'SPOUSE')
+    ))
+    .orderBy(schema.clientRelationships.ordinal)
+    .limit(1)
+    .get()
+
+  if (spouseRelationship) {
+    spouse = spouseRelationship.people
+  }
+
   // Get step info to find related templates
-  const step = await db.prepare(`
-    SELECT * FROM journey_steps WHERE id = ?
-  `).bind(stepId).first()
+  const step = await db.select()
+    .from(schema.journeySteps)
+    .where(eq(schema.journeySteps.id, stepId))
+    .get()
 
   if (!step) {
     throw createError({
@@ -55,14 +104,16 @@ export default defineEventHandler(async (event) => {
 
   // Find templates that match this step's group
   // We'll look for templates whose description matches the step
-  const templates = await db.prepare(`
-    SELECT * FROM document_templates
-    WHERE is_active = 1
-    AND description LIKE ?
-    ORDER BY original_file_name ASC
-  `).bind(`%${step.name}%`).all()
+  const templates = await db.select()
+    .from(schema.documentTemplates)
+    .where(and(
+      eq(schema.documentTemplates.isActive, true),
+      like(schema.documentTemplates.description, `%${step.name}%`)
+    ))
+    .orderBy(schema.documentTemplates.originalFileName)
+    .all()
 
-  if (!templates.results || templates.results.length === 0) {
+  if (!templates || templates.length === 0) {
     // If no exact match, get all templates in the relevant category
     // This is a fallback
     return {
@@ -80,28 +131,28 @@ export default defineEventHandler(async (event) => {
     clientAddress: clientJourney.address || '',
     clientCity: clientJourney.city || '',
     clientState: clientJourney.state || '',
-    clientZipCode: clientJourney.zip_code || '',
+    clientZipCode: clientJourney.zipCode || clientJourney.zip_code || '',
     clientEmail: clientJourney.email || '',
     clientPhone: clientJourney.phone || '',
-    
-    // Spouse info
-    spouseName: clientJourney.spouse_name || '',
-    spouseFirstName: clientJourney.spouse_name?.split(' ')[0] || '',
-    spouseLastName: clientJourney.spouse_name?.split(' ').slice(1).join(' ') || '',
-    
+
+    // Spouse info (from people/relationships system)
+    spouseName: spouse ? `${spouse.firstName || ''} ${spouse.lastName || ''}`.trim() : '',
+    spouseFirstName: spouse?.firstName || '',
+    spouseLastName: spouse?.lastName || '',
+
     // Dates
     currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     today: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signedOn: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    
+
     // Placeholders
     clientSignature: '[Signature Required]',
     signature: '[Signature Required]',
-    
+
     // Custom data
     ...customData,
-    
+
     // Questionnaire data
     questionnaireItems: questionnaireData
   }
@@ -112,38 +163,34 @@ export default defineEventHandler(async (event) => {
 
   // Generate documents
   const generatedDocs = []
-  
-  for (const template of templates.results) {
+  const now = new Date()
+
+  for (const template of templates) {
     try {
       // Render template with context
       const renderedContent = renderer.render(template.content, context)
 
       // Create document record
       const docId = nanoid()
-      await db.prepare(`
-        INSERT INTO documents (
-          id, title, description, status, template_id, content, variable_values,
-          requires_notary, notarization_status, client_id, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        docId,
-        template.name,
-        template.description,
-        'DRAFT',
-        template.id,
-        renderedContent,
-        JSON.stringify(context),
-        template.requires_notary,
-        template.requires_notary ? 'PENDING' : 'NOT_REQUIRED',
-        clientJourney.client_id,
-        Date.now(),
-        Date.now()
-      ).run()
+      await db.insert(schema.documents).values({
+        id: docId,
+        title: template.name,
+        description: template.description,
+        status: 'DRAFT',
+        templateId: template.id,
+        content: renderedContent,
+        variableValues: JSON.stringify(context),
+        requiresNotary: template.requiresNotary,
+        notarizationStatus: template.requiresNotary ? 'PENDING' : 'NOT_REQUIRED',
+        clientId: clientJourney.client_id,
+        createdAt: now,
+        updatedAt: now
+      })
 
       generatedDocs.push({
         id: docId,
         title: template.name,
-        requiresNotary: Boolean(template.requires_notary)
+        requiresNotary: Boolean(template.requiresNotary)
       })
     } catch (error) {
       console.error(`Error generating document from template ${template.id}:`, error)

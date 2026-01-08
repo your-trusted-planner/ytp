@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
   const body = await readBody(event)
   const result = callNotesSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -20,41 +20,36 @@ export default defineEventHandler(async (event) => {
       data: result.error.errors
     })
   }
-  
+
   const { appointmentId, preCallNotes, callNotes } = result.data
-  const db = hubDatabase()
-  
-  // Build update query dynamically based on what's provided
-  const updates: string[] = []
-  const params: any[] = []
-  
+
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
+  // Build update object dynamically based on what's provided
+  const updateData: any = {}
+
   if (preCallNotes !== undefined) {
-    updates.push('pre_call_notes = ?')
-    params.push(preCallNotes)
+    updateData.preCallNotes = preCallNotes
   }
-  
+
   if (callNotes !== undefined) {
-    updates.push('call_notes = ?')
-    updates.push('call_notes_updated_at = ?')
-    params.push(callNotes)
-    params.push(Date.now())
+    updateData.callNotes = callNotes
+    updateData.callNotesUpdatedAt = new Date()
   }
-  
-  if (updates.length === 0) {
+
+  if (Object.keys(updateData).length === 0) {
     throw createError({
       statusCode: 400,
       message: 'No notes provided'
     })
   }
-  
-  params.push(appointmentId)
-  
-  await db.prepare(`
-    UPDATE appointments 
-    SET ${updates.join(', ')}
-    WHERE id = ?
-  `).bind(...params).run()
-  
+
+  await db.update(schema.appointments)
+    .set(updateData)
+    .where(eq(schema.appointments.id, appointmentId))
+
   return {
     success: true,
     message: 'Call notes updated'

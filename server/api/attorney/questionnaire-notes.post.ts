@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
   const body = await readBody(event)
   const result = notesSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -19,18 +19,22 @@ export default defineEventHandler(async (event) => {
       data: result.error.errors
     })
   }
-  
+
   const { responseId, notes } = result.data
-  const db = hubDatabase()
-  
+
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Update questionnaire response with attorney notes
-  const now = Date.now()
-  await db.prepare(`
-    UPDATE questionnaire_responses 
-    SET attorney_notes = ?, attorney_notes_updated_at = ?
-    WHERE id = ?
-  `).bind(notes, now, responseId).run()
-  
+  const now = new Date()
+  await db.update(schema.questionnaireResponses)
+    .set({
+      attorneyNotes: notes,
+      attorneyNotesUpdatedAt: now
+    })
+    .where(eq(schema.questionnaireResponses.id, responseId))
+
   return {
     success: true,
     message: 'Attorney notes updated'

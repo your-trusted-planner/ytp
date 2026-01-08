@@ -262,14 +262,13 @@ async function seedWYDAPTDocuments() {
     const journeyId = nanoid()
     db.prepare(`
       INSERT INTO journeys (
-        id, service_catalog_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, service_catalog_id, name, description, is_active, estimated_duration_days, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       journeyId,
       catalogId,
       'Wyoming Asset Protection Trust Journey',
       'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
-      1, // This is a template
       1,
       60, // ~2 months estimated
       Date.now(),

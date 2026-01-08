@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 import { hashPassword, generateId, requireRole } from '../../utils/auth'
 
 const createClientSchema = z.object({

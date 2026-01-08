@@ -32,7 +32,7 @@
               <div v-if="service.category" class="text-xs text-gray-500">{{ service.category }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ formatPrice(service.price) }}</div>
+              <div class="text-sm text-gray-900">{{ formatCurrency(service.price) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <UiBadge :variant="getStatusVariant(service.status)">
@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatCurrency } from '~/utils/format'
+
 interface Service {
   catalog_id: string
   name: string
@@ -72,15 +74,6 @@ interface Props {
 }
 
 defineProps<Props>()
-
-function formatPrice(price: number): string {
-  if (!price) return '$0'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(price)
-}
 
 function formatDate(timestamp: number): string {
   if (!timestamp) return '-'

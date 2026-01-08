@@ -11,22 +11,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  // Get client journey details
-  const clientJourney = await db.prepare(`
-    SELECT 
-      cj.*,
-      u.email as client_email,
-      u.first_name as client_first_name,
-      js.name as current_step_name,
-      j.name as journey_name
-    FROM client_journeys cj
-    JOIN users u ON cj.client_id = u.id
-    LEFT JOIN journey_steps js ON cj.current_step_id = js.id
-    JOIN journeys j ON cj.journey_id = j.id
-    WHERE cj.id = ?
-  `).bind(clientJourneyId).first()
+  // Get client journey
+  const clientJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -35,10 +28,35 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get client info
+  const client = await db.select({
+    email: schema.users.email,
+    firstName: schema.users.firstName
+  })
+    .from(schema.users)
+    .where(eq(schema.users.id, clientJourney.clientId))
+    .get()
+
+  // Get current step name if exists
+  let currentStepName = null
+  if (clientJourney.currentStepId) {
+    const step = await db.select({ name: schema.journeySteps.name })
+      .from(schema.journeySteps)
+      .where(eq(schema.journeySteps.id, clientJourney.currentStepId))
+      .get()
+    currentStepName = step?.name
+  }
+
+  // Get journey name
+  const journey = await db.select({ name: schema.journeys.name })
+    .from(schema.journeys)
+    .where(eq(schema.journeys.id, clientJourney.journeyId))
+    .get()
+
   // TODO: Implement email sending
   // For now, just log the reminder
-  console.log('Sending reminder to:', clientJourney.client_email)
-  console.log('About:', clientJourney.journey_name, '-', clientJourney.current_step_name)
+  console.log('Sending reminder to:', client?.email)
+  console.log('About:', journey?.name, '-', currentStepName)
 
   return { success: true }
 })

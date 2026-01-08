@@ -29,17 +29,23 @@ export default defineEventHandler(async (event) => {
   }
   
   const { email, firstName, lastName, phone, questionnaireId, responses, attorneyId, utmSource, utmMedium, utmCampaign } = result.data
-  const db = hubDatabase()
-  
+
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, and, ne } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Check if booking already exists for this email
-  const existingBooking = await db.prepare(`
-    SELECT * FROM public_bookings 
-    WHERE email = ? 
-    AND status NOT IN ('CONVERTED', 'CANCELLED')
-    ORDER BY created_at DESC 
-    LIMIT 1
-  `).bind(email).first()
-  
+  const existingBooking = await db.select()
+    .from(schema.publicBookings)
+    .where(and(
+      eq(schema.publicBookings.email, email),
+      ne(schema.publicBookings.status, 'CONVERTED'),
+      ne(schema.publicBookings.status, 'CANCELLED')
+    ))
+    .orderBy(schema.publicBookings.createdAt)
+    .limit(1)
+    .get()
+
   if (existingBooking) {
     // Return existing booking if not yet completed
     return {
@@ -49,51 +55,58 @@ export default defineEventHandler(async (event) => {
       message: 'Booking already exists for this email'
     }
   }
-  
-  // Get questionnaire details to find consultation fee
-  const questionnaire = await db.prepare(`
-    SELECT q.*, sc.consultation_fee, sc.consultation_fee_enabled
-    FROM questionnaires q
-    LEFT JOIN service_catalog sc ON q.service_catalog_id = sc.id
-    WHERE q.id = ?
-  `).bind(questionnaireId).first()
-  
+
+  // Get questionnaire details
+  const questionnaire = await db.select()
+    .from(schema.questionnaires)
+    .where(eq(schema.questionnaires.id, questionnaireId))
+    .get()
+
   if (!questionnaire) {
     throw createError({
       statusCode: 404,
       message: 'Questionnaire not found'
     })
   }
-  
-  const consultationFee = questionnaire.consultation_fee || 37500 // Default $375
-  const consultationFeeEnabled = questionnaire.consultation_fee_enabled !== 0
-  
+
+  // Get service catalog consultation fee if linked
+  let consultationFee = 37500 // Default $375
+  let consultationFeeEnabled = false
+
+  if (questionnaire.serviceCatalogId) {
+    const serviceCatalog = await db.select({
+      consultationFee: schema.serviceCatalog.consultationFee,
+      consultationFeeEnabled: schema.serviceCatalog.consultationFeeEnabled
+    })
+      .from(schema.serviceCatalog)
+      .where(eq(schema.serviceCatalog.id, questionnaire.serviceCatalogId))
+      .get()
+
+    if (serviceCatalog) {
+      consultationFee = serviceCatalog.consultationFee || consultationFee
+      consultationFeeEnabled = serviceCatalog.consultationFeeEnabled || false
+    }
+  }
+
   // Create public booking record
   const bookingId = generateId()
-  const now = Date.now()
-  
-  await db.prepare(`
-    INSERT INTO public_bookings (
-      id, email, first_name, last_name, phone,
-      questionnaire_id, questionnaire_responses,
-      consultation_fee_paid, payment_amount, attorney_id,
-      status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    bookingId,
+  const now = new Date()
+
+  await db.insert(schema.publicBookings).values({
+    id: bookingId,
     email,
     firstName,
     lastName,
-    phone || null,
+    phone: phone || null,
     questionnaireId,
-    JSON.stringify(responses),
-    consultationFeeEnabled ? 0 : 1, // If fee disabled, mark as paid
-    consultationFeeEnabled ? consultationFee : 0,
-    attorneyId || null,
-    consultationFeeEnabled ? 'PENDING_PAYMENT' : 'PENDING_BOOKING',
-    now,
-    now
-  ).run()
+    questionnaireResponses: JSON.stringify(responses),
+    consultationFeePaid: consultationFeeEnabled ? false : true, // If fee disabled, mark as paid
+    paymentAmount: consultationFeeEnabled ? consultationFee : 0,
+    attorneyId: attorneyId || null,
+    status: consultationFeeEnabled ? 'PENDING_PAYMENT' : 'PENDING_BOOKING',
+    createdAt: now,
+    updatedAt: now
+  })
   
   // Store marketing attribution if provided
   if (utmSource || utmMedium || utmCampaign) {

@@ -21,12 +21,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Verify template exists
-  const template = await db.prepare(`
-    SELECT id FROM document_templates WHERE id = ?
-  `).bind(templateId).first()
+  const template = await db.select({ id: schema.documentTemplates.id })
+    .from(schema.documentTemplates)
+    .where(eq(schema.documentTemplates.id, templateId))
+    .get()
 
   if (!template) {
     throw createError({
@@ -36,16 +39,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Update variable mappings
-  await db.prepare(`
-    UPDATE document_templates
-    SET variable_mappings = ?,
-        updated_at = ?
-    WHERE id = ?
-  `).bind(
-    JSON.stringify(mappings),
-    Date.now(),
-    templateId
-  ).run()
+  await db.update(schema.documentTemplates)
+    .set({
+      variableMappings: JSON.stringify(mappings),
+      updatedAt: new Date()
+    })
+    .where(eq(schema.documentTemplates.id, templateId))
 
   return {
     success: true,

@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   LayoutDashboard,
   Users,
@@ -116,7 +116,8 @@ import {
   ChevronRight,
   ChevronDown,
   Wrench,
-  Contact
+  Contact,
+  KeyRound
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -149,7 +150,17 @@ const lawyerNavigation = ref([
 
   // Personal & Help
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
-  { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+  {
+    label: 'Settings',
+    icon: Settings,
+    isOpen: false,
+    children: [
+      { path: '/dashboard/settings', label: 'General', icon: Settings },
+      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle },
+      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound },
+      { path: '/dashboard/settings/calendars', label: 'Calendars', icon: Calendar }
+    ]
+  },
   { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
 ])
 
@@ -200,5 +211,13 @@ const handleLogout = async () => {
     isLoggingOut.value = false
   }
 }
+
+// Watch for invalid session and redirect to login
+watch(user, (newUser) => {
+  if (!newUser) {
+    console.warn('Session invalidated, redirecting to login')
+    router.push('/login?reason=invalid')
+  }
+}, { immediate: true })
 </script>
 

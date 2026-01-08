@@ -5,7 +5,9 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and, ne } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Validate that matter and catalog are provided
   if (!body.matterId || !body.catalogId) {
@@ -16,10 +18,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate that the service is engaged for this matter
-  const engagement = await db.prepare(`
-    SELECT * FROM matters_to_services
-    WHERE matter_id = ? AND catalog_id = ?
-  `).bind(body.matterId, body.catalogId).first()
+  const engagement = await db.select()
+    .from(schema.mattersToServices)
+    .where(and(
+      eq(schema.mattersToServices.matterId, body.matterId),
+      eq(schema.mattersToServices.catalogId, body.catalogId)
+    ))
+    .get()
 
   if (!engagement) {
     throw createError({
@@ -29,11 +34,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if a journey already exists for this engagement
-  const existingJourney = await db.prepare(`
-    SELECT * FROM client_journeys
-    WHERE matter_id = ? AND catalog_id = ?
-    AND status != 'CANCELLED'
-  `).bind(body.matterId, body.catalogId).first()
+  const existingJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(and(
+      eq(schema.clientJourneys.matterId, body.matterId),
+      eq(schema.clientJourneys.catalogId, body.catalogId),
+      ne(schema.clientJourneys.status, 'CANCELLED')
+    ))
+    .get()
 
   if (existingJourney) {
     throw createError({
@@ -43,73 +51,66 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get the first step of the journey
-  const firstStep = await db.prepare(`
-    SELECT id FROM journey_steps
-    WHERE journey_id = ?
-    ORDER BY step_order ASC
-    LIMIT 1
-  `).bind(body.journeyId).first()
+  const firstStep = await db.select({ id: schema.journeySteps.id })
+    .from(schema.journeySteps)
+    .where(eq(schema.journeySteps.journeyId, body.journeyId))
+    .orderBy(schema.journeySteps.stepOrder)
+    .limit(1)
+    .get()
 
-  const clientJourney = {
-    id: nanoid(),
-    client_id: body.clientId,
-    matter_id: body.matterId,
-    catalog_id: body.catalogId,
-    journey_id: body.journeyId,
-    current_step_id: firstStep?.id || null,
+  const clientJourneyId = nanoid()
+  const now = new Date()
+
+  await db.insert(schema.clientJourneys).values({
+    id: clientJourneyId,
+    clientId: body.clientId,
+    matterId: body.matterId,
+    catalogId: body.catalogId,
+    journeyId: body.journeyId,
+    currentStepId: firstStep?.id || null,
     status: 'IN_PROGRESS',
     priority: body.priority || 'MEDIUM',
-    started_at: Date.now(),
-    completed_at: null,
-    paused_at: null,
-    created_at: Date.now(),
-    updated_at: Date.now()
-  }
-
-  await db.prepare(`
-    INSERT INTO client_journeys (
-      id, client_id, matter_id, catalog_id, journey_id, current_step_id, status, priority,
-      started_at, completed_at, paused_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    clientJourney.id,
-    clientJourney.client_id,
-    clientJourney.matter_id,
-    clientJourney.catalog_id,
-    clientJourney.journey_id,
-    clientJourney.current_step_id,
-    clientJourney.status,
-    clientJourney.priority,
-    clientJourney.started_at,
-    clientJourney.completed_at,
-    clientJourney.paused_at,
-    clientJourney.created_at,
-    clientJourney.updated_at
-  ).run()
+    startedAt: now,
+    completedAt: null,
+    pausedAt: null,
+    createdAt: now,
+    updatedAt: now
+  })
 
   // Create progress record for the first step
   if (firstStep) {
-    const progressId = nanoid()
-    await db.prepare(`
-      INSERT INTO journey_step_progress (
-        id, client_journey_id, step_id, status, client_approved, counsel_approved,
-        iteration_count, started_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      progressId,
-      clientJourney.id,
-      firstStep.id,
-      'IN_PROGRESS',
-      0,
-      0,
-      0,
-      Date.now(),
-      Date.now(),
-      Date.now()
-    ).run()
+    await db.insert(schema.journeyStepProgress).values({
+      id: nanoid(),
+      clientJourneyId: clientJourneyId,
+      stepId: firstStep.id,
+      status: 'IN_PROGRESS',
+      clientApproved: false,
+      attorneyApproved: false,
+      iterationCount: 0,
+      startedAt: now,
+      createdAt: now,
+      updatedAt: now
+    })
   }
 
-  return { clientJourney }
+  // Return clientJourney object for compatibility
+  return {
+    clientJourney: {
+      id: clientJourneyId,
+      client_id: body.clientId,
+      matter_id: body.matterId,
+      catalog_id: body.catalogId,
+      journey_id: body.journeyId,
+      current_step_id: firstStep?.id || null,
+      status: 'IN_PROGRESS',
+      priority: body.priority || 'MEDIUM',
+      started_at: now.getTime(),
+      completed_at: null,
+      paused_at: null,
+      created_at: now.getTime(),
+      updated_at: now.getTime()
+    }
+  }
 })
 
 

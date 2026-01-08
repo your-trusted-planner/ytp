@@ -1,5 +1,6 @@
 // Generate a personalized document from a template
 import { nanoid } from 'nanoid'
+import { blob } from 'hub:blob'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -13,13 +14,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
   const renderer = useTemplateRenderer()
-  
+
   // Get template
-  const template = await db.prepare(`
-    SELECT * FROM document_templates WHERE id = ?
-  `).bind(body.templateId).first()
+  const template = await db.select()
+    .from(schema.documentTemplates)
+    .where(eq(schema.documentTemplates.id, body.templateId))
+    .get()
 
   if (!template) {
     throw createError({
@@ -30,35 +34,93 @@ export default defineEventHandler(async (event) => {
 
   // Parse variable mappings if they exist
   let variableMappings: Record<string, { source: string, field: string }> = {}
-  if (template.variable_mappings) {
+  if (template.variableMappings) {
     try {
-      variableMappings = JSON.parse(template.variable_mappings)
+      variableMappings = JSON.parse(template.variableMappings)
     } catch (error) {
       console.error('Error parsing variable mappings:', error)
     }
   }
 
   // Get client data
-  const client = await db.prepare(`
-    SELECT u.*, cp.*
-    FROM users u
-    LEFT JOIN client_profiles cp ON u.id = cp.user_id
-    WHERE u.id = ?
-  `).bind(body.clientId).first()
+  const clientData = await db.select({
+    // User fields
+    id: schema.users.id,
+    email: schema.users.email,
+    firstName: schema.users.firstName,
+    lastName: schema.users.lastName,
+    phone: schema.users.phone,
+    // Client profile fields
+    dateOfBirth: schema.clientProfiles.dateOfBirth,
+    address: schema.clientProfiles.address,
+    city: schema.clientProfiles.city,
+    state: schema.clientProfiles.state,
+    zipCode: schema.clientProfiles.zipCode,
+    hasMinorChildren: schema.clientProfiles.hasMinorChildren,
+    childrenInfo: schema.clientProfiles.childrenInfo,
+    businessName: schema.clientProfiles.businessName,
+    businessType: schema.clientProfiles.businessType
+  })
+    .from(schema.users)
+    .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
+    .where(eq(schema.users.id, body.clientId))
+    .get()
 
-  if (!client) {
+  if (!clientData) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
     })
   }
 
+  // Map to snake_case for compatibility with existing code
+  const client = {
+    id: clientData.id,
+    email: clientData.email,
+    first_name: clientData.firstName,
+    last_name: clientData.lastName,
+    phone: clientData.phone,
+    date_of_birth: clientData.dateOfBirth,
+    address: clientData.address,
+    city: clientData.city,
+    state: clientData.state,
+    zip_code: clientData.zipCode,
+    has_minor_children: clientData.hasMinorChildren,
+    children_info: clientData.childrenInfo,
+    business_name: clientData.businessName,
+    business_type: clientData.businessType
+  }
+
+  // Get spouse information from relationships system
+  let spouse: any = null
+  const spouseData = await db.select()
+    .from(schema.people)
+    .innerJoin(schema.clientRelationships, eq(schema.people.id, schema.clientRelationships.personId))
+    .where(and(
+      eq(schema.clientRelationships.clientId, body.clientId),
+      eq(schema.clientRelationships.relationshipType, 'SPOUSE')
+    ))
+    .orderBy(schema.clientRelationships.ordinal)
+    .limit(1)
+    .get()
+
+  if (spouseData) {
+    spouse = {
+      id: spouseData.people.id,
+      first_name: spouseData.people.firstName,
+      last_name: spouseData.people.lastName,
+      email: spouseData.people.email,
+      phone: spouseData.people.phone
+    }
+  }
+
   // Get matter data if matterId is provided
   let matter: any = null
   if (body.matterId) {
-    matter = await db.prepare(`
-      SELECT * FROM matters WHERE id = ?
-    `).bind(body.matterId).first()
+    matter = await db.select()
+      .from(schema.matters)
+      .where(eq(schema.matters.id, body.matterId))
+      .get()
   }
 
   // Build context for template rendering
@@ -109,12 +171,12 @@ export default defineEventHandler(async (event) => {
     clientZipCode: client.zip_code || '',
     clientEmail: client.email || '',
     clientPhone: client.phone || '',
-    
-    // Spouse info
-    spouseName: client.spouse_name || '',
-    spouseFirstName: client.spouse_name?.split(' ')[0] || '',
-    spouseLastName: client.spouse_name?.split(' ').slice(1).join(' ') || '',
-    
+
+    // Spouse info (from people/relationships system)
+    spouseName: spouse ? `${spouse.first_name || ''} ${spouse.last_name || ''}`.trim() : '',
+    spouseFirstName: spouse?.first_name || '',
+    spouseLastName: spouse?.last_name || '',
+
     // Service/Matter info (for engagement letters)
     serviceName: template.name || 'Legal Services',
     matterName: body.matterName || template.name || 'Legal Services',
@@ -148,10 +210,10 @@ export default defineEventHandler(async (event) => {
 
   // Generate DOCX if template has a blob key
   let docxBlobKey = null
-  if (template.docx_blob_key) {
+  if (template.docxBlobKey) {
     try {
       // Load template DOCX from blob storage
-      const templateBlob = await hubBlob().get(template.docx_blob_key)
+      const templateBlob = await blob.get(template.docxBlobKey)
       if (templateBlob) {
         const templateBuffer = await templateBlob.arrayBuffer()
 
@@ -165,7 +227,7 @@ export default defineEventHandler(async (event) => {
         // Store generated DOCX in blob storage
         const documentId = nanoid()
         docxBlobKey = `documents/${documentId}/${body.title || template.name}.docx`
-        await hubBlob().put(docxBlobKey, generatedDocx)
+        await blob.put(docxBlobKey, generatedDocx)
 
         // Use the generated document ID
         var finalDocumentId = documentId
@@ -180,63 +242,55 @@ export default defineEventHandler(async (event) => {
 
   // Create document record
   const documentId = finalDocumentId || nanoid()
-  const document = {
+  const now = new Date()
+
+  await db.insert(schema.documents).values({
     id: documentId,
     title: body.title || template.name,
     description: body.description || template.description,
     status: 'DRAFT',
-    template_id: template.id,
-    matter_id: body.matterId || null,
+    templateId: template.id,
+    matterId: body.matterId || null,
     content: renderedContent,
-    docx_blob_key: docxBlobKey,
-    file_path: null,
-    file_size: null,
-    mime_type: 'text/html',
-    variable_values: JSON.stringify(context),
-    requires_notary: template.requires_notary,
-    notarization_status: template.requires_notary ? 'PENDING' : 'NOT_REQUIRED',
-    pandadoc_request_id: null,
-    client_id: body.clientId,
-    signed_at: null,
-    signature_data: null,
-    viewed_at: null,
-    sent_at: null,
-    created_at: Date.now(),
-    updated_at: Date.now()
+    docxBlobKey: docxBlobKey,
+    filePath: null,
+    fileSize: null,
+    mimeType: 'text/html',
+    variableValues: JSON.stringify(context),
+    requiresNotary: template.requiresNotary,
+    clientId: body.clientId,
+    signedAt: null,
+    signatureData: null,
+    viewedAt: null,
+    sentAt: null,
+    createdAt: now,
+    updatedAt: now
+  })
+
+  // Return document object for compatibility
+  return {
+    document: {
+      id: documentId,
+      title: body.title || template.name,
+      description: body.description || template.description,
+      status: 'DRAFT',
+      template_id: template.id,
+      matter_id: body.matterId || null,
+      content: renderedContent,
+      docx_blob_key: docxBlobKey,
+      file_path: null,
+      file_size: null,
+      mime_type: 'text/html',
+      variable_values: JSON.stringify(context),
+      requires_notary: template.requiresNotary,
+      client_id: body.clientId,
+      signed_at: null,
+      signature_data: null,
+      viewed_at: null,
+      sent_at: null,
+      created_at: now.getTime(),
+      updated_at: now.getTime()
+    }
   }
-
-  await db.prepare(`
-    INSERT INTO documents (
-      id, title, description, status, template_id, matter_id, content, docx_blob_key,
-      file_path, file_size, mime_type, variable_values, requires_notary, notarization_status,
-      pandadoc_request_id, client_id, signed_at, signature_data, viewed_at, sent_at,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    document.id,
-    document.title,
-    document.description,
-    document.status,
-    document.template_id,
-    document.matter_id,
-    document.content,
-    document.docx_blob_key,
-    document.file_path,
-    document.file_size,
-    document.mime_type,
-    document.variable_values,
-    document.requires_notary,
-    document.notarization_status,
-    document.pandadoc_request_id,
-    document.client_id,
-    document.signed_at,
-    document.signature_data,
-    document.viewed_at,
-    document.sent_at,
-    document.created_at,
-    document.updated_at
-  ).run()
-
-  return { document }
 })
 

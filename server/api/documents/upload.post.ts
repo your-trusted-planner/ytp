@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { blob } from 'hub:blob'
 
 export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
@@ -41,27 +42,26 @@ export default defineEventHandler(async (event) => {
 
   try {
     const documentId = nanoid()
-    const blob = hubBlob()
-    const db = hubDatabase()
+    const { useDrizzle, schema } = await import('../../db')
+    const db = useDrizzle()
+    const now = new Date()
 
     // Upload original DOCX to R2
     const blobPath = `documents/${user.id}/${documentId}.docx`
     await blob.put(blobPath, file.data)
 
     // Create pending document record in database
-    await db.prepare(`
-      INSERT INTO uploaded_documents (
-        id, user_id, filename, blob_path, status, file_size, mime_type, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `).bind(
-      documentId,
-      user.id,
-      file.filename || 'document.docx',
-      blobPath,
-      'processing',
-      file.data.byteLength,
-      file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ).run()
+    await db.insert(schema.uploadedDocuments).values({
+      id: documentId,
+      userId: user.id,
+      filename: file.filename || 'document.docx',
+      blobPath: blobPath,
+      status: 'processing',
+      fileSize: file.data.byteLength,
+      mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      createdAt: now,
+      updatedAt: now
+    })
 
     // Send message to processing queue
     // @ts-expect-error - DOCUMENT_QUEUE is bound in wrangler.jsonc

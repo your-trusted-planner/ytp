@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 // Get a specific person by ID
 export default defineEventHandler(async (event) => {
@@ -26,9 +26,10 @@ export default defineEventHandler(async (event) => {
 
   return {
     id: person.id,
+    // camelCase (keep for backwards compatibility)
     firstName: person.firstName,
     lastName: person.lastName,
-    middleNames: person.middleNames, // Already deserialized by jsonArray custom type!
+    middleNames: person.middleNames,
     fullName: person.fullName,
     email: person.email,
     phone: person.phone,
@@ -43,6 +44,19 @@ export default defineEventHandler(async (event) => {
     entityEin: person.entityEin,
     notes: person.notes,
     createdAt: person.createdAt ? person.createdAt.getTime() : Date.now(),
-    updatedAt: person.updatedAt ? person.updatedAt.getTime() : Date.now()
+    updatedAt: person.updatedAt ? person.updatedAt.getTime() : Date.now(),
+    // snake_case versions for API compatibility
+    first_name: person.firstName,
+    last_name: person.lastName,
+    middle_names: person.middleNames,
+    full_name: person.fullName,
+    zip_code: person.zipCode,
+    date_of_birth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
+    ssn_last_4: person.ssnLast4,
+    entity_name: person.entityName,
+    entity_type: person.entityType,
+    entity_ein: person.entityEin,
+    created_at: person.createdAt ? person.createdAt.getTime() : Date.now(),
+    updated_at: person.updatedAt ? person.updatedAt.getTime() : Date.now()
   }
 })

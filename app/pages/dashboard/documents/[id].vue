@@ -10,7 +10,7 @@
       </div>
       <div class="flex items-center gap-3">
         <!-- Actions Dropdown -->
-        <div v-if="document && document.docxBlobKey" class="relative actions-dropdown">
+        <div v-if="document" class="relative actions-dropdown">
           <UiButton
             variant="secondary"
             size="sm"

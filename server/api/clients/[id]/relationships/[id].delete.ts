@@ -17,12 +17,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Verify relationship exists and belongs to this client
-  const existing = await db.prepare(
-    'SELECT id FROM client_relationships WHERE id = ? AND client_id = ?'
-  ).bind(relationshipId, clientId).first()
+  const existing = await db.select({ id: schema.clientRelationships.id })
+    .from(schema.clientRelationships)
+    .where(and(
+      eq(schema.clientRelationships.id, relationshipId),
+      eq(schema.clientRelationships.clientId, clientId)
+    ))
+    .get()
 
   if (!existing) {
     throw createError({
@@ -31,9 +37,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await db.prepare('DELETE FROM client_relationships WHERE id = ?')
-    .bind(relationshipId)
-    .run()
+  await db.delete(schema.clientRelationships)
+    .where(eq(schema.clientRelationships.id, relationshipId))
 
   return {
     success: true,

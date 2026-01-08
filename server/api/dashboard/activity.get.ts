@@ -1,5 +1,5 @@
 import { desc } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
@@ -12,7 +12,15 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(schema.activities.createdAt))
     .limit(10)
     .all()
-  
-  return activities
+
+  // Convert to snake_case for API compatibility
+  return activities.map(activity => ({
+    id: activity.id,
+    type: activity.type,
+    description: activity.description,
+    metadata: activity.metadata,
+    user_id: activity.userId,
+    created_at: activity.createdAt instanceof Date ? activity.createdAt.getTime() : activity.createdAt
+  }))
 })
 

@@ -1,4 +1,7 @@
 // Mark an action item as complete
+import { eq } from 'drizzle-orm'
+import { useDrizzle, schema } from '../../../db'
+
 export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
 
@@ -11,12 +14,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
-  
+  const db = useDrizzle()
+  const body = await readBody(event).catch(() => ({}))
+
   // Get the action item
-  const actionItem = await db.prepare(`
-    SELECT * FROM action_items WHERE id = ?
-  `).bind(actionItemId).first()
+  const actionItem = await db
+    .select()
+    .from(schema.actionItems)
+    .where(eq(schema.actionItems.id, actionItemId))
+    .get()
 
   if (!actionItem) {
     throw createError({
@@ -26,11 +32,16 @@ export default defineEventHandler(async (event) => {
   }
 
   // Mark as complete
-  await db.prepare(`
-    UPDATE action_items
-    SET status = 'COMPLETE', completed_at = ?, completed_by = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(Date.now(), user.id, Date.now(), actionItemId).run()
+  await db
+    .update(schema.actionItems)
+    .set({
+      status: 'COMPLETE',
+      completedAt: new Date(),
+      completedBy: user.id,
+      verificationEvidence: body.verificationEvidence ? JSON.stringify(body.verificationEvidence) : actionItem.verificationEvidence,
+      updatedAt: new Date()
+    })
+    .where(eq(schema.actionItems.id, actionItemId))
 
   return { success: true }
 })

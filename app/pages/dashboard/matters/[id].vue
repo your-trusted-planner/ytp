@@ -18,6 +18,9 @@
           </div>
         </div>
       </div>
+      <UiButton v-if="matter" @click="showEditModal = true" variant="outline">
+        Edit Matter
+      </UiButton>
     </div>
 
     <!-- Loading -->
@@ -77,6 +80,23 @@
                   <span class="text-gray-600">Contract Date:</span>
                   <span class="ml-2">{{ formatDate(matter.contract_date) }}</span>
                 </div>
+                <div v-if="matter.lead_attorney_first_name">
+                  <span class="text-gray-600">Lead Attorney:</span>
+                  <span class="ml-2 font-medium">
+                    {{ matter.lead_attorney_first_name }} {{ matter.lead_attorney_last_name }}
+                  </span>
+                </div>
+                <div v-if="matter.engagement_journey_name">
+                  <span class="text-gray-600">Engagement Journey:</span>
+                  <span class="ml-2 font-medium">{{ matter.engagement_journey_name }}</span>
+                  <button
+                    v-if="matter.engagement_journey_id"
+                    @click="viewEngagementJourney(matter.engagement_journey_id)"
+                    class="ml-2 text-burgundy-600 hover:text-burgundy-800 text-sm"
+                  >
+                    View Progress →
+                  </button>
+                </div>
                 <div v-if="matter.description">
                   <span class="text-gray-600">Description:</span>
                   <p class="ml-2 mt-1">{{ matter.description }}</p>
@@ -98,7 +118,7 @@
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Total Payments</span>
-                  <span class="font-semibold">{{ formatPrice(totalPayments) }}</span>
+                  <span class="font-semibold">{{ formatCurrency(totalPayments) }}</span>
                 </div>
               </div>
             </UiCard>
@@ -188,7 +208,7 @@
         <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
           <option value="">Choose a service...</option>
           <option v-for="item in catalog" :key="item.id" :value="item.id">
-            {{ item.name }} ({{ formatPrice(item.price) }})
+            {{ item.name }} ({{ formatCurrency(item.price) }})
           </option>
         </UiSelect>
       </form>
@@ -203,12 +223,24 @@
       </template>
     </UiModal>
 
+    <!-- Edit Matter Modal -->
+    <MatterFormModal
+      v-model="showEditModal"
+      :editing-matter="matter"
+      :clients="clients"
+      :lawyers="lawyers"
+      :engagement-journeys="engagementJourneys"
+      :catalog="catalog"
+      @save="handleMatterSaved"
+      @cancel="showEditModal = false"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft, Plus, Loader } from 'lucide-vue-next'
+import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
   middleware: ['auth'],
@@ -222,12 +254,17 @@ const matterId = route.params.id as string
 const loading = ref(true)
 const activeTab = ref('overview')
 const showAddServiceModal = ref(false)
+const showEditModal = ref(false)
+const saving = ref(false)
 
 const matter = ref<any>(null)
 const services = ref<any[]>([])
 const journeys = ref<any[]>([])
 const payments = ref<any[]>([])
 const catalog = ref<any[]>([])
+const clients = ref<any[]>([])
+const lawyers = ref<any[]>([])
+const engagementJourneys = ref<any[]>([])
 
 // Service addition state
 const addingService = ref(false)
@@ -251,6 +288,7 @@ const clientName = computed(() => {
 const totalPayments = computed(() => {
   return payments.value.reduce((sum, p) => sum + (p.amount || 0), 0)
 })
+
 
 // Fetch matter data
 async function fetchMatter() {
@@ -324,9 +362,48 @@ async function handleAddService() {
   }
 }
 
+// Edit matter
+async function handleMatterSaved() {
+  showEditModal.value = false
+  await fetchMatter()
+}
+
+// Fetch clients for dropdown
+async function fetchClients() {
+  try {
+    const response = await $fetch<{ clients: any[] }>('/api/clients')
+    clients.value = response.clients || response
+  } catch (error) {
+    console.error('Failed to fetch clients:', error)
+  }
+}
+
+// Fetch lawyers for dropdown
+async function fetchLawyers() {
+  try {
+    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
+    lawyers.value = response.lawyers || []
+  } catch (error) {
+    console.error('Failed to fetch lawyers:', error)
+  }
+}
+
+// Fetch engagement journey templates
+async function fetchEngagementJourneys() {
+  try {
+    const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
+    engagementJourneys.value = response.engagementJourneys || []
+  } catch (error) {
+    console.error('Failed to fetch engagement journeys:', error)
+  }
+}
 
 function viewJourney(journeyId: string) {
   router.push(`/dashboard/my-journeys/${journeyId}`)
+}
+
+function viewEngagementJourney(clientJourneyId: string) {
+  router.push(`/dashboard/my-journeys/${clientJourneyId}`)
 }
 
 function formatDate(timestamp: number) {
@@ -338,14 +415,6 @@ function formatDate(timestamp: number) {
   })
 }
 
-function formatPrice(price: number): string {
-  if (!price) return '$0'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(price)
-}
 
 function getStatusVariant(status: string): 'success' | 'primary' | 'default' | 'danger' {
   switch (status) {
@@ -377,8 +446,13 @@ function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'defau
   }
 }
 
-onMounted(() => {
-  fetchMatter()
-  fetchCatalog()
+onMounted(async () => {
+  await Promise.all([
+    fetchMatter(),
+    fetchCatalog(),
+    fetchClients(),
+    fetchLawyers(),
+    fetchEngagementJourneys()
+  ])
 })
 </script>

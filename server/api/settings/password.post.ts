@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 import { verifyPassword, hashPassword } from '../../utils/auth'
 
 const changePasswordSchema = z.object({

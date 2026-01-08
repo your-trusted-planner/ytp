@@ -40,3 +40,17 @@ export function formatRelativeDate(date: Date | string | number | null | undefin
   return formatRelative(dateObj, new Date())
 }
 
+export function formatCurrency(cents: number | null | undefined): string {
+  if (!cents && cents !== 0) return '$0.00'
+
+  // Convert cents to dollars
+  const dollars = cents / 100
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(dollars)
+}
+

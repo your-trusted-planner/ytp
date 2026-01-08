@@ -11,14 +11,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Soft delete by setting is_active to false
-  await db.prepare(`
-    UPDATE journeys 
-    SET is_active = 0, updated_at = ?
-    WHERE id = ?
-  `).bind(Date.now(), journeyId).run()
+  await db.update(schema.journeys)
+    .set({
+      isActive: false,
+      updatedAt: new Date()
+    })
+    .where(eq(schema.journeys.id, journeyId))
 
   return { success: true }
 })

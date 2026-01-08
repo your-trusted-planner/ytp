@@ -12,27 +12,29 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  await db.prepare(`
-    UPDATE journeys
-    SET
-      name = ?,
-      description = ?,
-      service_catalog_id = ?,
-      is_active = ?,
-      estimated_duration_days = ?,
-      updated_at = ?
-    WHERE id = ?
-  `).bind(
-    body.name,
-    body.description || null,
-    body.serviceCatalogId || null,
-    body.isActive ? 1 : 0,
-    body.estimatedDurationDays || null,
-    Date.now(),
-    journeyId
-  ).run()
+  // Validate journey type if provided
+  if (body.journeyType && !['ENGAGEMENT', 'SERVICE'].includes(body.journeyType)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid journey type. Must be ENGAGEMENT or SERVICE'
+    })
+  }
+
+  await db.update(schema.journeys)
+    .set({
+      name: body.name,
+      description: body.description || null,
+      serviceCatalogId: body.serviceCatalogId || null,
+      journeyType: body.journeyType || 'SERVICE',
+      isActive: body.isActive ? true : false,
+      estimatedDurationDays: body.estimatedDurationDays || null,
+      updatedAt: new Date()
+    })
+    .where(eq(schema.journeys.id, journeyId))
 
   return { success: true }
 })

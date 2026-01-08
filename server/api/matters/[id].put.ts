@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { isDatabaseAvailable } from '../../database'
+import { isDatabaseAvailable } from '../../db'
 
 const updateMatterSchema = z.object({
   title: z.string().optional(),
   matterNumber: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(['OPEN', 'CLOSED', 'PENDING']).optional(),
-  contractDate: z.string().optional(),
+  leadAttorneyId: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -36,15 +36,16 @@ export default defineEventHandler(async (event) => {
     updatedAt: new Date()
   }
 
-  if (result.data.contractDate) {
-    updateData.contractDate = new Date(result.data.contractDate)
+  // Handle nullable leadAttorneyId updates
+  if (result.data.leadAttorneyId !== undefined) {
+    updateData.leadAttorneyId = result.data.leadAttorneyId || null
   }
   
   if (!isDatabaseAvailable()) {
     return { success: true } // Mock response
   }
   
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
   
   await db

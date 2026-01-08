@@ -11,24 +11,29 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const db = hubDatabase()
+    const { useDrizzle, schema } = await import('../../../db')
+    const { eq, and } = await import('drizzle-orm')
+    const db = useDrizzle()
 
     // Fetch document status
-    const doc = await db.prepare(`
-      SELECT
-        id,
-        filename,
-        status,
-        content_text,
-        content_html,
-        paragraph_count,
-        error_message,
-        file_size,
-        created_at,
-        processed_at
-      FROM uploaded_documents
-      WHERE id = ? AND user_id = ?
-    `).bind(documentId, user.id).first()
+    const doc = await db.select({
+      id: schema.uploadedDocuments.id,
+      filename: schema.uploadedDocuments.filename,
+      status: schema.uploadedDocuments.status,
+      contentText: schema.uploadedDocuments.contentText,
+      contentHtml: schema.uploadedDocuments.contentHtml,
+      paragraphCount: schema.uploadedDocuments.paragraphCount,
+      errorMessage: schema.uploadedDocuments.errorMessage,
+      fileSize: schema.uploadedDocuments.fileSize,
+      createdAt: schema.uploadedDocuments.createdAt,
+      processedAt: schema.uploadedDocuments.processedAt
+    })
+      .from(schema.uploadedDocuments)
+      .where(and(
+        eq(schema.uploadedDocuments.id, documentId),
+        eq(schema.uploadedDocuments.userId, user.id)
+      ))
+      .get()
 
     if (!doc) {
       throw createError({
@@ -41,13 +46,13 @@ export default defineEventHandler(async (event) => {
       id: doc.id,
       filename: doc.filename,
       status: doc.status,
-      contentText: doc.content_text,
-      contentHtml: doc.content_html,
-      paragraphCount: doc.paragraph_count,
-      errorMessage: doc.error_message,
-      fileSize: doc.file_size,
-      createdAt: doc.created_at,
-      processedAt: doc.processed_at
+      contentText: doc.contentText,
+      contentHtml: doc.contentHtml,
+      paragraphCount: doc.paragraphCount,
+      errorMessage: doc.errorMessage,
+      fileSize: doc.fileSize,
+      createdAt: doc.createdAt,
+      processedAt: doc.processedAt
     }
   } catch (error) {
     console.error('Error fetching document status:', error)

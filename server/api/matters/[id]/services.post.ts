@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { isDatabaseAvailable } from '../../../database'
+import { isDatabaseAvailable } from '../../../db'
 import { generateId } from '../../../utils/auth'
 
 const addServiceSchema = z.object({
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     return { success: true } // Mock response
   }
 
-  const { useDrizzle, schema } = await import('../../../database')
+  const { useDrizzle, schema } = await import('../../../db')
   const db = useDrizzle()
 
   // Verify the catalog item exists

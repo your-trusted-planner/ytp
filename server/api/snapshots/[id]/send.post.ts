@@ -11,14 +11,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Update snapshot status to SENT
-  await db.prepare(`
-    UPDATE snapshot_versions
-    SET status = 'SENT', sent_at = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(Date.now(), Date.now(), snapshotId).run()
+  await db.update(schema.snapshotVersions)
+    .set({
+      status: 'SENT',
+      sentAt: new Date(),
+      updatedAt: new Date()
+    })
+    .where(eq(schema.snapshotVersions.id, snapshotId))
 
   // TODO: Send email notification to client
 

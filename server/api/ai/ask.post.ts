@@ -4,7 +4,6 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const aiAgent = useAIAgent()
-  const db = hubDatabase()
 
   const { question, stepProgressId, clientJourneyId } = body
 
@@ -15,43 +14,64 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Get context if provided
   let context: any = {}
 
   if (clientJourneyId) {
-    const clientJourney = await db.prepare(`
-      SELECT 
-        cj.*,
-        j.name as journey_name,
-        js.name as step_name,
-        u.first_name as client_first_name
-      FROM client_journeys cj
-      JOIN journeys j ON cj.journey_id = j.id
-      LEFT JOIN journey_steps js ON cj.current_step_id = js.id
-      JOIN users u ON cj.client_id = u.id
-      WHERE cj.id = ?
-    `).bind(clientJourneyId).first()
+    // Get client journey
+    const clientJourney = await db.select()
+      .from(schema.clientJourneys)
+      .where(eq(schema.clientJourneys.id, clientJourneyId))
+      .get()
 
     if (clientJourney) {
+      // Get journey name
+      const journey = await db.select({ name: schema.journeys.name })
+        .from(schema.journeys)
+        .where(eq(schema.journeys.id, clientJourney.journeyId))
+        .get()
+
+      // Get step name if exists
+      let stepName = null
+      if (clientJourney.currentStepId) {
+        const step = await db.select({ name: schema.journeySteps.name })
+          .from(schema.journeySteps)
+          .where(eq(schema.journeySteps.id, clientJourney.currentStepId))
+          .get()
+        stepName = step?.name || null
+      }
+
+      // Get client name
+      const client = await db.select({ firstName: schema.users.firstName })
+        .from(schema.users)
+        .where(eq(schema.users.id, clientJourney.clientId))
+        .get()
+
       context = {
-        journeyName: clientJourney.journey_name,
-        stepName: clientJourney.step_name,
-        clientName: clientJourney.client_first_name
+        journeyName: journey?.name || null,
+        stepName,
+        clientName: client?.firstName || null
       }
     }
   }
 
   // Search for relevant FAQ entries
-  const faqs = await db.prepare(`
-    SELECT question, answer
-    FROM faq_library
-    WHERE is_active = 1
-    ORDER BY view_count DESC
-    LIMIT 3
-  `).all()
+  const faqs = await db.select({
+    question: schema.faqLibrary.question,
+    answer: schema.faqLibrary.answer
+  })
+    .from(schema.faqLibrary)
+    .where(eq(schema.faqLibrary.isActive, true))
+    .orderBy(desc(schema.faqLibrary.viewCount))
+    .limit(3)
+    .all()
 
-  if (faqs.results?.length) {
-    context.faqContext = faqs.results.map((faq: any) => 
+  if (faqs.length > 0) {
+    context.faqContext = faqs.map((faq) =>
       `Q: ${faq.question}\nA: ${faq.answer}`
     )
   }
@@ -62,39 +82,32 @@ export default defineEventHandler(async (event) => {
   // If there's a step progress ID, save to conversation
   if (stepProgressId) {
     const { nanoid } = await import('nanoid')
-    
+    const now = new Date()
+
     // Save user question
-    await db.prepare(`
-      INSERT INTO bridge_conversations (
-        id, step_progress_id, user_id, message, is_ai_response, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(
-      nanoid(),
+    await db.insert(schema.bridgeConversations).values({
+      id: nanoid(),
       stepProgressId,
-      user.id,
-      question,
-      0,
-      Date.now()
-    ).run()
+      userId: user.id,
+      message: question,
+      isAiResponse: false,
+      createdAt: now
+    })
 
     // Save AI response
-    await db.prepare(`
-      INSERT INTO bridge_conversations (
-        id, step_progress_id, user_id, message, is_ai_response, metadata, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      nanoid(),
+    await db.insert(schema.bridgeConversations).values({
+      id: nanoid(),
       stepProgressId,
-      null,
-      response.message,
-      1,
-      JSON.stringify({
+      userId: null,
+      message: response.message,
+      isAiResponse: true,
+      metadata: JSON.stringify({
         confidence: response.confidence,
         escalate: response.escalate,
         suggestedActions: response.suggestedActions
       }),
-      Date.now()
-    ).run()
+      createdAt: now
+    })
   }
 
   return response

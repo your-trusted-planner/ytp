@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 import { requireRole } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -37,8 +37,26 @@ export default defineEventHandler(async (event) => {
     status: client.status,
     createdAt: client.createdAt instanceof Date ? client.createdAt.getTime() : client.createdAt,
     updatedAt: client.updatedAt instanceof Date ? client.updatedAt.getTime() : client.updatedAt,
-    profile: client.profile
+    profile: client.profile ? {
+      id: client.profile.id,
+      user_id: client.profile.userId,
+      date_of_birth: client.profile.dateOfBirth instanceof Date ? client.profile.dateOfBirth.getTime() : client.profile.dateOfBirth,
+      address: client.profile.address,
+      city: client.profile.city,
+      state: client.profile.state,
+      zip_code: client.profile.zipCode,
+      has_minor_children: client.profile.hasMinorChildren ? 1 : 0,
+      children_info: client.profile.childrenInfo,
+      business_name: client.profile.businessName,
+      business_type: client.profile.businessType,
+      has_will: client.profile.hasWill ? 1 : 0,
+      has_trust: client.profile.hasTrust ? 1 : 0,
+      last_updated: client.profile.lastUpdated instanceof Date ? client.profile.lastUpdated.getTime() : client.profile.lastUpdated,
+      assigned_lawyer_id: client.profile.assignedLawyerId,
+      created_at: client.profile.createdAt instanceof Date ? client.profile.createdAt.getTime() : client.profile.createdAt,
+      updated_at: client.profile.updatedAt instanceof Date ? client.profile.updatedAt.getTime() : client.profile.updatedAt
+    } : null
   }))
-  
+
   return { clients }
 })

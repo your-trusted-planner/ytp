@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 // Update a person
 export default defineEventHandler(async (event) => {

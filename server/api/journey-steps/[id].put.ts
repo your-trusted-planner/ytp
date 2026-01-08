@@ -12,35 +12,26 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  await db.prepare(`
-    UPDATE journey_steps 
-    SET 
-      step_type = ?,
-      name = ?,
-      description = ?,
-      step_order = ?,
-      responsible_party = ?,
-      expected_duration_days = ?,
-      automation_config = ?,
-      help_content = ?,
-      allow_multiple_iterations = ?,
-      updated_at = ?
-    WHERE id = ?
-  `).bind(
-    body.stepType || 'MILESTONE',
-    body.name,
-    body.description || null,
-    body.stepOrder || 0,
-    body.responsibleParty || 'CLIENT',
-    body.expectedDurationDays || null,
-    body.automationConfig ? JSON.stringify(body.automationConfig) : null,
-    body.helpContent || null,
-    body.allowMultipleIterations ? 1 : 0,
-    Date.now(),
-    stepId
-  ).run()
+  await db.update(schema.journeySteps)
+    .set({
+      stepType: body.stepType || 'MILESTONE',
+      name: body.name,
+      description: body.description || null,
+      stepOrder: body.stepOrder || 0,
+      responsibleParty: body.responsibleParty || 'CLIENT',
+      expectedDurationDays: body.expectedDurationDays || null,
+      automationConfig: body.automationConfig ? JSON.stringify(body.automationConfig) : null,
+      helpContent: body.helpContent || null,
+      allowMultipleIterations: body.allowMultipleIterations ? true : false,
+      isFinalStep: body.isFinalStep ? true : false,
+      requiresVerification: body.requiresVerification ? true : false,
+      updatedAt: new Date()
+    })
+    .where(eq(schema.journeySteps.id, stepId))
 
   return { success: true }
 })

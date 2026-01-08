@@ -13,12 +13,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
-  
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, and, gt } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Get current journey and step
-  const clientJourney = await db.prepare(`
-    SELECT * FROM client_journeys WHERE id = ?
-  `).bind(clientJourneyId).first()
+  const clientJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -28,9 +31,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get current step
-  const currentStep = await db.prepare(`
-    SELECT * FROM journey_steps WHERE id = ?
-  `).bind(clientJourney.current_step_id).first()
+  const currentStep = await db.select()
+    .from(schema.journeySteps)
+    .where(eq(schema.journeySteps.id, clientJourney.currentStepId))
+    .get()
 
   if (!currentStep) {
     throw createError({
@@ -39,57 +43,64 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const now = new Date()
+
   // Mark current step as complete
-  await db.prepare(`
-    UPDATE journey_step_progress
-    SET status = 'COMPLETE', completed_at = ?, updated_at = ?
-    WHERE client_journey_id = ? AND step_id = ?
-  `).bind(Date.now(), Date.now(), clientJourneyId, currentStep.id).run()
+  await db.update(schema.journeyStepProgress)
+    .set({
+      status: 'COMPLETE',
+      completedAt: now,
+      updatedAt: now
+    })
+    .where(and(
+      eq(schema.journeyStepProgress.clientJourneyId, clientJourneyId),
+      eq(schema.journeyStepProgress.stepId, currentStep.id)
+    ))
 
   // Get next step
-  const nextStep = await db.prepare(`
-    SELECT * FROM journey_steps
-    WHERE journey_id = ? AND step_order > ?
-    ORDER BY step_order ASC
-    LIMIT 1
-  `).bind(clientJourney.journey_id, currentStep.step_order).first()
+  const nextStep = await db.select()
+    .from(schema.journeySteps)
+    .where(and(
+      eq(schema.journeySteps.journeyId, clientJourney.journeyId),
+      gt(schema.journeySteps.stepOrder, currentStep.stepOrder)
+    ))
+    .orderBy(schema.journeySteps.stepOrder)
+    .limit(1)
+    .get()
 
   if (nextStep) {
     // Update client journey to next step
-    await db.prepare(`
-      UPDATE client_journeys
-      SET current_step_id = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(nextStep.id, Date.now(), clientJourneyId).run()
+    await db.update(schema.clientJourneys)
+      .set({
+        currentStepId: nextStep.id,
+        updatedAt: now
+      })
+      .where(eq(schema.clientJourneys.id, clientJourneyId))
 
     // Create progress record for next step
-    const progressId = nanoid()
-    await db.prepare(`
-      INSERT INTO journey_step_progress (
-        id, client_journey_id, step_id, status, client_approved, counsel_approved,
-        iteration_count, started_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      progressId,
-      clientJourneyId,
-      nextStep.id,
-      'IN_PROGRESS',
-      0,
-      0,
-      0,
-      Date.now(),
-      Date.now(),
-      Date.now()
-    ).run()
+    await db.insert(schema.journeyStepProgress).values({
+      id: nanoid(),
+      clientJourneyId: clientJourneyId,
+      stepId: nextStep.id,
+      status: 'IN_PROGRESS',
+      clientApproved: false,
+      attorneyApproved: false,
+      iterationCount: 0,
+      startedAt: now,
+      createdAt: now,
+      updatedAt: now
+    })
 
     return { success: true, nextStep }
   } else {
     // Journey is complete
-    await db.prepare(`
-      UPDATE client_journeys
-      SET status = 'COMPLETED', completed_at = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(Date.now(), Date.now(), clientJourneyId).run()
+    await db.update(schema.clientJourneys)
+      .set({
+        status: 'COMPLETED',
+        completedAt: now,
+        updatedAt: now
+      })
+      .where(eq(schema.clientJourneys.id, clientJourneyId))
 
     return { success: true, completed: true }
   }

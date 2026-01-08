@@ -344,8 +344,17 @@
         </div>
 
         <div v-if="templateVariables.length > 0" class="bg-yellow-50 border border-yellow-200 p-4 rounded">
-          <h5 class="font-semibold text-yellow-900 mb-2">Template Variables ({{ templateVariables.length }})</h5>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex justify-between items-center mb-2">
+            <h5 class="font-semibold text-yellow-900">Template Variables ({{ templateVariables.length }})</h5>
+            <button
+              v-if="!editingMappings"
+              @click="startEditingMappings"
+              class="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Edit Variable Mappings
+            </button>
+          </div>
+          <div v-if="!editingMappings" class="flex flex-wrap gap-2">
             <span
               v-for="variable in templateVariables"
               :key="variable"
@@ -353,6 +362,90 @@
             >
               {{ variable }}
             </span>
+          </div>
+        </div>
+
+        <!-- Variable Mapping Editor (Existing Templates) -->
+        <div v-if="editingMappings && templateVariables.length > 0" class="border border-gray-300 rounded-lg p-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="font-semibold text-gray-900">Edit Variable Mappings</h4>
+            <button
+              @click="showMappingHelp = !showMappingHelp"
+              class="text-xs text-blue-600 hover:text-blue-800"
+            >
+              {{ showMappingHelp ? 'Hide Help' : 'Show Help' }}
+            </button>
+          </div>
+
+          <div v-if="showMappingHelp" class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+            <p class="font-medium mb-1">How Variable Mapping Works:</p>
+            <ul class="list-disc list-inside space-y-1 text-xs">
+              <li>Mapped variables automatically pull data from the database</li>
+              <li>Unmapped variables can be filled manually when generating documents</li>
+              <li>Mapped variables cannot be edited in documents (they stay in sync with the database)</li>
+              <li>You can change mappings anytime by editing the template</li>
+            </ul>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div
+              v-for="variable in templateVariables"
+              :key="variable"
+              class="grid grid-cols-12 gap-3 items-center p-3 bg-gray-50 rounded"
+            >
+              <div class="col-span-3">
+                <code class="text-sm font-mono text-gray-900">{{ variable }}</code>
+              </div>
+
+              <div class="col-span-4">
+                <select
+                  v-model="variableMappings[variable].source"
+                  @change="onSourceChange(variable)"
+                  class="w-full text-sm border-gray-300 rounded-md"
+                >
+                  <option value="">Not Mapped (Manual Entry)</option>
+                  <option value="client">Client Data</option>
+                  <option value="matter">Matter Data</option>
+                </select>
+              </div>
+
+              <div class="col-span-5">
+                <select
+                  v-model="variableMappings[variable].field"
+                  :disabled="!variableMappings[variable].source"
+                  class="w-full text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-500"
+                >
+                  <option value="">-- Select Field --</option>
+                  <optgroup v-if="variableMappings[variable].source === 'client'" label="Client Fields">
+                    <option value="firstName">First Name</option>
+                    <option value="lastName">Last Name</option>
+                    <option value="fullName">Full Name</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
+                    <option value="address">Address</option>
+                    <option value="city">City</option>
+                    <option value="state">State</option>
+                    <option value="zipCode">ZIP Code</option>
+                  </optgroup>
+                  <optgroup v-if="variableMappings[variable].source === 'matter'" label="Matter Fields">
+                    <option value="title">Matter Title</option>
+                    <option value="matterNumber">Matter Number</option>
+                    <option value="status">Status</option>
+                    <option value="contractDate">Contract Date</option>
+                    <option value="description">Description</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 pt-3 border-t">
+            <UiButton variant="ghost" @click="cancelEditingMappings">
+              Cancel
+            </UiButton>
+            <UiButton @click="saveExistingTemplateMappings" :loading="savingMappings">
+              Save Mappings
+            </UiButton>
           </div>
         </div>
 
@@ -395,6 +488,7 @@ const showViewTemplateModal = ref(false)
 const showUploadModal = ref(false)
 const showMappingHelp = ref(false)
 const editingTemplateDetails = ref(false)
+const editingMappings = ref(false)
 const selectedTemplate = ref<any>(null)
 const viewingTemplate = ref<any>(null)
 const selectedFile = ref<File | null>(null)
@@ -471,6 +565,7 @@ async function fetchClients() {
 function viewTemplate(template: any) {
   viewingTemplate.value = template
   editingTemplateDetails.value = false
+  editingMappings.value = false
   showViewTemplateModal.value = true
 }
 
@@ -606,6 +701,76 @@ async function handleUpload() {
 // Handle source change - reset field selection
 function onSourceChange(variable: string) {
   variableMappings.value[variable].field = ''
+}
+
+// Start editing variable mappings for existing template
+function startEditingMappings() {
+  if (!viewingTemplate.value) return
+
+  // Initialize variable mappings with existing mappings if available
+  const mappings: Record<string, { source: string, field: string }> = {}
+
+  // Parse existing variable mappings
+  let existingMappings: Record<string, { source: string, field: string }> = {}
+  if (viewingTemplate.value.variable_mappings || viewingTemplate.value.variableMappings) {
+    try {
+      const mappingsStr = viewingTemplate.value.variable_mappings || viewingTemplate.value.variableMappings
+      existingMappings = typeof mappingsStr === 'string' ? JSON.parse(mappingsStr) : mappingsStr
+    } catch (error) {
+      console.error('Error parsing existing mappings:', error)
+    }
+  }
+
+  // Initialize mappings for all variables
+  templateVariables.value.forEach((variable: string) => {
+    mappings[variable] = existingMappings[variable] || { source: '', field: '' }
+  })
+
+  variableMappings.value = mappings
+  editingMappings.value = true
+}
+
+// Cancel editing variable mappings
+function cancelEditingMappings() {
+  editingMappings.value = false
+  variableMappings.value = {}
+  showMappingHelp.value = false
+}
+
+// Save variable mappings for existing template
+async function saveExistingTemplateMappings() {
+  if (!viewingTemplate.value) return
+
+  savingMappings.value = true
+  try {
+    // Filter out unmapped variables
+    const mappings: Record<string, { source: string, field: string }> = {}
+    Object.entries(variableMappings.value).forEach(([variable, mapping]) => {
+      if (mapping.source && mapping.field) {
+        mappings[variable] = mapping
+      }
+    })
+
+    await $fetch(`/api/templates/${viewingTemplate.value.id}/mappings`, {
+      method: 'PUT',
+      body: { mappings }
+    })
+
+    // Update the viewing template's mappings
+    viewingTemplate.value.variable_mappings = JSON.stringify(mappings)
+    viewingTemplate.value.variableMappings = JSON.stringify(mappings)
+
+    alert('Variable mappings saved successfully!')
+    editingMappings.value = false
+
+    // Refresh templates list
+    await fetchTemplates()
+  } catch (error: any) {
+    console.error('Failed to save mappings:', error)
+    alert(`Error saving mappings: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    savingMappings.value = false
+  }
 }
 
 // Save variable mappings

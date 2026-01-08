@@ -16,10 +16,10 @@ const createTemplateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const body = await readBody(event)
   const result = createTemplateSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -27,8 +27,10 @@ export default defineEventHandler(async (event) => {
       data: result.error
     })
   }
-  
-  const db = hubDatabase()
+
+  const { useDrizzle, schema } = await import('../../db')
+  const db = useDrizzle()
+
   const {
     name,
     description,
@@ -42,26 +44,22 @@ export default defineEventHandler(async (event) => {
   } = result.data
 
   const templateId = nanoid()
+  const now = new Date()
 
-  await db.prepare(`
-    INSERT INTO document_templates (
-      id, name, description, category, content, variables, requires_notary,
-      is_active, original_file_name, file_extension, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    templateId,
+  await db.insert(schema.documentTemplates).values({
+    id: templateId,
     name,
-    description || null,
-    category || 'General',
+    description: description || null,
+    category: category || 'General',
     content,
-    JSON.stringify(variables || []),
-    requiresNotary ? 1 : 0,
-    isActive !== false ? 1 : 0,
-    originalFileName || null,
-    fileExtension || null,
-    Date.now(),
-    Date.now()
-  ).run()
+    variables: JSON.stringify(variables || []),
+    requiresNotary: requiresNotary || false,
+    isActive: isActive !== false,
+    originalFileName: originalFileName || null,
+    fileExtension: fileExtension || null,
+    createdAt: now,
+    updatedAt: now
+  })
 
   return {
     success: true,

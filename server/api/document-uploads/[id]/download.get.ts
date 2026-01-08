@@ -1,4 +1,6 @@
 // Download a document upload
+import { blob } from 'hub:blob'
+
 export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
 
@@ -11,16 +13,36 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
-  const blob = hubBlob()
-  
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Get upload record
-  const upload = await db.prepare(`
-    SELECT du.*, cj.client_id
-    FROM document_uploads du
-    LEFT JOIN client_journeys cj ON du.client_journey_id = cj.id
-    WHERE du.id = ?
-  `).bind(uploadId).first()
+  const upload = await db.select({
+    id: schema.documentUploads.id,
+    clientJourneyId: schema.documentUploads.clientJourneyId,
+    actionItemId: schema.documentUploads.actionItemId,
+    uploadedByUserId: schema.documentUploads.uploadedByUserId,
+    documentCategory: schema.documentUploads.documentCategory,
+    fileName: schema.documentUploads.fileName,
+    originalFileName: schema.documentUploads.originalFileName,
+    filePath: schema.documentUploads.filePath,
+    fileSize: schema.documentUploads.fileSize,
+    mimeType: schema.documentUploads.mimeType,
+    status: schema.documentUploads.status,
+    reviewedByUserId: schema.documentUploads.reviewedByUserId,
+    reviewedAt: schema.documentUploads.reviewedAt,
+    reviewNotes: schema.documentUploads.reviewNotes,
+    version: schema.documentUploads.version,
+    replacesUploadId: schema.documentUploads.replacesUploadId,
+    createdAt: schema.documentUploads.createdAt,
+    updatedAt: schema.documentUploads.updatedAt,
+    client_id: schema.clientJourneys.clientId
+  })
+    .from(schema.documentUploads)
+    .leftJoin(schema.clientJourneys, eq(schema.documentUploads.clientJourneyId, schema.clientJourneys.id))
+    .where(eq(schema.documentUploads.id, uploadId))
+    .get()
 
   if (!upload) {
     throw createError({
@@ -30,10 +52,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check authorization
-  const canAccess = 
-    user.role === 'LAWYER' || 
+  const canAccess =
+    user.role === 'LAWYER' ||
     user.role === 'ADMIN' ||
-    user.id === upload.uploaded_by_user_id ||
+    user.id === upload.uploadedByUserId ||
     user.id === upload.client_id
 
   if (!canAccess) {
@@ -44,8 +66,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get file from blob storage
-  const file = await blob.get(upload.file_path)
-  
+  const file = await blob.get(upload.filePath)
+
   if (!file) {
     throw createError({
       statusCode: 404,
@@ -55,9 +77,9 @@ export default defineEventHandler(async (event) => {
 
   // Set headers for download
   setResponseHeaders(event, {
-    'Content-Type': upload.mime_type,
-    'Content-Disposition': `attachment; filename="${upload.original_file_name}"`,
-    'Content-Length': upload.file_size.toString()
+    'Content-Type': upload.mimeType,
+    'Content-Disposition': `attachment; filename="${upload.originalFileName}"`,
+    'Content-Length': upload.fileSize.toString()
   })
 
   return file

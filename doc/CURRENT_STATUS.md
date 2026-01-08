@@ -1,6 +1,6 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-07
 
 ## 📍 Where We Are Now
 
@@ -22,7 +22,140 @@
   - `/app/layouts/dashboard.vue` - Added People menu item
 - **Pattern Established**: ORM-layer serialization via Drizzle custom types (reusable for other JSON data)
 
+#### Action Items & Task Management System (2026-01-06)
+- **Status**: Complete and working ✅
+- **What**: Comprehensive task management system integrated into journey builder with "ring the bell" philosophy
+- **Implementation**:
+  - Created migration `0053_enhance_action_items_and_journey_steps.sql`
+  - Extended action types: 14 types total including AUTOMATION, THIRD_PARTY, OFFLINE_TASK, EXPENSE, FORM, DRAFT_DOCUMENT
+  - Added system integration tracking (calendar, payment, document, manual)
+  - Implemented "ring the bell" service delivery verification fields
+  - Enhanced journey steps with final step verification
+  - Converted 6 action-items API endpoints to Drizzle ORM
+  - Built complete UI with action type selector and configuration modals
+- **Key Features**:
+  - Every journey step must have ≥1 action item (enforced with validation)
+  - Visual action type selector with 14 types (icons + descriptions)
+  - Type-specific configuration forms (Meeting, Upload, Payment, E-Signature, Draft Document, Questionnaire)
+  - System integration toggles for calendar/payment/document features
+  - Service delivery verification with objective criteria and evidence
+  - Real-time validation warnings showing steps without action items
+  - Expandable action items sections within each journey step
+- **Action Types Available**:
+  - QUESTIONNAIRE, DECISION, UPLOAD, REVIEW, ESIGN, NOTARY
+  - PAYMENT, MEETING, KYC
+  - AUTOMATION, THIRD_PARTY, OFFLINE_TASK
+  - EXPENSE, FORM, DRAFT_DOCUMENT
+- **Files Created/Modified**:
+  - `/server/database/migrations/0053_enhance_action_items_and_journey_steps.sql`
+  - `/server/database/schema.ts` - Enhanced actionItems and journeySteps tables
+  - `/server/api/action-items/*.ts` - 6 endpoints (POST, PUT, DELETE, GET by step, GET by journey, complete)
+  - `/server/api/journeys/[id]/validate.get.ts` - Journey validation endpoint
+  - `/app/components/journey/ActionItemModal.vue` - Action item configuration modal (NEW)
+  - `/app/pages/dashboard/journeys/[id].vue` - Enhanced with action items display and validation
+- **Plan Document**: `/doc/action-items-task-management-plan.md` (comprehensive)
+- **Draft Document Action Type**: Stubbed with integration hooks for future document generation system
+  - Configuration: document name, template ID, drafting notes
+  - Integration toggle for document system
+  - Blue info banner indicating future integration
+
+#### Currency Formatting Refactored (2026-01-06)
+- **Status**: Complete
+- **What**: Consolidated all price formatting into centralized utility
+- **Implementation**:
+  - Created `formatCurrency()` in `/app/utils/format.ts`
+  - Correctly converts cents → dollars (divides by 100)
+  - Refactored 7 components to use centralized utility
+  - Fixed bugs in ServicesTable and PaymentsTable (were missing /100 division)
+- **Files Modified**:
+  - `/app/utils/format.ts` - Added formatCurrency function
+  - `/app/components/matter/ServicesTable.vue` - Bug fixed
+  - `/app/components/matter/PaymentsTable.vue` - Bug fixed
+  - `/app/pages/dashboard/service-catalog/index.vue`
+  - `/app/pages/dashboard/matters/index.vue`
+  - `/app/pages/dashboard/matters/[id].vue`
+  - `/app/pages/matters/index.vue`
+
+#### Matters API Route Structure Fixed (2026-01-06)
+- **Status**: Complete
+- **What**: Fixed route conflicts caused by inconsistent parameter naming
+- **Problem**: Both `[id]` and `[matterId]` directories causing 404 errors
+- **Solution**: Consolidated to `[id]` with consistent parameter names
+- **Files Modified**:
+  - Moved `/api/matters/[matterId]/relationships/` → `/api/matters/[id]/relationships/`
+  - Renamed relationship endpoints to use `[relationshipId]` instead of nested `[id]`
+  - Updated all `getRouterParam` calls for consistency
+
+#### Edit Matter Functionality Added (2026-01-06)
+- **Status**: Complete
+- **What**: Added edit functionality to matter detail page
+- **Why**: Users needed ability to change matter status (PENDING → OPEN) from detail view
+- **Implementation**:
+  - Added "Edit Matter" button to matter detail page header
+  - Created modal with fields: title, description, status, contract date
+  - Status dropdown: PENDING, OPEN, CLOSED
+  - Auto-populates form with current matter data
+  - Saves changes and refreshes matter view
+- **Files Modified**:
+  - `/app/pages/dashboard/matters/[id].vue` - Added edit modal and handler
+
 ### Currently In Progress 🔄
+
+#### NuxtHub 0.10.x Upgrade & API Response Normalization (2026-01-07)
+- **Status**: Core migration complete ✅ - Remaining endpoints on-demand
+- **What**: Upgraded from NuxtHub 0.9.x to 0.10.x with full API changes, plus systematic conversion of API responses to snake_case
+- **Migration Documentation**: `/doc/NUXTHUB_010_API_MIGRATION.md` (comprehensive reference)
+
+**Completed**:
+- ✅ Configuration updated: `database: true` → `db: 'sqlite'`
+- ✅ Directory moved: `server/database/` → `server/db/` (with git history)
+- ✅ All database access converted from `hubDatabase()` to `import { db } from 'hub:db'`
+- ✅ **All blob API calls updated**: `hubBlob()` → `import { blob } from 'hub:blob'` (5 files)
+  - documents/[id]/download.get.ts - Document downloads now working
+  - documents/generate-from-template.post.ts - Document generation
+  - documents/[id]/variables.post.ts - Variable updates with DOCX regeneration
+  - documents/upload.post.ts - Document uploads
+  - document-uploads/[id]/download.get.ts - Upload downloads
+- ✅ Database initialization working with NuxtHub 0.10.x virtual modules
+- ✅ Schema synchronized with migrations (removed deprecated `isTemplate` field)
+- ✅ Fixed journey step enum mismatch (`ATTORNEY` → `COUNSEL`)
+- ✅ **Fixed document download bug**: Documents now generate proper blob keys when regenerated
+- ✅ **26 API endpoints converted to snake_case** with proper timestamp handling:
+  - Matters: index, detail, lawyers dropdown, relationships
+  - Clients: index, detail, matters, relationships
+  - Journeys: index, detail, engagement templates, progress
+  - Action Items: by step, by client journey
+  - Templates: index, detail
+  - Service Catalog: index
+  - People: index, detail
+  - Users: index
+  - Documents: detail
+  - Dashboard: stats, activity
+  - Appointments: index
+  - Client Journeys: by client, by matter, progress
+
+**Remaining Work** (On-Demand Approach):
+- ~70 remaining GET endpoints to convert as features are tested/used
+- Update KV and Cache API calls when encountered (utilities, queue handlers)
+- Pattern established and documented - apply as needed
+
+**Key Bug Fixes**:
+1. **Document downloads working** - Fixed blob API calls and blob key generation
+2. **DOCX regeneration working** - Generates blob keys for documents that don't have them
+3. **Template uploads working** - Blob storage integration functional
+4. **All core features tested** - Matters, clients, journeys, templates, documents all displaying correctly
+
+**Files Modified** (Complete List):
+- `/server/db/index.ts` - Database initialization with virtual modules
+- `/server/db/schema.ts` - Removed deprecated fields, fixed enums
+- `/server/api/documents/[id]/download.get.ts` - Blob API + download fix
+- `/server/api/documents/generate-from-template.post.ts` - Blob API
+- `/server/api/documents/[id]/variables.post.ts` - Blob API + blob key generation fix
+- `/server/api/documents/upload.post.ts` - Blob API
+- `/server/api/document-uploads/[id]/download.get.ts` - Blob API
+- `/server/api/templates/upload.post.ts` - Blob API migration
+- `/server/api/{matters,clients,journeys,action-items,etc}/**/*.get.ts` - 26 endpoints with snake_case conversion
+- `/doc/NUXTHUB_010_API_MIGRATION.md` - Migration reference guide
 
 #### UI Restructuring Plan: Matter-Centric Architecture
 - **Status**: Planned (Phases 1-2 targeted)
@@ -70,7 +203,7 @@ Document (N) ──→ Matter (1)
 ### Technology Stack
 
 **Backend**:
-- Nuxt 3 + NuxtHub (Cloudflare-based)
+- Nuxt 4 + NuxtHub (Cloudflare-based)
 - Drizzle ORM with custom types
 - SQLite (D1) database
 - API routes in `/server/api/`
@@ -115,7 +248,6 @@ Document (N) ──→ Matter (1)
 
 ### 4. Journey-Matter Workflow Fix (Phase 4)
 - **Status**: Database supports it, UI doesn't enforce it
-- **Need**: Start Journey modal should require matter selection, auto-populate engaged services
 - **Validation**: Verify matter-service engagement exists before creating journey
 
 ### 5. Enhanced Matter List View (Phase 5)
@@ -134,6 +266,7 @@ Document (N) ──→ Matter (1)
 - **THIS FILE** (`CURRENT_STATUS.md`) - Up-to-date project status
 - `USAGE.md` - How to run the project
 - `API_AUDIT_REPORT.md` - Comprehensive API endpoint documentation
+- `action-items-task-management-plan.md` - Action items & task management system (comprehensive)
 - `future-schema-extraction-architecture.md` - Future feature planning
 - `entity-relationship-diagram.md` - Current database schema
 - `domain-model-final.md` - Domain model documentation
@@ -151,6 +284,21 @@ Document (N) ──→ Matter (1)
 ---
 
 ## 🚀 Quick Start (For Tomorrow)
+
+### If continuing API normalization work:
+1. Run the application and test features
+2. If you encounter fields showing as undefined/null in UI:
+   - Find the corresponding API endpoint (check browser network tab)
+   - Open the endpoint file (e.g., `/server/api/.../something.get.ts`)
+   - Look for `.all()` or `.get()` calls on Drizzle queries
+   - Add snake_case conversion mapping (see pattern in Technical Decisions Log)
+   - Convert Date objects to timestamps: `item.createdAt instanceof Date ? item.createdAt.getTime() : item.createdAt`
+   - Convert booleans to integers: `item.isActive ? 1 : 0`
+3. Reference examples:
+   - `/server/api/matters/index.get.ts` - Simple list conversion
+   - `/server/api/journeys/index.get.ts` - Enriched data with aggregates
+   - `/server/api/documents/[id].get.ts` - Complex nested objects
+4. **Priority order**: Fix endpoints as UI features are tested/used (on-demand approach)
 
 ### If resuming UI restructuring work:
 1. Review the plan file: `/Users/owenhathaway/.claude/plans/lexical-plotting-wadler.md`
@@ -183,6 +331,25 @@ Document (N) ──→ Matter (1)
 ---
 
 ## 📊 Technical Decisions Log
+
+### 2026-01-07: API Response Normalization Strategy
+- **Decision**: Systematically convert all Drizzle ORM responses to snake_case at API layer
+- **Context**: NuxtHub 0.10.x migration + Drizzle ORM adoption revealed field name mismatch
+- **Problem**: Drizzle returns camelCase, existing UI expects snake_case from old raw SQL days
+- **Solution**: Map all API responses to include both camelCase and snake_case (backwards compatible)
+- **Pattern**:
+  ```typescript
+  return items.map(item => ({
+    id: item.id,
+    fieldName: item.fieldName, // camelCase for new code
+    field_name: item.fieldName, // snake_case for existing UI
+    createdAt: item.createdAt instanceof Date ? item.createdAt.getTime() : item.createdAt,
+    created_at: item.createdAt instanceof Date ? item.createdAt.getTime() : item.createdAt
+  }))
+  ```
+- **Scope**: All GET endpoints using `.all()` or `.get()` (~96 files identified)
+- **Progress**: 26 high-priority endpoints completed, ~70 remaining
+- **Rationale**: Gradual migration path, no UI changes required, prevents display bugs
 
 ### 2026-01-06: ORM-Layer Serialization
 - **Decision**: Move JSON serialization from API layer to ORM layer
@@ -249,18 +416,34 @@ The following files can be moved to `/doc/archive/` as they represent historical
 
 ## 💬 Notes from Last Session
 
-**User feedback** (2026-01-06 evening):
-- "I'm feeling real good about where we are and where we're headed"
-- "I need to wind down and get some sleep, but I'd like to be able to pick up as close to where we are as possible"
-- Requested documentation of current state and markdown cleanup
-- Running out of steam but satisfied with progress
+**Session 2026-01-07 (Evening)**:
+- **Focus**: NuxtHub 0.10.x upgrade completion and bug fixes
+- **Achievements**:
+  - ✅ Completed NuxtHub 0.10.x migration (database, blob APIs)
+  - ✅ Fixed multiple display bugs caused by camelCase/snake_case mismatch
+  - ✅ Converted 26 high-priority GET endpoints to proper snake_case format
+  - ✅ Updated all 5 blob API endpoints (documents downloads, uploads, generation)
+  - ✅ Fixed critical bug: Document downloads now working (blob key generation issue)
+  - ✅ Fixed DOCX regeneration for documents without blob keys
+  - ✅ Documented migration process and patterns
+- **Current State**:
+  - Core features (matters, clients, journeys, templates, documents) fully working
+  - Document downloads and DOCX generation tested and working
+  - ~70 remaining endpoints to convert on-demand as features are used
+  - Server running successfully with NuxtHub 0.10.x
+  - No critical blocking issues
+- **User Decision**: "We'll knock these down over time" (on-demand approach for remaining endpoints)
+- **End of Session**: "Let's call it a night"
 
-**Technical state**:
+**Session 2026-01-06** (Previous):
+- "I'm feeling real good about where we are and where we're headed"
 - All middle names functionality working
 - Server starting successfully
-- No pending fixes or errors
-- Ready to resume either UI restructuring or schema extraction work
+- Ready to resume UI restructuring or schema extraction work
 
 ---
 
-**Next Session**: Choose one of the three paths above based on priority and energy level. All three are well-documented and ready to start.
+**Next Session Options**:
+1. **Continue API normalization** - Fix remaining endpoints as features are tested (on-demand)
+2. **UI restructuring** - Phase 1-2 of matter-centric architecture plan
+3. **Schema extraction** - Begin document template analysis and journey generation

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 import { generateId } from '../../utils/auth'
 
 const createAppointmentSchema = z.object({
