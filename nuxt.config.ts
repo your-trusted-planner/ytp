@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   // Env variables - https://nuxt.com/docs/getting-started/configuration#environment-variables-and-private-tokens
   runtimeConfig: {
     public: {
-      appName: 'Your Trusted Planner - Client Portal'
+      appName: 'Your Trusted Planner - Client Portal',
       gitCommit: process.env.NUXT_GIT_COMMIT,
       buildDate: process.env.NUXT_BUILD_DATE,
     },
