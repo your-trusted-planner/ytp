@@ -113,6 +113,46 @@ const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).fir
    - Server validates Firebase tokens
    - Creates/links users in local database
 
+## Deployment & Environments
+
+### Branch Strategy
+- **`main`** - Production deployments to `app.trustandlegacy.com` / `app.businessandlegacy.com`
+- **`stage`** - Preview deployments for staging/testing
+- **`feature/**`** - Preview deployments for feature branches (verbose naming)
+- **`feat/**`** - Preview deployments for feature branches (short naming)
+
+### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
+Deployments are triggered on push to any of the above branches.
+
+**Production (main branch):**
+1. Build the application
+2. Apply database migrations to `ytp-db`
+3. Deploy to production Workers
+
+**Preview (all other branches):**
+1. Build the application
+2. Apply database migrations to `ytp-preview`
+3. Deploy to preview Workers (`--env preview`)
+
+### Cloudflare Resources
+
+| Resource | Production | Preview |
+|----------|------------|---------|
+| Worker | `ytp` | `ytp-preview` |
+| D1 Database | `ytp-db` | `ytp-preview` |
+| R2 Bucket | `ytp-blob` | `ytp-blob-preview` |
+| KV (main) | `3c921ff1...` | `711a6f9c...` |
+| KV (cache) | `06ceff03...` | `9c78f773...` |
+| Queues | `document-*` | `document-*-preview` |
+
+### URLs
+- **Production**: `app.trustandlegacy.com`, `app.businessandlegacy.com`
+- **Preview**: `app-preview.trustandlegacy.com`, `app-preview.businessandlegacy.com`
+
+### Configuration Files
+- **Wrangler**: `wrangler.jsonc` - Defines Workers, D1, KV, R2, Queues for both environments
+- **GitHub Actions**: `.github/workflows/deploy.yml` - CI/CD pipeline
+
 ## Code Patterns
 
 ### API Endpoints
