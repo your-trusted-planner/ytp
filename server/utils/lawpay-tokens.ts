@@ -31,25 +31,24 @@ export async function storeLawPayConnection(
   merchantPublicKey: string,
   scope: string
 ): Promise<string> {
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../db')
+  const db = useDrizzle()
   const kv = hubKV()
   const connectionId = nanoid()
-  const expiresAt = Date.now() + (expiresIn * 1000)
+  const expiresAtTimestamp = Date.now() + (expiresIn * 1000)
+  const now = new Date()
+  const expiresAt = new Date(expiresAtTimestamp)
 
   // 1. Store metadata in Database (source of truth)
-  await db.prepare(`
-    INSERT INTO lawpay_connections (
-      id, user_id, merchant_public_key, scope, expires_at, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    connectionId,
+  await db.insert(schema.lawpayConnections).values({
+    id: connectionId,
     userId,
     merchantPublicKey,
     scope,
     expiresAt,
-    Date.now(),
-    Date.now()
-  ).run()
+    createdAt: now,
+    updatedAt: now
+  })
 
   // 2. Store tokens in KV with TTL (fast access cache)
   const ttlSeconds = Math.floor(expiresIn)
@@ -86,12 +85,20 @@ export async function getLawPayAccessToken(userId: string): Promise<string | nul
   }
 
   // KV miss - check if connection exists in DB
-  const db = hubDatabase()
-  const connection = await db.prepare(`
-    SELECT * FROM lawpay_connections
-    WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
-    ORDER BY created_at DESC LIMIT 1
-  `).bind(userId, Date.now()).first() as LawPayConnection | null
+  const { useDrizzle, schema } = await import('../db')
+  const { eq, and, isNull, gt, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
+
+  const connection = await db.select()
+    .from(schema.lawpayConnections)
+    .where(and(
+      eq(schema.lawpayConnections.userId, userId),
+      isNull(schema.lawpayConnections.revokedAt),
+      gt(schema.lawpayConnections.expiresAt, new Date())
+    ))
+    .orderBy(desc(schema.lawpayConnections.createdAt))
+    .limit(1)
+    .get() as LawPayConnection | null
 
   if (!connection) {
     return null // No valid connection
@@ -107,13 +114,20 @@ export async function getLawPayAccessToken(userId: string): Promise<string | nul
  * Get LawPay connection info from database
  */
 export async function getLawPayConnection(userId: string): Promise<LawPayConnection | null> {
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../db')
+  const { eq, and, isNull, gt, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  const connection = await db.prepare(`
-    SELECT * FROM lawpay_connections
-    WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
-    ORDER BY created_at DESC LIMIT 1
-  `).bind(userId, Date.now()).first()
+  const connection = await db.select()
+    .from(schema.lawpayConnections)
+    .where(and(
+      eq(schema.lawpayConnections.userId, userId),
+      isNull(schema.lawpayConnections.revokedAt),
+      gt(schema.lawpayConnections.expiresAt, new Date())
+    ))
+    .orderBy(desc(schema.lawpayConnections.createdAt))
+    .limit(1)
+    .get()
 
   return connection as LawPayConnection | null
 }
@@ -122,15 +136,23 @@ export async function getLawPayConnection(userId: string): Promise<LawPayConnect
  * Revoke LawPay connection (mark as revoked, clear KV cache)
  */
 export async function revokeLawPayConnection(userId: string): Promise<void> {
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../db')
+  const { eq, and, isNull } = await import('drizzle-orm')
+  const db = useDrizzle()
   const kv = hubKV()
 
+  const now = new Date()
+
   // Mark as revoked in DB
-  await db.prepare(`
-    UPDATE lawpay_connections
-    SET revoked_at = ?, updated_at = ?
-    WHERE user_id = ? AND revoked_at IS NULL
-  `).bind(Date.now(), Date.now(), userId).run()
+  await db.update(schema.lawpayConnections)
+    .set({
+      revokedAt: now,
+      updatedAt: now
+    })
+    .where(and(
+      eq(schema.lawpayConnections.userId, userId),
+      isNull(schema.lawpayConnections.revokedAt)
+    ))
 
   // Clear from KV cache
   await kv.delete(`lawpay:access:${userId}`)

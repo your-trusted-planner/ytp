@@ -18,7 +18,7 @@ interface DocumentGroup {
   journeyStepName: string
   stepOrder: number
   stepType: 'MILESTONE' | 'BRIDGE'
-  responsibleParty: 'CLIENT' | 'COUNSEL' | 'BOTH'
+  responsibleParty: 'CLIENT' | 'ATTORNEY' | 'BOTH'
   expectedDurationDays: number
   helpContent?: string
 }
@@ -50,7 +50,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Private Trust Company Setup',
     stepOrder: 3,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNSEL',
+    responsibleParty: 'ATTORNEY',
     expectedDurationDays: 5,
     helpContent: 'Your Private Family Trust Company documents establish the trustee entity.'
   },
@@ -60,7 +60,7 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
     journeyStepName: 'Special Purpose Trust (if applicable)',
     stepOrder: 4,
     stepType: 'MILESTONE',
-    responsibleParty: 'COUNSEL',
+    responsibleParty: 'ATTORNEY',
     expectedDurationDays: 5,
     helpContent: 'Special purpose trust documents (only if your plan includes this structure).'
   },
@@ -149,7 +149,10 @@ function extractVariables(text: string): Set<string> {
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'LAWYER'])
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   const blob = hubBlob()
 
   const log: string[] = []
@@ -157,9 +160,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Check if WYDAPT service catalog entry already exists
-    const existingCatalog = await db.prepare(`
-      SELECT id FROM service_catalog WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
-    `).first()
+    const existingCatalog = await db.select({ id: schema.serviceCatalog.id })
+      .from(schema.serviceCatalog)
+      .where(eq(schema.serviceCatalog.name, 'Wyoming Asset Protection Trust (WYDAPT)'))
+      .limit(1)
+      .get()
 
     if (existingCatalog) {
       return {
@@ -172,41 +177,35 @@ export default defineEventHandler(async (event) => {
     // 1. Create WYDAPT Service Catalog Entry
     log.push('📋 Creating WYDAPT Service Catalog Entry...')
     const catalogId = nanoid()
-    await db.prepare(`
-      INSERT INTO service_catalog (
-        id, name, description, category, type, price, is_active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      catalogId,
-      'Wyoming Asset Protection Trust (WYDAPT)',
-      'Comprehensive asset protection trust formation and ongoing management for Wyoming Asset Protection Trusts',
-      'Trust Formation',
-      'SINGLE',
-      1850000, // $18,500
-      1,
-      Date.now(),
-      Date.now()
-    ).run()
+    const now = new Date()
+
+    await db.insert(schema.serviceCatalog).values({
+      id: catalogId,
+      name: 'Wyoming Asset Protection Trust (WYDAPT)',
+      description: 'Comprehensive asset protection trust formation and ongoing management for Wyoming Asset Protection Trusts',
+      category: 'Trust Formation',
+      type: 'SINGLE',
+      price: 1850000, // $18,500
+      isActive: true,
+      createdAt: now,
+      updatedAt: now
+    })
     log.push(`✅ Service catalog entry created: ${catalogId}`)
 
     // 2. Create WYDAPT Journey
     log.push('🗺️  Creating WYDAPT Journey...')
     const journeyId = nanoid()
-    await db.prepare(`
-      INSERT INTO journeys (
-        id, service_catalog_id, name, description, is_template, is_active, estimated_duration_days, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      journeyId,
-      catalogId,
-      'Wyoming Asset Protection Trust Journey',
-      'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
-      1, // This is a template
-      1,
-      60, // ~2 months estimated
-      Date.now(),
-      Date.now()
-    ).run()
+
+    await db.insert(schema.journeys).values({
+      id: journeyId,
+      serviceCatalogId: catalogId,
+      name: 'Wyoming Asset Protection Trust Journey',
+      description: 'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
+      isActive: true,
+      estimatedDurationDays: 60, // ~2 months estimated
+      createdAt: now,
+      updatedAt: now
+    })
     log.push(`✅ Journey created: ${journeyId}`)
 
     // 3. Process each document group
@@ -219,25 +218,22 @@ export default defineEventHandler(async (event) => {
 
       // Create journey step
       const stepId = nanoid()
-      await db.prepare(`
-        INSERT INTO journey_steps (
-          id, journey_id, step_type, name, description, step_order, responsible_party,
-          expected_duration_days, help_content, allow_multiple_iterations, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        stepId,
+      const stepNow = new Date()
+
+      await db.insert(schema.journeySteps).values({
+        id: stepId,
         journeyId,
-        group.stepType,
-        group.journeyStepName,
-        `Documents: ${group.name}`,
-        group.stepOrder,
-        group.responsibleParty,
-        group.expectedDurationDays,
-        group.helpContent || '',
-        group.stepType === 'BRIDGE' ? 1 : 0,
-        Date.now(),
-        Date.now()
-      ).run()
+        stepType: group.stepType,
+        name: group.journeyStepName,
+        description: `Documents: ${group.name}`,
+        stepOrder: group.stepOrder,
+        responsibleParty: group.responsibleParty,
+        expectedDurationDays: group.expectedDurationDays,
+        helpContent: group.helpContent || '',
+        allowMultipleIterations: group.stepType === 'BRIDGE',
+        createdAt: stepNow,
+        updatedAt: stepNow
+      })
       log.push(`   ✅ Step created: ${stepId}`)
 
       // List all files in this group's R2 path
@@ -301,25 +297,22 @@ export default defineEventHandler(async (event) => {
 
             // Create document template
             const templateId = nanoid()
-            await db.prepare(`
-              INSERT INTO document_templates (
-                id, name, description, category, content, variables, requires_notary,
-                is_active, original_file_name, file_extension, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).bind(
-              templateId,
-              filename.replace('.docx', ''),
-              `From ${group.name}`,
+            const templateNow = new Date()
+
+            await db.insert(schema.documentTemplates).values({
+              id: templateId,
+              name: filename.replace('.docx', ''),
+              description: `From ${group.name}`,
               category,
-              html, // Keep the HTML content with {{ variable }} syntax
-              JSON.stringify(Array.from(variables)),
-              requiresNotary ? 1 : 0,
-              1,
-              filename,
-              'docx',
-              Date.now(),
-              Date.now()
-            ).run()
+              content: html, // Keep the HTML content with {{ variable }} syntax
+              variables: JSON.stringify(Array.from(variables)),
+              requiresNotary,
+              isActive: true,
+              originalFileName: filename,
+              fileExtension: 'docx',
+              createdAt: templateNow,
+              updatedAt: templateNow
+            })
 
             log.push(`      ✅ Template created: ${templateId}`)
             log.push(`         - Paragraphs: ${paragraphs.length}`)

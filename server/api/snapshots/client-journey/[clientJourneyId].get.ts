@@ -9,12 +9,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get client journey to check authorization
-  const clientJourney = await db.prepare(`
-    SELECT * FROM client_journeys WHERE id = ?
-  `).bind(clientJourneyId).first()
+  const clientJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -24,17 +27,17 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check authorization - clients can only view their own journey's snapshots
-  requireClientAccess(event, clientJourney.client_id)
+  requireClientAccess(event, clientJourney.clientId)
 
   // Get all snapshots
-  const snapshots = await db.prepare(`
-    SELECT * FROM snapshot_versions
-    WHERE client_journey_id = ?
-    ORDER BY version_number DESC
-  `).bind(clientJourneyId).all()
+  const snapshots = await db.select()
+    .from(schema.snapshotVersions)
+    .where(eq(schema.snapshotVersions.clientJourneyId, clientJourneyId))
+    .orderBy(desc(schema.snapshotVersions.versionNumber))
+    .all()
 
   return {
-    snapshots: snapshots.results || []
+    snapshots
   }
 })
 

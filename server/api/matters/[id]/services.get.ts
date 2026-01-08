@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { isDatabaseAvailable } from '../../../database'
+import { isDatabaseAvailable } from '../../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     return { services: [] } // Mock response
   }
   
-  const { useDrizzle, schema } = await import('../../../database')
+  const { useDrizzle, schema } = await import('../../../db')
   const db = useDrizzle()
 
   // Fetch services associated with this matter from junction table

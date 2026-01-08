@@ -2,21 +2,38 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and, sql } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  const journeys = await db.prepare(`
-    SELECT
-      j.id,
-      j.name,
-      j.description,
-      j.estimated_duration_days,
-      (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id) as step_count
-    FROM journeys j
-    WHERE j.is_active = 1 AND j.journey_type = 'ENGAGEMENT'
-    ORDER BY j.name ASC
-  `).all()
+  const journeys = await db.select()
+    .from(schema.journeys)
+    .where(and(
+      eq(schema.journeys.isActive, true),
+      eq(schema.journeys.journeyType, 'ENGAGEMENT')
+    ))
+    .orderBy(schema.journeys.name)
+    .all()
+
+  // Enrich with step counts
+  const enrichedJourneys = await Promise.all(
+    journeys.map(async (journey) => {
+      const stepCountResult = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.journeySteps)
+        .where(eq(schema.journeySteps.journeyId, journey.id))
+        .get()
+
+      return {
+        id: journey.id,
+        name: journey.name,
+        description: journey.description,
+        estimated_duration_days: journey.estimatedDurationDays,
+        step_count: stepCountResult?.count || 0
+      }
+    })
+  )
 
   return {
-    engagementJourneys: journeys.results || []
+    engagementJourneys: enrichedJourneys
   }
 })

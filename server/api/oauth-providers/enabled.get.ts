@@ -1,6 +1,6 @@
 // Get all enabled OAuth providers (public endpoint for login page)
 export default defineEventHandler(async (event) => {
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const { eq, and } = await import('drizzle-orm')
   const db = useDrizzle()
 

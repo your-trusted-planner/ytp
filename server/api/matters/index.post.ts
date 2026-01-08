@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { sql, eq } from 'drizzle-orm'
-import { isDatabaseAvailable } from '../../database'
+import { isDatabaseAvailable } from '../../db'
 import { requireRole, generateId } from '../../utils/auth'
 
 const createMatterSchema = z.object({
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     return { success: true, matter: mockMatter } // Mock response
   }
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
 
   // Auto-generate matter number: YYYY-NNN format

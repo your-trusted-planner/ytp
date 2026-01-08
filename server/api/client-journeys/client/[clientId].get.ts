@@ -12,34 +12,102 @@ export default defineEventHandler(async (event) => {
   // Clients can only view their own journeys
   requireClientAccess(event, clientId)
 
-  const db = hubDatabase()
-  
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, ne, desc, sql } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Get all active journeys for this client
-  const journeys = await db.prepare(`
-    SELECT
-      cj.*,
-      j.name as journey_name,
-      j.description as journey_description,
-      j.estimated_duration_days,
-      js.name as current_step_name,
-      js.step_type as current_step_type,
-      js.step_order as current_step_order,
-      (SELECT COUNT(*) FROM journey_steps WHERE journey_id = j.id) as total_steps,
-      sc.name as service_name,
-      m.title as matter_title,
-      m.matter_number as matter_number
-    FROM client_journeys cj
-    JOIN journeys j ON cj.journey_id = j.id
-    LEFT JOIN journey_steps js ON cj.current_step_id = js.id
-    LEFT JOIN service_catalog sc ON j.service_catalog_id = sc.id
-    LEFT JOIN matters m ON cj.matter_id = m.id
-    WHERE cj.client_id = ?
-    AND cj.status != 'CANCELLED'
-    ORDER BY cj.priority DESC, cj.created_at DESC
-  `).bind(clientId).all()
+  const clientJourneys = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.clientId, clientId))
+    .orderBy(desc(schema.clientJourneys.priority), desc(schema.clientJourneys.createdAt))
+    .all()
+
+  // Filter out cancelled journeys
+  const activeJourneys = clientJourneys.filter(cj => cj.status !== 'CANCELLED')
+
+  // Enrich with related data
+  const enrichedJourneys = await Promise.all(
+    activeJourneys.map(async (cj) => {
+      // Get journey info
+      const journey = await db.select({
+        name: schema.journeys.name,
+        description: schema.journeys.description,
+        estimatedDurationDays: schema.journeys.estimatedDurationDays,
+        serviceCatalogId: schema.journeys.serviceCatalogId
+      })
+        .from(schema.journeys)
+        .where(eq(schema.journeys.id, cj.journeyId))
+        .get()
+
+      // Get current step info
+      const currentStep = cj.currentStepId
+        ? await db.select({
+            name: schema.journeySteps.name,
+            stepType: schema.journeySteps.stepType,
+            stepOrder: schema.journeySteps.stepOrder
+          })
+          .from(schema.journeySteps)
+          .where(eq(schema.journeySteps.id, cj.currentStepId))
+          .get()
+        : null
+
+      // Get total steps count
+      const totalStepsResult = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.journeySteps)
+        .where(eq(schema.journeySteps.journeyId, cj.journeyId))
+        .get()
+
+      // Get service catalog info if journey has one
+      const service = journey?.serviceCatalogId
+        ? await db.select({ name: schema.serviceCatalog.name })
+          .from(schema.serviceCatalog)
+          .where(eq(schema.serviceCatalog.id, journey.serviceCatalogId))
+          .get()
+        : null
+
+      // Get matter info
+      const matter = cj.matterId
+        ? await db.select({
+            title: schema.matters.title,
+            matterNumber: schema.matters.matterNumber
+          })
+          .from(schema.matters)
+          .where(eq(schema.matters.id, cj.matterId))
+          .get()
+        : null
+
+      // Convert to snake_case for API compatibility
+      return {
+        id: cj.id,
+        client_id: cj.clientId,
+        matter_id: cj.matterId,
+        catalog_id: cj.catalogId,
+        journey_id: cj.journeyId,
+        current_step_id: cj.currentStepId,
+        status: cj.status,
+        priority: cj.priority,
+        started_at: cj.startedAt instanceof Date ? cj.startedAt.getTime() : cj.startedAt,
+        completed_at: cj.completedAt instanceof Date ? cj.completedAt.getTime() : cj.completedAt,
+        paused_at: cj.pausedAt instanceof Date ? cj.pausedAt.getTime() : cj.pausedAt,
+        created_at: cj.createdAt instanceof Date ? cj.createdAt.getTime() : cj.createdAt,
+        updated_at: cj.updatedAt instanceof Date ? cj.updatedAt.getTime() : cj.updatedAt,
+        journey_name: journey?.name || null,
+        journey_description: journey?.description || null,
+        estimated_duration_days: journey?.estimatedDurationDays || null,
+        current_step_name: currentStep?.name || null,
+        current_step_type: currentStep?.stepType || null,
+        current_step_order: currentStep?.stepOrder || null,
+        total_steps: totalStepsResult?.count || 0,
+        service_name: service?.name || null,
+        matter_title: matter?.title || null,
+        matter_number: matter?.matterNumber || null
+      }
+    })
+  )
 
   return {
-    journeys: journeys.results || []
+    journeys: enrichedJourneys
   }
 })
 

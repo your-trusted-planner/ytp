@@ -2,7 +2,7 @@
  * Update an action item
  */
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])

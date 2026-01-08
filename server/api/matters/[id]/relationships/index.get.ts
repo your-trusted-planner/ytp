@@ -10,52 +10,60 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../../db')
+  const { eq, inArray } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  // Get all relationships with person details
-  const relationships = await db.prepare(`
-    SELECT
-      mr.id,
-      mr.matter_id,
-      mr.person_id,
-      mr.relationship_type,
-      mr.ordinal,
-      mr.notes,
-      mr.created_at,
-      mr.updated_at,
-      p.first_name,
-      p.last_name,
-      p.full_name,
-      p.email,
-      p.phone,
-      p.entity_name,
-      p.entity_type
-    FROM matter_relationships mr
-    JOIN people p ON mr.person_id = p.id
-    WHERE mr.matter_id = ?
-    ORDER BY mr.relationship_type, mr.ordinal, p.full_name
-  `).bind(matterId).all()
+  // Get all relationships for this matter
+  const matterRelationships = await db.select()
+    .from(schema.matterRelationships)
+    .where(eq(schema.matterRelationships.matterId, matterId))
+    .orderBy(
+      schema.matterRelationships.relationshipType,
+      schema.matterRelationships.ordinal
+    )
+    .all()
+
+  if (matterRelationships.length === 0) {
+    return { relationships: [] }
+  }
+
+  // Get all people involved
+  const personIds = [...new Set(matterRelationships.map(mr => mr.personId))]
+  const people = await db.select()
+    .from(schema.people)
+    .where(inArray(schema.people.id, personIds))
+    .all()
+
+  // Create person lookup map
+  const personMap = new Map(people.map(p => [p.id, p]))
+
+  // Enrich relationships with person details and convert to snake_case
+  const enrichedRelationships = matterRelationships.map(mr => {
+    const person = personMap.get(mr.personId)
+    return {
+      id: mr.id,
+      matter_id: mr.matterId,
+      person_id: mr.personId,
+      relationship_type: mr.relationshipType,
+      ordinal: mr.ordinal,
+      notes: mr.notes,
+      created_at: mr.createdAt instanceof Date ? mr.createdAt.getTime() : mr.createdAt,
+      updated_at: mr.updatedAt instanceof Date ? mr.updatedAt.getTime() : mr.updatedAt,
+      person: person ? {
+        id: person.id,
+        first_name: person.firstName,
+        last_name: person.lastName,
+        full_name: person.fullName,
+        email: person.email,
+        phone: person.phone,
+        entity_name: person.entityName,
+        entity_type: person.entityType
+      } : null
+    }
+  })
 
   return {
-    relationships: relationships.results?.map((r: any) => ({
-      id: r.id,
-      matterId: r.matter_id,
-      personId: r.person_id,
-      relationshipType: r.relationship_type,
-      ordinal: r.ordinal,
-      notes: r.notes,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-      person: {
-        id: r.person_id,
-        firstName: r.first_name,
-        lastName: r.last_name,
-        fullName: r.full_name,
-        email: r.email,
-        phone: r.phone,
-        entityName: r.entity_name,
-        entityType: r.entity_type
-      }
-    })) || []
+    relationships: enrichedRelationships
   }
 })

@@ -4,58 +4,86 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const limit = query.limit ? parseInt(query.limit as string) : undefined
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, desc, inArray } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  // Lawyers and admins see all documents, clients see only their own
-  let sql = `
-    SELECT
-      d.*,
-      u.first_name as client_first_name,
-      u.last_name as client_last_name,
-      dt.name as template_name
-    FROM documents d
-    LEFT JOIN users u ON d.client_id = u.id
-    LEFT JOIN document_templates dt ON d.template_id = dt.id
-  `
+  // Get documents based on user role
+  let documentsQuery = db.select()
+    .from(schema.documents)
 
-  // Filter by client if user is a client
   if (user.role === 'CLIENT') {
-    sql += ` WHERE d.client_id = ?`
+    documentsQuery = documentsQuery.where(eq(schema.documents.clientId, user.id))
   }
 
-  sql += ` ORDER BY d.created_at DESC`
+  documentsQuery = documentsQuery.orderBy(desc(schema.documents.createdAt))
 
   if (limit) {
-    sql += ` LIMIT ${limit}`
+    documentsQuery = documentsQuery.limit(limit)
   }
 
-  const result = user.role === 'CLIENT'
-    ? await db.prepare(sql).bind(user.id).all()
-    : await db.prepare(sql).all()
+  const docs = await documentsQuery.all()
 
-  const documents = (result.results || []).map((doc: any) => ({
-    id: doc.id,
-    title: doc.title,
-    description: doc.description,
-    status: doc.status,
-    templateId: doc.template_id,
-    templateName: doc.template_name,
-    matterId: doc.matter_id,
-    content: doc.content,
-    variableValues: doc.variable_values,
-    requiresNotary: doc.requires_notary === 1,
-    notarizationStatus: doc.notarization_status,
-    clientId: doc.client_id,
-    clientFirstName: doc.client_first_name,
-    clientLastName: doc.client_last_name,
-    clientFullName: `${doc.client_first_name || ''} ${doc.client_last_name || ''}`.trim(),
-    signedAt: doc.signed_at,
-    signatureData: doc.signature_data,
-    viewedAt: doc.viewed_at,
-    sentAt: doc.sent_at,
-    createdAt: doc.created_at,
-    updatedAt: doc.updated_at
-  }))
+  // Get unique client IDs and template IDs
+  const clientIds = [...new Set(docs.map(d => d.clientId).filter(Boolean) as string[])]
+  const templateIds = [...new Set(docs.map(d => d.templateId).filter(Boolean) as string[])]
+
+  // Fetch clients and templates in parallel
+  const [clients, templates] = await Promise.all([
+    clientIds.length > 0
+      ? db.select({
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName
+        })
+        .from(schema.users)
+        .where(inArray(schema.users.id, clientIds))
+        .all()
+      : [],
+    templateIds.length > 0
+      ? db.select({
+          id: schema.documentTemplates.id,
+          name: schema.documentTemplates.name
+        })
+        .from(schema.documentTemplates)
+        .where(inArray(schema.documentTemplates.id, templateIds))
+        .all()
+      : []
+  ])
+
+  // Create lookup maps
+  const clientMap = new Map(clients.map(c => [c.id, c]))
+  const templateMap = new Map(templates.map(t => [t.id, t]))
+
+  // Enrich documents with related data
+  const documents = docs.map((doc) => {
+    const client = doc.clientId ? clientMap.get(doc.clientId) : null
+    const template = doc.templateId ? templateMap.get(doc.templateId) : null
+
+    return {
+      id: doc.id,
+      title: doc.title,
+      description: doc.description,
+      status: doc.status,
+      templateId: doc.templateId,
+      templateName: template?.name || null,
+      matterId: doc.matterId,
+      content: doc.content,
+      variableValues: doc.variableValues,
+      requiresNotary: doc.requiresNotary,
+      notarizationStatus: doc.notarizationStatus,
+      clientId: doc.clientId,
+      clientFirstName: client?.firstName || null,
+      clientLastName: client?.lastName || null,
+      clientFullName: client ? `${client.firstName || ''} ${client.lastName || ''}`.trim() : null,
+      signedAt: doc.signedAt,
+      signatureData: doc.signatureData,
+      viewedAt: doc.viewedAt,
+      sentAt: doc.sentAt,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    }
+  })
 
   return documents
 })

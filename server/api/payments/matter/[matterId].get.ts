@@ -12,17 +12,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get all payments for this matter
-  const payments = await db.prepare(`
-    SELECT *
-    FROM payments
-    WHERE matter_id = ?
-    ORDER BY created_at DESC
-  `).bind(matterId).all()
+  const payments = await db.select()
+    .from(schema.payments)
+    .where(eq(schema.payments.matterId, matterId))
+    .orderBy(desc(schema.payments.createdAt))
+    .all()
 
   return {
-    payments: payments.results || []
+    payments
   }
 })

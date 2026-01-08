@@ -1,6 +1,6 @@
 // Create an action item
 import { nanoid } from 'nanoid'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
@@ -10,15 +10,13 @@ export default defineEventHandler(async (event) => {
 
   // Validate action type for ENGAGEMENT journeys
   if (body.stepId) {
-    const hubDb = hubDatabase()
+    const { eq } = await import('drizzle-orm')
 
-    // Fetch the journey type via stepId
-    const step = await hubDb.prepare(`
-      SELECT js.*, j.journey_type
-      FROM journey_steps js
-      INNER JOIN journeys j ON js.journey_id = j.id
-      WHERE js.id = ?
-    `).bind(body.stepId).first()
+    // Fetch the journey step
+    const step = await db.select()
+      .from(schema.journeySteps)
+      .where(eq(schema.journeySteps.id, body.stepId))
+      .get()
 
     if (!step) {
       throw createError({
@@ -27,18 +25,26 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Validate action type for ENGAGEMENT journeys
-    const ALLOWED_ENGAGEMENT_ACTIONS = [
-      'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
-      'REVIEW', 'UPLOAD', 'DECISION'
-    ]
+    // Get the journey to check its type
+    const journey = await db.select()
+      .from(schema.journeys)
+      .where(eq(schema.journeys.id, step.journeyId))
+      .get()
 
-    if (step.journey_type === 'ENGAGEMENT' &&
-        !ALLOWED_ENGAGEMENT_ACTIONS.includes(body.actionType)) {
-      throw createError({
-        statusCode: 400,
-        message: `Action type ${body.actionType} is not allowed for ENGAGEMENT journeys. Allowed types: ${ALLOWED_ENGAGEMENT_ACTIONS.join(', ')}`
-      })
+    if (journey) {
+      // Validate action type for ENGAGEMENT journeys
+      const ALLOWED_ENGAGEMENT_ACTIONS = [
+        'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
+        'REVIEW', 'UPLOAD', 'DECISION'
+      ]
+
+      if (journey.journeyType === 'ENGAGEMENT' &&
+          !ALLOWED_ENGAGEMENT_ACTIONS.includes(body.actionType)) {
+        throw createError({
+          statusCode: 400,
+          message: `Action type ${body.actionType} is not allowed for ENGAGEMENT journeys. Allowed types: ${ALLOWED_ENGAGEMENT_ACTIONS.join(', ')}`
+        })
+      }
     }
   }
 

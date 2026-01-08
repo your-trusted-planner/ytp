@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
 
   // Check if email already exists

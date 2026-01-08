@@ -1,5 +1,5 @@
 import { eq, count } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 // Delete a person
 export default defineEventHandler(async (event) => {

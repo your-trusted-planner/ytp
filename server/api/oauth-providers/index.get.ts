@@ -2,7 +2,7 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN'])
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
 
   const providers = await db

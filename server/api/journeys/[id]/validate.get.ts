@@ -2,7 +2,7 @@
  * Validate a journey template - check if all steps have at least one action item
  */
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../../database'
+import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])

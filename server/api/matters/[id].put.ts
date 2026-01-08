@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { isDatabaseAvailable } from '../../database'
+import { isDatabaseAvailable } from '../../db'
 
 const updateMatterSchema = z.object({
   title: z.string().optional(),
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     return { success: true } // Mock response
   }
   
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
   
   await db

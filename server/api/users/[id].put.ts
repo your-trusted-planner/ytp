@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
 
   const updateData: any = {

@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 

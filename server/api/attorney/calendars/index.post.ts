@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireRole(event, ['LAWYER', 'ADMIN'])
   const body = await readBody(event)
   const result = addCalendarSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -23,42 +23,38 @@ export default defineEventHandler(async (event) => {
       data: result.error.errors
     })
   }
-  
+
   const { calendarId, calendarName, calendarEmail, isPrimary, timezone, serviceAccountKey } = result.data
-  const db = hubDatabase()
-  
+
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // If setting as primary, unset other primary calendars for this attorney
   if (isPrimary) {
-    await db.prepare(`
-      UPDATE attorney_calendars 
-      SET is_primary = 0 
-      WHERE attorney_id = ?
-    `).bind(user.id).run()
+    await db.update(schema.attorneyCalendars)
+      .set({ isPrimary: false })
+      .where(eq(schema.attorneyCalendars.attorneyId, user.id))
   }
-  
+
   // Create calendar record
   const id = generateId()
-  const now = Date.now()
-  
-  await db.prepare(`
-    INSERT INTO attorney_calendars (
-      id, attorney_id, calendar_id, calendar_name, calendar_email,
-      is_primary, timezone, service_account_key, is_active, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
+  const now = new Date()
+
+  await db.insert(schema.attorneyCalendars).values({
     id,
-    user.id,
+    attorneyId: user.id,
     calendarId,
     calendarName,
     calendarEmail,
-    isPrimary ? 1 : 0,
-    timezone || 'America/New_York',
-    serviceAccountKey || null, // TODO: Encrypt before storing
-    1,
-    now,
-    now
-  ).run()
-  
+    isPrimary: isPrimary || false,
+    timezone: timezone || 'America/New_York',
+    serviceAccountKey: serviceAccountKey || null, // TODO: Encrypt before storing
+    isActive: true,
+    createdAt: now,
+    updatedAt: now
+  })
+
   return {
     success: true,
     calendarId: id,

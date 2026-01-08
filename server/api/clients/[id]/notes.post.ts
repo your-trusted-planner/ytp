@@ -14,28 +14,29 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const db = useDrizzle()
 
-  const note = {
-    id: nanoid(),
+  const noteId = nanoid()
+  const now = new Date()
+
+  await db.insert(schema.notes).values({
+    id: noteId,
     content: body.content,
-    client_id: clientId,
-    created_at: Date.now(),
-    updated_at: Date.now()
+    clientId: clientId,
+    createdAt: now,
+    updatedAt: now
+  })
+
+  return {
+    note: {
+      id: noteId,
+      content: body.content,
+      client_id: clientId,
+      created_at: now.getTime(),
+      updated_at: now.getTime()
+    }
   }
-
-  await db.prepare(`
-    INSERT INTO notes (id, content, client_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?)
-  `).bind(
-    note.id,
-    note.content,
-    note.client_id,
-    note.created_at,
-    note.updated_at
-  ).run()
-
-  return { note }
 })
 
 

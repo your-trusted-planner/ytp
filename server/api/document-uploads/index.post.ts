@@ -13,9 +13,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const db = useDrizzle()
   const blob = hubBlob()
-  
+
   // Extract fields from form data
   let clientJourneyId: string | undefined
   let actionItemId: string | undefined
@@ -53,56 +54,53 @@ export default defineEventHandler(async (event) => {
   })
 
   // Create database record
-  const upload = {
-    id: nanoid(),
-    client_journey_id: clientJourneyId || null,
-    action_item_id: actionItemId || null,
-    uploaded_by_user_id: user.id,
-    document_category: documentCategory || 'General',
-    file_name: uniqueFilename,
-    original_file_name: file.filename || 'unknown',
-    file_path: filePath,
-    file_size: file.data.length,
-    mime_type: file.type || 'application/octet-stream',
+  const uploadId = nanoid()
+  const now = new Date()
+
+  await db.insert(schema.documentUploads).values({
+    id: uploadId,
+    clientJourneyId: clientJourneyId || null,
+    actionItemId: actionItemId || null,
+    uploadedByUserId: user.id,
+    documentCategory: documentCategory || 'General',
+    fileName: uniqueFilename,
+    originalFileName: file.filename || 'unknown',
+    filePath: filePath,
+    fileSize: file.data.length,
+    mimeType: file.type || 'application/octet-stream',
     status: 'PENDING_REVIEW',
-    reviewed_by_user_id: null,
-    reviewed_at: null,
-    review_notes: null,
+    reviewedByUserId: null,
+    reviewedAt: null,
+    reviewNotes: null,
     version: 1,
-    replaces_upload_id: null,
-    created_at: Date.now(),
-    updated_at: Date.now()
+    replacesUploadId: null,
+    createdAt: now,
+    updatedAt: now
+  })
+
+  // Return upload object for compatibility
+  return {
+    upload: {
+      id: uploadId,
+      client_journey_id: clientJourneyId || null,
+      action_item_id: actionItemId || null,
+      uploaded_by_user_id: user.id,
+      document_category: documentCategory || 'General',
+      file_name: uniqueFilename,
+      original_file_name: file.filename || 'unknown',
+      file_path: filePath,
+      file_size: file.data.length,
+      mime_type: file.type || 'application/octet-stream',
+      status: 'PENDING_REVIEW',
+      reviewed_by_user_id: null,
+      reviewed_at: null,
+      review_notes: null,
+      version: 1,
+      replaces_upload_id: null,
+      created_at: now.getTime(),
+      updated_at: now.getTime()
+    }
   }
-
-  await db.prepare(`
-    INSERT INTO document_uploads (
-      id, client_journey_id, action_item_id, uploaded_by_user_id, document_category,
-      file_name, original_file_name, file_path, file_size, mime_type, status,
-      reviewed_by_user_id, reviewed_at, review_notes, version, replaces_upload_id,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    upload.id,
-    upload.client_journey_id,
-    upload.action_item_id,
-    upload.uploaded_by_user_id,
-    upload.document_category,
-    upload.file_name,
-    upload.original_file_name,
-    upload.file_path,
-    upload.file_size,
-    upload.mime_type,
-    upload.status,
-    upload.reviewed_by_user_id,
-    upload.reviewed_at,
-    upload.review_notes,
-    upload.version,
-    upload.replaces_upload_id,
-    upload.created_at,
-    upload.updated_at
-  ).run()
-
-  return { upload }
 })
 
 

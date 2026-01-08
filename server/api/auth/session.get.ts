@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate user still exists in database and is active
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 

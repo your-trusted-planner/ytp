@@ -2,7 +2,7 @@
  * Get all action items for a journey step (template level)
  */
 import { eq, isNull } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../../database'
+import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
@@ -28,13 +28,30 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.actionItems.stepId, stepId))
     .all()
 
+  // Convert to snake_case for API compatibility
   return {
     actionItems: actionItems.map((item) => ({
-      ...item,
-      dueDate: item.dueDate?.getTime() || null,
-      completedAt: item.completedAt?.getTime() || null,
-      createdAt: item.createdAt?.getTime() || Date.now(),
-      updatedAt: item.updatedAt?.getTime() || Date.now()
+      id: item.id,
+      step_id: item.stepId,
+      client_journey_id: item.clientJourneyId,
+      action_type: item.actionType,
+      title: item.title,
+      description: item.description,
+      config: item.config,
+      status: item.status,
+      assigned_to: item.assignedTo,
+      due_date: item.dueDate instanceof Date ? item.dueDate.getTime() : item.dueDate,
+      priority: item.priority,
+      system_integration_type: item.systemIntegrationType,
+      resource_id: item.resourceId,
+      automation_handler: item.automationHandler,
+      is_service_delivery_verification: item.isServiceDeliveryVerification ? 1 : 0,
+      verification_criteria: item.verificationCriteria,
+      verification_evidence: item.verificationEvidence,
+      completed_at: item.completedAt instanceof Date ? item.completedAt.getTime() : item.completedAt,
+      completed_by: item.completedBy,
+      created_at: item.createdAt instanceof Date ? item.createdAt.getTime() : item.createdAt,
+      updated_at: item.updatedAt instanceof Date ? item.updatedAt.getTime() : item.updatedAt
     }))
   }
 })

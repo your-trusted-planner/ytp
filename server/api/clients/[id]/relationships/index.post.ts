@@ -25,12 +25,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Verify client exists
-  const client = await db.prepare('SELECT id FROM users WHERE id = ? AND role = ?')
-    .bind(clientId, 'CLIENT')
-    .first()
+  const client = await db.select({ id: schema.users.id })
+    .from(schema.users)
+    .where(and(
+      eq(schema.users.id, clientId),
+      eq(schema.users.role, 'CLIENT')
+    ))
+    .get()
 
   if (!client) {
     throw createError({
@@ -40,9 +46,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify person exists
-  const person = await db.prepare('SELECT id FROM people WHERE id = ?')
-    .bind(personId)
-    .first()
+  const person = await db.select({ id: schema.people.id })
+    .from(schema.people)
+    .where(eq(schema.people.id, personId))
+    .get()
 
   if (!person) {
     throw createError({
@@ -52,23 +59,18 @@ export default defineEventHandler(async (event) => {
   }
 
   const relationshipId = nanoid()
-  const now = Date.now()
+  const now = new Date()
 
-  await db.prepare(`
-    INSERT INTO client_relationships (
-      id, client_id, person_id, relationship_type, ordinal, notes,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    relationshipId,
+  await db.insert(schema.clientRelationships).values({
+    id: relationshipId,
     clientId,
     personId,
     relationshipType,
-    ordinal || 0,
-    notes || null,
-    now,
-    now
-  ).run()
+    ordinal: ordinal || 0,
+    notes: notes || null,
+    createdAt: now,
+    updatedAt: now
+  })
 
   return {
     success: true,
@@ -79,8 +81,8 @@ export default defineEventHandler(async (event) => {
       relationshipType,
       ordinal: ordinal || 0,
       notes,
-      createdAt: now,
-      updatedAt: now
+      createdAt: now.getTime(),
+      updatedAt: now.getTime()
     }
   }
 })

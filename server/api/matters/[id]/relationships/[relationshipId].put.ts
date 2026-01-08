@@ -15,12 +15,18 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { relationshipType, ordinal, notes } = body
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Verify relationship exists and belongs to this matter
-  const existing = await db.prepare(
-    'SELECT id FROM matter_relationships WHERE id = ? AND matter_id = ?'
-  ).bind(relationshipId, matterId).first()
+  const existing = await db.select({ id: schema.matterRelationships.id })
+    .from(schema.matterRelationships)
+    .where(and(
+      eq(schema.matterRelationships.id, relationshipId),
+      eq(schema.matterRelationships.matterId, matterId)
+    ))
+    .get()
 
   if (!existing) {
     throw createError({
@@ -29,23 +35,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const now = Date.now()
+  const now = new Date()
 
-  await db.prepare(`
-    UPDATE matter_relationships
-    SET
-      relationship_type = ?,
-      ordinal = ?,
-      notes = ?,
-      updated_at = ?
-    WHERE id = ?
-  `).bind(
-    relationshipType,
-    ordinal !== undefined ? ordinal : 0,
-    notes || null,
-    now,
-    relationshipId
-  ).run()
+  await db.update(schema.matterRelationships)
+    .set({
+      relationshipType,
+      ordinal: ordinal !== undefined ? ordinal : 0,
+      notes: notes || null,
+      updatedAt: now
+    })
+    .where(eq(schema.matterRelationships.id, relationshipId))
 
   return {
     success: true,
@@ -55,7 +54,7 @@ export default defineEventHandler(async (event) => {
       relationshipType,
       ordinal,
       notes,
-      updatedAt: now
+      updatedAt: now.getTime()
     }
   }
 })

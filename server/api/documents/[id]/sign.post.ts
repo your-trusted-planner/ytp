@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { isDatabaseAvailable } from '../../../database'
+import { isDatabaseAvailable } from '../../../db'
 import { requireAuth } from '../../../utils/auth'
 import { mockDb } from '../../../utils/mock-db'
 
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // Real database
-  const { useDrizzle, schema } = await import('../../../database')
+  const { useDrizzle, schema } = await import('../../../db')
   const db = useDrizzle()
   
   const document = await db

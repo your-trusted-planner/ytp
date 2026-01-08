@@ -1,8 +1,7 @@
 // Webhook endpoint for PandaDoc status updates
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const db = hubDatabase()
-  
+
   // Verify webhook signature (if configured)
   // const signature = getHeader(event, 'X-PandaDoc-Signature')
   // TODO: Implement signature verification for security
@@ -17,10 +16,15 @@ export default defineEventHandler(async (event) => {
       throw new Error('No document ID in webhook')
     }
 
+    const { useDrizzle, schema } = await import('../../db')
+    const { eq } = await import('drizzle-orm')
+    const db = useDrizzle()
+
     // Find document by PandaDoc request ID
-    const document = await db.prepare(`
-      SELECT * FROM documents WHERE pandadoc_request_id = ?
-    `).bind(pandaDocId).first()
+    const document = await db.select()
+      .from(schema.documents)
+      .where(eq(schema.documents.pandadocRequestId, pandaDocId))
+      .get()
 
     if (!document) {
       console.warn('Document not found for PandaDoc ID:', pandaDocId)
@@ -51,19 +55,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update document
-    await db.prepare(`
-      UPDATE documents
-      SET 
-        notarization_status = ?,
-        status = ?,
-        updated_at = ?
-      WHERE id = ?
-    `).bind(
-      notarizationStatus,
-      documentStatus,
-      Date.now(),
-      document.id
-    ).run()
+    await db.update(schema.documents)
+      .set({
+        notarizationStatus,
+        status: documentStatus,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.documents.id, document.id))
 
     // Log activity
     // TODO: Create activity log entry
@@ -73,7 +71,7 @@ export default defineEventHandler(async (event) => {
     console.error('Error processing PandaDoc webhook:', error)
     throw createError({
       statusCode: 500,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     })
   }
 })

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { isDatabaseAvailable } from '../../database'
+import { isDatabaseAvailable } from '../../db'
 import { verifyPassword } from '../../utils/auth'
 import { mockDb, initMockDb } from '../../utils/mock-db'
 
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // Real database code (when deployed to Cloudflare)
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
   
   const user = await db

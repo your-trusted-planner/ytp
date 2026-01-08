@@ -14,12 +14,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get current step
-  const clientJourney = await db.prepare(`
-    SELECT * FROM client_journeys WHERE id = ?
-  `).bind(clientJourneyId).first()
+  const clientJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -28,55 +31,62 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const now = new Date()
+
   // Mark current step as complete
-  if (clientJourney.current_step_id) {
-    await db.prepare(`
-      UPDATE journey_step_progress
-      SET status = 'COMPLETE', completed_at = ?, updated_at = ?
-      WHERE client_journey_id = ? AND step_id = ?
-    `).bind(Date.now(), Date.now(), clientJourneyId, clientJourney.current_step_id).run()
+  if (clientJourney.currentStepId) {
+    await db.update(schema.journeyStepProgress)
+      .set({
+        status: 'COMPLETE',
+        completedAt: now,
+        updatedAt: now
+      })
+      .where(and(
+        eq(schema.journeyStepProgress.clientJourneyId, clientJourneyId),
+        eq(schema.journeyStepProgress.stepId, clientJourney.currentStepId)
+      ))
   }
 
   // Update to new step
-  await db.prepare(`
-    UPDATE client_journeys
-    SET current_step_id = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(body.stepId, Date.now(), clientJourneyId).run()
+  await db.update(schema.clientJourneys)
+    .set({
+      currentStepId: body.stepId,
+      updatedAt: now
+    })
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
 
   // Create or update progress for new step
-  const existingProgress = await db.prepare(`
-    SELECT * FROM journey_step_progress
-    WHERE client_journey_id = ? AND step_id = ?
-  `).bind(clientJourneyId, body.stepId).first()
+  const existingProgress = await db.select()
+    .from(schema.journeyStepProgress)
+    .where(and(
+      eq(schema.journeyStepProgress.clientJourneyId, clientJourneyId),
+      eq(schema.journeyStepProgress.stepId, body.stepId)
+    ))
+    .get()
 
   if (existingProgress) {
     // Reactivate existing progress
-    await db.prepare(`
-      UPDATE journey_step_progress
-      SET status = 'IN_PROGRESS', started_at = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(Date.now(), Date.now(), existingProgress.id).run()
+    await db.update(schema.journeyStepProgress)
+      .set({
+        status: 'IN_PROGRESS',
+        startedAt: now,
+        updatedAt: now
+      })
+      .where(eq(schema.journeyStepProgress.id, existingProgress.id))
   } else {
     // Create new progress record
-    const progressId = nanoid()
-    await db.prepare(`
-      INSERT INTO journey_step_progress (
-        id, client_journey_id, step_id, status, client_approved, counsel_approved,
-        iteration_count, started_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      progressId,
-      clientJourneyId,
-      body.stepId,
-      'IN_PROGRESS',
-      0,
-      0,
-      0,
-      Date.now(),
-      Date.now(),
-      Date.now()
-    ).run()
+    await db.insert(schema.journeyStepProgress).values({
+      id: nanoid(),
+      clientJourneyId: clientJourneyId,
+      stepId: body.stepId,
+      status: 'IN_PROGRESS',
+      clientApproved: false,
+      attorneyApproved: false,
+      iterationCount: 0,
+      startedAt: now,
+      createdAt: now,
+      updatedAt: now
+    })
   }
 
   return { success: true }

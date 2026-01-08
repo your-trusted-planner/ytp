@@ -1,4 +1,4 @@
-import { seedDatabase } from '../../database/seed'
+import { seedDatabase } from '../../db/seed'
 
 export default defineEventHandler(async (event) => {
   try {

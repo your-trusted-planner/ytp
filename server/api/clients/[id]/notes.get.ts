@@ -11,17 +11,19 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
-  
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // Get all notes for this client
-  const notes = await db.prepare(`
-    SELECT * FROM notes
-    WHERE client_id = ?
-    ORDER BY created_at DESC
-  `).bind(clientId).all()
+  const notes = await db.select()
+    .from(schema.notes)
+    .where(eq(schema.notes.clientId, clientId))
+    .orderBy(desc(schema.notes.createdAt))
+    .all()
 
   return {
-    notes: notes.results || []
+    notes
   }
 })
 

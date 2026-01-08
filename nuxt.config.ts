@@ -56,7 +56,7 @@ export default defineNuxtConfig({
 
   // NuxtHub configuration for Cloudflare D1, KV, and R2
   hub: {
-    database: true,
+    db: 'sqlite', // Updated for NuxtHub 0.10.x
     blob: true,
     kv: true
   },

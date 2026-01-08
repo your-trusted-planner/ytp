@@ -2,7 +2,7 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'LAWYER'])
 
-  const { useDrizzle, schema } = await import('../../database')
+  const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
 
   console.log('[Users API] Fetching users from database...')
@@ -14,11 +14,19 @@ export default defineEventHandler(async (event) => {
 
   console.log(`[Users API] Found ${users.length} users`)
 
-  // Don't send password hashes to the client
-  const sanitizedUsers = users.map(user => {
-    const { password, ...rest } = user
-    return rest
-  })
+  // Convert to snake_case and sanitize (don't send password hashes)
+  const sanitizedUsers = users.map(user => ({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    first_name: user.firstName,
+    last_name: user.lastName,
+    phone: user.phone,
+    avatar: user.avatar,
+    status: user.status,
+    created_at: user.createdAt instanceof Date ? user.createdAt.getTime() : user.createdAt,
+    updated_at: user.updatedAt instanceof Date ? user.updatedAt.getTime() : user.updatedAt
+  }))
 
   console.log(`[Users API] Returning ${sanitizedUsers.length} sanitized users`)
 

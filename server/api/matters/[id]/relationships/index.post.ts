@@ -22,12 +22,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Verify matter exists
-  const matter = await db.prepare('SELECT id FROM matters WHERE id = ?')
-    .bind(matterId)
-    .first()
+  const matter = await db.select({ id: schema.matters.id })
+    .from(schema.matters)
+    .where(eq(schema.matters.id, matterId))
+    .get()
 
   if (!matter) {
     throw createError({
@@ -37,9 +40,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify person exists
-  const person = await db.prepare('SELECT id FROM people WHERE id = ?')
-    .bind(personId)
-    .first()
+  const person = await db.select({ id: schema.people.id })
+    .from(schema.people)
+    .where(eq(schema.people.id, personId))
+    .get()
 
   if (!person) {
     throw createError({
@@ -49,23 +53,18 @@ export default defineEventHandler(async (event) => {
   }
 
   const relationshipId = nanoid()
-  const now = Date.now()
+  const now = new Date()
 
-  await db.prepare(`
-    INSERT INTO matter_relationships (
-      id, matter_id, person_id, relationship_type, ordinal, notes,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    relationshipId,
+  await db.insert(schema.matterRelationships).values({
+    id: relationshipId,
     matterId,
     personId,
     relationshipType,
-    ordinal || 0,
-    notes || null,
-    now,
-    now
-  ).run()
+    ordinal: ordinal || 0,
+    notes: notes || null,
+    createdAt: now,
+    updatedAt: now
+  })
 
   return {
     success: true,
@@ -76,8 +75,8 @@ export default defineEventHandler(async (event) => {
       relationshipType,
       ordinal: ordinal || 0,
       notes,
-      createdAt: now,
-      updatedAt: now
+      createdAt: now.getTime(),
+      updatedAt: now.getTime()
     }
   }
 })

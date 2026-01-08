@@ -1,4 +1,6 @@
 // Download a document as DOCX file
+import { blob } from 'hub:blob'
+
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const documentId = getRouterParam(event, 'id')
@@ -12,14 +14,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get the document
-  const document = await db.prepare(`
-    SELECT * FROM documents WHERE id = ?
-  `).bind(documentId).first()
+  const document = await db.select()
+    .from(schema.documents)
+    .where(eq(schema.documents.id, documentId))
+    .get()
 
-  console.log('[Download] Document found:', document?.id, 'blob key:', document?.docx_blob_key)
+  console.log('[Download] Document found:', document?.id, 'blob key:', document?.docxBlobKey)
 
   if (!document) {
     throw createError({
@@ -29,7 +34,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can download any document, clients only their own
-  if (user.role === 'CLIENT' && document.client_id !== user.id) {
+  if (user.role === 'CLIENT' && document.clientId !== user.id) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
@@ -37,7 +42,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if document has a DOCX file
-  if (!document.docx_blob_key) {
+  if (!document.docxBlobKey) {
     console.error('[Download] Document has no DOCX blob key')
     throw createError({
       statusCode: 404,
@@ -46,11 +51,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get DOCX file from blob storage
-  console.log('[Download] Fetching blob from storage:', document.docx_blob_key)
-  const blob = await hubBlob().get(document.docx_blob_key)
+  console.log('[Download] Fetching blob from storage:', document.docxBlobKey)
+  const blobData = await blob.get(document.docxBlobKey)
 
-  if (!blob) {
-    console.error('[Download] Blob not found in storage:', document.docx_blob_key)
+  if (!blobData) {
+    console.error('[Download] Blob not found in storage:', document.docxBlobKey)
     throw createError({
       statusCode: 404,
       message: 'Document file not found in storage'
@@ -58,7 +63,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get the file data as a buffer
-  const fileData = await blob.arrayBuffer()
+  const fileData = await blobData.arrayBuffer()
   console.log('[Download] File data size:', fileData.byteLength, 'bytes')
 
   // Encode filename to handle special characters

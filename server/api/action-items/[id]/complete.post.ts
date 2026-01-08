@@ -1,6 +1,6 @@
 // Mark an action item as complete
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../../database'
+import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)

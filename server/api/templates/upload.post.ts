@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { requireRole } from '../../utils/auth'
+import { blob } from 'hub:blob'
 
 // Extract variables from text content using handlebars syntax only
 function extractVariables(text: string): Set<string> {
@@ -135,33 +136,31 @@ export default defineEventHandler(async (event) => {
     const templateName = name || filename.replace('.docx', '')
 
     // Create template in database
-    const db = hubDatabase()
+    const { useDrizzle, schema } = await import('../../db')
+    const db = useDrizzle()
     const templateId = nanoid()
 
     // Store original DOCX file in blob storage
     const blobKey = `templates/${templateId}/${filename}`
-    await hubBlob().put(blobKey, buffer)
+    await blob.put(blobKey, buffer)
 
-    await db.prepare(`
-      INSERT INTO document_templates (
-        id, name, description, category, content, variables, requires_notary,
-        is_active, original_file_name, file_extension, docx_blob_key, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      templateId,
-      templateName,
-      description || `Imported from ${filename}`,
+    const now = new Date()
+
+    await db.insert(schema.documentTemplates).values({
+      id: templateId,
+      name: templateName,
+      description: description || `Imported from ${filename}`,
       category,
-      html, // Store HTML content for preview
-      JSON.stringify(Array.from(variables)),
-      requiresNotary ? 1 : 0,
-      1, // Active by default
-      filename,
-      'docx',
-      blobKey, // Store blob storage path
-      Date.now(),
-      Date.now()
-    ).run()
+      content: html, // Store HTML content for preview
+      variables: JSON.stringify(Array.from(variables)),
+      requiresNotary,
+      isActive: true, // Active by default
+      originalFileName: filename,
+      fileExtension: 'docx',
+      docxBlobKey: blobKey, // Store blob storage path
+      createdAt: now,
+      updatedAt: now
+    })
 
     return {
       success: true,

@@ -1,4 +1,4 @@
-import { isDatabaseAvailable } from '../../database'
+import { isDatabaseAvailable } from '../../db'
 
 export default defineEventHandler(async () => {
   const dbAvailable = isDatabaseAvailable()
@@ -6,9 +6,15 @@ export default defineEventHandler(async () => {
   let dbInfo = null
   if (dbAvailable) {
     try {
-      const db = hubDatabase()
-      const result = await db.prepare('SELECT COUNT(*) as count FROM users').run()
-      const userCount = result.results?.[0]?.count || 0
+      const { useDrizzle, schema } = await import('../../db')
+      const { sql } = await import('drizzle-orm')
+      const db = useDrizzle()
+
+      const result = await db.select({ count: sql<number>`count(*)` })
+        .from(schema.users)
+        .get()
+
+      const userCount = result?.count || 0
       dbInfo = { userCount }
     } catch (e: any) {
       dbInfo = { error: e.message }

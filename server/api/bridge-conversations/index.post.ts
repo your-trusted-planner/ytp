@@ -5,31 +5,32 @@ export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
 
   const body = await readBody(event)
-  const db = hubDatabase()
-  
+
+  const { useDrizzle, schema } = await import('../../db')
+  const db = useDrizzle()
+
+  const messageId = nanoid()
+  const now = new Date()
+
+  await db.insert(schema.bridgeConversations).values({
+    id: messageId,
+    stepProgressId: body.stepProgressId,
+    userId: user.id,
+    message: body.message,
+    isAiResponse: false,
+    metadata: body.metadata ? JSON.stringify(body.metadata) : null,
+    createdAt: now
+  })
+
   const message = {
-    id: nanoid(),
+    id: messageId,
     step_progress_id: body.stepProgressId,
     user_id: user.id,
     message: body.message,
-    is_ai_response: 0,
+    is_ai_response: false,
     metadata: body.metadata ? JSON.stringify(body.metadata) : null,
-    created_at: Date.now()
+    created_at: now
   }
-
-  await db.prepare(`
-    INSERT INTO bridge_conversations (
-      id, step_progress_id, user_id, message, is_ai_response, metadata, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    message.id,
-    message.step_progress_id,
-    message.user_id,
-    message.message,
-    message.is_ai_response,
-    message.metadata,
-    message.created_at
-  ).run()
 
   return { message }
 })

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 import { requireAuth } from '../../utils/auth'
 import { usePandaDoc } from '../../utils/pandadoc'
 
