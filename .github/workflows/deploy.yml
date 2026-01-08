@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - main
-      - develop
+      - stage
       - 'feature/**'
+      - 'feat/**'
   pull_request:
     branches:
       - main
+      - stage
 
 jobs:
   deploy:
@@ -36,6 +38,14 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      - name: Apply Database Migrations (Preview)
+        if: github.ref != 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply ytp-preview --env preview --remote
 
       - name: Deploy to Preview (non-main branches)
         if: github.ref != 'refs/heads/main'

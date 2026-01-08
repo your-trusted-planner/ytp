@@ -24,11 +24,11 @@ This file tracks:
 
 ### Schema Management
 
-**Schema Definition**: All database schema is defined in `server/database/schema.ts` using Drizzle ORM.
+**Schema Definition**: All database schema is defined in `server/db/schema.ts` using Drizzle ORM.
 
 **Drizzle Kit Configuration**: `drizzle.config.ts` at the root defines:
-- Schema location: `./server/database/schema.ts`
-- Migration output: `./server/database/migrations`
+- Schema location: `./server/db/schema.ts`
+- Migration output: `./server/db/migrations`
 - Dialect: `sqlite` (CloudFlare D1)
 
 **IMPORTANT - Migration Generation**:
@@ -38,7 +38,7 @@ This file tracks:
 - Drizzle Kit automatically generates properly formatted migration files with random names (e.g., `0058_brave_wolverine.sql`)
 
 **Migration Process** (Codebase-First Mode):
-1. Claude modifies `server/database/schema.ts` with schema changes
+1. Claude modifies `server/db/schema.ts` with schema changes
 2. Claude tells the developer: "Please run `npx drizzle-kit generate` to create the migration"
 3. Developer runs the migration generation
 4. Developer applies migrations via Drizzle Kit: `npx drizzle-kit migrate`
@@ -113,6 +113,46 @@ const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).fir
    - Server validates Firebase tokens
    - Creates/links users in local database
 
+## Deployment & Environments
+
+### Branch Strategy
+- **`main`** - Production deployments to `app.trustandlegacy.com` / `app.businessandlegacy.com`
+- **`stage`** - Preview deployments for staging/testing
+- **`feature/**`** - Preview deployments for feature branches (verbose naming)
+- **`feat/**`** - Preview deployments for feature branches (short naming)
+
+### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
+Deployments are triggered on push to any of the above branches.
+
+**Production (main branch):**
+1. Build the application
+2. Apply database migrations to `ytp-db`
+3. Deploy to production Workers
+
+**Preview (all other branches):**
+1. Build the application
+2. Apply database migrations to `ytp-preview`
+3. Deploy to preview Workers (`--env preview`)
+
+### Cloudflare Resources
+
+| Resource | Production | Preview |
+|----------|------------|---------|
+| Worker | `ytp` | `ytp-preview` |
+| D1 Database | `ytp-db` | `ytp-preview` |
+| R2 Bucket | `ytp-blob` | `ytp-blob-preview` |
+| KV (main) | `3c921ff1...` | `711a6f9c...` |
+| KV (cache) | `06ceff03...` | `9c78f773...` |
+| Queues | `document-*` | `document-*-preview` |
+
+### URLs
+- **Production**: `app.trustandlegacy.com`, `app.businessandlegacy.com`
+- **Preview**: `app-preview.trustandlegacy.com`, `app-preview.businessandlegacy.com`
+
+### Configuration Files
+- **Wrangler**: `wrangler.jsonc` - Defines Workers, D1, KV, R2, Queues for both environments
+- **GitHub Actions**: `.github/workflows/deploy.yml` - CI/CD pipeline
+
 ## Code Patterns
 
 ### API Endpoints
@@ -135,7 +175,7 @@ const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).fir
 - `server/api/` - API endpoints
 - `server/middleware/` - Server middleware (auth, etc.)
 - `server/utils/` - Shared server utilities
-- `server/database/` - Database schema, migrations, utilities
+- `server/db/` - Database schema, migrations, utilities
 - `app/pages/` - Nuxt pages (Vue components)
 - `app/components/` - Reusable Vue components
 - `app/middleware/` - Client-side route middleware
