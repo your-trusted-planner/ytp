@@ -48,7 +48,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply ytp-preview --env preview --remote
+          environment: preview
+          command: d1 migrations apply ytp-preview --remote
 
       - name: Deploy to Preview (non-main branches)
         if: github.ref != 'refs/heads/main'
@@ -56,7 +57,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --env preview
+          environment: preview
+          command: deploy
 
       - name: Apply Database Migrations (Production)
         if: github.ref == 'refs/heads/main'
