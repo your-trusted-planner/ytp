@@ -30,6 +30,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       appName: 'Your Trusted Planner - Client Portal'
+      gitCommit: process.env.NUXT_GIT_COMMIT,
+      buildDate: process.env.NUXT_BUILD_DATE,
     },
     // Private keys (only available on the server)
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
