@@ -24,11 +24,11 @@ This file tracks:
 
 ### Schema Management
 
-**Schema Definition**: All database schema is defined in `server/database/schema.ts` using Drizzle ORM.
+**Schema Definition**: All database schema is defined in `server/db/schema.ts` using Drizzle ORM.
 
 **Drizzle Kit Configuration**: `drizzle.config.ts` at the root defines:
-- Schema location: `./server/database/schema.ts`
-- Migration output: `./server/database/migrations`
+- Schema location: `./server/db/schema.ts`
+- Migration output: `./server/db/migrations`
 - Dialect: `sqlite` (CloudFlare D1)
 
 **IMPORTANT - Migration Generation**:
@@ -38,7 +38,7 @@ This file tracks:
 - Drizzle Kit automatically generates properly formatted migration files with random names (e.g., `0058_brave_wolverine.sql`)
 
 **Migration Process** (Codebase-First Mode):
-1. Claude modifies `server/database/schema.ts` with schema changes
+1. Claude modifies `server/db/schema.ts` with schema changes
 2. Claude tells the developer: "Please run `npx drizzle-kit generate` to create the migration"
 3. Developer runs the migration generation
 4. Developer applies migrations via Drizzle Kit: `npx drizzle-kit migrate`
@@ -175,7 +175,7 @@ Deployments are triggered on push to any of the above branches.
 - `server/api/` - API endpoints
 - `server/middleware/` - Server middleware (auth, etc.)
 - `server/utils/` - Shared server utilities
-- `server/database/` - Database schema, migrations, utilities
+- `server/db/` - Database schema, migrations, utilities
 - `app/pages/` - Nuxt pages (Vue components)
 - `app/components/` - Reusable Vue components
 - `app/middleware/` - Client-side route middleware

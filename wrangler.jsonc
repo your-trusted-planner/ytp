@@ -32,7 +32,7 @@
       "binding": "DB",
       "database_name": "ytp-db",
       "database_id": "b33ecbc5-12b6-49c4-9a6a-235f9d4a5b14",
-      "migrations_dir": "server/database/migrations"
+      "migrations_dir": "server/db/migrations"
     }
   ],
 
@@ -117,7 +117,7 @@
           "binding": "DB",
           "database_name": "ytp-preview",
           "database_id": "b870e2f5-7d57-4216-af08-9a93ced6c363",
-          "migrations_dir": "server/database/migrations"
+          "migrations_dir": "server/db/migrations"
         }
       ],
       "kv_namespaces": [
