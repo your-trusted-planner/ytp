@@ -102,12 +102,12 @@
       "name": "ytp-preview",
       "routes": [
         {
-          "pattern": "app-preview.businessandlegacy.com/*",
+          "pattern": "app-preview.businessandlegacy.com",
           "zone_name": "businessandlegacy.com",
           "custom_domain": true
         },
         {
-          "pattern": "app-preview.trustandlegacy.com/*",
+          "pattern": "app-preview.trustandlegacy.com",
           "zone_name": "trustandlegacy.com",
           "custom_domain": true
         }
