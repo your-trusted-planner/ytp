@@ -8,7 +8,7 @@ import type { H3Event } from 'h3'
 export interface AuthenticatedUser {
   id: string
   email: string
-  role: 'ADMIN' | 'LAWYER' | 'CLIENT' | 'LEAD' | 'PROSPECT'
+  role: 'ADMIN' | 'LAWYER' | 'CLIENT' | 'ADVISOR' | 'LEAD' | 'PROSPECT'
   firstName?: string
   lastName?: string
 }

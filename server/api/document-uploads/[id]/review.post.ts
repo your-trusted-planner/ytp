@@ -20,26 +20,21 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+  const now = new Date()
 
   // Update upload review status
-  await db.prepare(`
-    UPDATE document_uploads
-    SET 
-      status = ?,
-      reviewed_by_user_id = ?,
-      reviewed_at = ?,
-      review_notes = ?,
-      updated_at = ?
-    WHERE id = ?
-  `).bind(
-    body.status || 'REVIEWED',
-    user.id,
-    Date.now(),
-    body.reviewNotes || null,
-    Date.now(),
-    uploadId
-  ).run()
+  await db.update(schema.documentUploads)
+    .set({
+      status: body.status || 'REVIEWED',
+      reviewedByUserId: user.id,
+      reviewedAt: now,
+      reviewNotes: body.reviewNotes || null,
+      updatedAt: now
+    })
+    .where(eq(schema.documentUploads.id, uploadId))
 
   return { success: true }
 })

@@ -21,12 +21,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Check if client exists
-  const existingClient = await db.prepare(`
-    SELECT id FROM users WHERE id = ? AND role = 'CLIENT'
-  `).bind(clientId).first()
+  const existingClient = await db.select({ id: schema.users.id })
+    .from(schema.users)
+    .where(and(
+      eq(schema.users.id, clientId),
+      eq(schema.users.role, 'CLIENT')
+    ))
+    .get()
 
   if (!existingClient) {
     throw createError({
@@ -35,74 +41,61 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const now = new Date()
+
   // Update user table
-  await db.prepare(`
-    UPDATE users
-    SET first_name = ?,
-        last_name = ?,
-        email = ?,
-        phone = ?,
-        status = ?,
-        updated_at = ?
-    WHERE id = ?
-  `).bind(
-    first_name,
-    last_name,
-    email,
-    phone || null,
-    status || 'ACTIVE',
-    Date.now(),
-    clientId
-  ).run()
+  await db.update(schema.users)
+    .set({
+      firstName: first_name,
+      lastName: last_name,
+      email,
+      phone: phone || null,
+      status: status || 'ACTIVE',
+      updatedAt: now
+    })
+    .where(eq(schema.users.id, clientId))
 
   // Check if profile exists
-  const existingProfile = await db.prepare(`
-    SELECT user_id FROM client_profiles WHERE user_id = ?
-  `).bind(clientId).first()
+  const existingProfile = await db.select({ userId: schema.clientProfiles.userId })
+    .from(schema.clientProfiles)
+    .where(eq(schema.clientProfiles.userId, clientId))
+    .get()
 
   if (existingProfile) {
     // Update existing profile
-    await db.prepare(`
-      UPDATE client_profiles
-      SET address = ?,
-          city = ?,
-          state = ?,
-          zip_code = ?,
-          updated_at = ?
-      WHERE user_id = ?
-    `).bind(
-      address || null,
-      city || null,
-      state || null,
-      zip_code || null,
-      Date.now(),
-      clientId
-    ).run()
+    await db.update(schema.clientProfiles)
+      .set({
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        zipCode: zip_code || null,
+        updatedAt: now
+      })
+      .where(eq(schema.clientProfiles.userId, clientId))
   } else {
     // Create new profile if it doesn't exist
-    await db.prepare(`
-      INSERT INTO client_profiles (id, user_id, address, city, state, zip_code, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      crypto.randomUUID(),
-      clientId,
-      address || null,
-      city || null,
-      state || null,
-      zip_code || null,
-      Date.now(),
-      Date.now()
-    ).run()
+    await db.insert(schema.clientProfiles).values({
+      id: crypto.randomUUID(),
+      userId: clientId,
+      address: address || null,
+      city: city || null,
+      state: state || null,
+      zipCode: zip_code || null,
+      createdAt: now,
+      updatedAt: now
+    })
   }
 
   // Get updated client data
-  const updatedClient = await db.prepare(`
-    SELECT * FROM users WHERE id = ?
-  `).bind(clientId).first()
+  const updatedClient = await db.select()
+    .from(schema.users)
+    .where(eq(schema.users.id, clientId))
+    .get()
 
-  const updatedProfile = await db.prepare(`
-    SELECT * FROM client_profiles WHERE user_id = ?
-  `).bind(clientId).first()
+  const updatedProfile = await db.select()
+    .from(schema.clientProfiles)
+    .where(eq(schema.clientProfiles.userId, clientId))
+    .get()
 
   return {
     success: true,

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../../database'
+import { useDrizzle, schema } from '../../../db'
 import { requireAuth } from '../../../utils/auth'
 import { usePandaDoc } from '../../../utils/pandadoc'
 

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 // Create a new person
 export default defineEventHandler(async (event) => {

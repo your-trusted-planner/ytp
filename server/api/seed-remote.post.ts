@@ -1,6 +1,5 @@
-import { drizzle } from 'drizzle-orm/d1'
-import { seedDatabase } from '../database/seed'
-import { schema } from '../database'
+import { seedDatabase } from '../db/seed'
+import { schema } from '../db'
 
 /**
  * Remote seeding endpoint for preview/production environments
@@ -27,12 +26,16 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const db = hubDatabase()
-    const drizzleDb = drizzle(db, { schema })
+    const { useDrizzle } = await import('../db')
+    const { sql } = await import('drizzle-orm')
+    const db = useDrizzle()
 
     // Check if database is already seeded
-    const result = await db.prepare('SELECT COUNT(*) as count FROM users').run()
-    const count = result.results?.[0]?.count || 0
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.users)
+      .get()
+
+    const count = result?.count || 0
 
     if (count > 0) {
       return {
@@ -42,7 +45,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Seed the database
-    await seedDatabase(drizzleDb)
+    await seedDatabase(db)
 
     return {
       success: true,

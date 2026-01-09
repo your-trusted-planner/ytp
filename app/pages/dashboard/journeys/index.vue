@@ -15,6 +15,45 @@
       </UiButton>
     </div>
 
+    <!-- Journey Type Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="-mb-px flex space-x-8">
+        <button
+          @click="activeFilter = 'all'"
+          :class="[
+            activeFilter === 'all'
+              ? 'border-burgundy-500 text-burgundy-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+            'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+          ]"
+        >
+          All Journeys
+        </button>
+        <button
+          @click="activeFilter = 'SERVICE'"
+          :class="[
+            activeFilter === 'SERVICE'
+              ? 'border-burgundy-500 text-burgundy-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+            'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+          ]"
+        >
+          Service Journeys
+        </button>
+        <button
+          @click="activeFilter = 'ENGAGEMENT'"
+          :class="[
+            activeFilter === 'ENGAGEMENT'
+              ? 'border-burgundy-500 text-burgundy-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+            'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+          ]"
+        >
+          Engagement Journeys
+        </button>
+      </nav>
+    </div>
+
     <!-- Journeys Grid -->
     <div v-if="loading" class="flex justify-center py-12">
       <IconLoader class="w-8 h-8 animate-spin text-burgundy-600" />
@@ -37,16 +76,21 @@
         <div class="flex items-start justify-between mb-4">
           <div class="flex-1">
             <!-- Inline editable journey name -->
-            <UiEditableText
-              v-model="journey.name"
-              tag="h3"
-              display-class="text-lg font-semibold text-gray-900 mb-1"
-              input-class="text-lg font-semibold"
-              :custom-cursor="pencilCursor"
-              :transform="(v) => v.toString().trim()"
-              @save="saveJourneyName(journey, $event)"
-              @click.stop
-            />
+            <div class="flex items-center gap-2 mb-1">
+              <UiEditableText
+                v-model="journey.name"
+                tag="h3"
+                display-class="text-lg font-semibold text-gray-900"
+                input-class="text-lg font-semibold"
+                :custom-cursor="pencilCursor"
+                :transform="(v) => v.toString().trim()"
+                @save="saveJourneyName(journey, $event)"
+                @click.stop
+              />
+              <UiBadge v-if="journey.journey_type === 'ENGAGEMENT'" variant="primary">
+                Engagement
+              </UiBadge>
+            </div>
             <p v-if="journey.description" class="text-sm text-gray-600">{{ journey.description }}</p>
           </div>
         </div>
@@ -121,6 +165,52 @@
           placeholder="e.g., 30"
         />
 
+        <!-- Journey Type Selector -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Journey Type</label>
+          <div class="space-y-3">
+            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                   :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+              <input
+                type="radio"
+                v-model="form.journeyType"
+                value="SERVICE"
+                class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
+              />
+              <div class="ml-3">
+                <div class="font-medium text-gray-900">Service Journey</div>
+                <div class="text-sm text-gray-600">
+                  For actual legal service delivery (trust creation, LLC formation, etc.)
+                </div>
+              </div>
+            </label>
+
+            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                   :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+              <input
+                type="radio"
+                v-model="form.journeyType"
+                value="ENGAGEMENT"
+                class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
+              />
+              <div class="ml-3">
+                <div class="font-medium text-gray-900">Engagement Journey</div>
+                <div class="text-sm text-gray-600">
+                  For initial client onboarding and engagement letter process
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Warning for ENGAGEMENT type -->
+          <div v-if="form.journeyType === 'ENGAGEMENT'" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-800">
+              <strong>Note:</strong> Engagement journeys can only use these action types:
+              Draft Document, E-Sign, Payment, Meeting, Review, Upload, Decision
+            </p>
+          </div>
+        </div>
+
         <div class="flex justify-end space-x-3 pt-4">
           <UiButton type="button" variant="ghost" @click="showCreateModal = false">
             Cancel
@@ -165,19 +255,24 @@ const showEditModal = ref(false)
 const journeys = ref([])
 const serviceCatalog = ref([])
 const editingJourney = ref(null)
+const activeFilter = ref('all') // 'all', 'SERVICE', 'ENGAGEMENT'
 
 const form = ref({
   name: '',
   description: '',
   serviceCatalogId: '',
-  estimatedDurationDays: null
+  estimatedDurationDays: null,
+  journeyType: 'SERVICE' // NEW - default to SERVICE
 })
 
 // Fetch journeys
 async function fetchJourneys() {
   loading.value = true
   try {
-    const { journeys: data } = await $fetch('/api/journeys')
+    const params = activeFilter.value !== 'all'
+      ? { type: activeFilter.value }
+      : {}
+    const { journeys: data } = await $fetch('/api/journeys', { params })
     journeys.value = data
   } catch (error) {
     console.error('Error fetching journeys:', error)
@@ -185,6 +280,11 @@ async function fetchJourneys() {
     loading.value = false
   }
 }
+
+// Watch for filter changes
+watch(activeFilter, () => {
+  fetchJourneys()
+})
 
 // Fetch service catalog for dropdown
 async function fetchServiceCatalog() {
@@ -243,7 +343,8 @@ async function duplicateJourney(journey: any) {
     name: `${journey.name} (Copy)`,
     description: journey.description || '',
     serviceCatalogId: journey.service_catalog_id || '',
-    estimatedDurationDays: journey.estimated_duration_days
+    estimatedDurationDays: journey.estimated_duration_days,
+    journeyType: journey.journey_type || 'SERVICE'
   }
   showCreateModal.value = true
 }

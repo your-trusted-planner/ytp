@@ -1,4 +1,4 @@
-// Approve a snapshot (client or counsel)
+// Approve a snapshot (client or attorney)
 export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
 
@@ -12,15 +12,32 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, sql } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get snapshot
-  const snapshot = await db.prepare(`
-    SELECT sv.*, cj.client_id
-    FROM snapshot_versions sv
-    JOIN client_journeys cj ON sv.client_journey_id = cj.id
-    WHERE sv.id = ?
-  `).bind(snapshotId).first()
+  const snapshot = await db.select({
+    id: schema.snapshotVersions.id,
+    clientJourneyId: schema.snapshotVersions.clientJourneyId,
+    versionNumber: schema.snapshotVersions.versionNumber,
+    content: schema.snapshotVersions.content,
+    generatedPdfPath: schema.snapshotVersions.generatedPdfPath,
+    status: schema.snapshotVersions.status,
+    sentAt: schema.snapshotVersions.sentAt,
+    approvedAt: schema.snapshotVersions.approvedAt,
+    approvedByClient: schema.snapshotVersions.approvedByClient,
+    approvedByAttorney: schema.snapshotVersions.approvedByAttorney,
+    clientFeedback: schema.snapshotVersions.clientFeedback,
+    attorneyNotes: schema.snapshotVersions.attorneyNotes,
+    createdAt: schema.snapshotVersions.createdAt,
+    updatedAt: schema.snapshotVersions.updatedAt,
+    client_id: schema.clientJourneys.clientId
+  })
+    .from(schema.snapshotVersions)
+    .innerJoin(schema.clientJourneys, eq(schema.snapshotVersions.clientJourneyId, schema.clientJourneys.id))
+    .where(eq(schema.snapshotVersions.id, snapshotId))
+    .get()
 
   if (!snapshot) {
     throw createError({
@@ -30,72 +47,77 @@ export default defineEventHandler(async (event) => {
   }
 
   const isClient = user.id === snapshot.client_id
-  const isCounsel = user.role === 'LAWYER' || user.role === 'ADMIN'
+  const isAttorney = user.role === 'LAWYER' || user.role === 'ADMIN'
 
-  if (!isClient && !isCounsel) {
+  if (!isClient && !isAttorney) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
     })
   }
 
+  const now = new Date()
+
   // Update approval status
   if (isClient) {
-    await db.prepare(`
+    // Client approval - use raw SQL for conditional status update
+    await db.run(sql`
       UPDATE snapshot_versions
       SET
         approved_by_client = 1,
-        client_feedback = ?,
+        client_feedback = ${body.feedback || null},
         status = CASE
-          WHEN approved_by_counsel = 1 THEN 'APPROVED'
+          WHEN approved_by_attorney = 1 THEN 'APPROVED'
           ELSE 'UNDER_REVISION'
         END,
-        updated_at = ?
-      WHERE id = ?
-    `).bind(
-      body.feedback || null,
-      Date.now(),
-      snapshotId
-    ).run()
-  } else if (isCounsel) {
-    await db.prepare(`
+        updated_at = ${now.getTime()}
+      WHERE id = ${snapshotId}
+    `)
+  } else if (isAttorney) {
+    // Attorney approval - use raw SQL for conditional status and approved_at update
+    await db.run(sql`
       UPDATE snapshot_versions
       SET
-        approved_by_counsel = 1,
-        counsel_notes = ?,
+        approved_by_attorney = 1,
+        attorney_notes = ${body.notes || null},
         status = CASE
           WHEN approved_by_client = 1 THEN 'APPROVED'
           ELSE 'UNDER_REVISION'
         END,
         approved_at = CASE
-          WHEN approved_by_client = 1 THEN ?
+          WHEN approved_by_client = 1 THEN ${now.getTime()}
           ELSE approved_at
         END,
-        updated_at = ?
-      WHERE id = ?
-    `).bind(
-      body.notes || null,
-      Date.now(),
-      Date.now(),
-      snapshotId
-    ).run()
+        updated_at = ${now.getTime()}
+      WHERE id = ${snapshotId}
+    `)
   }
 
   // Check if both parties approved
-  const updated = await db.prepare(`
-    SELECT * FROM snapshot_versions WHERE id = ?
-  `).bind(snapshotId).first()
+  const updated = await db.select()
+    .from(schema.snapshotVersions)
+    .where(eq(schema.snapshotVersions.id, snapshotId))
+    .get()
 
-  if (updated.approved_by_client && updated.approved_by_counsel) {
-    // Both approved - mark as APPROVED and set approved_at
-    await db.prepare(`
-      UPDATE snapshot_versions
-      SET status = 'APPROVED', approved_at = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(Date.now(), Date.now(), snapshotId).run()
+  if (!updated) {
+    throw createError({
+      statusCode: 404,
+      message: 'Snapshot not found after update'
+    })
   }
 
-  return { success: true, bothApproved: updated.approved_by_client && updated.approved_by_counsel }
+  // If both approved, ensure status is APPROVED and approved_at is set
+  if (updated.approvedByClient && updated.approvedByAttorney) {
+    await db.update(schema.snapshotVersions)
+      .set({
+        status: 'APPROVED',
+        approvedAt: now,
+        updatedAt: now
+      })
+      .where(eq(schema.snapshotVersions.id, snapshotId))
+  }
+
+  return { success: true, bothApproved: updated.approvedByClient && updated.approvedByAttorney }
 })
 
 

@@ -23,7 +23,9 @@ export default {
         console.log(`Processing document ${documentId} for user ${userId}`)
 
         // Get database and blob storage
-        const db = hubDatabase()
+        const { useDrizzle, schema } = await import('../db')
+        const { eq, sql } = await import('drizzle-orm')
+        const db = useDrizzle()
         const blob = hubBlob()
 
         // Fetch DOCX file from R2
@@ -38,22 +40,17 @@ export default {
         const { text, html, paragraphs } = parseDocx(buffer)
 
         // Update database with extracted content
-        await db.prepare(`
-          UPDATE uploaded_documents
-          SET
-            content_text = ?,
-            content_html = ?,
-            paragraph_count = ?,
-            status = 'completed',
-            processed_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).bind(
-          text,
-          html,
-          paragraphs.length,
-          documentId
-        ).run()
+        const now = new Date()
+        await db.update(schema.uploadedDocuments)
+          .set({
+            contentText: text,
+            contentHtml: html,
+            paragraphCount: paragraphs.length,
+            status: 'completed',
+            processedAt: now,
+            updatedAt: now
+          })
+          .where(eq(schema.uploadedDocuments.id, documentId))
 
         console.log(`Successfully processed document ${documentId}: ${paragraphs.length} paragraphs, ${text.length} characters`)
 
@@ -64,19 +61,19 @@ export default {
 
         // Update database with error
         try {
-          const db = hubDatabase()
-          await db.prepare(`
-            UPDATE uploaded_documents
-            SET
-              status = 'failed',
-              error_message = ?,
-              retry_count = retry_count + 1,
-              updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-          `).bind(
-            error instanceof Error ? error.message : 'Unknown error',
-            documentId
-          ).run()
+          const { useDrizzle, schema } = await import('../db')
+          const { eq, sql } = await import('drizzle-orm')
+          const db = useDrizzle()
+
+          const now = new Date()
+          await db.update(schema.uploadedDocuments)
+            .set({
+              status: 'failed',
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+              retryCount: sql`${schema.uploadedDocuments.retryCount} + 1`,
+              updatedAt: now
+            })
+            .where(eq(schema.uploadedDocuments.id, documentId))
         } catch (dbError) {
           console.error(`Failed to update error status for document ${documentId}:`, dbError)
         }

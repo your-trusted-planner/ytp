@@ -1,4 +1,6 @@
 // Update document variables and re-render content
+import { blob } from 'hub:blob'
+
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const documentId = getRouterParam(event, 'id')
@@ -19,13 +21,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
   const renderer = useTemplateRenderer()
 
   // Get the document
-  const document = await db.prepare(`
-    SELECT * FROM documents WHERE id = ?
-  `).bind(documentId).first()
+  const document = await db.select()
+    .from(schema.documents)
+    .where(eq(schema.documents.id, documentId))
+    .get()
 
   if (!document) {
     throw createError({
@@ -35,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can update any document, clients only their own
-  if (user.role === 'CLIENT' && document.client_id !== user.id) {
+  if (user.role === 'CLIENT' && document.clientId !== user.id) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
@@ -43,9 +48,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get the template to re-render
-  const template = await db.prepare(`
-    SELECT * FROM document_templates WHERE id = ?
-  `).bind(document.template_id).first()
+  const template = await db.select()
+    .from(schema.documentTemplates)
+    .where(eq(schema.documentTemplates.id, document.templateId))
+    .get()
 
   if (!template) {
     throw createError({
@@ -55,8 +61,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Merge existing variable values with new ones
-  const existingVariables = document.variable_values
-    ? JSON.parse(document.variable_values)
+  const existingVariables = document.variableValues
+    ? JSON.parse(document.variableValues)
     : {}
   const updatedVariables = { ...existingVariables, ...body.variables }
 
@@ -101,14 +107,14 @@ export default defineEventHandler(async (event) => {
   console.log('[Variables] Rendered content preview:', renderedContent.substring(0, 500))
 
   // Regenerate DOCX if template has one
-  let docxBlobKey = document.docx_blob_key
-  if (template.docx_blob_key) {
+  let docxBlobKey = document.docxBlobKey
+  if (template.docxBlobKey) {
     console.log('[Variables] Starting DOCX regeneration...')
-    console.log('[Variables] Template blob key:', template.docx_blob_key)
+    console.log('[Variables] Template blob key:', template.docxBlobKey)
     console.log('[Variables] Document blob key:', docxBlobKey)
     try {
       // Load template DOCX from blob storage
-      const templateBlob = await hubBlob().get(template.docx_blob_key)
+      const templateBlob = await blob.get(template.docxBlobKey)
       console.log('[Variables] Template blob loaded:', !!templateBlob)
 
       if (templateBlob) {
@@ -124,8 +130,15 @@ export default defineEventHandler(async (event) => {
         })
         console.log('[Variables] Generated DOCX size:', generatedDocx.byteLength)
 
-        // Update the existing DOCX in blob storage
-        await hubBlob().put(docxBlobKey, generatedDocx)
+        // Generate blob key if document doesn't have one
+        if (!docxBlobKey) {
+          const sanitizedTitle = (document.title || 'document').replace(/[^a-zA-Z0-9-_]/g, '_')
+          docxBlobKey = `documents/${documentId}/${sanitizedTitle}.docx`
+          console.log('[Variables] Generated new blob key:', docxBlobKey)
+        }
+
+        // Save the regenerated DOCX to blob storage
+        await blob.put(docxBlobKey, generatedDocx)
         console.log('[Variables] Successfully saved regenerated DOCX to:', docxBlobKey)
       } else {
         console.warn('[Variables] Template blob not found in storage')
@@ -143,16 +156,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Update document
-  await db.prepare(`
-    UPDATE documents
-    SET content = ?, variable_values = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(
-    renderedContent,
-    JSON.stringify(updatedVariables),
-    Date.now(),
-    documentId
-  ).run()
+  await db.update(schema.documents)
+    .set({
+      content: renderedContent,
+      variableValues: JSON.stringify(updatedVariables),
+      docxBlobKey: docxBlobKey, // Update the blob key (may have been generated)
+      updatedAt: new Date()
+    })
+    .where(eq(schema.documents.id, documentId))
 
   return {
     success: true,

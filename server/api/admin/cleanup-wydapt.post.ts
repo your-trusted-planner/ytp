@@ -7,16 +7,21 @@
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'LAWYER'])
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, or, like, inArray } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   const log: string[] = []
 
   try {
     log.push('🧹 Starting WYDAPT cleanup...')
 
     // Find WYDAPT service catalog entry
-    const serviceCatalog = await db.prepare(`
-      SELECT id FROM service_catalog WHERE name = 'Wyoming Asset Protection Trust (WYDAPT)' LIMIT 1
-    `).first()
+    const serviceCatalog = await db.select({ id: schema.serviceCatalog.id })
+      .from(schema.serviceCatalog)
+      .where(eq(schema.serviceCatalog.name, 'Wyoming Asset Protection Trust (WYDAPT)'))
+      .limit(1)
+      .get()
 
     if (!serviceCatalog) {
       return {
@@ -29,37 +34,45 @@ export default defineEventHandler(async (event) => {
     const catalogId = serviceCatalog.id
     log.push(`📋 Found WYDAPT service catalog entry: ${catalogId}`)
 
-    // Delete journey steps (cascade should handle this, but being explicit)
-    const stepsResult = await db.prepare(`
-      DELETE FROM journey_steps
-      WHERE journey_id IN (
-        SELECT id FROM journeys WHERE service_catalog_id = ?
-      )
-    `).bind(catalogId).run()
-    log.push(`✅ Deleted ${stepsResult.meta.changes || 0} journey steps`)
+    // Get journey IDs for this catalog
+    const journeys = await db.select({ id: schema.journeys.id })
+      .from(schema.journeys)
+      .where(eq(schema.journeys.serviceCatalogId, catalogId))
+      .all()
+
+    const journeyIds = journeys.map(j => j.id)
+
+    // Delete journey steps
+    let stepsDeleted = 0
+    if (journeyIds.length > 0) {
+      const stepsResult = await db.delete(schema.journeySteps)
+        .where(inArray(schema.journeySteps.journeyId, journeyIds))
+      stepsDeleted = stepsResult.rowsAffected || 0
+    }
+    log.push(`✅ Deleted ${stepsDeleted} journey steps`)
 
     // Delete journeys
-    const journeysResult = await db.prepare(`
-      DELETE FROM journeys WHERE service_catalog_id = ?
-    `).bind(catalogId).run()
-    log.push(`✅ Deleted ${journeysResult.meta.changes || 0} journeys`)
+    const journeysResult = await db.delete(schema.journeys)
+      .where(eq(schema.journeys.serviceCatalogId, catalogId))
+    const journeysDeleted = journeysResult.rowsAffected || 0
+    log.push(`✅ Deleted ${journeysDeleted} journeys`)
 
-    // Delete document templates with "Wyoming Asset Protection Trust" in description
-    const templatesResult = await db.prepare(`
-      DELETE FROM document_templates
-      WHERE description LIKE '%General Documents%'
-         OR description LIKE '%Trust Documents%'
-         OR description LIKE '%Wyoming Private Family Trust%'
-         OR description LIKE '%Investment Decisions%'
-         OR description LIKE '%Contributions to Trust%'
-         OR description LIKE '%Distributions From Trust%'
-    `).run()
-    log.push(`✅ Deleted ${templatesResult.meta.changes || 0} document templates`)
+    // Delete document templates with WYDAPT-related descriptions
+    const templatesResult = await db.delete(schema.documentTemplates)
+      .where(or(
+        like(schema.documentTemplates.description, '%General Documents%'),
+        like(schema.documentTemplates.description, '%Trust Documents%'),
+        like(schema.documentTemplates.description, '%Wyoming Private Family Trust%'),
+        like(schema.documentTemplates.description, '%Investment Decisions%'),
+        like(schema.documentTemplates.description, '%Contributions to Trust%'),
+        like(schema.documentTemplates.description, '%Distributions From Trust%')
+      )!)
+    const templatesDeleted = templatesResult.rowsAffected || 0
+    log.push(`✅ Deleted ${templatesDeleted} document templates`)
 
     // Delete the service catalog entry
-    const catalogResult = await db.prepare(`
-      DELETE FROM service_catalog WHERE id = ?
-    `).bind(catalogId).run()
+    await db.delete(schema.serviceCatalog)
+      .where(eq(schema.serviceCatalog.id, catalogId))
     log.push(`✅ Deleted service catalog entry`)
 
     log.push('\n✨ Cleanup complete! You can now re-run the seed process.')
@@ -67,9 +80,9 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       catalogId,
-      stepsDeleted: stepsResult.meta.changes || 0,
-      journeysDeleted: journeysResult.meta.changes || 0,
-      templatesDeleted: templatesResult.meta.changes || 0,
+      stepsDeleted,
+      journeysDeleted,
+      templatesDeleted,
       log: log.join('\n')
     }
   } catch (error) {

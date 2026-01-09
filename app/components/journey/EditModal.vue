@@ -32,6 +32,52 @@
         placeholder="e.g., 30"
       />
 
+      <!-- Journey Type Selector -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Journey Type</label>
+        <div class="space-y-3">
+          <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                 :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+            <input
+              type="radio"
+              v-model="form.journeyType"
+              value="SERVICE"
+              class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
+            />
+            <div class="ml-3">
+              <div class="font-medium text-gray-900">Service Journey</div>
+              <div class="text-sm text-gray-600">
+                For actual legal service delivery (trust creation, LLC formation, etc.)
+              </div>
+            </div>
+          </label>
+
+          <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                 :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+            <input
+              type="radio"
+              v-model="form.journeyType"
+              value="ENGAGEMENT"
+              class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
+            />
+            <div class="ml-3">
+              <div class="font-medium text-gray-900">Engagement Journey</div>
+              <div class="text-sm text-gray-600">
+                For initial client onboarding and engagement letter process
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Warning for ENGAGEMENT type -->
+        <div v-if="form.journeyType === 'ENGAGEMENT'" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p class="text-sm text-blue-800">
+            <strong>Note:</strong> Engagement journeys can only use these action types:
+            Draft Document, E-Sign, Payment, Meeting, Review, Upload, Decision
+          </p>
+        </div>
+      </div>
+
       <div class="flex justify-end space-x-3 pt-4">
         <UiButton type="button" variant="ghost" @click="handleCancel">
           Cancel
@@ -53,6 +99,7 @@ interface Journey {
   description?: string
   service_catalog_id?: string
   estimated_duration_days?: number
+  journey_type?: string
 }
 
 interface Props {
@@ -81,7 +128,8 @@ const form = ref({
   name: '',
   description: '',
   serviceCatalogId: '',
-  estimatedDurationDays: null as number | null
+  estimatedDurationDays: null as number | null,
+  journeyType: 'SERVICE' as 'SERVICE' | 'ENGAGEMENT'
 })
 
 // Watch for journey changes to populate form
@@ -91,7 +139,8 @@ watch(() => props.journey, (journey) => {
       name: journey.name,
       description: journey.description || '',
       serviceCatalogId: journey.service_catalog_id || '',
-      estimatedDurationDays: journey.estimated_duration_days || null
+      estimatedDurationDays: journey.estimated_duration_days || null,
+      journeyType: (journey.journey_type as 'SERVICE' | 'ENGAGEMENT') || 'SERVICE'
     }
   }
 }, { immediate: true })
@@ -108,7 +157,8 @@ async function handleSubmit() {
         description: form.value.description,
         serviceCatalogId: form.value.serviceCatalogId,
         isActive: true,
-        estimatedDurationDays: form.value.estimatedDurationDays
+        estimatedDurationDays: form.value.estimatedDurationDays,
+        journeyType: form.value.journeyType
       }
     })
 

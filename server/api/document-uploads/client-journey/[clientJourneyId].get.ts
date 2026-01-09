@@ -9,12 +9,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq, desc, inArray } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get client journey to check authorization
-  const clientJourney = await db.prepare(`
-    SELECT * FROM client_journeys WHERE id = ?
-  `).bind(clientJourneyId).first()
+  const clientJourney = await db.select()
+    .from(schema.clientJourneys)
+    .where(eq(schema.clientJourneys.id, clientJourneyId))
+    .get()
 
   if (!clientJourney) {
     throw createError({
@@ -24,25 +27,51 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check authorization - clients can only view their own journey's uploads
-  requireClientAccess(event, clientJourney.client_id)
+  requireClientAccess(event, clientJourney.clientId)
 
-  // Get all uploads
-  const uploads = await db.prepare(`
-    SELECT 
-      du.*,
-      u1.first_name as uploaded_by_first_name,
-      u1.last_name as uploaded_by_last_name,
-      u2.first_name as reviewed_by_first_name,
-      u2.last_name as reviewed_by_last_name
-    FROM document_uploads du
-    LEFT JOIN users u1 ON du.uploaded_by_user_id = u1.id
-    LEFT JOIN users u2 ON du.reviewed_by_user_id = u2.id
-    WHERE du.client_journey_id = ?
-    ORDER BY du.created_at DESC
-  `).bind(clientJourneyId).all()
+  // Get all uploads (we'll enrich with user info separately)
+  const uploads = await db.select()
+    .from(schema.documentUploads)
+    .where(eq(schema.documentUploads.clientJourneyId, clientJourneyId))
+    .orderBy(desc(schema.documentUploads.createdAt))
+    .all()
+
+  // Get unique user IDs to fetch
+  const uploaderIds = [...new Set(uploads.map(u => u.uploadedByUserId).filter(Boolean))]
+  const reviewerIds = [...new Set(uploads.map(u => u.reviewedByUserId).filter(Boolean))]
+  const allUserIds = [...new Set([...uploaderIds, ...reviewerIds])]
+
+  // Fetch all users in one query
+  const users = allUserIds.length > 0
+    ? await db.select({
+        id: schema.users.id,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName
+      })
+      .from(schema.users)
+      .where(inArray(schema.users.id, allUserIds))
+      .all()
+    : []
+
+  // Create user lookup map
+  const userMap = new Map(users.map(u => [u.id, u]))
+
+  // Enrich uploads with user info
+  const enrichedUploads = uploads.map(upload => {
+    const uploader = userMap.get(upload.uploadedByUserId)
+    const reviewer = upload.reviewedByUserId ? userMap.get(upload.reviewedByUserId) : null
+
+    return {
+      ...upload,
+      uploaded_by_first_name: uploader?.firstName || null,
+      uploaded_by_last_name: uploader?.lastName || null,
+      reviewed_by_first_name: reviewer?.firstName || null,
+      reviewed_by_last_name: reviewer?.lastName || null
+    }
+  })
 
   return {
-    uploads: uploads.results || []
+    uploads: enrichedUploads
   }
 })
 

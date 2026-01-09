@@ -29,12 +29,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Get the document to check authorization
-  const document = await db.prepare(`
-    SELECT * FROM documents WHERE id = ?
-  `).bind(documentId).first()
+  const document = await db.select()
+    .from(schema.documents)
+    .where(eq(schema.documents.id, documentId))
+    .get()
 
   if (!document) {
     throw createError({
@@ -52,11 +55,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Update the status
-  await db.prepare(`
-    UPDATE documents
-    SET status = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(status, Date.now(), documentId).run()
+  await db.update(schema.documents)
+    .set({
+      status,
+      updatedAt: new Date()
+    })
+    .where(eq(schema.documents.id, documentId))
 
   return { success: true, status }
 })

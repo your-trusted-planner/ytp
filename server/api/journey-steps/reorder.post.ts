@@ -3,8 +3,10 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
   const body = await readBody(event)
-  const db = hubDatabase()
-  
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
+
   // body.steps should be array of { id, order }
   if (!Array.isArray(body.steps)) {
     throw createError({
@@ -13,13 +15,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const now = new Date()
+
   // Update each step's order
   for (const step of body.steps) {
-    await db.prepare(`
-      UPDATE journey_steps 
-      SET step_order = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(step.order, Date.now(), step.id).run()
+    await db.update(schema.journeySteps)
+      .set({
+        stepOrder: step.order,
+        updatedAt: now
+      })
+      .where(eq(schema.journeySteps.id, step.id))
   }
 
   return { success: true }

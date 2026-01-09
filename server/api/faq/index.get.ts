@@ -1,41 +1,51 @@
 // Get FAQ entries
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq, and, or, like, isNull, desc } = await import('drizzle-orm')
+  const db = useDrizzle()
 
-  let whereClause = 'WHERE is_active = 1'
-  const params: any[] = []
+  const conditions = [eq(schema.faqLibrary.isActive, true)]
 
   if (query.journeyId) {
-    whereClause += ` AND (journey_id = ? OR journey_id IS NULL)`
-    params.push(query.journeyId)
+    conditions.push(or(
+      eq(schema.faqLibrary.journeyId, query.journeyId as string),
+      isNull(schema.faqLibrary.journeyId)
+    )!)
   }
 
   if (query.stepId) {
-    whereClause += ` AND (step_id = ? OR step_id IS NULL)`
-    params.push(query.stepId)
+    conditions.push(or(
+      eq(schema.faqLibrary.stepId, query.stepId as string),
+      isNull(schema.faqLibrary.stepId)
+    )!)
   }
 
   if (query.category) {
-    whereClause += ` AND category = ?`
-    params.push(query.category)
+    conditions.push(eq(schema.faqLibrary.category, query.category as string))
   }
 
   if (query.search) {
-    whereClause += ` AND (question LIKE ? OR answer LIKE ? OR tags LIKE ?)`
     const searchTerm = `%${query.search}%`
-    params.push(searchTerm, searchTerm, searchTerm)
+    conditions.push(or(
+      like(schema.faqLibrary.question, searchTerm),
+      like(schema.faqLibrary.answer, searchTerm),
+      like(schema.faqLibrary.tags, searchTerm)
+    )!)
   }
 
-  const faqs = await db.prepare(`
-    SELECT * FROM faq_library
-    ${whereClause}
-    ORDER BY view_count DESC, helpful_count DESC
-    LIMIT ${query.limit || 20}
-  `).bind(...params).all()
+  const faqs = await db.select()
+    .from(schema.faqLibrary)
+    .where(and(...conditions))
+    .orderBy(
+      desc(schema.faqLibrary.viewCount),
+      desc(schema.faqLibrary.helpfulCount)
+    )
+    .limit(query.limit ? parseInt(query.limit as string) : 20)
+    .all()
 
   return {
-    faqs: faqs.results || []
+    faqs
   }
 })
 

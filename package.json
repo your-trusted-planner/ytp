@@ -12,16 +12,15 @@
     "deploy:preview": "wrangler deploy --env preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply ytp-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply ytp-db --remote",
+    "db:generate": "npx nuxt db generate",
+    "db:migrate": "npx nuxt db migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "curl -X POST http://localhost:3000/api/_dev/seed",
     "seed:wydapt": "npx tsx scripts/seed-wydapt.ts"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.11.0",
-    "@nuxthub/core": "^0.9.1",
+    "@nuxthub/core": "^0.10.4",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
@@ -30,6 +29,7 @@
     "drizzle-orm": "^0.36.4",
     "fast-xml-parser": "^5.3.2",
     "fflate": "^0.8.2",
+    "firebase": "^12.7.0",
     "handlebars": "^4.7.8",
     "lucide-vue-next": "^0.468.0",
     "marked": "^17.0.1",
@@ -53,7 +53,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^2.2.12",
-    "wrangler": "^4.53.0"
+    "wrangler": "^4.58.0"
   },
   "packageManager": "pnpm@10.12.1",
   "pnpm": {

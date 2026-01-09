@@ -5,15 +5,15 @@
       <div class="grid grid-cols-3 gap-4">
         <div>
           <div class="text-sm text-gray-600">Total Paid</div>
-          <div class="text-2xl font-bold text-green-600">{{ formatPrice(totalPaid) }}</div>
+          <div class="text-2xl font-bold text-green-600">{{ formatCurrency(totalPaid) }}</div>
         </div>
         <div>
           <div class="text-sm text-gray-600">Pending</div>
-          <div class="text-2xl font-bold text-yellow-600">{{ formatPrice(totalPending) }}</div>
+          <div class="text-2xl font-bold text-yellow-600">{{ formatCurrency(totalPending) }}</div>
         </div>
         <div>
           <div class="text-sm text-gray-600">Total</div>
-          <div class="text-2xl font-bold text-gray-900">{{ formatPrice(totalAmount) }}</div>
+          <div class="text-2xl font-bold text-gray-900">{{ formatCurrency(totalAmount) }}</div>
         </div>
       </div>
     </div>
@@ -50,7 +50,7 @@
               <div class="text-sm font-medium text-gray-900">{{ formatPaymentType(payment.payment_type) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ formatPrice(payment.amount) }}</div>
+              <div class="text-sm text-gray-900">{{ formatCurrency(payment.amount) }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm text-gray-500">{{ payment.payment_method || '-' }}</div>
@@ -74,6 +74,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatCurrency } from '~/utils/format'
 
 interface Payment {
   id: string
@@ -105,15 +106,6 @@ const totalPending = computed(() => {
 const totalAmount = computed(() => {
   return props.payments.reduce((sum, p) => sum + p.amount, 0)
 })
-
-function formatPrice(price: number): string {
-  if (!price) return '$0'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(price)
-}
 
 function formatDate(timestamp: number): string {
   if (!timestamp) return '-'

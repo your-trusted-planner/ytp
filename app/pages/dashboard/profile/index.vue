@@ -11,11 +11,13 @@
           <UiInput
             v-model="profile.firstName"
             label="First Name"
+            autocomplete="given-name"
             required
           />
           <UiInput
             v-model="profile.lastName"
             label="Last Name"
+            autocomplete="family-name"
             required
           />
         </div>
@@ -23,11 +25,13 @@
           v-model="profile.email"
           label="Email"
           type="email"
+          autocomplete="email"
           disabled
         />
         <UiInput
           v-model="profile.phone"
           label="Phone"
+          autocomplete="tel"
         />
         <div class="flex justify-end space-x-3">
           <UiButton variant="outline" type="button">
@@ -40,24 +44,27 @@
       </form>
     </UiCard>
 
-    <UiCard title="Change Password">
+    <UiCard v-if="showPasswordSection" title="Change Password">
       <form @submit.prevent="handlePasswordChange" class="space-y-4">
         <UiInput
           v-model="passwordForm.currentPassword"
           label="Current Password"
           type="password"
+          autocomplete="current-password"
           required
         />
         <UiInput
           v-model="passwordForm.newPassword"
           label="New Password"
           type="password"
+          autocomplete="new-password"
           required
         />
         <UiInput
           v-model="passwordForm.confirmPassword"
           label="Confirm New Password"
           type="password"
+          autocomplete="new-password"
           required
         />
         <div class="flex justify-end">
@@ -95,8 +102,11 @@ const passwordForm = ref({
 
 const saving = ref(false)
 const changingPassword = ref(false)
+const showPasswordSection = ref(false)
 
 onMounted(() => {
+  // Set password section visibility after hydration to avoid SSR mismatch
+  showPasswordSection.value = !!sessionData.value?.user?.hasPassword
   if (sessionData.value?.user) {
     const user = sessionData.value.user
     profile.value = {

@@ -1,7 +1,3 @@
-import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
-import { schema } from '../../database'
-
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const email = query.email as string
@@ -11,10 +7,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const db = hubDatabase()
-    const drizzleDb = drizzle(db, { schema })
+    const { useDrizzle, schema } = await import('../../db')
+    const { eq } = await import('drizzle-orm')
+    const db = useDrizzle()
 
-    const user = await drizzleDb
+    const user = await db
       .select()
       .from(schema.users)
       .where(eq(schema.users.email, email))

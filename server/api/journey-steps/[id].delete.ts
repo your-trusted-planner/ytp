@@ -11,12 +11,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const db = hubDatabase()
+  const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
+  const db = useDrizzle()
 
   // Hard delete the step (cascade will handle related records)
-  await db.prepare(`
-    DELETE FROM journey_steps WHERE id = ?
-  `).bind(stepId).run()
+  await db.delete(schema.journeySteps)
+    .where(eq(schema.journeySteps.id, stepId))
 
   return { success: true }
 })

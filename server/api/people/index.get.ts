@@ -1,5 +1,5 @@
 import { like, or, asc } from 'drizzle-orm'
-import { useDrizzle, schema } from '../../database'
+import { useDrizzle, schema } from '../../db'
 
 // Get all people (with optional search)
 export default defineEventHandler(async (event) => {
@@ -28,9 +28,10 @@ export default defineEventHandler(async (event) => {
   return {
     people: people.map((p) => ({
       id: p.id,
+      // camelCase (keep for backwards compatibility)
       firstName: p.firstName,
       lastName: p.lastName,
-      middleNames: p.middleNames, // Already deserialized by jsonArray custom type!
+      middleNames: p.middleNames,
       fullName: p.fullName,
       email: p.email,
       phone: p.phone,
@@ -45,7 +46,20 @@ export default defineEventHandler(async (event) => {
       entityEin: p.entityEin,
       notes: p.notes,
       createdAt: p.createdAt ? p.createdAt.getTime() : Date.now(),
-      updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now()
+      updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now(),
+      // snake_case versions for API compatibility
+      first_name: p.firstName,
+      last_name: p.lastName,
+      middle_names: p.middleNames,
+      full_name: p.fullName,
+      zip_code: p.zipCode,
+      date_of_birth: p.dateOfBirth ? p.dateOfBirth.getTime() : null,
+      ssn_last_4: p.ssnLast4,
+      entity_name: p.entityName,
+      entity_type: p.entityType,
+      entity_ein: p.entityEin,
+      created_at: p.createdAt ? p.createdAt.getTime() : Date.now(),
+      updated_at: p.updatedAt ? p.updatedAt.getTime() : Date.now()
     }))
   }
 })
