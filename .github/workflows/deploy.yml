@@ -82,6 +82,9 @@ jobs:
           console.log('Updated .output/server/wrangler.json');
           EOF
 
+      - name: Remove conflicting deploy config
+        run: rm -rf .wrangler/deploy
+
       - name: Apply Database Migrations (Preview)
         if: github.ref != 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
