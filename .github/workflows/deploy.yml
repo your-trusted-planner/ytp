@@ -42,21 +42,44 @@ jobs:
           NUXT_GIT_COMMIT: ${{ github.sha }}
           NUXT_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
 
-      - name: Inject Preview Environment into Wrangler Config
-        if: github.ref != 'refs/heads/main'
+      - name: Fix Wrangler Config Paths and Inject Preview Environment
         run: |
           node << 'EOF'
           const fs = require('fs');
           const generated = JSON.parse(fs.readFileSync('.output/server/wrangler.json', 'utf-8'));
-          // Parse JSONC (strip comments and trailing commas)
+
+          // Fix migrations path for running from .output/server
+          if (generated.d1_databases) {
+            generated.d1_databases.forEach(db => {
+              if (db.migrations_dir && db.migrations_dir.startsWith('server/')) {
+                db.migrations_dir = db.migrations_dir.replace('server/', '');
+                console.log('Fixed migrations_dir to:', db.migrations_dir);
+              }
+            });
+          }
+
+          // Parse JSONC and inject env section (strip comments and trailing commas)
           let sourceText = fs.readFileSync('wrangler.jsonc', 'utf-8');
           sourceText = sourceText.replace(/\/\/.*/g, '').replace(/,(\s*[}\]])/g, '$1');
           const source = JSON.parse(sourceText);
           if (source.env) {
+            // Also fix migrations paths in env sections
+            Object.keys(source.env).forEach(envName => {
+              const env = source.env[envName];
+              if (env.d1_databases) {
+                env.d1_databases.forEach(db => {
+                  if (db.migrations_dir && db.migrations_dir.startsWith('server/')) {
+                    db.migrations_dir = db.migrations_dir.replace('server/', '');
+                  }
+                });
+              }
+            });
             generated.env = source.env;
             console.log('Injected env section with environments:', Object.keys(source.env));
           }
+
           fs.writeFileSync('.output/server/wrangler.json', JSON.stringify(generated, null, 2));
+          console.log('Updated .output/server/wrangler.json');
           EOF
 
       - name: Apply Database Migrations (Preview)
