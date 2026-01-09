@@ -53,6 +53,24 @@ This file tracks:
 - Drizzle Kit generates the correct create/copy/drop/rename pattern when needed
 - Manual migrations can cause inconsistencies with Drizzle's schema tracking
 
+### Fixing Migration Drift
+
+Sometimes Drizzle Kit's snapshot gets out of sync with reality (e.g., after manually importing migrations or schema drift). This causes generated migrations to include operations that were already performed.
+
+**Symptoms**:
+- Migration fails with "no such column" or "table already exists" errors
+- Generated migration includes `DROP COLUMN` for columns that don't exist
+- Generated migration number is lower than existing migrations
+
+**How to Fix**:
+1. **Inspect the generated migration** - Look for statements that reference non-existent objects
+2. **Edit the SQL file** - Remove the problematic statements (e.g., `DROP COLUMN` for already-dropped columns)
+3. **Rename the file** - Change to the next sequence number (e.g., `0021_white_mordo.sql` → `0056_descriptive_name.sql`)
+4. **Update meta files**:
+   - `server/db/migrations/meta/_journal.json` - Change the `tag` in the last entry
+   - Rename `server/db/migrations/meta/XXXX_snapshot.json` to match the new number
+5. **Test locally** - Run `pnpm dev` to verify migrations apply correctly
+
 ### Database Access Patterns
 
 **Drizzle ORM** (Preferred for most operations):

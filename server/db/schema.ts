@@ -20,25 +20,25 @@ const jsonArray = customType<{ data: string[]; driverData: string }>({
   }
 })
 
-// OAuth Providers table - TEMPORARILY COMMENTED OUT FOR FIREBASE MIGRATION
-// export const oauthProviders = sqliteTable('oauth_providers', {
-//   id: text('id').primaryKey(),
-//   providerId: text('provider_id').notNull().unique(), // Firebase provider ID (e.g., 'google.com', 'facebook.com')
-//   name: text('name').notNull(), // Display name (e.g., 'Google', 'Facebook')
-//   logoUrl: text('logo_url'), // Logo image (data URI or external URL)
-//   buttonColor: text('button_color').notNull().default('#4285F4'), // Hex color for button
-//   isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(false),
-//   displayOrder: integer('display_order').notNull().default(0),
-//   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-//   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-// })
+// OAuth Providers table - stores enabled authentication providers
+export const oauthProviders = sqliteTable('oauth_providers', {
+  id: text('id').primaryKey(),
+  providerId: text('provider_id').notNull().unique(), // Firebase provider ID (e.g., 'google.com', 'facebook.com')
+  name: text('name').notNull(), // Display name (e.g., 'Google', 'Facebook')
+  logoUrl: text('logo_url'), // Logo image (data URI or external URL)
+  buttonColor: text('button_color').notNull().default('#4285F4'), // Hex color for button
+  isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(false),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
 
 // Users table
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   password: text('password'), // Nullable for OAuth-only users
-  // firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users - TEMPORARILY COMMENTED OUT FOR MIGRATION
+  firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users
   role: text('role', { enum: ['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -660,4 +660,3 @@ export const matterRelationships = sqliteTable('matter_relationships', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
-

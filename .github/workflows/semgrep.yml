@@ -1,0 +1,54 @@
+name: Semgrep
+
+on:
+  push:
+    branches:
+      - main
+      - stage
+  pull_request:
+    branches:
+      - main
+      - stage
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  semgrep:
+    name: Semgrep Scan
+    runs-on: ubuntu-latest
+
+    # Skip on dependabot PRs (they can't access secrets)
+    if: github.actor != 'dependabot[bot]'
+
+    permissions:
+      contents: read
+      security-events: write  # Required to upload SARIF results
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: semgrep ci --sarif --output=semgrep-results.sarif
+        env:
+          # To use Semgrep App (optional - for advanced features):
+          # SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+          # Run with default rulesets (auto mode)
+          # This includes security rules for JavaScript, TypeScript, and more
+          SEMGREP_RULES: >-
+            p/default
+            p/javascript
+            p/typescript
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+
+      - name: Upload SARIF results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif

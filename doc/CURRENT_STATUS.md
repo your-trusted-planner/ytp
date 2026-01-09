@@ -1,10 +1,48 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-07
+**Last Updated**: 2026-01-08
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Firebase Authentication with OAuth Providers (2026-01-08)
+- **Status**: Complete and working ✅
+- **What**: Integrated Firebase Authentication to support OAuth providers (Google, Microsoft, Apple, Facebook) alongside existing email/password authentication
+- **Implementation**:
+  - Enabled `oauthProviders` table and `firebaseUid` field in database schema
+  - Created migration `0056_firebase_oauth.sql` for OAuth providers table
+  - Created migration `0057_make_password_nullable.sql` for OAuth-only users
+  - Installed `firebase` and `firebase-admin` packages
+  - Built client-side Firebase plugin and auth composable
+  - Server-side token verification with automatic user creation/linking
+  - Admin UI for managing OAuth providers at `/dashboard/settings/oauth-providers`
+  - Role-based navigation refactored for better configurability
+- **Key Features**:
+  - Automatic account linking by email (OAuth login links to existing email/password account)
+  - Support for both popup and redirect auth flows (falls back to redirect if popup blocked)
+  - OAuth-only users can sign up without password
+  - Profile page hides "Change Password" section for OAuth-only users
+  - Provider logos stored locally (`/public/icons/google.svg`, etc.)
+- **Files Created/Modified**:
+  - `/server/db/schema.ts` - Enabled oauthProviders table, firebaseUid field
+  - `/nuxt.config.ts` - Added Firebase runtime config
+  - `/app/plugins/firebase.client.ts` - Firebase client initialization (NEW)
+  - `/app/composables/useFirebaseAuth.ts` - OAuth flow composable (NEW)
+  - `/server/api/auth/firebase.post.ts` - Token verification endpoint (NEW)
+  - `/server/utils/firebase-admin.ts` - Firebase Admin SDK utility (NEW)
+  - `/server/middleware/auth.ts` - Added public routes for Firebase auth
+  - `/app/pages/login.vue` - Added OAuth buttons, wrapped in ClientOnly for hydration
+  - `/app/layouts/dashboard.vue` - Role-based navigation configuration
+  - `/app/pages/dashboard/profile/index.vue` - Conditional password section
+  - `/server/api/auth/session.get.ts` - Added hasPassword/hasFirebaseAuth flags
+  - `/public/icons/*.svg` - Provider logos (google, microsoft, facebook, apple)
+- **Environment Variables Required**:
+  - `NUXT_PUBLIC_FIREBASE_API_KEY` - Firebase client API key
+  - `NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
+  - `NUXT_PUBLIC_FIREBASE_PROJECT_ID` - Firebase project ID
+  - `NUXT_FIREBASE_SERVICE_ACCOUNT` - Firebase Admin service account JSON
+- **Note**: Firebase must be configured in Firebase Console with desired OAuth providers enabled
 
 #### Multiple Middle Names Support (2026-01-06)
 - **Status**: Complete and working
@@ -221,6 +259,45 @@ Document (N) ──→ Matter (1)
 
 ## 🔮 Future Work
 
+### 0. SEMGREP Security Scanning (GitHub Action)
+- **Status**: Planned
+- **Priority**: High (security best practice)
+- **Goal**: Implement SEMGREP as a GitHub Action for static application security testing (SAST)
+- **What**: Automated code scanning on PRs and pushes to detect security vulnerabilities
+- **Benefits**:
+  - Catch security issues early in development
+  - Automated scanning on every PR
+  - Covers OWASP Top 10 vulnerabilities
+  - TypeScript/JavaScript rule support
+  - Free for open source, affordable for private repos
+- **Implementation**:
+  - Add `.github/workflows/semgrep.yml` workflow file
+  - Configure rules for TypeScript/Vue/Node.js
+  - Set up PR comments for findings
+  - Consider custom rules for project-specific patterns
+- **Resources**:
+  - https://semgrep.dev/docs/getting-started/
+  - https://github.com/returntocorp/semgrep-action
+
+### 1. Development Seed Data Improvements
+- **Status**: Needed
+- **Priority**: Medium-High (blocks efficient local development)
+- **Goal**: Comprehensive seed data that covers all features for local testing
+- **Current State**: Basic seed data exists but insufficient for full feature testing
+- **Needs**:
+  - Complete user accounts with various roles (ADMIN, LAWYER, CLIENT, ADVISOR)
+  - Sample matters with engaged services
+  - Journey templates with steps and action items
+  - Client journeys in various states (NOT_STARTED, IN_PROGRESS, COMPLETED)
+  - Sample documents attached to matters
+  - OAuth providers for Firebase auth testing
+  - People records with relationships
+- **Implementation Options**:
+  - Expand existing seed script (`/server/api/test/seed.post.ts`)
+  - Create separate dev seed script with comprehensive data
+  - Export/import from preview environment as seed baseline
+- **Benefit**: Faster development cycles, consistent testing baseline
+
 ### 1. Schema Extraction Architecture
 - **Status**: Documented, not implemented
 - **Doc**: `/doc/future-schema-extraction-architecture.md`
@@ -416,34 +493,43 @@ The following files can be moved to `/doc/archive/` as they represent historical
 
 ## 💬 Notes from Last Session
 
-**Session 2026-01-07 (Evening)**:
-- **Focus**: NuxtHub 0.10.x upgrade completion and bug fixes
+**Session 2026-01-08 (Evening)**:
+- **Focus**: Firebase Authentication integration with OAuth providers
 - **Achievements**:
-  - ✅ Completed NuxtHub 0.10.x migration (database, blob APIs)
-  - ✅ Fixed multiple display bugs caused by camelCase/snake_case mismatch
-  - ✅ Converted 26 high-priority GET endpoints to proper snake_case format
-  - ✅ Updated all 5 blob API endpoints (documents downloads, uploads, generation)
-  - ✅ Fixed critical bug: Document downloads now working (blob key generation issue)
-  - ✅ Fixed DOCX regeneration for documents without blob keys
-  - ✅ Documented migration process and patterns
+  - ✅ Full Firebase Authentication implementation (Google, Microsoft, Apple, Facebook support)
+  - ✅ Automatic account linking by email
+  - ✅ OAuth-only user support (nullable password field)
+  - ✅ Role-based navigation refactored for better configurability
+  - ✅ Admin UI for OAuth provider management
+  - ✅ Fixed hydration mismatches from password manager extensions (LastPass)
+  - ✅ Added provider logos to `/public/icons/`
+  - ✅ Profile page conditionally shows password section based on user auth type
+- **Technical Challenges Solved**:
+  - Firebase Admin SDK JSON parsing (Nuxt auto-parses env vars)
+  - Password NOT NULL constraint for OAuth users (migration to make nullable)
+  - SSR hydration mismatches (ClientOnly wrapper for forms)
+  - Role-based navigation for different user types (ADMIN, LAWYER, CLIENT, PROSPECT, etc.)
 - **Current State**:
-  - Core features (matters, clients, journeys, templates, documents) fully working
-  - Document downloads and DOCX generation tested and working
-  - ~70 remaining endpoints to convert on-demand as features are used
-  - Server running successfully with NuxtHub 0.10.x
-  - No critical blocking issues
-- **User Decision**: "We'll knock these down over time" (on-demand approach for remaining endpoints)
-- **End of Session**: "Let's call it a night"
+  - Firebase OAuth working end-to-end with Google provider tested
+  - Session management working across page navigations
+  - Navigation shows only relevant items for user's role
+  - Clean console (no Vue warnings except LastPass extension noise)
+- **End of Session**: Documentation updated, SEMGREP added to roadmap
+
+**Session 2026-01-07** (Previous):
+- Completed NuxtHub 0.10.x migration
+- Fixed document downloads and DOCX generation
+- Converted 26 API endpoints to snake_case format
 
 **Session 2026-01-06** (Previous):
-- "I'm feeling real good about where we are and where we're headed"
-- All middle names functionality working
-- Server starting successfully
-- Ready to resume UI restructuring or schema extraction work
+- Multiple middle names functionality completed
+- Action items & task management system implemented
 
 ---
 
 **Next Session Options**:
-1. **Continue API normalization** - Fix remaining endpoints as features are tested (on-demand)
-2. **UI restructuring** - Phase 1-2 of matter-centric architecture plan
-3. **Schema extraction** - Begin document template analysis and journey generation
+1. **SEMGREP GitHub Action** - Set up security scanning workflow
+2. **Continue API normalization** - Fix remaining endpoints as features are tested (on-demand)
+3. **UI restructuring** - Phase 1-2 of matter-centric architecture plan
+4. **Seed data improvements** - Better development data for testing
+5. **Schema extraction** - Begin document template analysis and journey generation

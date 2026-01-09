@@ -15,7 +15,9 @@ export default defineEventHandler(async (event) => {
     path === '/api/auth/login' ||
     path === '/api/auth/register' ||
     path === '/api/auth/logout' ||
-    path === '/api/auth/session' // Allow checking session status
+    path === '/api/auth/session' || // Allow checking session status
+    path === '/api/auth/firebase' || // Firebase OAuth authentication
+    path === '/api/oauth-providers/enabled' // Public list of enabled OAuth providers
   ) {
     return
   }

@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `firebase_uid` text;

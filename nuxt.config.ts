@@ -32,6 +32,10 @@ export default defineNuxtConfig({
       appName: 'Your Trusted Planner - Client Portal',
       gitCommit: process.env.NUXT_GIT_COMMIT,
       buildDate: process.env.NUXT_BUILD_DATE,
+      // Firebase client configuration (public)
+      firebaseApiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || '',
+      firebaseAuthDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+      firebaseProjectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || ''
     },
     // Private keys (only available on the server)
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
@@ -44,7 +48,9 @@ export default defineNuxtConfig({
     lawPayRedirectUri: process.env.LAWPAY_REDIRECT_URI || '',
     // Google Calendar service account (domain-wide delegation)
     googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
-    googleServiceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || ''
+    googleServiceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+    // Firebase Admin SDK (server-only)
+    firebaseServiceAccount: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT || ''
   },
 
   // Nitro config

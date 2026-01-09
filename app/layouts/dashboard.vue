@@ -127,68 +127,97 @@ const user = computed(() => sessionData.value?.user)
 const isLoggingOut = ref(false)
 const isSidebarCollapsed = ref(false)
 
-const lawyerNavigation = ref([
-  // Frequent Use - Client Activity
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/dashboard/clients', label: 'Clients', icon: Users },
-  { path: '/dashboard/people', label: 'People', icon: Contact },
-  { path: '/dashboard/matters', label: 'Matters', icon: Briefcase },
-  { path: '/dashboard/documents', label: 'Documents', icon: File },
-  { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar },
+// Role groups for easier configuration
+const STAFF_ROLES = ['ADMIN', 'LAWYER', 'ADVISOR']
+const CLIENT_ROLES = ['CLIENT']
+const PROSPECT_ROLES = ['PROSPECT', 'LEAD']
+const ALL_ROLES = [...STAFF_ROLES, ...CLIENT_ROLES, ...PROSPECT_ROLES]
 
-  // Configuration (Collapsible)
+// Single navigation configuration with role-based visibility
+const navigationConfig = ref([
+  // Dashboard - visible to all
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
+
+  // Staff-only sections
+  { path: '/dashboard/clients', label: 'Clients', icon: Users, roles: STAFF_ROLES },
+  { path: '/dashboard/people', label: 'People', icon: Contact, roles: STAFF_ROLES },
+  { path: '/dashboard/matters', label: 'Matters', icon: Briefcase, roles: STAFF_ROLES },
+  { path: '/dashboard/documents', label: 'Documents', icon: File, roles: STAFF_ROLES },
+  { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar, roles: STAFF_ROLES },
+
+  // Configuration section - staff only
   {
     label: 'Configuration',
     icon: Wrench,
     isOpen: false,
+    roles: STAFF_ROLES,
     children: [
-      { path: '/dashboard/service-catalog', label: 'Service Catalog', icon: ShoppingBag },
-      { path: '/dashboard/journeys', label: 'Journey Templates', icon: Map },
-      { path: '/dashboard/templates', label: 'Document Templates', icon: Copy }
+      { path: '/dashboard/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: STAFF_ROLES },
+      { path: '/dashboard/journeys', label: 'Journey Templates', icon: Map, roles: STAFF_ROLES },
+      { path: '/dashboard/templates', label: 'Document Templates', icon: Copy, roles: STAFF_ROLES }
     ]
   },
 
-  // Personal & Help
-  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
+  // Client-facing sections (engaged clients only)
+  { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map, roles: CLIENT_ROLES },
+  { path: '/dashboard/my-matters', label: 'My Matters', icon: Briefcase, roles: CLIENT_ROLES },
+
+  // Appointments - clients and prospects can book/view
+  { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
+  { path: '/dashboard/documents', label: 'My Documents', icon: File, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
+
+  // Profile - visible to all
+  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle, roles: ALL_ROLES },
+
+  // Settings section - admin only
   {
     label: 'Settings',
     icon: Settings,
     isOpen: false,
+    roles: ['ADMIN'],
     children: [
-      { path: '/dashboard/settings', label: 'General', icon: Settings },
-      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle },
-      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound },
-      { path: '/dashboard/settings/calendars', label: 'Calendars', icon: Calendar }
+      { path: '/dashboard/settings', label: 'General', icon: Settings, roles: ['ADMIN'] },
+      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle, roles: ['ADMIN'] },
+      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ['ADMIN'] },
+      { path: '/dashboard/settings/calendars', label: 'Calendars', icon: Calendar, roles: ['ADMIN'] }
     ]
   },
-  { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
+
+  // Help - visible to all
+  { path: '/dashboard/help', label: 'Help', icon: HelpCircle, roles: ALL_ROLES }
 ])
 
-const clientNavigation = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map },
-  { path: '/dashboard/my-matters', label: 'My Matters', icon: Briefcase },
-  { path: '/dashboard/documents', label: 'My Documents', icon: File },
-  { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle },
-  { path: '/dashboard/help', label: 'Help', icon: HelpCircle }
-]
-
+// Filter navigation items based on user's role
 const navigationItems = computed(() => {
-  const items = user.value?.role === 'LAWYER' || user.value?.role === 'ADMIN'
-    ? lawyerNavigation.value
-    : clientNavigation
+  const role = user.value?.role
+  if (!role) return []
 
-  // Auto-expand Configuration if on a config page
-  if (user.value?.role === 'LAWYER' || user.value?.role === 'ADMIN') {
-    const configItem = items.find(item => item.label === 'Configuration')
-    if (configItem && configItem.children) {
-      const isOnConfigPage = configItem.children.some(child => route.path.startsWith(child.path))
-      if (isOnConfigPage) {
-        configItem.isOpen = true
+  const filterByRole = (items: any[]): any[] => {
+    return items
+      .filter(item => item.roles?.includes(role))
+      .map(item => {
+        if (item.children) {
+          return {
+            ...item,
+            children: filterByRole(item.children)
+          }
+        }
+        return item
+      })
+      .filter(item => !item.children || item.children.length > 0) // Remove empty sections
+  }
+
+  const items = filterByRole(navigationConfig.value)
+
+  // Auto-expand sections if on a child page
+  items.forEach(item => {
+    if (item.children) {
+      const isOnChildPage = item.children.some((child: any) => route.path.startsWith(child.path))
+      if (isOnChildPage) {
+        item.isOpen = true
       }
     }
-  }
+  })
 
   return items
 })
@@ -220,4 +249,3 @@ watch(user, (newUser) => {
   }
 }, { immediate: true })
 </script>
-
