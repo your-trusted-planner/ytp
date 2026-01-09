@@ -36,6 +36,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Verify Firebase Config
+        run: |
+          echo "Checking Firebase configuration..."
+          if [ -n "$NUXT_PUBLIC_FIREBASE_PROJECT_ID" ]; then
+            echo "✓ FIREBASE_PROJECT_ID is set (value: ${NUXT_PUBLIC_FIREBASE_PROJECT_ID:0:10}...)"
+          else
+            echo "✗ FIREBASE_PROJECT_ID is NOT set"
+          fi
+          if [ -n "$NUXT_PUBLIC_FIREBASE_API_KEY" ]; then
+            echo "✓ FIREBASE_API_KEY is set (length: ${#NUXT_PUBLIC_FIREBASE_API_KEY} chars)"
+          else
+            echo "✗ FIREBASE_API_KEY is NOT set"
+          fi
+          if [ -n "$NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN" ]; then
+            echo "✓ FIREBASE_AUTH_DOMAIN is set (value: $NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN)"
+          else
+            echo "✗ FIREBASE_AUTH_DOMAIN is NOT set"
+          fi
+        env:
+          NUXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
       - name: Build
         run: pnpm run build
         env:
