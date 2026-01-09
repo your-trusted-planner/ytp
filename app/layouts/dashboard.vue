@@ -42,7 +42,7 @@
             <!-- Collapsible Section -->
             <div v-if="item.children" class="space-y-1">
               <button
-                @click="item.isOpen = !item.isOpen"
+                @click="toggleSection(item.label)"
                 class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-50"
                 :class="isSidebarCollapsed ? 'justify-center px-2' : ''"
                 :title="isSidebarCollapsed ? item.label : ''"
@@ -227,6 +227,14 @@ const isActive = (path: string) => {
     return route.path === '/dashboard'
   }
   return route.path.startsWith(path)
+}
+
+// Toggle section open/closed state on the original config
+const toggleSection = (label: string) => {
+  const item = navigationConfig.value.find(i => i.label === label)
+  if (item && 'isOpen' in item) {
+    item.isOpen = !item.isOpen
+  }
 }
 
 const handleLogout = async () => {
