@@ -116,23 +116,36 @@ const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).fir
 ## Deployment & Environments
 
 ### Branch Strategy
-- **`main`** - Production deployments to `app.trustandlegacy.com` / `app.businessandlegacy.com`
-- **`stage`** - Preview deployments for staging/testing
-- **`feature/**`** - Preview deployments for feature branches (verbose naming)
-- **`feat/**`** - Preview deployments for feature branches (short naming)
+- **`main`** - Production deployments
+- **`stage`** - Preview/staging deployments
+- **Feature branches** - Test locally; merge to `stage` when ready for preview deployment
 
 ### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
-Deployments are triggered on push to any of the above branches.
+Deployments are triggered on push to `main` or `stage` branches only.
 
 **Production (main branch):**
 1. Build the application
-2. Apply database migrations to `ytp-db`
-3. Deploy to production Workers
+2. Fix wrangler config paths and inject environments
+3. Apply database migrations to `ytp-db`
+4. Deploy to production Workers
 
-**Preview (all other branches):**
+**Preview (stage branch):**
 1. Build the application
-2. Apply database migrations to `ytp-preview`
-3. Deploy to preview Workers (`--env preview`)
+2. Fix wrangler config paths and inject preview environment
+3. Apply database migrations to `ytp-preview`
+4. Deploy to preview Workers (`--env preview`)
+
+### NuxtHub 0.10.x + Wrangler Deployment
+
+**Important Context**: NuxtHub Admin and CLI are being sunset (Dec 31, 2025). As of v0.10.x, deployment uses wrangler directly instead of the NuxtHub action.
+
+**Key Challenge**: Nitro/NuxtHub generates `.output/server/wrangler.json` during build, but this generated config does NOT include the `env` section from your root `wrangler.jsonc`. This means wrangler's `--env preview` flag won't find the preview environment.
+
+**Workarounds in deploy.yml**:
+1. **Inject env section**: A Node script copies the `env` section from `wrangler.jsonc` into the generated `.output/server/wrangler.json`
+2. **Fix migrations paths**: The generated config has `migrations_dir: "server/db/migrations"` but wrangler runs from `.output/server`, so the path is rewritten to `db/migrations`
+3. **Remove conflicting config**: Delete `.wrangler/deploy/config.json` which conflicts with the generated wrangler.json
+4. **Set workingDirectory**: All wrangler-action steps use `workingDirectory: .output/server`
 
 ### Cloudflare Resources
 
@@ -150,8 +163,15 @@ Deployments are triggered on push to any of the above branches.
 - **Preview**: `app-preview.trustandlegacy.com`, `app-preview.businessandlegacy.com`
 
 ### Configuration Files
-- **Wrangler**: `wrangler.jsonc` - Defines Workers, D1, KV, R2, Queues for both environments
-- **GitHub Actions**: `.github/workflows/deploy.yml` - CI/CD pipeline
+- **`wrangler.jsonc`** - Defines Workers, D1, KV, R2, Queues for both environments (includes `env.preview` section)
+- **`.github/workflows/deploy.yml`** - CI/CD pipeline with NuxtHub 0.10.x workarounds
+- **`.output/server/wrangler.json`** - Generated at build time by Nitro (do not edit manually)
+
+### Adding New Preview Environment Secrets
+When adding secrets for the preview environment:
+```bash
+wrangler secret put SECRET_NAME --env preview
+```
 
 ## Code Patterns
 
