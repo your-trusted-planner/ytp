@@ -42,12 +42,30 @@ jobs:
           NUXT_GIT_COMMIT: ${{ github.sha }}
           NUXT_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
 
+      - name: Inject Preview Environment into Wrangler Config
+        if: github.ref != 'refs/heads/main'
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const generated = JSON.parse(fs.readFileSync('.output/server/wrangler.json', 'utf-8'));
+          // Parse JSONC (strip comments and trailing commas)
+          let sourceText = fs.readFileSync('wrangler.jsonc', 'utf-8');
+          sourceText = sourceText.replace(/\/\/.*/g, '').replace(/,(\s*[}\]])/g, '$1');
+          const source = JSON.parse(sourceText);
+          if (source.env) {
+            generated.env = source.env;
+            console.log('Injected env section with environments:', Object.keys(source.env));
+          }
+          fs.writeFileSync('.output/server/wrangler.json', JSON.stringify(generated, null, 2));
+          EOF
+
       - name: Apply Database Migrations (Preview)
         if: github.ref != 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: .output/server
           environment: preview
           command: d1 migrations apply ytp-preview --remote
 
@@ -57,6 +75,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: .output/server
           environment: preview
           command: deploy
 
@@ -66,6 +85,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: .output/server
           command: d1 migrations apply ytp-db --remote
 
       - name: Deploy to Production (main branch)
@@ -74,6 +94,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: .output/server
           command: deploy
 
       - name: Comment PR with deployment info
