@@ -159,20 +159,6 @@
     {
       "idx": 22,
       "version": "6",
-      "when": 1767931251436,
-      "tag": "0022_powerful_bug",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "6",
-      "when": 1767933274525,
-      "tag": "0023_legal_mister_fear",
-      "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "6",
       "when": 1767935000000,
       "tag": "0057_make_password_nullable",
       "breakpoints": true
