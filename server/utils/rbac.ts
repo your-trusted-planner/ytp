@@ -8,7 +8,7 @@ import type { H3Event } from 'h3'
 export interface AuthenticatedUser {
   id: string
   email: string
-  role: 'ADMIN' | 'LAWYER' | 'CLIENT' | 'ADVISOR' | 'LEAD' | 'PROSPECT'
+  role: 'ADMIN' | 'LAWYER' | 'STAFF' | 'CLIENT' | 'ADVISOR' | 'LEAD' | 'PROSPECT'
   adminLevel: number // 0=none, 1=basic admin, 2=full admin, 3+=super admin
   firstName?: string
   lastName?: string
@@ -85,26 +85,40 @@ export function requireAdminLevel(event: H3Event, requiredLevel: number) {
 }
 
 /**
- * Check if user is lawyer or admin
+ * Check if user is a firm member (lawyer, staff, or admin)
  */
-export function isLawyerOrAdmin(event: H3Event): boolean {
+export function isFirmMember(event: H3Event): boolean {
   const user = getAuthUser(event)
-  return user.role === 'LAWYER' || user.role === 'ADMIN' || user.adminLevel > 0
+  return user.role === 'LAWYER' || user.role === 'STAFF' || user.role === 'ADMIN' || user.adminLevel > 0
 }
 
 /**
- * Check if user is the specified client or a lawyer/admin
+ * Check if user is lawyer or admin
+ * @deprecated Use isFirmMember() instead for broader firm access checks
+ */
+export function isLawyerOrAdmin(event: H3Event): boolean {
+  const user = getAuthUser(event)
+  return user.role === 'LAWYER' || user.role === 'STAFF' || user.role === 'ADMIN' || user.adminLevel > 0
+}
+
+/**
+ * Check if user is the specified client or a firm member (lawyer/staff/admin)
  */
 export function canAccessClient(event: H3Event, clientId: string): boolean {
   const user = getAuthUser(event)
 
-  if (user.role === 'LAWYER' || user.role === 'ADMIN' || user.adminLevel > 0) {
+  // Firm members have access to all clients
+  if (user.role === 'LAWYER' || user.role === 'STAFF' || user.role === 'ADMIN' || user.adminLevel > 0) {
     return true
   }
 
+  // Clients can only access their own records
   if (user.role === 'CLIENT' && user.id === clientId) {
     return true
   }
+
+  // ADVISOR role requires explicit matter/client assignment (not implemented here)
+  // They should NOT have blanket access to all clients
 
   return false
 }

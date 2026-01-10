@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const updateUserSchema = z.object({
-  role: z.enum(['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).optional(),
+  role: z.enum(['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).optional(),
   status: z.enum(['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE']).optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -10,8 +10,8 @@ const updateUserSchema = z.object({
   adminLevel: z.number().int().min(0).max(10).optional(),
 })
 
-// Staff roles that can have admin levels
-const STAFF_ROLES = ['LAWYER', 'ADVISOR']
+// Firm roles that can have admin levels (internal employees only, not external advisors)
+const FIRM_ROLES = ['LAWYER', 'STAFF']
 
 export default defineEventHandler(async (event) => {
   // Require admin level 2+ to update users (role-based ADMIN check kept for backwards compatibility)
@@ -66,10 +66,10 @@ export default defineEventHandler(async (event) => {
 
   // If adminLevel is being set > 0, validate the role allows it
   if (adminLevel !== undefined && adminLevel > 0) {
-    if (!STAFF_ROLES.includes(effectiveRole)) {
+    if (!FIRM_ROLES.includes(effectiveRole)) {
       throw createError({
         statusCode: 400,
-        message: 'Admin levels can only be assigned to staff roles (Lawyer, Advisor)'
+        message: 'Admin levels can only be assigned to firm roles (Lawyer, Staff)'
       })
     }
 
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
     updateData.role = role
 
     // Auto-reset adminLevel to 0 when changing to non-staff role
-    if (!STAFF_ROLES.includes(role) && (targetUser.adminLevel ?? 0) > 0) {
+    if (!FIRM_ROLES.includes(role) && (targetUser.adminLevel ?? 0) > 0) {
       updateData.adminLevel = 0
     }
   }

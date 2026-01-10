@@ -117,7 +117,8 @@ import {
   ChevronDown,
   Wrench,
   Contact,
-  KeyRound
+  KeyRound,
+  Activity
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -128,10 +129,13 @@ const isLoggingOut = ref(false)
 const isSidebarCollapsed = ref(false)
 
 // Role groups for easier configuration
-const STAFF_ROLES = ['ADMIN', 'LAWYER', 'ADVISOR']
+// FIRM_ROLES: Internal firm employees with broad access (admins, attorneys, paralegals, secretaries, etc.)
+const FIRM_ROLES = ['ADMIN', 'LAWYER', 'STAFF']
+// ADVISOR: External third-parties (CPAs, investment advisors, insurance brokers) with limited access to specific clients/matters
+const ADVISOR_ROLES = ['ADVISOR']
 const CLIENT_ROLES = ['CLIENT']
 const PROSPECT_ROLES = ['PROSPECT', 'LEAD']
-const ALL_ROLES = [...STAFF_ROLES, ...CLIENT_ROLES, ...PROSPECT_ROLES]
+const ALL_ROLES = [...FIRM_ROLES, ...ADVISOR_ROLES, ...CLIENT_ROLES, ...PROSPECT_ROLES]
 
 // Single navigation configuration with role-based visibility
 const navigationConfig = ref([
@@ -139,22 +143,23 @@ const navigationConfig = ref([
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
 
   // Staff-only sections
-  { path: '/dashboard/clients', label: 'Clients', icon: Users, roles: STAFF_ROLES },
-  { path: '/dashboard/people', label: 'People', icon: Contact, roles: STAFF_ROLES },
-  { path: '/dashboard/matters', label: 'Matters', icon: Briefcase, roles: STAFF_ROLES },
-  { path: '/dashboard/documents', label: 'Documents', icon: File, roles: STAFF_ROLES },
-  { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar, roles: STAFF_ROLES },
+  { path: '/dashboard/clients', label: 'Clients', icon: Users, roles: FIRM_ROLES },
+  { path: '/dashboard/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
+  { path: '/dashboard/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
+  { path: '/dashboard/documents', label: 'Documents', icon: File, roles: FIRM_ROLES },
+  { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
+  { path: '/dashboard/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
 
   // Configuration section - staff only
   {
     label: 'Configuration',
     icon: Wrench,
     isOpen: false,
-    roles: STAFF_ROLES,
+    roles: FIRM_ROLES,
     children: [
-      { path: '/dashboard/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: STAFF_ROLES },
-      { path: '/dashboard/journeys', label: 'Journey Templates', icon: Map, roles: STAFF_ROLES },
-      { path: '/dashboard/templates', label: 'Document Templates', icon: Copy, roles: STAFF_ROLES }
+      { path: '/dashboard/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
+      { path: '/dashboard/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
+      { path: '/dashboard/templates', label: 'Document Templates', icon: Copy, roles: FIRM_ROLES }
     ]
   },
 

@@ -1,10 +1,55 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-08
+**Last Updated**: 2026-01-09
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Role Structure Clarification (2026-01-09)
+- **Status**: Complete ✅
+- **What**: Clarified and fixed the distinction between STAFF and ADVISOR roles
+- **Key Distinction**:
+  - **STAFF**: Internal firm employees (paralegals, legal secretaries, receptionists) with broad access to all clients/matters
+  - **ADVISOR**: External third-parties (CPAs, investment advisors, insurance brokers) with LIMITED access to specific clients/matters they're assigned to
+- **Changes Made**:
+  - Added 'STAFF' to user role enum in schema
+  - Updated `FIRM_ROLES = ['ADMIN', 'LAWYER', 'STAFF']` throughout (was incorrectly using ADVISOR)
+  - RBAC utilities updated: `isFirmMember()` now includes STAFF, `canAccessClient()` excludes ADVISOR
+  - Navigation shows firm-level items to STAFF (same as LAWYER)
+  - User management UI allows setting admin levels for STAFF (not ADVISOR)
+  - Profile page calendar management available to STAFF
+  - Tests updated for STAFF role access patterns
+- **Files Modified**:
+  - `server/db/schema.ts` - Added STAFF to role enum
+  - `server/utils/rbac.ts` - Added `isFirmMember()`, updated role checks
+  - `server/api/users/index.post.ts` - STAFF in enum, FIRM_ROLES logic
+  - `server/api/users/[id].put.ts` - STAFF in enum, FIRM_ROLES logic
+  - `server/api/referral-partners/*.ts` - Added STAFF to allowed roles
+  - `app/layouts/dashboard.vue` - FIRM_ROLES navigation
+  - `app/pages/dashboard/settings/users.vue` - STAFF option, FIRM_ROLES logic
+  - `app/pages/dashboard/profile/index.vue` - isFirmMember for calendar access
+  - `tests/unit/rbac.test.ts` - STAFF role tests
+- **Note**: Many API endpoints still use `['LAWYER', 'ADMIN']` - STAFF access can be added as needed
+
+#### Activity Logging & Request Context System (2026-01-09)
+- **Status**: Complete ✅
+- **What**: Comprehensive activity logging system with request context capture and analytics dimensions
+- **Implementation**:
+  - Enhanced `activities` table with funnel/attribution dimensions
+  - Added `referralPartners`, `marketingEvents`, `eventRegistrations` tables
+  - Added referral tracking fields to `clientProfiles`
+  - Created `server/utils/request-context.ts` - Captures IP, user agent, geo from Cloudflare headers
+  - Created `server/utils/activity-logger.ts` - Structured logging utility
+  - Activity log page at `/dashboard/activity` with filtering and CSV export
+  - Wired logging into login, client creation, document signing, document generation
+- **Files Created**:
+  - `server/utils/request-context.ts`
+  - `server/utils/activity-logger.ts`
+  - `server/api/referral-partners/index.get.ts`, `index.post.ts`, `[id].put.ts`
+  - `app/components/dashboard/ActivityFeed.vue`
+  - `app/pages/dashboard/activity.vue`
+- **Migration**: `0024_large_gertrude_yorkes.sql`
 
 #### Firebase Authentication with OAuth Providers (2026-01-08)
 - **Status**: Complete and working ✅
@@ -285,7 +330,7 @@ Document (N) ──→ Matter (1)
 - **Goal**: Comprehensive seed data that covers all features for local testing
 - **Current State**: Basic seed data exists but insufficient for full feature testing
 - **Needs**:
-  - Complete user accounts with various roles (ADMIN, LAWYER, CLIENT, ADVISOR)
+  - Complete user accounts with various roles (ADMIN, LAWYER, STAFF, CLIENT, ADVISOR)
   - Sample matters with engaged services
   - Journey templates with steps and action items
   - Client journeys in various states (NOT_STARTED, IN_PROGRESS, COMPLETED)
@@ -492,6 +537,26 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-09**:
+- **Focus**: Activity Logging System & Role Structure Clarification
+- **Achievements**:
+  - ✅ Activity logging system with request context capture
+  - ✅ Referral partner management (CRUD APIs)
+  - ✅ Marketing event and registration tables
+  - ✅ Activity feed component and full activity log page
+  - ✅ Navigation link to Activity Log for firm members
+  - ✅ STAFF role added (internal firm employees like paralegals, secretaries)
+  - ✅ ADVISOR role clarified (external third-parties with limited access)
+  - ✅ RBAC utilities updated with `isFirmMember()` function
+  - ✅ User management UI updated with STAFF option
+  - ✅ Tests updated for new role structure
+- **Role Structure (Clarified)**:
+  - FIRM_ROLES: `['ADMIN', 'LAWYER', 'STAFF']` - Internal employees with broad access
+  - ADVISOR: External third-parties (CPAs, financial advisors) with LIMITED access
+  - CLIENT_ROLES: `['CLIENT']` - Engaged clients
+  - PROSPECT_ROLES: `['PROSPECT', 'LEAD']` - Not yet engaged
+- **Database Migration**: `0024_large_gertrude_yorkes.sql` (activities enhancement + new tables)
 
 **Session 2026-01-08 (Evening)**:
 - **Focus**: Firebase Authentication integration with OAuth providers

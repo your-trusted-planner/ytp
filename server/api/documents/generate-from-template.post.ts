@@ -1,6 +1,7 @@
 // Generate a personalized document from a template
 import { nanoid } from 'nanoid'
 import { blob } from 'hub:blob'
+import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -265,6 +266,25 @@ export default defineEventHandler(async (event) => {
     sentAt: null,
     createdAt: now,
     updatedAt: now
+  })
+
+  // Log document creation activity
+  await logActivity({
+    type: 'DOCUMENT_CREATED',
+    description: `${user.firstName || user.email} created document "${body.title || template.name}" for ${clientFullName}`,
+    userId: user.id,
+    userRole: user.role,
+    targetType: 'document',
+    targetId: documentId,
+    matterId: body.matterId || undefined,
+    event,
+    metadata: {
+      documentTitle: body.title || template.name,
+      templateId: template.id,
+      templateName: template.name,
+      clientId: body.clientId,
+      clientName: clientFullName
+    }
   })
 
   // Return document object for compatibility
