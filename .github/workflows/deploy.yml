@@ -13,6 +13,8 @@ jobs:
   deploy:
     name: "Deploy to Cloudflare"
     runs-on: ubuntu-latest
+    # Use GitHub environment based on branch for environment-specific secrets
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
     permissions:
       contents: read
       deployments: write
@@ -34,11 +36,39 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Verify Firebase Config
+        run: |
+          echo "Checking Firebase configuration..."
+          if [ -n "$FIREBASE_PROJECT_ID" ]; then
+            echo "✓ FIREBASE_PROJECT_ID is set (value: ${FIREBASE_PROJECT_ID})"
+          else
+            echo "✗ FIREBASE_PROJECT_ID is NOT set"
+          fi
+          if [ -n "$FIREBASE_API_KEY" ]; then
+            echo "✓ FIREBASE_API_KEY is set (length: ${#FIREBASE_API_KEY} chars)"
+          else
+            echo "✗ FIREBASE_API_KEY is NOT set"
+          fi
+          if [ -n "$FIREBASE_AUTH_DOMAIN" ]; then
+            echo "✓ FIREBASE_AUTH_DOMAIN is set (value: $FIREBASE_AUTH_DOMAIN)"
+          else
+            echo "✗ FIREBASE_AUTH_DOMAIN is NOT set"
+          fi
+        env:
+          # API key is a secret, others are variables
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
       - name: Build
         run: pnpm run build
         env:
           NUXT_GIT_COMMIT: ${{ github.sha }}
           NUXT_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
+          # Firebase config: API key from secrets, others from vars
+          NUXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
       - name: Fix Wrangler Config Paths and Inject Preview Environment
         run: |

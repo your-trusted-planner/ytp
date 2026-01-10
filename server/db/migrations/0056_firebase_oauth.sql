@@ -15,6 +15,6 @@ CREATE TABLE `oauth_providers` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `oauth_providers_provider_id_unique` ON `oauth_providers` (`provider_id`);
 --> statement-breakpoint
--- ALTER TABLE `users` ADD `firebase_uid` text;
+ALTER TABLE `users` ADD `firebase_uid` text;
 --> statement-breakpoint
--- CREATE UNIQUE INDEX `users_firebase_uid_unique` ON `users` (`firebase_uid`);
+CREATE UNIQUE INDEX `users_firebase_uid_unique` ON `users` (`firebase_uid`);
