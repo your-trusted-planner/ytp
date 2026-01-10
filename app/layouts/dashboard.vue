@@ -169,17 +169,17 @@ const navigationConfig = ref([
   // Profile - visible to all
   { path: '/dashboard/profile', label: 'Profile', icon: UserCircle, roles: ALL_ROLES },
 
-  // Settings section - admin only
+  // Settings section - requires admin level 2+
   {
     label: 'Settings',
     icon: Settings,
     isOpen: false,
-    roles: ['ADMIN'],
+    roles: ALL_ROLES, // Role check bypassed, uses adminLevel instead
+    minAdminLevel: 2,
     children: [
-      { path: '/dashboard/settings', label: 'General', icon: Settings, roles: ['ADMIN'] },
-      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle, roles: ['ADMIN'] },
-      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ['ADMIN'] },
-      { path: '/dashboard/settings/calendars', label: 'Calendars', icon: Calendar, roles: ['ADMIN'] }
+      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/dashboard/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 }
     ]
   },
 
@@ -187,19 +187,26 @@ const navigationConfig = ref([
   { path: '/dashboard/help', label: 'Help', icon: HelpCircle, roles: ALL_ROLES }
 ])
 
-// Filter navigation items based on user's role
+// Filter navigation items based on user's role and admin level
 const navigationItems = computed(() => {
   const role = user.value?.role
+  const adminLevel = user.value?.adminLevel ?? 0
   if (!role) return []
 
-  const filterByRole = (items: any[]): any[] => {
+  const filterByAccess = (items: any[]): any[] => {
     return items
-      .filter(item => item.roles?.includes(role))
+      .filter(item => {
+        // Check role requirement
+        const hasRole = item.roles?.includes(role)
+        // Check admin level requirement (if specified)
+        const hasAdminLevel = item.minAdminLevel ? adminLevel >= item.minAdminLevel : true
+        return hasRole && hasAdminLevel
+      })
       .map(item => {
         if (item.children) {
           return {
             ...item,
-            children: filterByRole(item.children)
+            children: filterByAccess(item.children)
           }
         }
         return item
@@ -207,7 +214,7 @@ const navigationItems = computed(() => {
       .filter(item => !item.children || item.children.length > 0) // Remove empty sections
   }
 
-  const items = filterByRole(navigationConfig.value)
+  const items = filterByAccess(navigationConfig.value)
 
   // Auto-expand sections if on a child page
   items.forEach(item => {

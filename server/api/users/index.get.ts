@@ -1,6 +1,13 @@
-// Get all users (admin/lawyer only)
+// Get all users (admin level 2+ or ADMIN/LAWYER role for backwards compatibility)
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['ADMIN', 'LAWYER'])
+  const currentUser = getAuthUser(event)
+  const isAuthorized = currentUser.adminLevel >= 2 || ['ADMIN', 'LAWYER'].includes(currentUser.role)
+  if (!isAuthorized) {
+    throw createError({
+      statusCode: 403,
+      message: 'Insufficient permissions to view users'
+    })
+  }
 
   const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
@@ -19,6 +26,7 @@ export default defineEventHandler(async (event) => {
     id: user.id,
     email: user.email,
     role: user.role,
+    admin_level: user.adminLevel ?? 0,
     first_name: user.firstName,
     last_name: user.lastName,
     phone: user.phone,

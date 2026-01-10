@@ -381,7 +381,7 @@ async function fetchClients() {
 // Fetch lawyers for dropdown
 async function fetchLawyers() {
   try {
-    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
+    const response = await $api<{ lawyers: any[] }>('/api/matters/lawyers')
     lawyers.value = response.lawyers || []
   } catch (error) {
     console.error('Failed to fetch lawyers:', error)

@@ -40,6 +40,7 @@ export const users = sqliteTable('users', {
   password: text('password'), // Nullable for OAuth-only users
   firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users
   role: text('role', { enum: ['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
+  adminLevel: integer('admin_level').default(0), // 0=none, 1=basic admin, 2=full admin, 3+=super admin
   firstName: text('first_name'),
   lastName: text('last_name'),
   phone: text('phone'),

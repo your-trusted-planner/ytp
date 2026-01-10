@@ -152,10 +152,12 @@ interface Props {
   lawyers: any[]
   engagementJourneys: any[]
   catalog: any[]
+  defaultClientId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  editingMatter: null
+  editingMatter: null,
+  defaultClientId: ''
 })
 
 const emit = defineEmits<{
@@ -193,10 +195,10 @@ watch(() => props.editingMatter, (matter) => {
       engagementJourneyTemplateId: matter.engagementJourneyId || ''
     }
   } else {
-    // Reset form for new matter
+    // Reset form for new matter, using defaultClientId if provided
     form.value = {
       title: '',
-      clientId: '',
+      clientId: props.defaultClientId || '',
       description: '',
       status: 'PENDING',
       leadAttorneyId: '',
@@ -205,6 +207,13 @@ watch(() => props.editingMatter, (matter) => {
     selectedServices.value = []
   }
 }, { immediate: true })
+
+// Watch for defaultClientId changes (for pre-filling new matter forms)
+watch(() => props.defaultClientId, (clientId) => {
+  if (!props.editingMatter && clientId) {
+    form.value.clientId = clientId
+  }
+})
 
 async function handleSubmit() {
   if (!form.value.title || !form.value.clientId || !form.value.status) {

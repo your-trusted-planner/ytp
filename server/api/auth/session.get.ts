@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
       id: dbUser.id,
       email: dbUser.email,
       role: dbUser.role,
+      adminLevel: dbUser.adminLevel ?? 0,
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
       status: dbUser.status,

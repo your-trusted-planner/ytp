@@ -10,10 +10,18 @@ const createUserSchema = z.object({
   phone: z.string().optional(),
   role: z.enum(['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).default('CLIENT'),
   status: z.enum(['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  adminLevel: z.number().int().min(0).max(10).optional(),
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['ADMIN'])
+  // Require admin level 2+ to create users (role-based ADMIN check kept for backwards compatibility)
+  const currentUser = getAuthUser(event)
+  if (currentUser.adminLevel < 2 && currentUser.role !== 'ADMIN') {
+    throw createError({
+      statusCode: 403,
+      message: 'Admin level 2+ required to create users'
+    })
+  }
 
   const body = await readBody(event)
   const result = createUserSchema.safeParse(body)
@@ -49,6 +57,39 @@ export default defineEventHandler(async (event) => {
   // Generate user ID
   const userId = generateId()
 
+  // Staff roles that can have admin levels
+  const STAFF_ROLES = ['LAWYER', 'ADVISOR']
+
+  // Handle adminLevel with authorization checks
+  let adminLevel = 0
+  if (result.data.adminLevel !== undefined && result.data.adminLevel > 0) {
+    // Only staff roles can have admin levels
+    if (!STAFF_ROLES.includes(result.data.role)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Admin levels can only be assigned to staff roles (Lawyer, Advisor)'
+      })
+    }
+
+    // Require admin level 2+ to set admin levels
+    if (currentUser.adminLevel < 2) {
+      throw createError({
+        statusCode: 403,
+        message: 'Admin level 2+ required to set admin levels'
+      })
+    }
+
+    // Cannot set admin level higher than your own
+    if (result.data.adminLevel > currentUser.adminLevel) {
+      throw createError({
+        statusCode: 403,
+        message: 'Cannot set admin level higher than your own'
+      })
+    }
+
+    adminLevel = result.data.adminLevel
+  }
+
   // Insert user
   await db.insert(schema.users).values({
     id: userId,
@@ -59,6 +100,7 @@ export default defineEventHandler(async (event) => {
     phone: result.data.phone || null,
     role: result.data.role,
     status: result.data.status,
+    adminLevel,
     createdAt: new Date(),
     updatedAt: new Date()
   })

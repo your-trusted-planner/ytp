@@ -261,6 +261,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
+import DOMPurify from 'dompurify'
 
 definePageMeta({
   middleware: 'auth',
@@ -347,9 +348,10 @@ const needsVariables = computed(() => {
 })
 
 const renderedContent = computed(() => {
-  // Content is already rendered by Handlebars on the server
-  // No need for client-side replacement
-  return document.value?.content || ''
+  // Content is rendered by Handlebars on the server
+  // Sanitize with DOMPurify to prevent XSS attacks
+  const content = document.value?.content || ''
+  return DOMPurify.sanitize(content)
 })
 
 const fetchDocument = async () => {

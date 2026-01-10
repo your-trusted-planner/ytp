@@ -73,16 +73,26 @@ export default defineEventHandler(async (event) => {
   // Convert flat keys with dots to nested objects for Handlebars/docxtemplater
   // e.g., { 'lead_attorney.full_name': 'value' } => { lead_attorney: { full_name: 'value' } }
   function unflattenObject(obj: Record<string, any>): Record<string, any> {
+    const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
     const result: Record<string, any> = {}
-    for (const key in obj) {
-      if (key.includes('.')) {
-        const keys = key.split('.')
+
+    for (const key of Object.keys(obj)) {
+      const parts = key.split('.')
+
+      // Skip keys containing dangerous property names to prevent prototype pollution
+      if (parts.some(part => DANGEROUS_KEYS.has(part))) {
+        continue
+      }
+
+      if (parts.length > 1) {
         let current = result
-        for (let i = 0; i < keys.length - 1; i++) {
-          if (!current[keys[i]]) current[keys[i]] = {}
-          current = current[keys[i]]
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!Object.hasOwn(current, parts[i])) {
+            current[parts[i]] = {}
+          }
+          current = current[parts[i]]
         }
-        current[keys[keys.length - 1]] = obj[key]
+        current[parts[parts.length - 1]] = obj[key]
       } else {
         result[key] = obj[key]
       }

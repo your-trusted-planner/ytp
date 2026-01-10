@@ -2,58 +2,83 @@
   <div class="space-y-6">
     <div>
       <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-      <p class="text-gray-600 mt-1">Manage application settings</p>
+      <p class="text-gray-600 mt-1">System administration and configuration</p>
     </div>
 
-    <UiCard title="Account Settings">
-      <div class="space-y-4">
-        <div class="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <h3 class="font-medium text-gray-900">Email Notifications</h3>
-            <p class="text-sm text-gray-500">Receive email updates about your account</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- User Management -->
+      <NuxtLink to="/dashboard/settings/users" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-burgundy-50 rounded-lg">
+              <UserCircle class="w-6 h-6 text-burgundy-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">User Management</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Create, edit, and manage user accounts and permissions
+              </p>
+            </div>
           </div>
-          <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" />
-        </div>
-        <div class="flex items-center justify-between py-3 border-b border-gray-200">
-          <div>
-            <h3 class="font-medium text-gray-900">SMS Notifications</h3>
-            <p class="text-sm text-gray-500">Receive text message reminders</p>
-          </div>
-          <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" />
-        </div>
-        <div class="flex items-center justify-between py-3">
-          <div>
-            <h3 class="font-medium text-gray-900">Two-Factor Authentication</h3>
-            <p class="text-sm text-gray-500">Add an extra layer of security</p>
-          </div>
-          <UiButton variant="outline" size="sm">
-            Enable
-          </UiButton>
-        </div>
-      </div>
-    </UiCard>
+        </UiCard>
+      </NuxtLink>
 
-    <UiCard title="Preferences">
-      <div class="space-y-4">
-        <UiSelect label="Time Zone">
-          <option value="America/New_York">Eastern Time</option>
-          <option value="America/Chicago">Central Time</option>
-          <option value="America/Denver">Mountain Time</option>
-          <option value="America/Los_Angeles">Pacific Time</option>
-        </UiSelect>
-        <UiSelect label="Language">
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-        </UiSelect>
+      <!-- OAuth Providers -->
+      <NuxtLink to="/dashboard/settings/oauth-providers" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <KeyRound class="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">OAuth Providers</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Configure authentication providers and SSO settings
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
+      <!-- Calendar Administration -->
+      <NuxtLink to="/dashboard/settings/calendars" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-green-50 rounded-lg">
+              <Calendar class="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Calendar Administration</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Manage organization-wide calendar settings and scheduling rules
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+    </div>
+
+    <!-- Admin Info -->
+    <UiCard>
+      <div class="flex items-start space-x-3">
+        <Info class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+        <div class="text-sm text-gray-600">
+          <p>
+            This area is restricted to users with admin level 2 or higher.
+            Personal settings like notifications, preferences, and individual calendars
+            can be managed from the <NuxtLink to="/dashboard/profile" class="text-burgundy-600 hover:text-burgundy-700 underline">Profile page</NuxtLink>.
+          </p>
+        </div>
       </div>
     </UiCard>
   </div>
 </template>
 
 <script setup lang="ts">
+import { UserCircle, KeyRound, Calendar, Info } from 'lucide-vue-next'
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
 })
 </script>
-
