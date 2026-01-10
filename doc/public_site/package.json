@@ -14,5 +14,11 @@
     "vitepress-plugin-mermaid": "^2.0.17",
     "mermaid": "^11.4.0",
     "dayjs": "^1.11.13"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": ">=0.25.0",
+      "preact": ">=10.28.2"
+    }
   }
 }

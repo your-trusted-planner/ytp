@@ -75,6 +75,7 @@
       :lawyers="lawyers"
       :engagement-journeys="engagementJourneys"
       :catalog="catalog"
+      :default-client-id="defaultClientId"
       @save="handleMatterSaved"
       @cancel="closeModal"
     />
@@ -98,6 +99,7 @@ const catalog = ref<any[]>([])
 const loading = ref(true)
 const showAddModal = ref(false)
 const editingMatter = ref<any>(null)
+const defaultClientId = ref('')
 
 // Refs for dropdowns
 const lawyers = ref<any[]>([])
@@ -174,12 +176,13 @@ const handleMatterSaved = async (matterId?: string) => {
 const closeModal = () => {
   showAddModal.value = false
   editingMatter.value = null
+  defaultClientId.value = ''
 }
 
 // NEW: Fetch lawyers for lead attorney dropdown
 const fetchLawyers = async () => {
   try {
-    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
+    const response = await $api<{ lawyers: any[] }>('/api/matters/lawyers')
     lawyers.value = response.lawyers || []
   } catch (error) {
     console.error('Failed to fetch lawyers:', error)
@@ -208,7 +211,7 @@ onMounted(async () => {
   // Check if we should auto-open the modal with a pre-filled client
   const route = useRoute()
   if (route.query.createNew === 'true' && route.query.clientId) {
-    matterForm.value.clientId = route.query.clientId as string
+    defaultClientId.value = route.query.clientId as string
     showAddModal.value = true
   }
 })
