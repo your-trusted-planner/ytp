@@ -8,6 +8,8 @@ Welcome to Your Trusted Planner! This guide will help you get started with manag
 2. Enter your email and password
 3. You'll be directed to your dashboard
 
+![Login Page](/screenshots/login-page.png)
+
 ## The Lawyer Dashboard
 
 When you log in, your dashboard shows:
@@ -15,6 +17,8 @@ When you log in, your dashboard shows:
 - **Stats Overview**: Total clients, pending documents, active journeys, upcoming appointments
 - **Recent Activity**: Latest actions across all clients
 - **Quick Actions**: Add clients, create journeys, generate documents
+
+![Lawyer Dashboard](/screenshots/lawyer-dashboard.png)
 
 ## Navigation
 

@@ -8,6 +8,8 @@ Welcome! Your Trusted Planner is your personal portal for managing your estate p
 2. Navigate to the portal URL
 3. Enter your credentials and log in
 
+![Login Page](/screenshots/login-page.png)
+
 ## Your Dashboard
 
 When you log in, you'll see your personal dashboard with:
@@ -16,6 +18,8 @@ When you log in, you'll see your personal dashboard with:
 - **My Documents**: Documents assigned to you
 - **Upcoming Appointments**: Scheduled meetings
 - **Quick Stats**: Documents pending, progress on current journey
+
+![Client Dashboard](/screenshots/client-dashboard.png)
 
 ## Navigation
 

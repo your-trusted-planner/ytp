@@ -15,6 +15,8 @@ Learn how to add, manage, and track your clients and their engagements effective
 
 The client will receive login credentials and can access their portal.
 
+![Clients List](/screenshots/clients-list.png)
+
 ## Viewing Client Details
 
 Click on any client to see their full profile:
@@ -26,6 +28,8 @@ Click on any client to see their full profile:
 - **Active Journeys**: Services they're enrolled in
 - **Documents**: Documents assigned to them
 - **Notes**: Internal notes and history
+
+![Client Detail](/screenshots/client-detail.png)
 
 ## Client Statuses
 
@@ -62,6 +66,8 @@ Services: WYDAPT, Annual Maintenance
 
 **Services** are the specific products/offerings engaged within a matter (e.g., WYDAPT formation, Annual Maintenance). Each service has a workflow (journey) that guides the client through completion.
 
+![Service Catalog](/screenshots/service-catalog.png)
+
 ---
 
 ## Creating a New Matter
@@ -77,10 +83,14 @@ Services: WYDAPT, Annual Maintenance
    - **Services**: Check the services to include (optional, can add later)
 4. Click **Create Matter**
 
+![Matters List](/screenshots/matters-list.png)
+
 **The system automatically:**
 - Generates a unique matter number (YYYY-###)
 - Creates service engagements for any selected services
 - Sets up journeys for each engaged service
+
+![Matter Detail](/screenshots/matter-detail.png)
 
 ## Managing Matter Services
 

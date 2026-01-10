@@ -75,6 +75,8 @@ From **Journeys**, you can see:
 - Days in current step
 - Priority level
 
+![Journeys List](/screenshots/journeys-list.png)
+
 Click into any journey to see detailed step-by-step status and take action.
 
 ---
