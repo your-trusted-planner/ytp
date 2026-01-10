@@ -32,6 +32,13 @@ lerna-debug.log*
 # Playwright
 .playwright-mcp
 
+# Test coverage
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
+
 # Claude
 .claude
 
