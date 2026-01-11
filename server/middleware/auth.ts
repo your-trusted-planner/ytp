@@ -18,7 +18,8 @@ export default defineEventHandler(async (event) => {
     path === '/api/auth/logout' ||
     path === '/api/auth/session' || // Allow checking session status
     path === '/api/auth/firebase' || // Firebase OAuth authentication
-    path === '/api/oauth-providers/enabled' // Public list of enabled OAuth providers
+    path === '/api/oauth-providers/enabled' || // Public list of enabled OAuth providers
+    path === '/api/seed-remote' // Remote seeding (token-based auth)
   ) {
     return
   }
