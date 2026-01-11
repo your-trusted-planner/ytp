@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../db'
 import { hashPassword, generateId, requireRole } from '../../utils/auth'
+import { logActivity } from '../../utils/activity-logger'
 
 const createClientSchema = z.object({
   email: z.string().email(),
@@ -12,7 +13,7 @@ const createClientSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  await requireRole(event, ['LAWYER', 'ADMIN'])
+  const user = await requireRole(event, ['LAWYER', 'ADMIN'])
   
   const body = await readBody(event)
   const result = createClientSchema.safeParse(body)
@@ -61,7 +62,22 @@ export default defineEventHandler(async (event) => {
     id: generateId(),
     userId
   })
-  
+
+  // Log activity
+  await logActivity({
+    type: 'CLIENT_CREATED',
+    description: `${user.firstName || user.email} created client ${firstName} ${lastName}`,
+    userId: user.id,
+    userRole: user.role,
+    targetType: 'client',
+    targetId: userId,
+    event,
+    metadata: {
+      clientEmail: email,
+      clientName: `${firstName} ${lastName}`
+    }
+  })
+
   return { success: true, userId }
 })
 

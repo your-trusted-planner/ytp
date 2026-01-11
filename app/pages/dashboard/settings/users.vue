@@ -119,7 +119,8 @@
           <option value="PROSPECT">Prospect</option>
           <option value="LEAD">Lead</option>
           <option value="CLIENT">Client</option>
-          <option value="ADVISOR">Advisor</option>
+          <option value="ADVISOR">Advisor (External)</option>
+          <option value="STAFF">Staff</option>
           <option value="LAWYER">Lawyer</option>
         </UiSelect>
 
@@ -222,15 +223,15 @@ const editForm = ref({
   adminLevel: 0
 })
 
-// Staff roles that can have admin levels
-const STAFF_ROLES = ['LAWYER', 'ADVISOR']
+// Firm roles that can have admin levels (internal employees only, not external advisors)
+const FIRM_ROLES = ['LAWYER', 'STAFF']
 
-// Check if selected role is a staff role (can have admin levels)
-const isStaffRole = computed(() => STAFF_ROLES.includes(editForm.value.role))
+// Check if selected role is a firm role (can have admin levels)
+const isFirmRole = computed(() => FIRM_ROLES.includes(editForm.value.role))
 
-// Can only edit admin levels if current user has admin level 2+ AND selected role is staff
+// Can only edit admin levels if current user has admin level 2+ AND selected role is a firm role
 const canEditAdminLevel = computed(() => {
-  return (currentUser.value?.adminLevel ?? 0) >= 2 && isStaffRole.value
+  return (currentUser.value?.adminLevel ?? 0) >= 2 && isFirmRole.value
 })
 
 // Can only assign admin levels up to your own level
@@ -239,9 +240,9 @@ const availableAdminLevels = computed(() => {
   return Array.from({ length: maxLevel }, (_, i) => i + 1)
 })
 
-// Auto-reset adminLevel when switching to non-staff role
+// Auto-reset adminLevel when switching to non-firm role
 watch(() => editForm.value.role, (newRole) => {
-  if (!STAFF_ROLES.includes(newRole)) {
+  if (!FIRM_ROLES.includes(newRole)) {
     editForm.value.adminLevel = 0
   }
 })
@@ -379,6 +380,8 @@ function getRoleBadgeVariant(role: string) {
       return 'danger'
     case 'LAWYER':
       return 'primary'
+    case 'STAFF':
+      return 'secondary'
     case 'CLIENT':
       return 'success'
     case 'ADVISOR':

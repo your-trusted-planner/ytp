@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     // Test file patterns (exclude e2e - those use Playwright)
     include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts'],
-    exclude: ['tests/e2e/**', '**/node_modules/**'],
+    exclude: ['tests/e2e/**', 'tests/screenshots/**', '**/node_modules/**'],
 
     // Environment for tests
     environment: 'node',

@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
-  const blob = hubBlob()
+  // blob is auto-imported from hub:blob
 
   // Extract fields from form data
   let clientJourneyId: string | undefined

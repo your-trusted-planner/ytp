@@ -63,6 +63,15 @@ const advisorUser: AuthenticatedUser = {
   lastName: 'User'
 }
 
+const staffUser: AuthenticatedUser = {
+  id: 'staff-1',
+  email: 'staff@test.com',
+  role: 'STAFF',
+  adminLevel: 0,
+  firstName: 'Staff',
+  lastName: 'User'
+}
+
 const lawyerWithAdminLevel: AuthenticatedUser = {
   id: 'lawyer-admin-1',
   email: 'lawyeradmin@test.com',
@@ -229,9 +238,14 @@ describe('RBAC Utilities', () => {
       expect(isLawyerOrAdmin(event)).toBe(false)
     })
 
-    it('should return false for ADVISOR', () => {
+    it('should return false for ADVISOR (external third-party)', () => {
       const event = createMockEvent(advisorUser)
       expect(isLawyerOrAdmin(event)).toBe(false)
+    })
+
+    it('should return true for STAFF (firm member)', () => {
+      const event = createMockEvent(staffUser)
+      expect(isLawyerOrAdmin(event)).toBe(true)
     })
   })
 
@@ -265,9 +279,15 @@ describe('RBAC Utilities', () => {
       expect(canAccessClient(event, 'other-client')).toBe(false)
     })
 
-    it('should deny ADVISOR access to client data', () => {
+    it('should deny ADVISOR access to client data (external third-party)', () => {
       const event = createMockEvent(advisorUser)
       expect(canAccessClient(event, targetClientId)).toBe(false)
+    })
+
+    it('should allow STAFF to access any client (firm member)', () => {
+      const event = createMockEvent(staffUser)
+      expect(canAccessClient(event, targetClientId)).toBe(true)
+      expect(canAccessClient(event, 'other-client')).toBe(true)
     })
   })
 

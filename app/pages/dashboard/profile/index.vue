@@ -127,8 +127,8 @@
       </div>
     </UiCard>
 
-    <!-- My Calendars (for staff roles) -->
-    <UiCard v-if="isStaff" title="My Calendars">
+    <!-- My Calendars (for firm members) -->
+    <UiCard v-if="isFirmMember" title="My Calendars">
       <template #header-actions>
         <UiButton size="sm" @click="showAddCalendarModal = true">
           Add Calendar
@@ -252,10 +252,10 @@ definePageMeta({
 const { data: sessionData } = await useFetch('/api/auth/session')
 const currentUser = computed(() => sessionData.value?.user)
 
-// Check if user is staff (can manage calendars)
-const isStaff = computed(() => {
+// Check if user is a firm member (can manage calendars)
+const isFirmMember = computed(() => {
   const role = currentUser.value?.role
-  return ['ADMIN', 'LAWYER', 'ADVISOR'].includes(role)
+  return ['ADMIN', 'LAWYER', 'STAFF'].includes(role)
 })
 
 const profile = ref({
@@ -308,8 +308,8 @@ onMounted(async () => {
     }
   }
 
-  // Load calendars for staff
-  if (isStaff.value) {
+  // Load calendars for firm members
+  if (isFirmMember.value) {
     await loadCalendars()
   }
 })

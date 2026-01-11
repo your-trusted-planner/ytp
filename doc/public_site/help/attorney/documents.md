@@ -54,6 +54,8 @@ Date: {{signatureDate}}
 5. Select category (or keep auto-detected)
 6. Click **"Upload Template"**
 
+![Templates List](/screenshots/templates-list.png)
+
 The system will:
 - Store your original DOCX with formatting preserved
 - Extract all `{{variables}}` automatically

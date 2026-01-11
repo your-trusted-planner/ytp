@@ -39,7 +39,7 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   password: text('password'), // Nullable for OAuth-only users
   firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users
-  role: text('role', { enum: ['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
+  role: text('role', { enum: ['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
   adminLevel: integer('admin_level').default(0), // 0=none, 1=basic admin, 2=full admin, 3+=super admin
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -67,6 +67,18 @@ export const clientProfiles = sqliteTable('client_profiles', {
   hasTrust: integer('has_trust', { mode: 'boolean' }).notNull().default(false),
   lastUpdated: integer('last_updated', { mode: 'timestamp' }),
   assignedLawyerId: text('assigned_lawyer_id').references(() => users.id),
+
+  // Referral tracking
+  referralType: text('referral_type', { enum: ['CLIENT', 'PROFESSIONAL', 'EVENT', 'MARKETING'] }), // How they were referred
+  referredByUserId: text('referred_by_user_id').references(() => users.id), // If referred by existing client
+  referredByPartnerId: text('referred_by_partner_id'), // References referralPartners.id (forward ref)
+  referralNotes: text('referral_notes'),
+
+  // Initial attribution captured at lead creation
+  initialAttributionSource: text('initial_attribution_source'),
+  initialAttributionMedium: text('initial_attribution_medium'),
+  initialAttributionCampaign: text('initial_attribution_campaign'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -160,13 +172,41 @@ export const notes = sqliteTable('notes', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Activities table
+// Activities table - Enhanced for observability, compliance, and KPI tracking
 export const activities = sqliteTable('activities', {
   id: text('id').primaryKey(),
   type: text('type').notNull(),
   description: text('description').notNull(),
-  metadata: text('metadata'), // JSON string
+
+  // Actor
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userRole: text('user_role'), // Role AT TIME OF EVENT (denormalized for history)
+
+  // Target entity (what was acted upon)
+  targetType: text('target_type'), // 'user', 'client', 'document', 'matter', 'journey', 'template'
+  targetId: text('target_id'),
+
+  // Funnel dimensions (for journey/conversion analysis)
+  journeyId: text('journey_id'),
+  journeyStepId: text('journey_step_id'),
+  matterId: text('matter_id'),
+  serviceId: text('service_id'),
+
+  // Attribution dimensions (for marketing/referral analysis)
+  attributionSource: text('attribution_source'), // utm_source or 'referral'
+  attributionMedium: text('attribution_medium'), // utm_medium or referral type
+  attributionCampaign: text('attribution_campaign'), // utm_campaign
+
+  // Request context (for audit trail)
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  country: text('country'),
+  city: text('city'),
+  requestId: text('request_id'),
+
+  // Flexible metadata
+  metadata: text('metadata'), // JSON string
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
@@ -477,6 +517,48 @@ export const marketingSources = sqliteTable('marketing_sources', {
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Referral Partners - Track professional referral sources (CPAs, attorneys, financial advisors)
+export const referralPartners = sqliteTable('referral_partners', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(), // "John Smith, CPA"
+  company: text('company'), // "Smith & Associates"
+  type: text('type', { enum: ['CPA', 'ATTORNEY', 'FINANCIAL_ADVISOR', 'ORGANIZATION', 'OTHER'] }).notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  notes: text('notes'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Marketing Events - Track webinars, workshops, seminars for conversion funnel analysis
+export const marketingEvents = sqliteTable('marketing_events', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(), // "Estate Planning Webinar - Jan 2026"
+  type: text('type', { enum: ['WEBINAR', 'WORKSHOP', 'SEMINAR', 'CONFERENCE', 'OTHER'] }).notNull(),
+  occurredAt: integer('occurred_at', { mode: 'timestamp' }),
+  description: text('description'),
+  metadata: text('metadata'), // JSON for flexible event details
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Event Registrations - Track event→client conversion funnel
+export const eventRegistrations = sqliteTable('event_registrations', {
+  id: text('id').primaryKey(),
+  eventId: text('event_id').notNull().references(() => marketingEvents.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id), // null if not yet a user
+  email: text('email').notNull(), // for matching later
+  name: text('name'),
+  registeredAt: integer('registered_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  attendedAt: integer('attended_at', { mode: 'timestamp' }),
+  convertedToLeadAt: integer('converted_to_lead_at', { mode: 'timestamp' }),
+  convertedToClientAt: integer('converted_to_client_at', { mode: 'timestamp' }),
+  // Attribution - how they found the event
+  attributionSource: text('attribution_source'),
+  attributionMedium: text('attribution_medium'),
+  attributionCampaign: text('attribution_campaign')
 })
 
 // Client Marketing Attribution - Track individual client sources

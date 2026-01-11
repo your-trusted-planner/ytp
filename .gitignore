@@ -71,3 +71,4 @@ scripts/*.tmp
 
 # OS
 Thumbs.db
+.wrangler.old

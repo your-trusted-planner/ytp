@@ -208,6 +208,45 @@ wrangler secret put SECRET_NAME --env preview
 - Prefer interfaces over types for object shapes
 - Use `any` sparingly - only when truly dynamic
 
+## Testing
+
+### Test Framework
+- **Unit Tests**: Vitest (`pnpm test` or `pnpm test:run`)
+- **E2E Tests**: Playwright (`pnpm test:e2e`)
+- **Coverage**: `pnpm test:coverage` (v8 provider)
+
+### When to Write Tests First (TDD)
+Consider writing tests before implementation when:
+- **Business rules are well-defined**: RBAC permissions, validation rules, state machines
+- **Pure functions**: Clear inputs/outputs with no side effects
+- **Bug fixes**: Write a failing test that reproduces the bug, then fix it
+- **API contracts**: Endpoints with stable request/response shapes
+
+### When to Write Tests After
+It's fine to implement first, then test when:
+- **Exploratory work**: Requirements are still forming
+- **UI components**: Likely to change during design iteration
+- **Integration glue**: Code primarily wiring libraries together
+- **Prototyping**: Validating an approach before committing
+
+### Test Organization
+```
+tests/
+├── setup.ts           # Global test setup
+├── unit/              # Unit tests (Vitest)
+│   ├── auth.test.ts
+│   ├── rbac.test.ts
+│   └── ...
+└── e2e/               # End-to-end tests (Playwright)
+    └── auth.spec.ts
+```
+
+### Writing Effective Tests
+- Test business logic, not implementation details
+- For code with external dependencies (DB, KV), test the logic patterns and interfaces
+- Use descriptive test names that explain the expected behavior
+- Group related tests with `describe()` blocks
+
 ## File Organization
 
 - `server/api/` - API endpoints

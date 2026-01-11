@@ -12,6 +12,8 @@ Journeys guide you through the legal services you're receiving. Each journey is 
    - Current step highlighted
    - Completed steps with checkmarks
 
+![My Journeys](/screenshots/client-my-journeys.png)
+
 ## Understanding Steps
 
 Each journey has multiple steps. Some steps require action from you:

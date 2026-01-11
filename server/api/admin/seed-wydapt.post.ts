@@ -152,8 +152,7 @@ export default defineEventHandler(async (event) => {
   const { useDrizzle, schema } = await import('../../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
-
-  const blob = hubBlob()
+  // blob is auto-imported from hub:blob
 
   const log: string[] = []
   log.push('🚀 Starting WYDAPT Document Seeding from R2...')

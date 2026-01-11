@@ -8,7 +8,7 @@ const createUserSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(['ADMIN', 'LAWYER', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).default('CLIENT'),
+  role: z.enum(['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).default('CLIENT'),
   status: z.enum(['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE']).default('ACTIVE'),
   adminLevel: z.number().int().min(0).max(10).optional(),
 })
@@ -57,17 +57,17 @@ export default defineEventHandler(async (event) => {
   // Generate user ID
   const userId = generateId()
 
-  // Staff roles that can have admin levels
-  const STAFF_ROLES = ['LAWYER', 'ADVISOR']
+  // Firm roles that can have admin levels (internal employees only, not external advisors)
+  const FIRM_ROLES = ['LAWYER', 'STAFF']
 
   // Handle adminLevel with authorization checks
   let adminLevel = 0
   if (result.data.adminLevel !== undefined && result.data.adminLevel > 0) {
-    // Only staff roles can have admin levels
-    if (!STAFF_ROLES.includes(result.data.role)) {
+    // Only firm roles can have admin levels
+    if (!FIRM_ROLES.includes(result.data.role)) {
       throw createError({
         statusCode: 400,
-        message: 'Admin levels can only be assigned to staff roles (Lawyer, Advisor)'
+        message: 'Admin levels can only be assigned to firm roles (Lawyer, Staff)'
       })
     }
 

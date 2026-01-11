@@ -8,6 +8,8 @@ View, sign, and manage all documents related to your legal services.
 2. You'll see all documents assigned to you
 3. Documents are sorted by status
 
+![My Documents](/screenshots/client-documents.png)
+
 ## Document Statuses
 
 | Status | What It Means |

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isDatabaseAvailable } from '../../db'
 import { verifyPassword } from '../../utils/auth'
 import { mockDb, initMockDb } from '../../utils/mock-db'
+import { logActivity } from '../../utils/activity-logger'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -104,7 +105,18 @@ export default defineEventHandler(async (event) => {
     },
     loggedInAt: new Date()
   })
-  
+
+  // Log successful login
+  await logActivity({
+    type: 'USER_LOGIN',
+    description: `${user.firstName || user.email} logged in`,
+    userId: user.id,
+    userRole: user.role,
+    targetType: 'user',
+    targetId: user.id,
+    event
+  })
+
   const { password: _, ...userWithoutPassword } = user
   return { user: userWithoutPassword }
 })

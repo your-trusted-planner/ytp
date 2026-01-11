@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isDatabaseAvailable } from '../../../db'
 import { requireAuth } from '../../../utils/auth'
 import { mockDb } from '../../../utils/mock-db'
+import { logActivity } from '../../../utils/activity-logger'
 
 const signSchema = z.object({
   signatureData: z.string()
@@ -76,7 +77,24 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     .where(eq(schema.documents.id, id))
-  
+
+  // Log document signing activity (critical for audit trail)
+  await logActivity({
+    type: 'DOCUMENT_SIGNED',
+    description: `${user.firstName || user.email} signed "${document.title}"`,
+    userId: user.id,
+    userRole: user.role,
+    targetType: 'document',
+    targetId: id,
+    matterId: document.matterId || undefined,
+    event,
+    metadata: {
+      documentTitle: document.title,
+      documentTemplateId: document.templateId,
+      signedAt: new Date().toISOString()
+    }
+  })
+
   return { success: true }
 })
 
