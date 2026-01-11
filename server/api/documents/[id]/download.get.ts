@@ -41,6 +41,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Prevent downloading editable DOCX for signed documents
+  if (document.status === 'SIGNED' || document.status === 'COMPLETED') {
+    throw createError({
+      statusCode: 403,
+      message: 'Cannot download editable version of a signed document'
+    })
+  }
+
   // Check if document has a DOCX file
   if (!document.docxBlobKey) {
     console.error('[Download] Document has no DOCX blob key')

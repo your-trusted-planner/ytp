@@ -50,7 +50,12 @@ export default defineNuxtConfig({
     googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
     googleServiceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '',
     // Firebase Admin SDK (server-only)
-    firebaseServiceAccount: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT || ''
+    firebaseServiceAccount: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT || '',
+    // Resend email service
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    emailFrom: process.env.EMAIL_FROM || 'Your Trusted Planner <noreply@yourtrustedplanner.com>',
+    // Identity verification mode: 'attestation', 'kba', 'manual', 'persona'
+    identityVerificationMode: process.env.IDENTITY_VERIFICATION_MODE || 'attestation'
   },
 
   // Nitro config

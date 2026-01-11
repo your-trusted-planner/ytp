@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "96d6dfe9-d4c5-4f77-be47-59cbb0185283",
-  "prevId": "e356d700-08f5-4bc9-9bde-5409b4387adb",
+  "id": "66d6352f-c58a-44f5-95f2-e07c60a4b29e",
+  "prevId": "a5f061fb-993f-43fc-94c2-48fb251de2fe",
   "tables": {
     "action_items": {
       "name": "action_items",
@@ -1884,13 +1884,6 @@
         },
         "docx_blob_key": {
           "name": "docx_blob_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signed_pdf_blob_key": {
-          "name": "signed_pdf_blob_key",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -4323,236 +4316,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "signature_sessions": {
-      "name": "signature_sessions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "signer_id": {
-          "name": "signer_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "action_item_id": {
-          "name": "action_item_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_tier": {
-          "name": "signature_tier",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'PENDING'"
-        },
-        "identity_verified": {
-          "name": "identity_verified",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "identity_verification_method": {
-          "name": "identity_verification_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "identity_verified_at": {
-          "name": "identity_verified_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "identity_provider": {
-          "name": "identity_provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "identity_reference_id": {
-          "name": "identity_reference_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signing_token": {
-          "name": "signing_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "token_expires_at": {
-          "name": "token_expires_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "user_agent": {
-          "name": "user_agent",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "geolocation": {
-          "name": "geolocation",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_data": {
-          "name": "signature_data",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_hash": {
-          "name": "signature_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signed_at": {
-          "name": "signed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_certificate": {
-          "name": "signature_certificate",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "terms_accepted_at": {
-          "name": "terms_accepted_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "terms_version": {
-          "name": "terms_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
-        }
-      },
-      "indexes": {
-        "signature_sessions_signing_token_unique": {
-          "name": "signature_sessions_signing_token_unique",
-          "columns": [
-            "signing_token"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "signature_sessions_document_id_documents_id_fk": {
-          "name": "signature_sessions_document_id_documents_id_fk",
-          "tableFrom": "signature_sessions",
-          "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "signature_sessions_signer_id_users_id_fk": {
-          "name": "signature_sessions_signer_id_users_id_fk",
-          "tableFrom": "signature_sessions",
-          "tableTo": "users",
-          "columnsFrom": [
-            "signer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "signature_sessions_action_item_id_action_items_id_fk": {
-          "name": "signature_sessions_action_item_id_action_items_id_fk",
-          "tableFrom": "signature_sessions",
-          "tableTo": "action_items",
-          "columnsFrom": [
-            "action_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "snapshot_versions": {
       "name": "snapshot_versions",
       "columns": {
@@ -4960,20 +4723,6 @@
         "avatar": {
           "name": "avatar",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_image": {
-          "name": "signature_image",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_image_updated_at": {
-          "name": "signature_image_updated_at",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

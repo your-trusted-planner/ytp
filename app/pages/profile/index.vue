@@ -77,6 +77,14 @@
       </form>
     </UiCard>
 
+    <!-- Stored Signature -->
+    <UiCard title="E-Signature">
+      <template #header-actions>
+        <span class="text-sm text-gray-500">For signing documents</span>
+      </template>
+      <SignatureSignatureImageManager @updated="handleSignatureUpdated" />
+    </UiCard>
+
     <!-- Notification Settings -->
     <UiCard title="Notification Settings">
       <div class="space-y-4">
@@ -430,5 +438,10 @@ const deleteCalendar = async (calendarId: string) => {
   if (!confirm('Are you sure you want to delete this calendar?')) return
   // TODO: Implement API call
   alert('Delete functionality coming soon')
+}
+
+// Signature updated handler
+const handleSignatureUpdated = (hasSignature: boolean) => {
+  console.log('Signature updated:', hasSignature)
 }
 </script>

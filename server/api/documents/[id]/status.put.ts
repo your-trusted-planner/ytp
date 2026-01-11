@@ -1,4 +1,4 @@
-// Update document status
+// Update document status and signature readiness
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const documentId = getRouterParam(event, 'id')
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { status } = body
+  const { status, readyForSignature, attorneyApproved } = body
 
   if (!status) {
     throw createError({
@@ -46,20 +46,48 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Only lawyers/admins can update document status
-  if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
+  // Prevent status changes on signed/completed documents
+  if (document.status === 'SIGNED' || document.status === 'COMPLETED') {
+    throw createError({
+      statusCode: 400,
+      message: 'Cannot change status of a signed document'
+    })
+  }
+
+  // Only lawyers/admins/staff can update document status
+  if (!['LAWYER', 'ADMIN', 'STAFF'].includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: 'Unauthorized'
     })
   }
 
-  // Update the status
+  // Build update object
+  const updateData: Record<string, any> = {
+    status,
+    updatedAt: new Date()
+  }
+
+  // Handle readyForSignature flag
+  if (readyForSignature !== undefined) {
+    updateData.readyForSignature = readyForSignature
+    if (readyForSignature) {
+      updateData.readyForSignatureAt = new Date()
+    }
+  }
+
+  // Handle attorneyApproved flag
+  if (attorneyApproved !== undefined) {
+    updateData.attorneyApproved = attorneyApproved
+    if (attorneyApproved) {
+      updateData.attorneyApprovedAt = new Date()
+      updateData.attorneyApprovedBy = user.id
+    }
+  }
+
+  // Update the document
   await db.update(schema.documents)
-    .set({
-      status,
-      updatedAt: new Date()
-    })
+    .set(updateData)
     .where(eq(schema.documents.id, documentId))
 
   return { success: true, status }

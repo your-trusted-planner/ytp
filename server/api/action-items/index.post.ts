@@ -48,6 +48,44 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Validate ESIGN action items require a documentId
+  if (body.actionType === 'ESIGN') {
+    const config = body.config || {}
+    if (!config.documentId) {
+      throw createError({
+        statusCode: 400,
+        message: 'ESIGN action items require a documentId in config'
+      })
+    }
+
+    // Validate the document exists
+    const { eq } = await import('drizzle-orm')
+    const document = await db.select()
+      .from(schema.documents)
+      .where(eq(schema.documents.id, config.documentId))
+      .get()
+
+    if (!document) {
+      throw createError({
+        statusCode: 400,
+        message: 'Document not found'
+      })
+    }
+
+    // Validate document is ready or could become ready for signature
+    if (document.status === 'SIGNED') {
+      throw createError({
+        statusCode: 400,
+        message: 'Document has already been signed'
+      })
+    }
+
+    // Set systemIntegrationType for ESIGN if not already set
+    if (!body.systemIntegrationType) {
+      body.systemIntegrationType = 'document'
+    }
+  }
+
   const actionItemId = nanoid()
 
   const actionItem = {

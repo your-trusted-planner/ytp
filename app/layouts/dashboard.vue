@@ -90,7 +90,7 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 p-8 transition-all duration-300">
+      <main class="flex-1 min-w-0 p-8 transition-all duration-300">
         <slot />
       </main>
     </div>
@@ -118,7 +118,8 @@ import {
   Wrench,
   Contact,
   KeyRound,
-  Activity
+  Activity,
+  PenTool
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -147,6 +148,7 @@ const navigationConfig = ref([
   { path: '/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
   { path: '/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
   { path: '/documents', label: 'Documents', icon: File, roles: FIRM_ROLES },
+  { path: '/signatures', label: 'E-Signatures', icon: PenTool, roles: FIRM_ROLES },
   { path: '/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
   { path: '/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
 
