@@ -63,15 +63,11 @@ definePageMeta({
 const matters = ref<any[]>([])
 const loading = ref(true)
 
-// TODO: Create a specific API endpoint for "My Matters" that filters by logged-in user
-// For now, we reuse the admin one but we need to secure it server-side or filter client-side (not ideal for prod)
-// In a real implementation, we'd add /api/my-matters
 const fetchMatters = async () => {
   loading.value = true
   try {
-    // This is a placeholder. Real implementation needs `GET /api/my-matters`
-    const response = await $fetch<{ matters: any[] }>('/api/matters') 
-    matters.value = response.matters || response
+    const response = await $fetch<{ matters: any[] }>('/api/my-matters')
+    matters.value = response.matters || []
   } catch (error) {
     console.error('Failed to fetch matters:', error)
   } finally {

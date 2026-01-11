@@ -306,7 +306,7 @@ async function createJourney() {
     })
     showCreateModal.value = false
     // Navigate to journey builder
-    router.push(`/dashboard/journeys/${journey.id}`)
+    router.push(`/journeys/${journey.id}`)
   } catch (error) {
     console.error('Error creating journey:', error)
   } finally {
@@ -316,7 +316,7 @@ async function createJourney() {
 
 // Open journey builder
 function openJourney(id: string) {
-  router.push(`/dashboard/journeys/${id}`)
+  router.push(`/journeys/${id}`)
 }
 
 // Edit journey - open edit modal

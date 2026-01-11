@@ -235,12 +235,12 @@ function getTargetLink(activity: Activity): string | null {
   if (!activity.targetType || !activity.targetId) return null
 
   const routes: Record<string, string> = {
-    client: `/dashboard/clients/${activity.targetId}`,
-    document: `/dashboard/documents/${activity.targetId}`,
-    matter: `/dashboard/matters/${activity.targetId}`,
-    journey: `/dashboard/journeys/${activity.targetId}`,
-    template: `/dashboard/templates/${activity.targetId}`,
-    referral_partner: `/dashboard/referral-partners/${activity.targetId}`
+    client: `/clients/${activity.targetId}`,
+    document: `/documents/${activity.targetId}`,
+    matter: `/matters/${activity.targetId}`,
+    journey: `/journeys/${activity.targetId}`,
+    template: `/templates/${activity.targetId}`,
+    referral_partner: `/referral-partners/${activity.targetId}`
   }
 
   return routes[activity.targetType] || null

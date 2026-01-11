@@ -845,7 +845,7 @@ async function generateDocument() {
     showUseTemplateModal.value = false
     
     // Navigate to document detail page
-    router.push(`/dashboard/documents/${document.id}`)
+    router.push(`/documents/${document.id}`)
   } catch (error: any) {
     console.error('Failed to generate document:', error)
     alert(`Error generating document: ${error.data?.message || error.message || 'Unknown error'}`)

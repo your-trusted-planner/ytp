@@ -127,7 +127,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" @click.stop>
                 <NuxtLink
-                  :to="`/dashboard/clients/${client.id}`"
+                  :to="`/clients/${client.id}`"
                   class="text-accent-600 hover:text-accent-900"
                 >
                   View Details
@@ -295,7 +295,7 @@ const sortedClients = computed(() => {
 
 // Navigate to client details
 const navigateToClient = (clientId: string) => {
-  router.push(`/dashboard/clients/${clientId}`)
+  router.push(`/clients/${clientId}`)
 }
 
 // Format date for display

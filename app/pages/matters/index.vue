@@ -2,143 +2,143 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Matters & Services</h1>
-        <p class="text-gray-600 mt-1">Manage your service offerings and product inventory</p>
+        <h1 class="text-3xl font-bold text-gray-900">Client Matters</h1>
+        <p class="text-gray-600 mt-1">Manage client engagements and matters</p>
       </div>
       <UiButton @click="showAddModal = true">
-        Add Matter
+        Add New Matter
       </UiButton>
     </div>
 
-    <!-- Matters Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <UiCard
-        v-for="matter in matters"
-        :key="matter.id"
-        :padding="false"
-        class="hover:shadow-lg transition-shadow"
-      >
-        <div class="p-6">
-          <div class="flex justify-between items-start mb-3">
-            <div class="flex-1">
-              <h3 class="font-semibold text-gray-900 text-lg">{{ matter.name }}</h3>
-              <p v-if="matter.category" class="text-sm text-gray-500">{{ matter.category }}</p>
-            </div>
-            <UiBadge :variant="matter.type === 'RECURRING' ? 'info' : 'default'">
-              {{ matter.type }}
-            </UiBadge>
-          </div>
-          
-          <p v-if="matter.description" class="text-sm text-gray-600 mb-4">
-            {{ matter.description }}
-          </p>
-          
-          <div class="space-y-2 border-t border-gray-200 pt-4">
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Price:</span>
-              <span class="font-semibold text-gray-900">{{ formatCurrency(matter.price) }}</span>
-            </div>
-            <div v-if="matter.type === 'RECURRING' && matter.duration" class="flex justify-between text-sm">
-              <span class="text-gray-600">Billing:</span>
-              <span class="font-medium text-gray-700">{{ matter.duration }}</span>
-            </div>
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Status:</span>
-              <UiBadge :variant="matter.isActive ? 'success' : 'default'" size="sm">
-                {{ matter.isActive ? 'Active' : 'Inactive' }}
-              </UiBadge>
-            </div>
-          </div>
-          
-          <div class="mt-4 flex space-x-2">
-            <button
-              @click="editMatter(matter)"
-              class="flex-1 text-sm text-accent-600 hover:text-accent-900 font-medium"
-            >
-              Edit
-            </button>
-            <button
-              @click="toggleMatterStatus(matter)"
-              class="flex-1 text-sm text-gray-600 hover:text-gray-900 font-medium"
-            >
-              {{ matter.isActive ? 'Deactivate' : 'Activate' }}
-            </button>
-          </div>
+    <!-- Filters -->
+    <UiCard>
+      <div class="flex flex-wrap gap-4 items-end">
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by title, matter #, or client..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+          />
         </div>
-      </UiCard>
-    </div>
+
+        <!-- Status Filter -->
+        <div class="w-40">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select
+            v-model="statusFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+          >
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="PENDING">Pending</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+        </div>
+
+        <!-- Client Filter -->
+        <div class="w-48">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Client</label>
+          <select
+            v-model="clientFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+          >
+            <option value="">All Clients</option>
+            <option v-for="client in clients" :key="client.id" :value="client.id">
+              {{ client.firstName }} {{ client.lastName }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Clear Filters -->
+        <button
+          v-if="hasActiveFilters"
+          @click="clearFilters"
+          class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+        >
+          Clear filters
+        </button>
+      </div>
+    </UiCard>
+
+    <!-- Matters List -->
+    <UiCard>
+      <div v-if="loading" class="text-center py-12">
+        <p class="text-gray-500">Loading matters...</p>
+      </div>
+      <div v-else-if="filteredMatters.length === 0" class="text-center py-12">
+        <p class="text-gray-500">
+          {{ matters.length === 0 ? 'No matters found' : 'No matters match your filters' }}
+        </p>
+      </div>
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matter Title</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr
+              v-for="matter in filteredMatters"
+              :key="matter.id"
+              class="hover:bg-gray-50 cursor-pointer transition-colors"
+              @click="viewMatter(matter.id)"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900">{{ matter.title }}</div>
+                <div class="text-xs text-gray-500">{{ matter.matterNumber || 'No # assigned' }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">{{ getClientName(matter.clientId) }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <UiBadge :variant="getStatusVariant(matter.status)">
+                  {{ matter.status }}
+                </UiBadge>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">
+                  {{ matter.contractDate ? formatDate(matter.contractDate) : '-' }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <button
+                  @click.stop="editMatter(matter)"
+                  class="text-burgundy-600 hover:text-burgundy-900"
+                >
+                  Edit
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </UiCard>
 
     <!-- Add/Edit Matter Modal -->
-    <UiModal v-model="showAddModal" :title="editingMatter ? 'Edit Matter' : 'Add New Matter'" size="lg">
-      <form @submit.prevent="handleSaveMatter" class="space-y-4">
-        <UiInput
-          v-model="matterForm.name"
-          label="Matter Name"
-          placeholder="e.g., Wyoming Asset Protection Trust"
-          required
-        />
-        
-        <UiTextarea
-          v-model="matterForm.description"
-          label="Description"
-          placeholder="Detailed description of this service..."
-          :rows="3"
-        />
-        
-        <div class="grid grid-cols-2 gap-4">
-          <UiInput
-            v-model="matterForm.category"
-            label="Category"
-            placeholder="e.g., Trust, LLC Formation"
-          />
-          
-          <UiSelect
-            v-model="matterForm.type"
-            label="Type"
-            required
-          >
-            <option value="SINGLE">Single Matter (One-time)</option>
-            <option value="RECURRING">Recurring Matter (Ongoing)</option>
-          </UiSelect>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <UiInput
-            v-model="matterForm.price"
-            label="Price ($)"
-            type="number"
-            step="0.01"
-            placeholder="18500.00"
-            required
-          />
-          
-          <UiSelect
-            v-if="matterForm.type === 'RECURRING'"
-            v-model="matterForm.duration"
-            label="Billing Cycle"
-          >
-            <option value="">Select frequency</option>
-            <option value="MONTHLY">Monthly</option>
-            <option value="QUARTERLY">Quarterly</option>
-            <option value="ANNUALLY">Annually</option>
-          </UiSelect>
-        </div>
-      </form>
-      
-      <template #footer>
-        <UiButton variant="outline" @click="closeModal">
-          Cancel
-        </UiButton>
-        <UiButton @click="handleSaveMatter" :is-loading="saving">
-          {{ editingMatter ? 'Update' : 'Create' }} Matter
-        </UiButton>
-      </template>
-    </UiModal>
+    <MatterFormModal
+      v-model="showAddModal"
+      :editing-matter="editingMatter"
+      :clients="clients"
+      :lawyers="lawyers"
+      :engagement-journeys="engagementJourneys"
+      :catalog="catalog"
+      :default-client-id="defaultClientId"
+      @save="handleMatterSaved"
+      @cancel="closeModal"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
@@ -146,100 +146,175 @@ definePageMeta({
   layout: 'dashboard'
 })
 
-const matters = ref<any[]>([])
-const showAddModal = ref(false)
-const saving = ref(false)
-const editingMatter = ref<any>(null)
+const router = useRouter()
 
-const matterForm = ref({
-  name: '',
-  description: '',
-  category: '',
-  type: 'SINGLE',
-  price: '',
-  duration: ''
+const matters = ref<any[]>([])
+const clients = ref<any[]>([])
+const catalog = ref<any[]>([])
+const loading = ref(true)
+const showAddModal = ref(false)
+const editingMatter = ref<any>(null)
+const defaultClientId = ref('')
+
+// Filter state
+const searchQuery = ref('')
+const statusFilter = ref('')
+const clientFilter = ref('')
+
+// Refs for dropdowns
+const lawyers = ref<any[]>([])
+const engagementJourneys = ref<any[]>([])
+
+// Computed: Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return searchQuery.value || statusFilter.value || clientFilter.value
 })
 
+// Computed: Filter matters based on search and filters
+const filteredMatters = computed(() => {
+  let result = matters.value
+
+  // Filter by status
+  if (statusFilter.value) {
+    result = result.filter(m => m.status === statusFilter.value)
+  }
+
+  // Filter by client
+  if (clientFilter.value) {
+    result = result.filter(m => m.clientId === clientFilter.value)
+  }
+
+  // Filter by search query
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(m => {
+      const clientName = getClientName(m.clientId).toLowerCase()
+      const title = (m.title || '').toLowerCase()
+      const matterNumber = (m.matterNumber || m.matter_number || '').toLowerCase()
+      return title.includes(query) || matterNumber.includes(query) || clientName.includes(query)
+    })
+  }
+
+  return result
+})
+
+// Clear all filters
+const clearFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  clientFilter.value = ''
+}
 
 const fetchMatters = async () => {
+  loading.value = true
   try {
-    matters.value = await $fetch('/api/matters')
+    const response = await $fetch<{ matters: any[] }>('/api/matters')
+    matters.value = response.matters || response // Handle both wrapped and unwrapped responses
   } catch (error) {
     console.error('Failed to fetch matters:', error)
+  } finally {
+    loading.value = false
   }
 }
 
-const editMatter = (matter: any) => {
-  editingMatter.value = matter
-  matterForm.value = {
-    name: matter.name,
-    description: matter.description || '',
-    category: matter.category || '',
-    type: matter.type,
-    price: (matter.price / 100).toString(),
-    duration: matter.duration || ''
+const fetchClients = async () => {
+  try {
+    const response = await $fetch<{ clients: any[] }>('/api/clients')
+    clients.value = response.clients || response
+  } catch (error) {
+    console.error('Failed to fetch clients:', error)
   }
+}
+
+const fetchCatalog = async () => {
+  try {
+    const response = await $fetch<any>('/api/catalog')
+    catalog.value = response.services || response || []
+  } catch (error) {
+    console.error('Failed to fetch catalog:', error)
+  }
+}
+
+// Navigate to matter detail page
+const viewMatter = (matterId: string) => {
+  router.push(`/matters/${matterId}`)
+}
+
+const getClientName = (clientId: string) => {
+    const client = clients.value.find(c => c.id === clientId)
+    return client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
+}
+
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case 'OPEN': return 'success'
+    case 'PENDING': return 'warning'
+    case 'CLOSED': return 'default'
+    default: return 'default'
+  }
+}
+
+const formatDate = (dateInput: string | Date | number) => {
+  // Handle Unix timestamp (number), ISO string, or Date object
+  const date = typeof dateInput === 'number'
+    ? new Date(dateInput * 1000)  // Convert Unix timestamp to ms
+    : new Date(dateInput)
+  return date.toLocaleDateString()
+}
+
+
+const editMatter = async (matter: any) => {
+  editingMatter.value = matter
   showAddModal.value = true
 }
 
-const toggleMatterStatus = async (matter: any) => {
-  try {
-    await $fetch(`/api/matters/${matter.id}`, {
-      method: 'PUT',
-      body: { isActive: !matter.isActive }
-    })
-    await fetchMatters()
-  } catch (error) {
-    alert('Failed to update matter status')
-  }
-}
-
-const handleSaveMatter = async () => {
-  saving.value = true
-  try {
-    const payload = {
-      ...matterForm.value,
-      price: parseFloat(matterForm.value.price)
-    }
-    
-    if (editingMatter.value) {
-      await $fetch(`/api/matters/${editingMatter.value.id}`, {
-        method: 'PUT',
-        body: payload
-      })
-    } else {
-      await $fetch('/api/matters', {
-        method: 'POST',
-        body: payload
-      })
-    }
-    
-    closeModal()
-    await fetchMatters()
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to save matter')
-  } finally {
-    saving.value = false
-  }
+const handleMatterSaved = async (matterId?: string) => {
+  await fetchMatters()
+  closeModal()
 }
 
 const closeModal = () => {
   showAddModal.value = false
   editingMatter.value = null
-  matterForm.value = {
-    name: '',
-    description: '',
-    category: '',
-    type: 'SINGLE',
-    price: '',
-    duration: ''
+  defaultClientId.value = ''
+}
+
+// NEW: Fetch lawyers for lead attorney dropdown
+const fetchLawyers = async () => {
+  try {
+    const response = await $api<{ lawyers: any[] }>('/api/matters/lawyers')
+    lawyers.value = response.lawyers || []
+  } catch (error) {
+    console.error('Failed to fetch lawyers:', error)
   }
 }
 
-onMounted(() => {
-  fetchMatters()
+// NEW: Fetch engagement journey templates
+const fetchEngagementJourneys = async () => {
+  try {
+    const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
+    engagementJourneys.value = response.engagementJourneys || []
+  } catch (error) {
+    console.error('Failed to fetch engagement journeys:', error)
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    fetchMatters(),
+    fetchClients(),
+    fetchCatalog(),
+    fetchLawyers(),
+    fetchEngagementJourneys()
+  ])
+
+  // Check if we should auto-open the modal with a pre-filled client
+  const route = useRoute()
+  if (route.query.createNew === 'true' && route.query.clientId) {
+    defaultClientId.value = route.query.clientId as string
+    showAddModal.value = true
+  }
 })
 </script>
-
 
 

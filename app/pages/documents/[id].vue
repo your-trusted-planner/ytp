@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <NuxtLink to="/dashboard/documents" class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block">
+        <NuxtLink to="/documents" class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block">
           ← Back to Documents
         </NuxtLink>
         <h1 class="text-3xl font-bold text-gray-900">{{ document?.title || 'Document' }}</h1>

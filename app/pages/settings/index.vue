@@ -7,7 +7,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- User Management -->
-      <NuxtLink to="/dashboard/settings/users" class="block">
+      <NuxtLink to="/settings/users" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
           <div class="flex items-start space-x-4">
             <div class="p-3 bg-burgundy-50 rounded-lg">
@@ -24,7 +24,7 @@
       </NuxtLink>
 
       <!-- OAuth Providers -->
-      <NuxtLink to="/dashboard/settings/oauth-providers" class="block">
+      <NuxtLink to="/settings/oauth-providers" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
           <div class="flex items-start space-x-4">
             <div class="p-3 bg-blue-50 rounded-lg">
@@ -41,7 +41,7 @@
       </NuxtLink>
 
       <!-- Calendar Administration -->
-      <NuxtLink to="/dashboard/settings/calendars" class="block">
+      <NuxtLink to="/settings/calendars" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
           <div class="flex items-start space-x-4">
             <div class="p-3 bg-green-50 rounded-lg">
@@ -66,7 +66,7 @@
           <p>
             This area is restricted to users with admin level 2 or higher.
             Personal settings like notifications, preferences, and individual calendars
-            can be managed from the <NuxtLink to="/dashboard/profile" class="text-burgundy-600 hover:text-burgundy-700 underline">Profile page</NuxtLink>.
+            can be managed from the <NuxtLink to="/profile" class="text-burgundy-600 hover:text-burgundy-700 underline">Profile page</NuxtLink>.
           </p>
         </div>
       </div>

@@ -399,11 +399,11 @@ async function fetchEngagementJourneys() {
 }
 
 function viewJourney(journeyId: string) {
-  router.push(`/dashboard/my-journeys/${journeyId}`)
+  router.push(`/my-journeys/${journeyId}`)
 }
 
 function viewEngagementJourney(clientJourneyId: string) {
-  router.push(`/dashboard/my-journeys/${clientJourneyId}`)
+  router.push(`/my-journeys/${clientJourneyId}`)
 }
 
 function formatDate(timestamp: number) {

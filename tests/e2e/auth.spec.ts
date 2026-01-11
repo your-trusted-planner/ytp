@@ -1,4 +1,12 @@
 import { test, expect } from '@playwright/test'
+import {
+  PROTECTED_ROUTES,
+  FIRM_ROUTES,
+  ADMIN_ROUTES,
+  CLIENT_ROUTES as CLIENT_ONLY_ROUTES,
+  API_ACCESS_CONTROL,
+  type RouteConfig
+} from '../../shared/routes'
 
 test.describe('Authentication Flow', () => {
   test.describe('Login Page', () => {
@@ -34,22 +42,6 @@ test.describe('Authentication Flow', () => {
     })
   })
 
-  test.describe('Protected Routes', () => {
-    test('should redirect to login when accessing dashboard unauthenticated', async ({ page }) => {
-      await page.goto('/dashboard')
-
-      // Should redirect to login
-      await expect(page).toHaveURL(/login/)
-    })
-
-    test('should redirect to login when accessing clients unauthenticated', async ({ page }) => {
-      await page.goto('/dashboard/clients')
-
-      // Should redirect to login
-      await expect(page).toHaveURL(/login/)
-    })
-  })
-
   test.describe('Public Routes', () => {
     test('should allow access to home page', async ({ page }) => {
       const response = await page.goto('/')
@@ -63,7 +55,90 @@ test.describe('Authentication Flow', () => {
       expect(response?.status()).toBeLessThan(400)
       await expect(page).toHaveURL(/login/)
     })
+
+    test('should allow access to public booking page', async ({ page }) => {
+      const response = await page.goto('/book')
+
+      // Page should load (may redirect or show content)
+      expect(response?.status()).toBeLessThan(500)
+    })
   })
+})
+
+/**
+ * CRITICAL: Protected Route Tests
+ *
+ * Attorney-client privilege requires that unauthenticated users
+ * cannot access any protected routes. These tests verify that
+ * all protected routes redirect to login when unauthenticated.
+ */
+test.describe('Protected Routes - Unauthenticated Access', () => {
+  // Test each protected route individually for clear failure reporting
+  for (const route of PROTECTED_ROUTES) {
+    test(`should redirect ${route.path} (${route.name}) to login when unauthenticated`, async ({ page }) => {
+      await page.goto(route.path)
+
+      // Should redirect to login
+      await expect(page).toHaveURL(/login/, {
+        timeout: 10000
+      })
+    })
+  }
+})
+
+/**
+ * API Authentication Tests
+ *
+ * Verify that protected API endpoints return 401 when accessed
+ * without authentication.
+ */
+test.describe('Protected API Endpoints - Unauthenticated Access', () => {
+  // Firm-only endpoints
+  const firmEndpoints = [
+    '/api/clients',
+    '/api/matters',
+    '/api/documents',
+    '/api/templates',
+    '/api/client-journeys',
+    '/api/services',
+  ]
+
+  for (const endpoint of firmEndpoints) {
+    test(`should require auth for ${endpoint}`, async ({ request }) => {
+      const response = await request.get(endpoint)
+
+      expect(response.status()).toBe(401)
+    })
+  }
+
+  // Admin endpoints
+  const adminEndpoints = [
+    '/api/users',
+    '/api/oauth-providers',
+  ]
+
+  for (const endpoint of adminEndpoints) {
+    test(`should require auth for admin endpoint ${endpoint}`, async ({ request }) => {
+      const response = await request.get(endpoint)
+
+      expect(response.status()).toBe(401)
+    })
+  }
+
+  // Client-specific endpoints
+  const clientEndpoints = [
+    '/api/my-matters',
+    '/api/my-journeys',
+    '/api/client/stats',
+  ]
+
+  for (const endpoint of clientEndpoints) {
+    test(`should require auth for client endpoint ${endpoint}`, async ({ request }) => {
+      const response = await request.get(endpoint)
+
+      expect(response.status()).toBe(401)
+    })
+  }
 })
 
 test.describe('Session API', () => {
@@ -86,7 +161,7 @@ test.describe('Session API', () => {
   })
 })
 
-test.describe('Login API', () => {
+test.describe('Login API Validation', () => {
   test('should reject invalid email format', async ({ request }) => {
     const response = await request.post('/api/auth/login', {
       data: {
@@ -121,21 +196,34 @@ test.describe('Login API', () => {
   })
 })
 
-test.describe('Protected API Endpoints', () => {
-  test('should require auth for /api/users', async ({ request }) => {
-    const response = await request.get('/api/users')
+/**
+ * Sensitive Data Protection Tests
+ *
+ * Verify that endpoints containing sensitive client data
+ * are properly protected and return appropriate error codes.
+ */
+test.describe('Sensitive Data Protection', () => {
+  test('should not expose client data without auth', async ({ request }) => {
+    // Attempt to access a specific client
+    const response = await request.get('/api/clients/some-client-id')
 
     expect(response.status()).toBe(401)
   })
 
-  test('should require auth for /api/clients', async ({ request }) => {
-    const response = await request.get('/api/clients')
+  test('should not expose matter data without auth', async ({ request }) => {
+    const response = await request.get('/api/matters/some-matter-id')
 
     expect(response.status()).toBe(401)
   })
 
-  test('should require auth for /api/documents', async ({ request }) => {
-    const response = await request.get('/api/documents')
+  test('should not expose document data without auth', async ({ request }) => {
+    const response = await request.get('/api/documents/some-doc-id')
+
+    expect(response.status()).toBe(401)
+  })
+
+  test('should not expose journey data without auth', async ({ request }) => {
+    const response = await request.get('/api/client-journeys/some-journey-id')
 
     expect(response.status()).toBe(401)
   })
