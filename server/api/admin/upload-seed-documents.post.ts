@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const blob = hubBlob()
+  // blob is auto-imported from hub:blob
   const uploadedFiles: Array<{ filename: string; path: string; group: string }> = []
   const errors: Array<{ filename: string; error: string }> = []
 

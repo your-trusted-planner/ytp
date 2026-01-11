@@ -26,7 +26,7 @@ export default {
         const { useDrizzle, schema } = await import('../db')
         const { eq, sql } = await import('drizzle-orm')
         const db = useDrizzle()
-        const blob = hubBlob()
+        // blob is auto-imported from hub:blob
 
         // Fetch DOCX file from R2
         const file = await blob.get(blobPath)

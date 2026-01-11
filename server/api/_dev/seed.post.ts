@@ -29,15 +29,36 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Seed the database
-    await seedDatabase(db)
+    // Seed the database (blob is auto-imported from hub:blob)
+    await seedDatabase(db, blob)
 
     return {
       success: true,
       message: 'Database seeded successfully!',
-      credentials: {
-        lawyer: { email: 'lawyer@yourtrustedplanner.com', password: 'password123' },
-        client: { email: 'client@test.com', password: 'password123' }
+      accounts: {
+        admin: { email: 'admin@trustandlegacy.test', password: 'password123', role: 'ADMIN' },
+        lawyers: [
+          { email: 'john.meuli@yourtrustedplanner.com', password: 'password123', role: 'LAWYER' },
+          { email: 'mary.parker@trustandlegacy.test', password: 'password123', role: 'LAWYER' }
+        ],
+        staff: { email: 'lisa.chen@trustandlegacy.test', password: 'password123', role: 'STAFF' },
+        advisor: { email: 'bob.advisor@external.test', password: 'password123', role: 'ADVISOR' },
+        clients: [
+          { email: 'jane.doe@test.com', password: 'password123', role: 'CLIENT', status: 'active matter' },
+          { email: 'michael.johnson@test.com', password: 'password123', role: 'CLIENT', status: 'prospect' },
+          { email: 'sarah.williams@test.com', password: 'password123', role: 'CLIENT', status: 'completed' }
+        ]
+      },
+      data: {
+        users: 8,
+        clientProfiles: 3,
+        matters: 3,
+        journeys: 1,
+        journeySteps: 7,
+        clientJourneys: 3,
+        actionItems: 11,
+        people: 5,
+        documents: 4
       }
     }
   } catch (error: any) {
