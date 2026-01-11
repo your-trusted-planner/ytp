@@ -1,6 +1,8 @@
-# Your Trusted Planner - Client Portal (Nuxt 4 + NuxtHub)
+# Your Trusted Planner - Client Portal
 
-## 🚀 Quick Start
+A modern estate planning client portal built with Nuxt 4 and NuxtHub, deployed on Cloudflare's edge infrastructure.
+
+## Quick Start
 
 ```bash
 # Install dependencies
@@ -8,76 +10,156 @@ pnpm install
 
 # Run development server
 pnpm dev
+
+# Open http://localhost:3000
 ```
 
-Visit **http://localhost:3000** (or the port shown in terminal)
+**That's it!** The database auto-seeds on first request with test data.
 
-## 🔐 Login Page
+## Test Accounts
 
-The login page is fully functional at `/login` with identical design to the original Next.js version:
-- Navy blue background (#0A2540)
-- Burgundy CTA button (#C41E3A)
-- YTP logo
-- Clean, professional layout
+After auto-seeding, these accounts are available:
 
-## ⚠️ Important Notes
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@trustandlegacy.test | password123 |
+| Lawyer | john.meuli@yourtrustedplanner.com | password123 |
+| Lawyer | mary.parker@trustandlegacy.test | password123 |
+| Staff | lisa.chen@trustandlegacy.test | password123 |
+| Advisor | bob.advisor@external.test | password123 |
+| Client (Active) | jane.doe@test.com | password123 |
+| Client (Prospect) | michael.johnson@test.com | password123 |
+| Client (Completed) | sarah.williams@test.com | password123 |
 
-### Local Development Fully Functional
-The app uses **NuxtHub Core** which provides local development support for Cloudflare services (D1, R2, KV) via Miniflare.
+## Development Scripts
 
-In local development:
-- ✅ All pages load correctly
-- ✅ UI components work
-- ✅ Database works locally (SQLite via Miniflare)
-- ✅ Login and authentication work
-- ✅ File uploads to R2 work locally
-- ✅ Full feature parity with production
+```bash
+pnpm dev              # Start dev server (auto-seeds if empty)
+pnpm db:seed          # Manually trigger seed via API
+pnpm db:generate      # Generate migrations from schema changes
+pnpm db:studio        # Open Drizzle Studio for database inspection
+pnpm test             # Run unit tests
+pnpm test:e2e         # Run Playwright E2E tests
+pnpm lint             # Run ESLint
+```
 
-Run migrations locally with: `pnpm db:migrate`
+## Tech Stack
 
-## 📦 What's Been Rebuilt
+| Layer | Technology |
+|-------|------------|
+| Framework | Nuxt 4 |
+| Database | Cloudflare D1 (SQLite at edge) |
+| ORM | Drizzle |
+| Storage | Cloudflare R2 (blob storage) |
+| Hosting | Cloudflare Workers + Pages |
+| Platform | NuxtHub Core |
+| Styling | Tailwind CSS |
+| Language | TypeScript |
+| Document Processing | Custom DOCX parser (fflate + fast-xml-parser) |
+| Template Rendering | Handlebars |
+| Authentication | nuxt-auth-utils + Firebase OAuth |
 
-- ✅ Complete authentication system
-- ✅ Login page (identical design)
-- ✅ Dashboard layout with sidebar
-- ✅ Lawyer & client dashboards
-- ✅ All UI components in Vue 3
-- ✅ API routes for stats, documents, appointments
-- ✅ Database schema (9 tables) 
-- ✅ Tailwind styling (brand colors)
+## Project Structure
 
-## 🔧 Tech Stack
+```
+app/
+├── pages/           # Application pages
+├── components/      # Vue components
+├── layouts/         # Page layouts
+├── middleware/      # Client-side route guards
+└── composables/     # Vue composables
 
-- **Framework:** Nuxt 4
-- **Database:** Cloudflare D1 (SQLite at edge)
-- **Storage:** Cloudflare R2 (for files)
-- **Hosting:** Cloudflare Pages + Workers
-- **Platform:** NuxtHub Core (local dev + deployment)
-- **ORM:** Drizzle
-- **Styling:** Tailwind CSS
-- **Language:** TypeScript
-- **Document Processing:** Custom DOCX parser (fflate + fast-xml-parser) for Cloudflare Workers compatibility
+server/
+├── api/             # API endpoints
+├── db/              # Database schema, migrations, seed
+├── middleware/      # Server middleware (auth)
+├── plugins/         # Nitro plugins (auto-seed)
+├── utils/           # Server utilities
+└── queue/           # Cloudflare Queue handlers
 
-## 📁 Key Directories
+doc/                 # Technical documentation
+tests/               # Unit and E2E tests
+```
 
-- `app/pages/` - Application pages (login, dashboard, etc.)
-- `app/components/` - Vue components
-- `app/layouts/` - Page layouts
-- `server/api/` - API endpoints
-- `server/database/` - Database schema & migrations
-- `server/middleware/` - Route guards
-- `doc/` - Technical documentation
+## Key Features
 
-## 🎨 Brand Colors
+### Authentication
+- Email/password authentication
+- OAuth providers via Firebase (Google, Microsoft, Apple, Facebook)
+- Role-based access control (ADMIN, LAWYER, STAFF, ADVISOR, CLIENT)
 
-- **Navy:** #0A2540
-- **Burgundy/Accent:** #C41E3A
+### Document System
+- DOCX template upload with automatic variable extraction
+- Handlebars-based template rendering
+- Document generation with variable substitution
+- R2 blob storage for DOCX files
 
-## 📚 Documentation
+### Journey Workflows
+- Multi-step client journeys
+- Action items with various types (signature, upload, payment, etc.)
+- Progress tracking and milestone management
 
-- **COMPLETE_IMPLEMENTATION_SUMMARY.md** - Comprehensive project overview
-- **FINAL_STATUS_COMPLETE.md** - Current implementation status
-- **doc/DOCUMENTATION_CLEANUP_ANALYSIS.md** - Documentation organization guide
-- **CLOUDFLARE_SETUP.md** - Deployment instructions
-- **doc/wydapt-seeding-production.md** - WYDAPT document seeding guide
-- **doc/docx-processing-architecture.md** - Custom DOCX parser implementation
+### Development Features
+- **Auto-seeding**: Empty databases automatically seed on first request
+- **Real DOCX content**: Seed data includes actual parsed DOCX templates
+- **Comprehensive test data**: 8 users, 3 matters, journeys, documents, relationships
+
+## Database Management
+
+### Schema Changes
+1. Modify `server/db/schema.ts`
+2. Run `pnpm db:generate` to create migration
+3. Migrations auto-apply on dev server restart
+
+### Seeding
+- **Automatic**: Dev server seeds empty database on first request
+- **Manual**: `pnpm db:seed` or POST to `/api/_dev/seed`
+- **Reset**: Delete `.wrangler/state/` and restart dev server
+
+## Environment Variables
+
+### Required for OAuth (optional feature)
+```env
+NUXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NUXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NUXT_FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
+```
+
+### Session Secret (auto-generated in dev)
+```env
+NUXT_SESSION_PASSWORD=your-32-char-secret
+```
+
+## Deployment
+
+### Preview (stage branch)
+```bash
+git push origin stage
+# Auto-deploys to app-preview.trustandlegacy.com
+```
+
+### Production (main branch)
+```bash
+git push origin main
+# Auto-deploys to app.trustandlegacy.com
+```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [CURRENT_STATUS.md](doc/CURRENT_STATUS.md) | Project status and recent changes |
+| [CLAUDE.md](CLAUDE.md) | AI assistant guidelines |
+| [API_AUDIT_REPORT.md](doc/API_AUDIT_REPORT.md) | API endpoint documentation |
+| [entity-relationship-diagram.md](doc/entity-relationship-diagram.md) | Database schema |
+| [docx-processing-architecture.md](doc/docx-processing-architecture.md) | Document processing |
+
+## Brand Colors
+
+- **Navy**: #0A2540
+- **Burgundy/Accent**: #C41E3A
+
+## License
+
+Proprietary - Your Trusted Planner, LLC

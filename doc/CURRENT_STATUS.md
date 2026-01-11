@@ -1,10 +1,54 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-09
+**Last Updated**: 2026-01-10
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Comprehensive Seed Data & Auto-Seeding (2026-01-10)
+- **Status**: Complete ✅
+- **What**: Enhanced seed data with real DOCX content and automatic seeding on empty database
+- **Key Features**:
+  - **Auto-seeding**: Dev server automatically seeds on first request if database is empty
+  - **Real DOCX content**: Templates and documents use actual DOCX files from `doc/word_document_templates/`
+  - **Document blobs**: Both templates and documents now have DOCX files stored in R2 blob storage
+  - **Rendered HTML**: Documents contain properly rendered HTML with variables substituted
+  - **8 test accounts**: All roles covered (ADMIN, LAWYER, STAFF, ADVISOR, CLIENT)
+  - **Comprehensive relationships**: People, client relationships, matter relationships
+- **Seed Data Includes**:
+  - 8 users (all roles)
+  - 3 client profiles
+  - 3 matters (OPEN, PENDING, CLOSED)
+  - 2 matter-service engagements
+  - 1 journey template with 7 steps
+  - 3 client journeys (IN_PROGRESS, COMPLETED, NOT_STARTED)
+  - 14 journey step progress records
+  - 11 action items
+  - 5 people records
+  - 4 client relationships
+  - 4 matter relationships
+  - 4 documents with DOCX blobs
+  - 3 document templates with DOCX blobs
+- **New Utility**: `server/utils/template-upload.ts` - Reusable DOCX processing for uploads and seeding
+- **Files Created/Modified**:
+  - `server/db/seed.ts` - Enhanced with real DOCX content
+  - `server/plugins/database.ts` - Auto-seeding on first request
+  - `server/utils/template-upload.ts` - New reusable utility
+  - `server/api/_dev/seed.post.ts` - Updated response with all test accounts
+- **Migration**: `0059_rename_counsel_to_attorney.sql` - Fixed column naming mismatch
+
+#### hubBlob() Deprecation Fix (2026-01-10)
+- **Status**: Complete ✅
+- **What**: Updated all files using deprecated `hubBlob()` to use auto-imported `blob` from `hub:blob`
+- **Files Updated**:
+  - `server/api/document-uploads/index.post.ts`
+  - `server/api/templates/upload.post.ts`
+  - `server/api/_dev/seed.post.ts`
+  - `server/queue/document-processor.ts`
+  - `server/api/admin/seed-wydapt.post.ts`
+  - `server/api/admin/upload-seed-documents.post.ts`
+- **Note**: `blob` is now auto-imported from `hub:blob` module in NuxtHub 0.10.x
 
 #### Role Structure Clarification (2026-01-09)
 - **Status**: Complete ✅
@@ -324,24 +368,11 @@ Document (N) ──→ Matter (1)
   - https://semgrep.dev/docs/getting-started/
   - https://github.com/returntocorp/semgrep-action
 
-### 1. Development Seed Data Improvements
-- **Status**: Needed
-- **Priority**: Medium-High (blocks efficient local development)
-- **Goal**: Comprehensive seed data that covers all features for local testing
-- **Current State**: Basic seed data exists but insufficient for full feature testing
-- **Needs**:
-  - Complete user accounts with various roles (ADMIN, LAWYER, STAFF, CLIENT, ADVISOR)
-  - Sample matters with engaged services
-  - Journey templates with steps and action items
-  - Client journeys in various states (NOT_STARTED, IN_PROGRESS, COMPLETED)
-  - Sample documents attached to matters
-  - OAuth providers for Firebase auth testing
-  - People records with relationships
-- **Implementation Options**:
-  - Expand existing seed script (`/server/api/test/seed.post.ts`)
-  - Create separate dev seed script with comprehensive data
-  - Export/import from preview environment as seed baseline
-- **Benefit**: Faster development cycles, consistent testing baseline
+### ~~1. Development Seed Data Improvements~~ ✅ COMPLETED (2026-01-10)
+- **Status**: Complete ✅
+- See "Comprehensive Seed Data & Auto-Seeding" in Recently Completed section above
+- All requirements met: users, matters, journeys, documents, people, relationships
+- Auto-seeding on empty database for zero-config development startup
 
 ### 1. Schema Extraction Architecture
 - **Status**: Documented, not implemented
@@ -538,6 +569,27 @@ The following files can be moved to `/doc/archive/` as they represent historical
 
 ## 💬 Notes from Last Session
 
+**Session 2026-01-10**:
+- **Focus**: Seed Data Improvements & Auto-Seeding
+- **Achievements**:
+  - ✅ Comprehensive seed data with 8 users, 3 matters, journeys, documents, relationships
+  - ✅ Real DOCX content from `doc/word_document_templates/` parsed and stored
+  - ✅ Documents now have DOCX blobs in R2 storage (not just templates)
+  - ✅ Template renderer integration for variable substitution in seed documents
+  - ✅ Auto-seeding on first request when database is empty (dev only)
+  - ✅ New `server/utils/template-upload.ts` utility for reusable DOCX processing
+  - ✅ Fixed deprecated `hubBlob()` across 6 files (now auto-imported `blob`)
+  - ✅ Migration 0059 to fix column naming (counsel_approved → attorney_approved)
+  - ✅ Updated README.md with modern quick-start guide
+- **Developer Experience**:
+  - `pnpm dev` + open browser = fully seeded database ready to test
+  - No manual seed step required for fresh development
+  - Test accounts documented in README.md
+- **Technical Notes**:
+  - Auto-seed uses `nitroApp.hooks.hookOnce('request', ...)` to ensure migrations run first
+  - Seed reads DOCX files from filesystem, processes with template-upload utility
+  - Documents get copies of template DOCX blobs with unique paths
+
 **Session 2026-01-09**:
 - **Focus**: Activity Logging System & Role Structure Clarification
 - **Achievements**:
@@ -596,5 +648,5 @@ The following files can be moved to `/doc/archive/` as they represent historical
 1. **SEMGREP GitHub Action** - Set up security scanning workflow
 2. **Continue API normalization** - Fix remaining endpoints as features are tested (on-demand)
 3. **UI restructuring** - Phase 1-2 of matter-centric architecture plan
-4. **Seed data improvements** - Better development data for testing
-5. **Schema extraction** - Begin document template analysis and journey generation
+4. **Schema extraction** - Begin document template analysis and journey generation
+5. **E-signature integration** - PandaDoc or similar for document signing workflow
