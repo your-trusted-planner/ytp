@@ -1,6 +1,6 @@
 <template>
   <NuxtLink
-    :to="`/dashboard/help?topic=${topic}`"
+    :to="`/help?topic=${topic}`"
     :title="title || 'Get help'"
     class="inline-flex items-center justify-center text-gray-400 hover:text-burgundy-500 transition-colors"
     :class="sizeClasses"

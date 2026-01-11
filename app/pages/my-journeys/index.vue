@@ -137,7 +137,7 @@ function formatStatus(status: string) {
 
 // View journey progress
 function viewProgress(journeyId: string) {
-  router.push(`/dashboard/my-journeys/${journeyId}`)
+  router.push(`/my-journeys/${journeyId}`)
 }
 
 onMounted(() => {

@@ -42,7 +42,7 @@
                 {{ doc.status }}
               </UiBadge>
               <NuxtLink
-                :to="`/dashboard/documents/${doc.id}`"
+                :to="`/documents/${doc.id}`"
                 class="text-sm text-accent-600 hover:text-accent-900"
               >
                 View

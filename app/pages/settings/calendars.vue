@@ -16,7 +16,7 @@
         <div class="mt-6">
           <p class="text-xs text-gray-400">
             Individual users can manage their own calendars from their
-            <NuxtLink to="/dashboard/profile" class="text-burgundy-600 hover:text-burgundy-700 underline">
+            <NuxtLink to="/profile" class="text-burgundy-600 hover:text-burgundy-700 underline">
               Profile page
             </NuxtLink>.
           </p>

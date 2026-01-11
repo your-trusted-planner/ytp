@@ -134,7 +134,7 @@
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Client Matters</h3>
-            <UiButton size="sm" @click="$router.push(`/dashboard/matters?createNew=true&clientId=${clientId}`)">
+            <UiButton size="sm" @click="$router.push(`/matters?createNew=true&clientId=${clientId}`)">
               <Plus class="w-4 h-4 mr-1" />
               Create Matter
             </UiButton>
@@ -149,7 +149,7 @@
               v-for="matter in matters"
               :key="matter.id"
               class="p-4 border border-gray-200 rounded-lg hover:border-burgundy-500 transition-colors cursor-pointer"
-              @click="$router.push(`/dashboard/matters/${matter.id}`)"
+              @click="$router.push(`/matters/${matter.id}`)"
             >
               <div class="flex justify-between items-start mb-3">
                 <div>
@@ -585,7 +585,7 @@ async function fetchClient() {
 
 // View journey
 function viewJourney(journeyId: string) {
-  router.push(`/dashboard/my-journeys/${journeyId}`)
+  router.push(`/my-journeys/${journeyId}`)
 }
 
 // Add note

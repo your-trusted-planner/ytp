@@ -90,7 +90,7 @@
           <NuxtLink
             v-for="doc in documents"
             :key="doc.id"
-            :to="`/dashboard/documents/${doc.id}`"
+            :to="`/documents/${doc.id}`"
             class="block p-3 border border-gray-200 rounded-lg hover:border-burgundy-500 hover:bg-burgundy-50 transition-colors"
           >
             <div class="flex items-center justify-between">
@@ -155,19 +155,19 @@ const appointments = ref<any[]>([])
 
 const quickActions = [
   {
-    href: '/dashboard/documents',
+    href: '/documents',
     icon: FileText,
     title: 'My Documents',
     description: 'View and sign documents'
   },
   {
-    href: '/dashboard/appointments',
+    href: '/appointments',
     icon: Calendar,
     title: 'Schedule Meeting',
     description: 'Book time with your lawyer'
   },
   {
-    href: '/dashboard/profile',
+    href: '/profile',
     icon: UserCircle,
     title: 'Update Profile',
     description: 'Manage your information'

@@ -122,19 +122,19 @@ const statCards = computed(() => [
 
 const quickActions = [
   {
-    href: '/dashboard/clients',
+    href: '/clients',
     icon: Users,
     title: 'View Clients',
     description: 'Manage your client list'
   },
   {
-    href: '/dashboard/templates',
+    href: '/templates',
     icon: FileText,
     title: 'Templates',
     description: 'Create and manage document templates'
   },
   {
-    href: '/dashboard/schedule',
+    href: '/schedule',
     icon: Calendar,
     title: 'Schedule',
     description: 'View your calendar and appointments'

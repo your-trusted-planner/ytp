@@ -451,7 +451,7 @@
 
         <div class="border border-gray-200 rounded p-4 max-h-96 overflow-auto">
           <h5 class="font-semibold text-gray-900 mb-3">Template Content Preview</h5>
-          <div class="prose prose-sm max-w-none" v-html="viewingTemplate.content"></div>
+          <div class="prose prose-sm max-w-none" v-html="sanitizedTemplateContent"></div>
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
@@ -518,7 +518,7 @@ const uploadForm = ref({
 const templateVariables = computed(() => {
   const template = selectedTemplate.value || viewingTemplate.value
   if (!template || !template.variables) return []
-  
+
   try {
     const parsed = JSON.parse(template.variables)
     // Handle both array of strings and array of objects
@@ -538,6 +538,9 @@ const templateVariables = computed(() => {
     return []
   }
 })
+
+// Sanitize template content to prevent XSS attacks when rendering with v-html
+const sanitizedTemplateContent = useSanitizedHtml(() => viewingTemplate.value?.content)
 
 // Fetch templates
 async function fetchTemplates() {
@@ -842,7 +845,7 @@ async function generateDocument() {
     showUseTemplateModal.value = false
     
     // Navigate to document detail page
-    router.push(`/dashboard/documents/${document.id}`)
+    router.push(`/documents/${document.id}`)
   } catch (error: any) {
     console.error('Failed to generate document:', error)
     alert(`Error generating document: ${error.data?.message || error.message || 'Unknown error'}`)

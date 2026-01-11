@@ -143,12 +143,12 @@ const navigationConfig = ref([
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
 
   // Staff-only sections
-  { path: '/dashboard/clients', label: 'Clients', icon: Users, roles: FIRM_ROLES },
-  { path: '/dashboard/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
-  { path: '/dashboard/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
-  { path: '/dashboard/documents', label: 'Documents', icon: File, roles: FIRM_ROLES },
-  { path: '/dashboard/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
-  { path: '/dashboard/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
+  { path: '/clients', label: 'Clients', icon: Users, roles: FIRM_ROLES },
+  { path: '/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
+  { path: '/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
+  { path: '/documents', label: 'Documents', icon: File, roles: FIRM_ROLES },
+  { path: '/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
+  { path: '/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
 
   // Configuration section - staff only
   {
@@ -157,22 +157,22 @@ const navigationConfig = ref([
     isOpen: false,
     roles: FIRM_ROLES,
     children: [
-      { path: '/dashboard/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
-      { path: '/dashboard/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
-      { path: '/dashboard/templates', label: 'Document Templates', icon: Copy, roles: FIRM_ROLES }
+      { path: '/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
+      { path: '/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
+      { path: '/templates', label: 'Document Templates', icon: Copy, roles: FIRM_ROLES }
     ]
   },
 
   // Client-facing sections (engaged clients only)
-  { path: '/dashboard/my-journeys', label: 'My Journeys', icon: Map, roles: CLIENT_ROLES },
-  { path: '/dashboard/my-matters', label: 'My Matters', icon: Briefcase, roles: CLIENT_ROLES },
+  { path: '/my-journeys', label: 'My Journeys', icon: Map, roles: CLIENT_ROLES },
+  { path: '/my-matters', label: 'My Matters', icon: Briefcase, roles: CLIENT_ROLES },
 
   // Appointments - clients and prospects can book/view
-  { path: '/dashboard/appointments', label: 'Appointments', icon: Calendar, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
-  { path: '/dashboard/documents', label: 'My Documents', icon: File, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
+  { path: '/appointments', label: 'Appointments', icon: Calendar, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
+  { path: '/documents', label: 'My Documents', icon: File, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
 
   // Profile - visible to all
-  { path: '/dashboard/profile', label: 'Profile', icon: UserCircle, roles: ALL_ROLES },
+  { path: '/profile', label: 'Profile', icon: UserCircle, roles: ALL_ROLES },
 
   // Settings section - requires admin level 2+
   {
@@ -182,14 +182,14 @@ const navigationConfig = ref([
     roles: ALL_ROLES, // Role check bypassed, uses adminLevel instead
     minAdminLevel: 2,
     children: [
-      { path: '/dashboard/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/dashboard/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/dashboard/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 }
+      { path: '/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 }
     ]
   },
 
   // Help - visible to all
-  { path: '/dashboard/help', label: 'Help', icon: HelpCircle, roles: ALL_ROLES }
+  { path: '/help', label: 'Help', icon: HelpCircle, roles: ALL_ROLES }
 ])
 
 // Filter navigation items based on user's role and admin level

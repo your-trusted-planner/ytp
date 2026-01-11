@@ -269,12 +269,12 @@ async function onDragEnd(event: any, newStepId: string) {
 
 // View client details
 function viewClient(clientJourney: any) {
-  router.push(`/dashboard/clients/${clientJourney.client_id}`)
+  router.push(`/clients/${clientJourney.client_id}`)
 }
 
 // View progress
 function viewProgress(clientJourneyId: string) {
-  router.push(`/dashboard/client-journeys/${clientJourneyId}/progress`)
+  router.push(`/client-journeys/${clientJourneyId}/progress`)
 }
 
 // Send reminder

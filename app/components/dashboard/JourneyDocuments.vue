@@ -235,7 +235,7 @@ async function sendDocument(docId: string) {
 // View document
 function viewDocument(docId: string) {
   // Navigate to document viewer
-  navigateTo(`/dashboard/documents/${docId}`)
+  navigateTo(`/documents/${docId}`)
 }
 
 // Request notarization

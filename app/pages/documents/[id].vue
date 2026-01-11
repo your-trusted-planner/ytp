@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <NuxtLink to="/dashboard/documents" class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block">
+        <NuxtLink to="/documents" class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block">
           ← Back to Documents
         </NuxtLink>
         <h1 class="text-3xl font-bold text-gray-900">{{ document?.title || 'Document' }}</h1>
@@ -261,7 +261,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
-import DOMPurify from 'dompurify'
 
 definePageMeta({
   middleware: 'auth',
@@ -347,12 +346,8 @@ const needsVariables = computed(() => {
   return documentVariables.value.length > 0
 })
 
-const renderedContent = computed(() => {
-  // Content is rendered by Handlebars on the server
-  // Sanitize with DOMPurify to prevent XSS attacks
-  const content = document.value?.content || ''
-  return DOMPurify.sanitize(content)
-})
+// Sanitize document content to prevent XSS attacks when rendering with v-html
+const renderedContent = useSanitizedHtml(() => document.value?.content)
 
 const fetchDocument = async () => {
   loading.value = true
