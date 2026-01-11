@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
   // Skip auth for public routes
   if (
     path.startsWith('/api/public/') ||
+    path.startsWith('/api/signature/') || // E-signature public endpoints (token-based auth)
     path.startsWith('/api/_') || // Dev/internal routes
     path.startsWith('/_') ||
     path === '/api/auth/login' ||

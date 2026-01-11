@@ -51,6 +51,7 @@ export const ALL_ROLES: UserRole[] = ['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADV
 export const PUBLIC_ROUTES: RouteConfig[] = [
   { path: '/login', name: 'Login', requiresAuth: false, allowedRoles: 'ANY' },
   { path: '/book', name: 'Public Booking', requiresAuth: false, allowedRoles: 'ANY' },
+  { path: '/sign/:token', name: 'E-Signature', requiresAuth: false, allowedRoles: 'ANY' },
 ]
 
 /**
@@ -217,6 +218,7 @@ export const API_ACCESS_CONTROL = {
     '/api/auth/firebase',
     '/api/oauth-providers/enabled',
     '/api/public/*',
+    '/api/signature/*', // E-signature public endpoints (token-based access)
   ],
 
   // Firm-only APIs (lawyer, staff, admin)

@@ -1,10 +1,72 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-10
+**Last Updated**: 2026-01-11
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### E-Signature Integration Phase 3 Complete (2026-01-11)
+- **Status**: Complete ✅
+- **What**: Completed Phase 3 of e-signature integration - Attorney workflow with email notifications, signatures dashboard, and reminder/revoke functionality
+- **Key Achievements**:
+  - **Resend Email Integration**: Transactional emails via Resend API for signature requests and reminders
+  - **Signatures Dashboard**: New `/signatures` page with status summary cards, filterable table, and action buttons
+  - **Reminder System**: Send reminder emails with optional expiration extension
+  - **Revoke Functionality**: Attorneys can revoke pending signature sessions
+  - **Signed PDF Download**: Public download endpoint for signed documents via signing token
+  - **CSS Layout Fix**: Fixed flexbox overflow issue on /clients page with `min-w-0`
+- **API Endpoints Created**:
+  - `GET /api/signature-sessions` - List sessions with filtering by status, counts for dashboard
+  - `POST /api/signature-sessions/[id]/resend` - Send reminder, extend expiration
+  - `POST /api/signature-sessions/[id]/revoke` - Revoke pending sessions
+  - `GET /api/signature/[token]/download` - Public download for signed PDFs
+- **Files Created**:
+  - `server/utils/email.ts` - Resend email utility with templates
+  - `server/api/signature-sessions/index.get.ts`
+  - `server/api/signature-sessions/[id]/resend.post.ts`
+  - `server/api/signature-sessions/[id]/revoke.post.ts`
+  - `server/api/signature/[token]/download.get.ts`
+  - `app/pages/signatures.vue` - Full dashboard with modals
+- **Files Modified**:
+  - `app/layouts/dashboard.vue` - Added E-Signatures nav item, fixed CSS overflow
+  - `app/pages/documents/[id].vue` - Email checkbox/message in signature modal
+  - `server/api/documents/[id]/signature-session.post.ts` - Email integration
+  - `app/components/signature/SigningCeremony.vue` - Download button on completion
+- **Environment Variables**:
+  - `RESEND_API_KEY` - Resend API key (required for email)
+  - `NUXT_EMAIL_FROM` - From address for emails
+- **Phase Status**:
+  - ✅ Phase 1: Signature session infrastructure
+  - ✅ Phase 2: Standard signature UI
+  - ✅ Phase 3: Attorney workflow integration
+  - ⏳ Phase 4: Enhanced signature (KYC integration) - Future
+  - ⏳ Phase 5: ESIGN action item integration - Future
+
+#### RBAC Testing Infrastructure & Page Restructuring (2026-01-10)
+- **Status**: Complete ✅
+- **What**: Comprehensive access control testing and flat page structure
+- **Key Achievements**:
+  - **Centralized Route Configuration**: Created `shared/routes.ts` as single source of truth for all routes and access requirements
+  - **Expanded E2E Auth Tests**: From 2 protected route tests to 46 comprehensive tests covering all routes
+  - **RBAC E2E Tests**: New test file for role-based access control scenarios
+  - **Route Unit Tests**: 61 tests covering route configuration and access control helpers
+  - **Page Restructuring**: Moved all pages from `/app/pages/dashboard/` to flat structure at `/app/pages/`
+- **Test Coverage**:
+  - All 18 protected routes tested for unauthenticated redirect
+  - All API endpoint categories tested (firm, admin, client)
+  - Cross-role access matrix tests
+  - Sensitive data protection tests
+  - Client data isolation tests
+- **Files Created**:
+  - `shared/routes.ts` - Route configuration with access requirements
+  - `tests/e2e/rbac.spec.ts` - Role-based access control E2E tests
+  - `tests/unit/routes.test.ts` - Route configuration unit tests
+- **Files Modified**:
+  - `tests/e2e/auth.spec.ts` - Expanded from 10 to 46 tests
+  - All pages moved from `app/pages/dashboard/` to `app/pages/`
+  - `app/layouts/dashboard.vue` - Updated navigation paths
+- **Why**: Attorney-client privilege requires comprehensive access control verification
 
 #### Semgrep Security Fixes & UI Restructuring Completion (2026-01-10)
 - **Status**: Complete ✅
@@ -21,10 +83,10 @@
   - `server/api/my-matters/index.get.ts` - Secure client matters endpoint
 - **Files Modified**:
   - `server/api/client-journeys/[id]/advance.post.ts` - Auto-start service journeys
-  - `app/pages/dashboard/matters/index.vue` - Added filters/search
-  - `app/pages/dashboard/my-matters/index.vue` - Uses secure endpoint
-  - `app/pages/dashboard/documents/[id].vue` - Uses useSanitizedHtml
-  - `app/pages/dashboard/templates/index.vue` - Uses useSanitizedHtml
+  - `app/pages/matters/index.vue` - Added filters/search
+  - `app/pages/my-matters/index.vue` - Uses secure endpoint
+  - `app/pages/documents/[id].vue` - Uses useSanitizedHtml
+  - `app/pages/templates/index.vue` - Uses useSanitizedHtml
   - `tests/unit/template-renderer.test.ts` - Suppressed console.error in error tests
 - **UI Restructuring Plan**: Marked as COMPLETED (all phases done)
 
@@ -408,22 +470,42 @@ Document (N) ──→ Matter (1)
 - **Need**: Record payments, view payment history, calculate balances
 - **Location**: Matter detail view (Payments tab)
 
-### ~~4. Journey-Matter Workflow Fix (Phase 4)~~ ✅ COMPLETED (2026-01-10)
+### 4. Toast Notifications & UI Polish
+- **Status**: Planned
+- **Problem**: Many places in the app use browser `alert()` for notifications (success, error, info messages)
+- **Scope**:
+  - **Toast notifications**: Replace all `alert()` calls with styled toast components (success, error, warning, info variants)
+  - **Styled tooltips**: Improve tooltip styling throughout the app (currently using native `title` attributes)
+  - **Confirmation dialogs**: Consistent styled modals for destructive actions (already have UiModal, ensure consistent usage)
+  - **Loading states**: Audit and improve loading indicators across the app
+- **Files to audit for `alert()` usage**:
+  - `app/pages/signatures.vue` - copySigningLink, sendReminder, revokeSession
+  - `app/pages/documents/[id].vue` - signature session creation
+  - `app/components/signature/SigningCeremony.vue` - download error handling
+  - Various other pages with form submissions
+- **Implementation approach**:
+  - Create `useToast` composable with `toast.success()`, `toast.error()`, `toast.warning()`, `toast.info()` methods
+  - Toast container component in layout (fixed position, stacking)
+  - Auto-dismiss with configurable duration
+  - Optional action buttons in toasts
+- **Libraries to consider**: Vue Toastification, or build lightweight custom solution
+
+### ~~5. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - **Implementation**: Auto-start service journeys when engagement journey completes
 - When ENGAGEMENT journey completes, automatically creates client journeys for all engaged services
 - Backend already validates matter-service engagement before manual journey creation
 - See `server/api/client-journeys/[id]/advance.post.ts`
 
-### ~~5. Enhanced Matter List View (Phase 5)~~ ✅ COMPLETED (2026-01-10)
+### ~~6. Enhanced Matter List View~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - Added search input (title, matter #, client name)
 - Added status filter (All/Open/Pending/Closed)
 - Added client filter dropdown
 - Added "Clear filters" button
-- See `app/pages/dashboard/matters/index.vue`
+- See `app/pages/matters/index.vue`
 
-### ~~6. Client Experience Improvements (Phase 6)~~ ✅ PARTIALLY COMPLETED (2026-01-10)
+### ~~7. Client Experience Improvements~~ ✅ PARTIALLY COMPLETED (2026-01-10)
 - **Status**: Security fix complete, card layout deferred
 - Created secure `/api/my-matters` endpoint (returns only client's matters)
 - Fixed security issue where clients could see all matters
@@ -542,12 +624,8 @@ Document (N) ──→ Matter (1)
 
 ## 🐛 Known Issues
 
-1. **Terminology Confusion**: `/dashboard/matters/` currently manages service catalog (not matters)
-   - Fix: Phase 1 of UI restructuring plan
-2. **Missing Matter Context in Journeys UI**: Journey creation doesn't enforce matter selection
-   - Fix: Phase 4 of UI restructuring plan
-3. **No Payment Management UI**: Database table exists but no UI to record/view payments
-   - Fix: Phase 3 of UI restructuring plan
+1. **No Payment Management UI**: Database table exists but no UI to record/view payments
+   - Needs separate implementation plan
 
 ---
 
@@ -585,6 +663,41 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-11**:
+- **Focus**: E-Signature Integration Phase 3 Completion
+- **Achievements**:
+  - ✅ Resend email integration for signature requests and reminders
+  - ✅ Signatures dashboard page (`/signatures`) with status cards and filterable table
+  - ✅ Reminder/resend functionality with expiration extension option
+  - ✅ Revoke functionality for pending sessions
+  - ✅ Signed PDF download endpoint (public, token-based)
+  - ✅ Fixed hubBlob deprecation (use `import { blob } from 'hub:blob'`)
+  - ✅ Fixed CSS overflow on /clients page (`min-w-0` on flex children)
+  - ✅ Added E-Signatures navigation item to dashboard sidebar
+  - ✅ Added toast notifications and UI polish to roadmap
+- **Technical Notes**:
+  - Resend API key format: `re_...` (not UUID format)
+  - Blob access: Use `import { blob } from 'hub:blob'` not deprecated `hubBlob()`
+  - Flexbox overflow: `min-w-0` overrides implicit `min-width: auto`
+- **Plan Status**: E-Signature Phases 1-3 complete, Phases 4-5 (KYC, ESIGN action items) remain for future
+- **Next Up**: Toast notifications system, Payment Management UI, or continue with Enhanced Signature (Phase 4)
+
+**Session 2026-01-10 (Late Evening)**:
+- **Focus**: RBAC Testing Infrastructure & Page Restructuring
+- **Achievements**:
+  - ✅ Created centralized route configuration (`shared/routes.ts`)
+  - ✅ Expanded E2E auth tests from 2 to 46 tests
+  - ✅ Created RBAC E2E test suite (`tests/e2e/rbac.spec.ts`)
+  - ✅ Created route unit tests (61 tests in `tests/unit/routes.test.ts`)
+  - ✅ Moved all pages from `/app/pages/dashboard/` to flat structure
+  - ✅ Updated all navigation and router paths
+- **Files Created**:
+  - `shared/routes.ts` - Single source of truth for routes and access control
+  - `tests/e2e/rbac.spec.ts` - Role-based access control E2E tests
+  - `tests/unit/routes.test.ts` - Route configuration unit tests
+- **Why**: Attorney-client privilege requires comprehensive access control verification
+- **Test Results**: 46 E2E tests passing, 61 route unit tests passing, 34 RBAC unit tests passing
 
 **Session 2026-01-10 (Evening)**:
 - **Focus**: Semgrep Security Fixes & UI Restructuring Completion
@@ -678,9 +791,24 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 **Next Session Options**:
-1. ~~**SEMGREP GitHub Action**~~ ✅ Complete - Semgrep Cloud Platform active, findings fixed
-2. **Continue API normalization** - Fix remaining endpoints as features are tested (on-demand)
-3. ~~**UI restructuring**~~ ✅ Complete - All phases done
-4. **Schema extraction** - Begin document template analysis and journey generation
-5. **E-signature integration** - PandaDoc or similar for document signing workflow
-6. **Payment Management** - Build payment recording UI (separate plan needed)
+1. **Payment Management** - Build payment recording UI (separate plan needed) - Only remaining known issue
+2. **Schema extraction** - Begin document template analysis and journey generation
+3. **Continue API normalization** - Fix remaining ~70 endpoints as features are tested (on-demand)
+
+---
+
+## 📋 Future Considerations
+
+### PDF/A Compliance for Signed Documents
+- **Status**: Documented for future consideration
+- **Context**: When implementing signed PDF generation, considered PDF/A (ISO 19005) for long-term archival
+- **Decision**: Start with standard PDF using `pdf-lib` - legally sufficient under ESIGN/UETA
+- **Why PDF/A might be needed later**:
+  - Some government agencies require PDF/A for submissions
+  - Financial institutions may require it for compliance
+  - Long-term archival guarantees (fonts embedded, no external dependencies)
+- **Implementation options if needed**:
+  - Manual PDF/A metadata with pdf-lib (complex)
+  - Server-side conversion via Adobe PDF Services API
+  - Alternative library with native PDF/A support
+- **Current approach**: Standard PDF with embedded signature, audit trail, and document hash is legally binding and tamper-evident for most use cases
