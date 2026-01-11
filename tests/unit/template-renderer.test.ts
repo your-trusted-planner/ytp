@@ -3,7 +3,7 @@
  * Covers Handlebars template rendering, helpers, and variable extraction
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { TemplateRenderer, useTemplateRenderer } from '../../server/utils/template-renderer'
 
 describe('TemplateRenderer', () => {
@@ -311,6 +311,15 @@ describe('TemplateRenderer', () => {
   })
 
   describe('Error Handling', () => {
+    // Suppress console.error for these tests since we're intentionally triggering errors
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
     it('should throw helpful error for invalid syntax', () => {
       const template = '{{#if}}{{/if}}' // Missing condition
 
