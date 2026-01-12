@@ -1,5 +1,5 @@
 // Delete a template (soft or hard delete)
-// INCREMENTAL DEBUG v5: Add activity logging
+// INCREMENTAL DEBUG v6: Add readBody and document count
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { useDrizzle, schema } = await import('../../db')
-  const { eq } = await import('drizzle-orm')
+  const { eq, sql } = await import('drizzle-orm')
   const db = useDrizzle()
 
   const template = await db.select()
@@ -28,7 +28,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Template not found' })
   }
 
-  // Soft delete: set isActive = false
+  // Count documents referencing this template
+  const documentCount = await db.select({
+    count: sql<number>`count(*)`
+  })
+    .from(schema.documents)
+    .where(eq(schema.documents.templateId, id))
+    .get()
+
+  const referencingDocuments = documentCount?.count || 0
+  const body = await readBody(event).catch(() => ({}))
+
+  // For now, always soft delete
   await db.update(schema.documentTemplates)
     .set({ isActive: false, updatedAt: new Date() })
     .where(eq(schema.documentTemplates.id, id))
@@ -45,17 +56,19 @@ export default defineEventHandler(async (event) => {
     event,
     metadata: {
       templateName: template.name,
-      deletionMethod: 'soft'
+      deletionMethod: 'soft',
+      referencingDocuments
     }
   })
 
   return {
     success: true,
-    debug: 'v5-with-logging',
+    debug: 'v6-with-body-and-count',
     message: 'Template soft deleted',
     deleted: {
       template: { id: template.id, name: template.name },
-      method: 'soft'
+      method: 'soft',
+      referencingDocuments
     }
   }
 })
