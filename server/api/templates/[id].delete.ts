@@ -2,11 +2,15 @@
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
-  // Import blob dynamically to avoid Workers hanging issue
-  const { blob } = await import('hub:blob')
+  console.log('[Template Delete] Handler started')
 
-  const { user } = await requireUserSession(event)
+  console.log('[Template Delete] Getting router param')
   const id = getRouterParam(event, 'id')
+  console.log('[Template Delete] Router param:', id)
+
+  console.log('[Template Delete] Calling requireUserSession')
+  const { user } = await requireUserSession(event)
+  console.log('[Template Delete] User session retrieved:', user?.id)
 
   if (!id) {
     throw createError({
@@ -81,6 +85,7 @@ export default defineEventHandler(async (event) => {
       // Clean up blob storage before hard delete
       try {
         if (template.docxBlobKey) {
+          const { blob } = await import('hub:blob')
           await blob.delete(template.docxBlobKey)
           blobsDeleted.push('docx')
         }
