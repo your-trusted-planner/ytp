@@ -1,11 +1,14 @@
 // Delete a template (soft or hard delete)
-// MINIMAL VERSION FOR DEBUGGING CLOUDFLARE HANG
+// INCREMENTAL DEBUG v2: Add auth check
 
 export default defineEventHandler(async (event) => {
-  // Step 1: Just return immediately to test if handler is reached
+  const { user } = await requireUserSession(event)
+  const id = getRouterParam(event, 'id')
+
   return {
     success: true,
-    debug: 'minimal-v1',
-    message: 'DELETE handler reached'
+    debug: 'v2-auth',
+    userId: user?.id,
+    templateId: id
   }
 })
