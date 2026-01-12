@@ -1,5 +1,5 @@
 // Delete a template (soft or hard delete)
-// INCREMENTAL DEBUG v6b: Document count only (no readBody)
+// INCREMENTAL DEBUG v6c: With readBody (confirm issue)
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
@@ -37,7 +37,17 @@ export default defineEventHandler(async (event) => {
     .get()
 
   const referencingDocuments = documentCount?.count || 0
-  // const body = await readBody(event).catch(() => ({}))
+
+  // Safe body reading - handle cases where body may be empty or already consumed
+  let body: Record<string, any> = {}
+  try {
+    const rawBody = await readBody(event)
+    if (rawBody && typeof rawBody === 'object') {
+      body = rawBody
+    }
+  } catch {
+    // No body or body already consumed - use empty object
+  }
 
   // For now, always soft delete
   await db.update(schema.documentTemplates)
@@ -63,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    debug: 'v6b-count-only',
+    debug: 'v6c-with-readbody',
     message: 'Template soft deleted',
     deleted: {
       template: { id: template.id, name: template.name },
