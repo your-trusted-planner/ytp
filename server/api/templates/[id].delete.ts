@@ -1,5 +1,6 @@
 // Delete a template (soft or hard delete)
-// INCREMENTAL DEBUG v4: Add soft delete operation
+// INCREMENTAL DEBUG v5: Add activity logging
+import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -32,9 +33,25 @@ export default defineEventHandler(async (event) => {
     .set({ isActive: false, updatedAt: new Date() })
     .where(eq(schema.documentTemplates.id, id))
 
+  // Log activity
+  const actorName = user.firstName || user.email
+  await logActivity({
+    type: 'TEMPLATE_DELETED',
+    description: `${actorName} soft deleted template "${template.name}"`,
+    userId: user.id,
+    userRole: user.role,
+    targetType: 'template',
+    targetId: id,
+    event,
+    metadata: {
+      templateName: template.name,
+      deletionMethod: 'soft'
+    }
+  })
+
   return {
     success: true,
-    debug: 'v4-soft-delete',
+    debug: 'v5-with-logging',
     message: 'Template soft deleted',
     deleted: {
       template: { id: template.id, name: template.name },
