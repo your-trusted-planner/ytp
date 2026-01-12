@@ -3,7 +3,7 @@ import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
   // Import blob dynamically to avoid Workers hanging issue
-  console.log('invoking delete')
+  console.info('invoking delete')
   const { blob } = await import('hub:blob')
 
   const { user } = await requireUserSession(event)
