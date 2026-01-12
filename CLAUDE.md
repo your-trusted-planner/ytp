@@ -283,6 +283,45 @@ tests/
 - Use bcryptjs via `hashPassword()` and `verifyPassword()`
 - Keep migrations and schema.ts in sync
 
+## Cloudflare Workers Gotchas
+
+### `readBody()` Fails in Workers
+
+**Problem**: The h3 `readBody()` function causes 500 errors in Cloudflare Workers, even with `.catch()` error handling. This works fine in local development but fails in production.
+
+**Symptoms**:
+- DELETE or POST endpoints return 500 errors in production
+- Works perfectly in local dev
+- No useful error message in logs
+
+**Solution**: Use query parameters instead of request body for DELETE endpoints:
+
+```typescript
+// ❌ DON'T - This fails in CF Workers
+const body = await readBody(event).catch(() => ({}))
+if (body.confirmDelete) { ... }
+
+// ✅ DO - Use query params instead
+const query = getQuery(event)
+const confirmDelete = query.confirmDelete === 'true'
+```
+
+**Affected Endpoints**:
+- `DELETE /api/templates/[id]` - Uses `?forceHardDelete=true`
+- `DELETE /api/documents/[id]` - Uses `?confirmDelete=true`
+
+### Dynamic Imports for NuxtHub Modules
+
+For reliability in Workers, use dynamic imports for NuxtHub virtual modules inside handlers rather than top-level imports:
+
+```typescript
+// Preferred pattern for hub:blob
+export default defineEventHandler(async (event) => {
+  const { blob } = await import('hub:blob')
+  // ... use blob
+})
+```
+
 ## When Uncertain
 
 If unsure about:

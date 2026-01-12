@@ -978,9 +978,10 @@ async function handleDeleteTemplate() {
 
   deletingTemplate.value = true
   try {
-    const response = await $fetch(`/api/templates/${viewingTemplate.value.id}`, {
-      method: 'DELETE',
-      body: forceHardDelete.value ? { forceHardDelete: true } : {}
+    // Use query param instead of body (readBody fails in CF Workers)
+    const url = `/api/templates/${viewingTemplate.value.id}${forceHardDelete.value ? '?forceHardDelete=true' : ''}`
+    const response = await $fetch(url, {
+      method: 'DELETE'
     })
 
     if (response.success) {

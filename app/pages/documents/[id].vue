@@ -925,9 +925,10 @@ const handleDeleteDocument = async () => {
 
   deleting.value = true
   try {
-    const response = await $fetch(`/api/documents/${documentId}`, {
-      method: 'DELETE',
-      body: needsConfirmation ? { confirmDelete: true } : {}
+    // Use query param instead of body (readBody fails in CF Workers)
+    const url = `/api/documents/${documentId}${needsConfirmation ? '?confirmDelete=true' : ''}`
+    const response = await $fetch(url, {
+      method: 'DELETE'
     })
 
     if (response.success) {
