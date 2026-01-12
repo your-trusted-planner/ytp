@@ -174,6 +174,17 @@ export async function processTemplateUpload(
   const blobKey = `templates/${templateId}/${filename}`
   await blob.put(blobKey, buffer)
 
+  // Precompile template for Workers compatibility
+  const { useTemplateRenderer } = await import('./template-renderer')
+  const renderer = useTemplateRenderer()
+  let compiledTemplate: string | null = null
+  try {
+    compiledTemplate = renderer.precompile(html)
+  } catch (error) {
+    console.warn('Failed to precompile template, will fall back to runtime compilation:', error)
+    // Continue without precompilation - will work in dev but may fail in Workers
+  }
+
   const now = new Date()
 
   // Create database record
@@ -184,6 +195,7 @@ export async function processTemplateUpload(
     category: finalCategory,
     folderId: folderId || null,
     content: html,
+    compiledTemplate,
     variables: JSON.stringify(Array.from(variables)),
     requiresNotary,
     isActive: true,

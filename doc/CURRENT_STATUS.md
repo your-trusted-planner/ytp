@@ -480,7 +480,8 @@ Document (N) ──→ Matter (1)
   - **Loading states**: Audit and improve loading indicators across the app
 - **Files to audit for `alert()` usage**:
   - `app/pages/signatures.vue` - copySigningLink, sendReminder, revokeSession
-  - `app/pages/documents/[id].vue` - signature session creation
+  - `app/pages/documents/[id].vue` - signature session creation, document deletion
+  - `app/pages/templates/index.vue` - template deletion, reactivation
   - `app/components/signature/SigningCeremony.vue` - download error handling
   - Various other pages with form submissions
 - **Implementation approach**:
@@ -490,14 +491,43 @@ Document (N) ──→ Matter (1)
   - Optional action buttons in toasts
 - **Libraries to consider**: Vue Toastification, or build lightweight custom solution
 
-### ~~5. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
+### 5. API Token Authentication
+- **Status**: Planned
+- **Problem**: No programmatic API access - only session-based authentication via UI
+- **Why**: Enable external integrations, testing, automation, and third-party service access
+- **Use Cases**:
+  - Integration with external CRM/practice management systems
+  - Automated document generation workflows
+  - Third-party client portals
+  - Testing and development convenience
+  - Zapier/Make.com integrations
+- **Scope**:
+  - **API key generation**: Allow users to create API keys with optional scopes/permissions
+  - **API key management UI**: View, create, revoke, and regenerate keys
+  - **Token-based auth middleware**: Validate `Authorization: Bearer <token>` header
+  - **Rate limiting**: Protect endpoints from abuse
+  - **Audit logging**: Track API usage for security and debugging
+  - **API documentation**: OpenAPI/Swagger docs for all endpoints
+- **Security Considerations**:
+  - Tokens should have scopes (read-only, read-write, admin)
+  - Tokens should be revocable
+  - Tokens should have expiration dates (optional)
+  - Rate limiting per token
+  - IP allowlisting (optional)
+- **Implementation Notes**:
+  - Tokens stored hashed in database (like passwords)
+  - Middleware checks both session auth and token auth
+  - Existing endpoints work with both auth types
+  - New `/api/api-keys/*` endpoints for key management
+
+### ~~6. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - **Implementation**: Auto-start service journeys when engagement journey completes
 - When ENGAGEMENT journey completes, automatically creates client journeys for all engaged services
 - Backend already validates matter-service engagement before manual journey creation
 - See `server/api/client-journeys/[id]/advance.post.ts`
 
-### ~~6. Enhanced Matter List View~~ ✅ COMPLETED (2026-01-10)
+### ~~7. Enhanced Matter List View~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - Added search input (title, matter #, client name)
 - Added status filter (All/Open/Pending/Closed)
@@ -505,7 +535,7 @@ Document (N) ──→ Matter (1)
 - Added "Clear filters" button
 - See `app/pages/matters/index.vue`
 
-### ~~7. Client Experience Improvements~~ ✅ PARTIALLY COMPLETED (2026-01-10)
+### ~~8. Client Experience Improvements~~ ✅ PARTIALLY COMPLETED (2026-01-10)
 - **Status**: Security fix complete, card layout deferred
 - Created secure `/api/my-matters` endpoint (returns only client's matters)
 - Fixed security issue where clients could see all matters

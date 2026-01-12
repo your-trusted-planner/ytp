@@ -57,6 +57,14 @@
               <PenTool class="w-4 h-4 mr-2" />
               Send for E-Signature
             </button>
+            <button
+              v-if="canDelete"
+              @click="showDeleteModal = true"
+              class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete Document
+            </button>
           </div>
         </div>
         <select
@@ -412,12 +420,64 @@
         </UiButton>
       </template>
     </UiModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UiModal v-model="showDeleteModal" title="Delete Document" size="md">
+      <div class="space-y-4">
+        <div v-if="document" class="space-y-3">
+          <p class="text-sm text-gray-700">
+            Are you sure you want to delete "<strong>{{ document.title }}</strong>"?
+          </p>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="text-sm text-gray-600 space-y-1">
+              <p><strong>Status:</strong> {{ document.status }}</p>
+              <p v-if="document.signedAt"><strong>Signed:</strong> {{ formatDateTime(document.signedAt) }}</p>
+            </div>
+          </div>
+
+          <div v-if="document.status !== 'DRAFT'" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm text-yellow-800">
+              <strong>Warning:</strong> This document has status {{ document.status }}. This action cannot be undone.
+            </p>
+            <label class="flex items-center mt-2">
+              <input
+                type="checkbox"
+                v-model="confirmDelete"
+                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+              />
+              <span class="ml-2 text-sm text-yellow-900">I understand this action is permanent</span>
+            </label>
+          </div>
+
+          <div v-if="document.status === 'SIGNED' || document.status === 'COMPLETED'" class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p class="text-sm text-red-800">
+              <strong>Legal Document:</strong> This signed document may have legal significance. Only admins can delete signed documents.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showDeleteModal = false; confirmDelete = false">
+          Cancel
+        </UiButton>
+        <UiButton
+          variant="danger"
+          @click="handleDeleteDocument"
+          :is-loading="deleting"
+          :disabled="requiresConfirmation && !confirmDelete"
+        >
+          Delete Document
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon, PenTool } from 'lucide-vue-next'
+import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon, PenTool, Trash2 } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
 
 definePageMeta({
@@ -440,6 +500,7 @@ const showEditVariablesModal = ref(false)
 const showPreviewModal = ref(false)
 const showSignatureModal = ref(false)
 const showSigningLinkModal = ref(false)
+const showDeleteModal = ref(false)
 
 // E-Signature state
 const signatureTier = ref<'STANDARD' | 'ENHANCED'>('STANDARD')
@@ -458,6 +519,11 @@ const showActionsDropdown = ref(false)
 // Collapsible sections state
 const showMetadata = ref(true)
 
+// Deletion state
+const deleting = ref(false)
+const requiresConfirmation = ref(false)
+const confirmDelete = ref(false)
+
 const signatureCanvas = ref<HTMLCanvasElement | null>(null)
 const isDrawing = ref(false)
 const ctx = ref<CanvasRenderingContext2D | null>(null)
@@ -475,6 +541,38 @@ const canSendForSignature = computed(() => {
   if (!document.value) return false
   // Allow sending for signature if document is in DRAFT or has been previously sent
   return ['DRAFT', 'SENT', 'VIEWED'].includes(document.value.status)
+})
+
+// Can delete document based on role and document status
+const canDelete = computed(() => {
+  if (!document.value || !user.value) return false
+
+  // Admin level 2+ can delete anything
+  if (user.value.adminLevel >= 2 || user.value.role === 'ADMIN') {
+    return true
+  }
+
+  // For SIGNED/COMPLETED documents, only admin level 2+ can delete
+  if (document.value.status === 'SIGNED' || document.value.status === 'COMPLETED') {
+    return false
+  }
+
+  // Staff can delete DRAFT documents
+  if (user.value.role === 'STAFF' && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  // Lawyers can delete DRAFT documents
+  if (user.value.role === 'LAWYER' && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  // Creator (client) can delete their own DRAFT documents
+  if (user.value.role === 'CLIENT' && document.value.clientId === user.value.id && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  return false
 })
 
 // Only show direct signing UI for clients viewing their own document (legacy path)
@@ -810,6 +908,43 @@ const copySigningUrl = async () => {
 
 const openSigningUrl = () => {
   window.open(signingUrl.value, '_blank')
+}
+
+// Delete document
+const handleDeleteDocument = async () => {
+  if (!document.value) return
+
+  // Check if confirmation is required
+  const needsConfirmation = document.value.status !== 'DRAFT'
+  requiresConfirmation.value = needsConfirmation
+
+  if (needsConfirmation && !confirmDelete.value) {
+    // Show confirmation checkbox
+    return
+  }
+
+  deleting.value = true
+  try {
+    const response = await $fetch(`/api/documents/${documentId}`, {
+      method: 'DELETE',
+      body: needsConfirmation ? { confirmDelete: true } : {}
+    })
+
+    if (response.success) {
+      // Navigate back to documents list
+      await navigateTo('/documents')
+    }
+  } catch (error: any) {
+    if (error.statusCode === 400 && error.data?.error === 'Confirmation required') {
+      // Server requires confirmation
+      requiresConfirmation.value = true
+      alert(`This document has status ${document.value.status}. Please check the confirmation box to proceed.`)
+    } else {
+      alert(`Failed to delete document: ${error.data?.message || error.message || 'Unknown error'}`)
+    }
+  } finally {
+    deleting.value = false
+  }
 }
 
 // Close dropdown when clicking outside

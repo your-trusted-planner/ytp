@@ -26,6 +26,7 @@ export type ActivityType =
   | 'DOCUMENT_SIGNED'
   | 'DOCUMENT_DOWNLOADED'
   | 'DOCUMENT_STATUS_CHANGED'
+  | 'DOCUMENT_DELETED'
   // Journey events
   | 'JOURNEY_STARTED'
   | 'JOURNEY_STEP_COMPLETED'
@@ -203,6 +204,7 @@ export function formatActivityDescription(
     DOCUMENT_SIGNED: targetName ? `${actorName} signed "${targetName}"` : `${actorName} signed a document`,
     DOCUMENT_DOWNLOADED: targetName ? `${actorName} downloaded "${targetName}"` : `${actorName} downloaded a document`,
     DOCUMENT_STATUS_CHANGED: `${actorName} changed document status`,
+    DOCUMENT_DELETED: targetName ? `${actorName} deleted document "${targetName}"` : `${actorName} deleted a document`,
     JOURNEY_STARTED: targetName ? `${actorName} started journey "${targetName}"` : `${actorName} started a journey`,
     JOURNEY_STEP_COMPLETED: `${actorName} completed a journey step`,
     JOURNEY_COMPLETED: targetName ? `${actorName} completed journey "${targetName}"` : `${actorName} completed a journey`,

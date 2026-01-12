@@ -454,21 +454,127 @@
           <div class="prose prose-sm max-w-none" v-html="sanitizedTemplateContent"></div>
         </div>
 
-        <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="showViewTemplateModal = false">
-            Close
-          </UiButton>
-          <UiButton @click="openUseTemplateFromView">
-            Use This Template
-          </UiButton>
+        <div class="flex justify-between items-center pt-4">
+          <div class="flex space-x-2">
+            <UiButton
+              v-if="isAdmin && !viewingTemplate.isActive"
+              type="button"
+              variant="outline"
+              @click="showReactivateModal = true"
+            >
+              <RotateCcw class="w-4 h-4 mr-2" />
+              Reactivate
+            </UiButton>
+            <UiButton
+              v-if="isAdmin"
+              type="button"
+              variant="danger"
+              @click="showDeleteTemplateModal = true"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete
+            </UiButton>
+          </div>
+          <div class="flex space-x-3">
+            <UiButton type="button" variant="ghost" @click="showViewTemplateModal = false">
+              Close
+            </UiButton>
+            <UiButton @click="openUseTemplateFromView">
+              Use This Template
+            </UiButton>
+          </div>
         </div>
       </div>
+    </UiModal>
+
+    <!-- Delete Template Modal -->
+    <UiModal v-model="showDeleteTemplateModal" title="Delete Template" size="md">
+      <div class="space-y-4">
+        <div v-if="viewingTemplate" class="space-y-3">
+          <p class="text-sm text-gray-700">
+            Are you sure you want to delete "<strong>{{ viewingTemplate.name }}</strong>"?
+          </p>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="text-sm text-gray-600 space-y-1">
+              <p><strong>Category:</strong> {{ viewingTemplate.category }}</p>
+              <p><strong>Status:</strong> {{ viewingTemplate.isActive ? 'Active' : 'Inactive' }}</p>
+            </div>
+          </div>
+
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm text-yellow-800">
+              <strong>Note:</strong> If this template is used by existing documents, it will be soft-deleted (hidden but not permanently removed).
+            </p>
+            <label v-if="viewingTemplate.isActive" class="flex items-center mt-2">
+              <input
+                type="checkbox"
+                v-model="forceHardDelete"
+                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+              />
+              <span class="ml-2 text-sm text-yellow-900">
+                Permanently delete (only if not used by documents)
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showDeleteTemplateModal = false; forceHardDelete = false">
+          Cancel
+        </UiButton>
+        <UiButton
+          variant="danger"
+          @click="handleDeleteTemplate"
+          :is-loading="deletingTemplate"
+        >
+          Delete Template
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Reactivate Template Modal -->
+    <UiModal v-model="showReactivateModal" title="Reactivate Template" size="md">
+      <div class="space-y-4">
+        <div v-if="viewingTemplate" class="space-y-3">
+          <p class="text-sm text-gray-700">
+            Reactivate "<strong>{{ viewingTemplate.name }}</strong>"?
+          </p>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="text-sm text-gray-600 space-y-1">
+              <p><strong>Category:</strong> {{ viewingTemplate.category }}</p>
+              <p><strong>Variables:</strong> {{ templateVariables.length }}</p>
+            </div>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p class="text-sm text-blue-800">
+              This template will become available for document generation again.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showReactivateModal = false">
+          Cancel
+        </UiButton>
+        <UiButton
+          @click="handleReactivateTemplate"
+          :is-loading="reactivatingTemplate"
+        >
+          Reactivate Template
+        </UiButton>
+      </template>
     </UiModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { Trash2, RotateCcw } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -489,12 +595,17 @@ const showUploadModal = ref(false)
 const showMappingHelp = ref(false)
 const editingTemplateDetails = ref(false)
 const editingMappings = ref(false)
+const showDeleteTemplateModal = ref(false)
+const showReactivateModal = ref(false)
 const selectedTemplate = ref<any>(null)
 const viewingTemplate = ref<any>(null)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadResult = ref<any>(null)
 const variableMappings = ref<Record<string, { source: string, field: string }>>({})
+const deletingTemplate = ref(false)
+const reactivatingTemplate = ref(false)
+const forceHardDelete = ref(false)
 
 const templateEditForm = ref({
   name: '',
@@ -513,6 +624,13 @@ const uploadForm = ref({
   name: '',
   description: '',
   category: 'General'
+})
+
+const { user } = useUserSession()
+
+// Check if user is admin (can delete/reactivate templates)
+const isAdmin = computed(() => {
+  return user.value && (user.value.role === 'ADMIN' || user.value.adminLevel >= 2)
 })
 
 const templateVariables = computed(() => {
@@ -843,7 +961,7 @@ async function generateDocument() {
     })
 
     showUseTemplateModal.value = false
-    
+
     // Navigate to document detail page
     router.push(`/documents/${document.id}`)
   } catch (error: any) {
@@ -851,6 +969,56 @@ async function generateDocument() {
     alert(`Error generating document: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     generating.value = false
+  }
+}
+
+// Delete template
+async function handleDeleteTemplate() {
+  if (!viewingTemplate.value) return
+
+  deletingTemplate.value = true
+  try {
+    const response = await $fetch(`/api/templates/${viewingTemplate.value.id}`, {
+      method: 'DELETE',
+      body: forceHardDelete.value ? { forceHardDelete: true } : {}
+    })
+
+    if (response.success) {
+      alert(response.message)
+      showDeleteTemplateModal.value = false
+      showViewTemplateModal.value = false
+      await fetchTemplates()
+    }
+  } catch (error: any) {
+    console.error('Failed to delete template:', error)
+    alert(`Error deleting template: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    deletingTemplate.value = false
+    forceHardDelete.value = false
+  }
+}
+
+// Reactivate template
+async function handleReactivateTemplate() {
+  if (!viewingTemplate.value) return
+
+  reactivatingTemplate.value = true
+  try {
+    const response = await $fetch(`/api/templates/${viewingTemplate.value.id}/reactivate`, {
+      method: 'POST'
+    })
+
+    if (response.success) {
+      alert(response.message)
+      viewingTemplate.value.isActive = true
+      showReactivateModal.value = false
+      await fetchTemplates()
+    }
+  } catch (error: any) {
+    console.error('Failed to reactivate template:', error)
+    alert(`Error reactivating template: ${error.data?.message || error.message || 'Unknown error'}`)
+  } finally {
+    reactivatingTemplate.value = false
   }
 }
 

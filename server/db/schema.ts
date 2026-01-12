@@ -124,6 +124,7 @@ export const documentTemplates = sqliteTable('document_templates', {
   category: text('category').notNull(),
   folderId: text('folder_id').references(() => templateFolders.id),
   content: text('content').notNull(),
+  compiledTemplate: text('compiled_template'), // Precompiled Handlebars template (for Workers compatibility)
   variables: text('variables').notNull(), // JSON string
   variableMappings: text('variable_mappings'), // JSON mapping of template variables to database fields
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false),
