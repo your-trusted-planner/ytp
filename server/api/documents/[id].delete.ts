@@ -1,9 +1,8 @@
 // Delete a document
+// Use query param ?confirmDelete=true for non-DRAFT docs (readBody fails in CF Workers)
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
-  // Import blob dynamically to avoid Workers hanging issue
-  console.info('invoking delete')
   const { blob } = await import('hub:blob')
 
   const { user } = await requireUserSession(event)
@@ -43,15 +42,17 @@ export default defineEventHandler(async (event) => {
   }
 
   // Confirmation check for non-DRAFT documents
-  const body = await readBody(event).catch(() => ({}))
+  // Use query param for confirmDelete (readBody fails in CF Workers)
+  const query = getQuery(event)
+  const confirmDelete = query.confirmDelete === 'true'
   const requiresConfirmation = document.status !== 'DRAFT'
 
-  if (requiresConfirmation && !body.confirmDelete) {
+  if (requiresConfirmation && !confirmDelete) {
     throw createError({
       statusCode: 400,
       data: {
         error: 'Confirmation required',
-        message: `This document has status ${document.status}. Set confirmDelete: true to proceed.`,
+        message: `This document has status ${document.status}. Add ?confirmDelete=true to proceed.`,
         document: {
           id: document.id,
           title: document.title,

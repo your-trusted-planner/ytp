@@ -1,5 +1,5 @@
 // Delete a template (soft or hard delete)
-// INCREMENTAL DEBUG v6d: Use query params instead of body
+// Use query param ?forceHardDelete=true for hard delete (readBody doesn't work in CF Workers)
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
@@ -38,20 +38,62 @@ export default defineEventHandler(async (event) => {
 
   const referencingDocuments = documentCount?.count || 0
 
-  // Check for forceHardDelete via query param instead of body (safer in Workers)
+  // Use query param for forceHardDelete (body reading fails in CF Workers)
   const query = getQuery(event)
   const forceHardDelete = query.forceHardDelete === 'true'
 
-  // For now, always soft delete
-  await db.update(schema.documentTemplates)
-    .set({ isActive: false, updatedAt: new Date() })
-    .where(eq(schema.documentTemplates.id, id))
+  let deletionMethod: 'soft' | 'hard'
+  let blobsDeleted: string[] = []
+
+  if (referencingDocuments > 0) {
+    // Template is referenced - must soft delete
+    if (forceHardDelete) {
+      throw createError({
+        statusCode: 400,
+        message: `Cannot hard delete: template is referenced by ${referencingDocuments} document(s)`,
+        data: { referencingDocuments }
+      })
+    }
+
+    await db.update(schema.documentTemplates)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.documentTemplates.id, id))
+
+    deletionMethod = 'soft'
+  } else {
+    // Template not referenced - can hard delete if requested
+    if (forceHardDelete) {
+      // Clean up blob storage before hard delete
+      try {
+        if (template.docxBlobKey) {
+          const { blob } = await import('hub:blob')
+          await blob.delete(template.docxBlobKey)
+          blobsDeleted.push('docx')
+        }
+      } catch (error) {
+        console.warn('Failed to delete template blob:', error)
+      }
+
+      // Hard delete from database
+      await db.delete(schema.documentTemplates)
+        .where(eq(schema.documentTemplates.id, id))
+
+      deletionMethod = 'hard'
+    } else {
+      // Default to soft delete even when not referenced (safer)
+      await db.update(schema.documentTemplates)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(schema.documentTemplates.id, id))
+
+      deletionMethod = 'soft'
+    }
+  }
 
   // Log activity
   const actorName = user.firstName || user.email
   await logActivity({
     type: 'TEMPLATE_DELETED',
-    description: `${actorName} soft deleted template "${template.name}"`,
+    description: `${actorName} ${deletionMethod === 'soft' ? 'soft deleted' : 'permanently deleted'} template "${template.name}"`,
     userId: user.id,
     userRole: user.role,
     targetType: 'template',
@@ -59,19 +101,36 @@ export default defineEventHandler(async (event) => {
     event,
     metadata: {
       templateName: template.name,
-      deletionMethod: 'soft',
-      referencingDocuments
+      templateCategory: template.category,
+      deletionMethod,
+      referencingDocuments,
+      blobsDeleted: deletionMethod === 'hard' ? blobsDeleted : [],
+      wasActive: template.isActive
     }
   })
 
-  return {
-    success: true,
-    debug: 'v6d-query-params',
-    message: 'Template soft deleted',
-    deleted: {
-      template: { id: template.id, name: template.name },
-      method: 'soft',
-      referencingDocuments
+  if (deletionMethod === 'soft') {
+    return {
+      success: true,
+      message: referencingDocuments > 0
+        ? 'Template soft deleted (referenced by documents)'
+        : 'Template soft deleted (can be reactivated)',
+      deleted: {
+        template: { id: template.id, name: template.name },
+        method: 'soft',
+        referencingDocuments,
+        canReactivate: true
+      }
+    }
+  } else {
+    return {
+      success: true,
+      message: 'Template permanently deleted',
+      deleted: {
+        template: { id: template.id, name: template.name },
+        method: 'hard',
+        blobsDeleted
+      }
     }
   }
 })
