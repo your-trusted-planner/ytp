@@ -285,25 +285,30 @@ tests/
 
 ## Cloudflare Workers Gotchas
 
-### `readBody()` Fails in Workers
+### `readBody()` Fails for DELETE Requests in Workers
 
-**Problem**: The h3 `readBody()` function causes 500 errors in Cloudflare Workers, even with `.catch()` error handling. This works fine in local development but fails in production.
+**Problem**: The h3 `readBody()` function causes 500 errors for DELETE requests in Cloudflare Workers, even with `.catch()` error handling. This works fine in local development but fails in production. POST and PUT requests with `readBody()` work fine.
 
 **Symptoms**:
-- DELETE or POST endpoints return 500 errors in production
+- DELETE endpoints with request bodies return 500 errors in production
 - Works perfectly in local dev
 - No useful error message in logs
 
-**Solution**: Use query parameters instead of request body for DELETE endpoints:
+**Root cause (speculated)**: Likely related to how Workers handles DELETE request bodies (which are technically allowed by HTTP spec but semantics are undefined). The body stream may be consumed or closed before `readBody()` can process it.
+
+**Solution**: Use query parameters for DELETE options instead of request body:
 
 ```typescript
-// ❌ DON'T - This fails in CF Workers
+// ❌ DON'T - readBody fails for DELETE in CF Workers
 const body = await readBody(event).catch(() => ({}))
 if (body.confirmDelete) { ... }
 
-// ✅ DO - Use query params instead
+// ✅ DO - Use query params for DELETE options
 const query = getQuery(event)
 const confirmDelete = query.confirmDelete === 'true'
+
+// ✅ POST/PUT with readBody works fine
+const body = await readBody(event)  // OK for POST/PUT
 ```
 
 **Affected Endpoints**:
