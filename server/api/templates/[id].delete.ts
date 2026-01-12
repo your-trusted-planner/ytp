@@ -1,8 +1,10 @@
 // Delete a template (soft or hard delete)
-import { blob } from 'hub:blob'
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
+  // Import blob dynamically to avoid Workers hanging issue
+  const { blob } = await import('hub:blob')
+
   const { user } = await requireUserSession(event)
   const id = getRouterParam(event, 'id')
 
