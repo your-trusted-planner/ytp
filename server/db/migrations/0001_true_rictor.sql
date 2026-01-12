@@ -1,0 +1,1 @@
+ALTER TABLE `signature_sessions` ADD `action_item_id` text REFERENCES action_items(id);

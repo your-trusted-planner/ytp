@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "96d6dfe9-d4c5-4f77-be47-59cbb0185283",
-  "prevId": "e356d700-08f5-4bc9-9bde-5409b4387adb",
+  "id": "c6903946-6376-45ad-8adf-914551fef20f",
+  "prevId": "66d6352f-c58a-44f5-95f2-e07c60a4b29e",
   "tables": {
     "action_items": {
       "name": "action_items",
@@ -1884,13 +1884,6 @@
         },
         "docx_blob_key": {
           "name": "docx_blob_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signed_pdf_blob_key": {
-          "name": "signed_pdf_blob_key",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -4347,13 +4340,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "action_item_id": {
-          "name": "action_item_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "signature_tier": {
           "name": "signature_tier",
           "type": "text",
@@ -4533,19 +4519,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "signature_sessions_action_item_id_action_items_id_fk": {
-          "name": "signature_sessions_action_item_id_action_items_id_fk",
-          "tableFrom": "signature_sessions",
-          "tableTo": "action_items",
-          "columnsFrom": [
-            "action_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -4960,20 +4933,6 @@
         "avatar": {
           "name": "avatar",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_image": {
-          "name": "signature_image",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "signature_image_updated_at": {
-          "name": "signature_image_updated_at",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
