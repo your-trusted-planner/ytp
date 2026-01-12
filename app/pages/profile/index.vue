@@ -82,7 +82,7 @@
       <template #header-actions>
         <span class="text-sm text-gray-500">For signing documents</span>
       </template>
-      <SignatureSignatureImageManager @updated="handleSignatureUpdated" />
+      <SignatureImageManager @updated="handleSignatureUpdated" />
     </UiCard>
 
     <!-- Notification Settings -->
