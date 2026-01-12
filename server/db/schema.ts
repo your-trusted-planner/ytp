@@ -54,19 +54,6 @@ export const users = sqliteTable('users', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// API Tokens table - for programmatic API access
-export const apiTokens = sqliteTable('api_tokens', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull(), // bcrypt hash of the token (never store plaintext)
-  name: text('name').notNull(), // User-friendly name (e.g., "Development Testing", "CI/CD Pipeline")
-  scopes: text('scopes'), // JSON array of permission scopes (for future use)
-  expiresAt: integer('expires_at', { mode: 'timestamp' }), // Optional expiration
-  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }), // Track usage
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
-
 // Client Profiles table
 export const clientProfiles = sqliteTable('client_profiles', {
   id: text('id').primaryKey(),

@@ -29,119 +29,60 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // Check for API token authentication first (Bearer token)
-  const authHeader = getHeader(event, 'authorization')
-  let dbUser = null
+  // Require authenticated session for all other API routes
+  try {
+    const { user: sessionUser } = await requireUserSession(event)
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    // API Token authentication
-    const token = authHeader.substring(7) // Remove "Bearer " prefix
-
+    // Validate user still exists in database and is active
     const { useDrizzle, schema } = await import('../db')
     const { eq } = await import('drizzle-orm')
-    const { verifyPassword } = await import('../utils/auth')
     const db = useDrizzle()
 
-    // Find all tokens and check each one (can't query by hash directly)
-    const allTokens = await db.select()
-      .from(schema.apiTokens)
-      .all()
-
-    let validToken = null
-    for (const tokenRecord of allTokens) {
-      const isValid = await verifyPassword(token, tokenRecord.tokenHash)
-      if (isValid) {
-        validToken = tokenRecord
-        break
-      }
-    }
-
-    if (!validToken) {
-      throw createError({
-        statusCode: 401,
-        message: 'Invalid API token'
-      })
-    }
-
-    // Check if token is expired
-    if (validToken.expiresAt && new Date(validToken.expiresAt * 1000) < new Date()) {
-      throw createError({
-        statusCode: 401,
-        message: 'API token has expired'
-      })
-    }
-
-    // Get the user associated with this token
-    dbUser = await db.select()
+    const dbUser = await db
+      .select()
       .from(schema.users)
-      .where(eq(schema.users.id, validToken.userId))
+      .where(eq(schema.users.id, sessionUser.id))
       .get()
 
     if (!dbUser) {
+      // User no longer exists in database - clear session
+      await clearUserSession(event)
       throw createError({
         statusCode: 401,
-        message: 'User account no longer exists'
+        message: 'User account no longer exists',
+        data: { reason: 'deleted' }
       })
     }
 
-    // Update last used timestamp
-    await db.update(schema.apiTokens)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(schema.apiTokens.id, validToken.id))
-  } else {
-    // Session-based authentication (existing behavior)
-    try {
-      const { user: sessionUser } = await requireUserSession(event)
-
-      // Validate user still exists in database and is active
-      const { useDrizzle, schema } = await import('../db')
-      const { eq } = await import('drizzle-orm')
-      const db = useDrizzle()
-
-      dbUser = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, sessionUser.id))
-        .get()
-
-      if (!dbUser) {
-        // User no longer exists in database - clear session
-        await clearUserSession(event)
-        throw createError({
-          statusCode: 401,
-          message: 'User account no longer exists',
-          data: { reason: 'deleted' }
-        })
-      }
-    } catch (error) {
+    if (dbUser.status === 'INACTIVE') {
+      // User account is disabled - clear session
+      await clearUserSession(event)
       throw createError({
-        statusCode: 401,
-        message: 'Authentication required'
+        statusCode: 403,
+        message: 'User account is disabled',
+        data: { reason: 'disabled' }
       })
     }
-  }
 
-  // Common validation for both auth methods
-  if (dbUser.status === 'INACTIVE') {
+    // Update session user with current data from database
+    const user = {
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role,
+      adminLevel: dbUser.adminLevel ?? 0,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName
+    }
+
+    // Attach user to event context for use in route handlers
+    event.context.user = user
+    event.context.userId = user.id
+    event.context.userRole = user.role
+    event.context.adminLevel = user.adminLevel
+  } catch (error) {
     throw createError({
-      statusCode: 403,
-      message: 'User account is disabled',
-      data: { reason: 'disabled' }
+      statusCode: 401,
+      message: 'Authentication required'
     })
   }
-
-  // Attach user to event context for use in route handlers
-  const user = {
-    id: dbUser.id,
-    email: dbUser.email,
-    role: dbUser.role,
-    adminLevel: dbUser.adminLevel ?? 0,
-    firstName: dbUser.firstName,
-    lastName: dbUser.lastName
-  }
-
-  event.context.user = user
-  event.context.userId = user.id
-  event.context.userRole = user.role
-  event.context.adminLevel = user.adminLevel
 })
