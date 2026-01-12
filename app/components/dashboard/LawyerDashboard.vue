@@ -148,7 +148,7 @@ onMounted(async () => {
       $fetch('/api/dashboard/activity')
     ])
     stats.value = statsData as DashboardStats
-    recentActivity.value = activityData as any[]
+    recentActivity.value = (activityData as any).activities || []
   } catch (err) {
     console.error('Failed to fetch dashboard data:', err)
   }
