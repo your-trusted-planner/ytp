@@ -1,5 +1,5 @@
 // Delete a template (soft or hard delete)
-// INCREMENTAL DEBUG v6c: With readBody (confirm issue)
+// INCREMENTAL DEBUG v6d: Use query params instead of body
 import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
@@ -38,16 +38,9 @@ export default defineEventHandler(async (event) => {
 
   const referencingDocuments = documentCount?.count || 0
 
-  // Safe body reading - handle cases where body may be empty or already consumed
-  let body: Record<string, any> = {}
-  try {
-    const rawBody = await readBody(event)
-    if (rawBody && typeof rawBody === 'object') {
-      body = rawBody
-    }
-  } catch {
-    // No body or body already consumed - use empty object
-  }
+  // Check for forceHardDelete via query param instead of body (safer in Workers)
+  const query = getQuery(event)
+  const forceHardDelete = query.forceHardDelete === 'true'
 
   // For now, always soft delete
   await db.update(schema.documentTemplates)
@@ -73,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    debug: 'v6c-with-readbody',
+    debug: 'v6d-query-params',
     message: 'Template soft deleted',
     deleted: {
       template: { id: template.id, name: template.name },
