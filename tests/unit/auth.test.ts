@@ -122,4 +122,12 @@ describe('Auth Utilities', () => {
       expect(id).toMatch(/^[a-z0-9]+$/)
     })
   })
+
+  // INTENTIONAL FAILURE - Testing CI/CD pipeline behavior
+  // Remove this test after verifying deploy is blocked on test failure
+  describe('INTENTIONAL FAILURE', () => {
+    it('should fail to verify deploy does not proceed', () => {
+      expect(true).toBe(false)
+    })
+  })
 })
