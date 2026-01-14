@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { cn } from '~/utils/cn'
 
 interface Props {
@@ -49,7 +49,7 @@ const emit = defineEmits<{
   focus: [event: Event]
 }>()
 
-const textareaId = computed(() => `textarea-${Math.random().toString(36).substring(7)}`)
+const textareaId = useId()
 
 const textareaClasses = computed(() => {
   return cn(

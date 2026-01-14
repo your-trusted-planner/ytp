@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { cn } from '~/utils/cn'
 
 interface Props {
@@ -44,7 +44,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const selectId = computed(() => `select-${Math.random().toString(36).substring(7)}`)
+const selectId = useId()
 
 const selectClasses = computed(() => {
   return cn(

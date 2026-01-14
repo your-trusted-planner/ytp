@@ -112,9 +112,26 @@ tests/               # Unit and E2E tests
 3. Migrations auto-apply on dev server restart
 
 ### Seeding
+
+**Local Development:**
 - **Automatic**: Dev server seeds empty database on first request
 - **Manual**: `pnpm db:seed` or POST to `/api/_dev/seed`
 - **Reset**: Delete `.wrangler/state/` and restart dev server
+
+**Preview/Production Environments:**
+
+Remote seeding is protected by a secret token. First, set the token:
+```bash
+wrangler secret put NUXT_SEED_TOKEN --env preview
+```
+
+Then trigger seeding via API:
+```bash
+curl -X POST https://app-preview.businessandlegacy.com/api/seed-remote \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+The endpoint returns test credentials on success and refuses to seed if data already exists.
 
 ## Environment Variables
 
@@ -131,12 +148,28 @@ NUXT_FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
 NUXT_SESSION_PASSWORD=your-32-char-secret
 ```
 
+### Remote Seeding (preview/production)
+```env
+NUXT_SEED_TOKEN=your-secure-token
+```
+
 ## Deployment
 
 ### Preview (stage branch)
 ```bash
 git push origin stage
 # Auto-deploys to app-preview.trustandlegacy.com
+```
+
+**First-time setup for preview:**
+```bash
+# Set required secrets
+wrangler secret put NUXT_SESSION_PASSWORD --env preview
+wrangler secret put NUXT_SEED_TOKEN --env preview
+
+# After deployment, seed the database
+curl -X POST https://app-preview.businessandlegacy.com/api/seed-remote \
+  -H "Authorization: Bearer YOUR_SEED_TOKEN"
 ```
 
 ### Production (main branch)

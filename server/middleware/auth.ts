@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
   // Skip auth for public routes
   if (
     path.startsWith('/api/public/') ||
+    path.startsWith('/api/signature/') || // E-signature public endpoints (token-based auth)
     path.startsWith('/api/_') || // Dev/internal routes
     path.startsWith('/_') ||
     path === '/api/auth/login' ||
@@ -17,7 +18,8 @@ export default defineEventHandler(async (event) => {
     path === '/api/auth/logout' ||
     path === '/api/auth/session' || // Allow checking session status
     path === '/api/auth/firebase' || // Firebase OAuth authentication
-    path === '/api/oauth-providers/enabled' // Public list of enabled OAuth providers
+    path === '/api/oauth-providers/enabled' || // Public list of enabled OAuth providers
+    path === '/api/seed-remote' // Remote seeding (token-based auth)
   ) {
     return
   }

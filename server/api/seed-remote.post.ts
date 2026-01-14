@@ -44,21 +44,40 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Seed the database
-    await seedDatabase(db)
+    // Seed the database with blob storage for full functionality
+    // Note: DOCX template files won't be available in Workers (no filesystem),
+    // but blob storage allows document storage after seeding
+    await seedDatabase(db, blob)
+
+    // Verify what was created
+    const userCount = await db.select({ count: sql<number>`count(*)` }).from(schema.users).get()
+    const matterCount = await db.select({ count: sql<number>`count(*)` }).from(schema.matters).get()
+    const docCount = await db.select({ count: sql<number>`count(*)` }).from(schema.documents).get()
 
     return {
       success: true,
       message: 'Database seeded successfully!',
+      created: {
+        users: userCount?.count || 0,
+        matters: matterCount?.count || 0,
+        documents: docCount?.count || 0
+      },
       credentials: {
-        lawyer: { email: 'lawyer@yourtrustedplanner.com', password: 'password123' },
-        client: { email: 'client@test.com', password: 'password123' }
+        admin: { email: 'admin@trustandlegacy.test', password: 'password123' },
+        lawyer: { email: 'john.meuli@yourtrustedplanner.com', password: 'password123' },
+        lawyer2: { email: 'mary.parker@trustandlegacy.test', password: 'password123' },
+        staff: { email: 'lisa.chen@trustandlegacy.test', password: 'password123' },
+        advisor: { email: 'bob.advisor@external.test', password: 'password123' },
+        client1: { email: 'jane.doe@test.com', password: 'password123', note: 'Active matter' },
+        client2: { email: 'michael.johnson@test.com', password: 'password123', note: 'Prospect' },
+        client3: { email: 'sarah.williams@test.com', password: 'password123', note: 'Completed' }
       }
     }
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      message: `Failed to seed database: ${error.message}`
+      message: `Failed to seed database: ${error.message}`,
+      data: { stack: error.stack }
     })
   }
 })

@@ -45,6 +45,10 @@ export const users = sqliteTable('users', {
   lastName: text('last_name'),
   phone: text('phone'),
   avatar: text('avatar'),
+  // Stored signature image (base64 data URL) for reuse across documents
+  // Requires affirmative adoption each time it's used
+  signatureImage: text('signature_image'),
+  signatureImageUpdatedAt: integer('signature_image_updated_at', { mode: 'timestamp' }),
   status: text('status', { enum: ['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
@@ -120,6 +124,7 @@ export const documentTemplates = sqliteTable('document_templates', {
   category: text('category').notNull(),
   folderId: text('folder_id').references(() => templateFolders.id),
   content: text('content').notNull(),
+  compiledTemplate: text('compiled_template'), // Precompiled Handlebars template (for Workers compatibility)
   variables: text('variables').notNull(), // JSON string
   variableMappings: text('variable_mappings'), // JSON mapping of template variables to database fields
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false),
@@ -146,6 +151,7 @@ export const documents = sqliteTable('documents', {
   mimeType: text('mime_type'),
   variableValues: text('variable_values'), // JSON string
   docxBlobKey: text('docx_blob_key'), // Path to generated DOCX file in blob storage
+  signedPdfBlobKey: text('signed_pdf_blob_key'), // Path to signed PDF with signature in blob storage
   notarizationStatus: text('notarization_status'), // Notarization status (e.g., PENDING, SCHEDULED, COMPLETED, NOT_REQUIRED)
   pandadocRequestId: text('pandadoc_request_id'), // PandaDoc request ID for tracking
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false), // Track for meat-space coordination
@@ -608,6 +614,61 @@ export const uploadedDocuments = sqliteTable('uploaded_documents', {
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   processedAt: integer('processed_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// E-SIGNATURE SYSTEM
+// ===================================
+
+// Signature Sessions - Track signing ceremonies with audit trail
+export const signatureSessions = sqliteTable('signature_sessions', {
+  id: text('id').primaryKey(),
+  documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  signerId: text('signer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Link to action item (for ESIGN action items in journeys)
+  // When set, completing signature will auto-complete the action item
+  actionItemId: text('action_item_id').references(() => actionItems.id, { onDelete: 'set null' }),
+
+  // Signature tier: STANDARD (engagement letters) or ENHANCED (requires identity verification)
+  signatureTier: text('signature_tier', { enum: ['STANDARD', 'ENHANCED'] }).notNull(),
+
+  // Session state
+  status: text('status', {
+    enum: ['PENDING', 'IDENTITY_REQUIRED', 'READY', 'SIGNED', 'EXPIRED', 'REVOKED']
+  }).notNull().default('PENDING'),
+
+  // Identity verification (for ENHANCED tier)
+  identityVerified: integer('identity_verified', { mode: 'boolean' }).notNull().default(false),
+  identityVerificationMethod: text('identity_verification_method'), // 'KYC', 'SMS_OTP', 'EMAIL_OTP', 'KNOWLEDGE_BASED'
+  identityVerifiedAt: integer('identity_verified_at', { mode: 'timestamp' }),
+  identityProvider: text('identity_provider'), // 'PERSONA', 'JUMIO', etc.
+  identityReferenceId: text('identity_reference_id'), // External verification ID
+
+  // Signing ceremony - unique token for signing URL
+  signingToken: text('signing_token').unique(),
+  tokenExpiresAt: integer('token_expires_at', { mode: 'timestamp' }),
+
+  // Request context (audit trail)
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  geolocation: text('geolocation'), // JSON: {country, region, city}
+
+  // Signature capture
+  signatureData: text('signature_data'), // Base64 PNG
+  signatureHash: text('signature_hash'), // SHA-256 of signature data
+  signedAt: integer('signed_at', { mode: 'timestamp' }),
+
+  // Tamper-evident certificate (JSON containing full audit trail)
+  signatureCertificate: text('signature_certificate'),
+
+  // Terms acceptance tracking
+  termsAcceptedAt: integer('terms_accepted_at', { mode: 'timestamp' }),
+  termsVersion: text('terms_version'),
+
+  // Timestamps
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 

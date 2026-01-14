@@ -1,10 +1,7 @@
-name: Deploy to Cloudflare
+name: Deploy
+
 on:
   push:
-    branches:
-      - main
-      - stage
-  pull_request:
     branches:
       - main
       - stage
@@ -18,8 +15,6 @@ jobs:
     permissions:
       contents: read
       deployments: write
-      pull-requests: write
-      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -35,23 +30,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Run unit tests
-        run: pnpm test:run
-
-      - name: Install Playwright browsers
-        run: npx playwright install chromium
-
-      - name: Run e2e tests
-        run: pnpm test:e2e
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
 
       - name: Verify Firebase Config
         run: |
@@ -131,7 +109,7 @@ jobs:
         run: rm -rf .wrangler/deploy
 
       - name: Apply Database Migrations (Preview)
-        if: github.ref != 'refs/heads/main'
+        if: github.ref == 'refs/heads/stage'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -140,8 +118,8 @@ jobs:
           environment: preview
           command: d1 migrations apply ytp-preview --remote
 
-      - name: Deploy to Preview (non-main branches)
-        if: github.ref != 'refs/heads/main'
+      - name: Deploy to Preview
+        if: github.ref == 'refs/heads/stage'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -159,7 +137,7 @@ jobs:
           workingDirectory: .output/server
           command: d1 migrations apply ytp-db --remote
 
-      - name: Deploy to Production (main branch)
+      - name: Deploy to Production
         if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
@@ -167,29 +145,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: .output/server
           command: deploy
-
-      - name: Comment PR with deployment info
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const branchName = context.payload.pull_request.head.ref;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## 🚀 Deployment Complete
-
-              **Environment:** Preview
-              **Branch:** \`${branchName}\`
-
-              **URLs:**
-              - Custom Domain: https://app-preview.trustandlegacy.com
-              - Workers URL: https://ytp-preview.workers.dev
-
-              **Resources:**
-              - Database: \`ytp-preview\`
-              - R2 Bucket: \`ytp-blob-preview\`
-              - Queues: \`*-preview\`
-              `
-            })

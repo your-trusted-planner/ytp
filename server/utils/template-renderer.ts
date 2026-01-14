@@ -1,4 +1,15 @@
+/**
+ * Handlebars Template Renderer with Cloudflare Workers Support
+ *
+ * Uses precompiled templates to avoid eval()/new Function() restrictions in Workers.
+ *
+ * Two-phase approach:
+ * 1. Compilation (at template upload): Handlebars.precompile() - generates JS function as string
+ * 2. Execution (at render time): handlebars/runtime - executes precompiled template
+ */
+
 import Handlebars from 'handlebars'
+import HandlebarsRuntime from 'handlebars/runtime'
 
 // Template context interface (flexible to accept any data)
 export interface TemplateContext {
@@ -7,13 +18,16 @@ export interface TemplateContext {
 
 export class TemplateRenderer {
   private handlebars: typeof Handlebars
+  private runtime: typeof HandlebarsRuntime
 
   constructor() {
     this.handlebars = Handlebars.create()
+    this.runtime = HandlebarsRuntime.create()
     this.registerHelpers()
+    this.registerRuntimeHelpers()
   }
 
-  // Register custom Handlebars helpers
+  // Register custom Handlebars helpers (for compilation)
   private registerHelpers() {
     // Helper for formatting dates
     this.handlebars.registerHelper('formatDate', (date: any) => {
@@ -45,6 +59,38 @@ export class TemplateRenderer {
     })
   }
 
+  // Register helpers for runtime (must match compilation helpers)
+  private registerRuntimeHelpers() {
+    // Helper for formatting dates
+    this.runtime.registerHelper('formatDate', (date: any) => {
+      if (!date) return ''
+      const d = new Date(date)
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    })
+
+    // Helper for formatting currency
+    this.runtime.registerHelper('formatCurrency', (amount: any) => {
+      if (amount === null || amount === undefined) return ''
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num)
+    })
+
+    // Helper for uppercase
+    this.runtime.registerHelper('uppercase', (str: any) => {
+      return str ? String(str).toUpperCase() : ''
+    })
+
+    // Helper for lowercase
+    this.runtime.registerHelper('lowercase', (str: any) => {
+      return str ? String(str).toLowerCase() : ''
+    })
+
+    // Helper for default values
+    this.runtime.registerHelper('default', (value: any, defaultValue: any) => {
+      return value !== null && value !== undefined && value !== '' ? value : defaultValue
+    })
+  }
+
   // Preprocess template to fix common syntax issues
   private preprocessTemplate(template: string): string {
     let processed = template
@@ -61,23 +107,62 @@ export class TemplateRenderer {
     return processed
   }
 
-  // Render a template with context data using Handlebars
-  render(template: string, context: TemplateContext): string {
+  /**
+   * Precompile a template for use in Workers
+   * Call this at template upload time and store the result
+   */
+  precompile(template: string): string {
     try {
-      // Preprocess template to fix common syntax issues
       const processedTemplate = this.preprocessTemplate(template)
+      return this.handlebars.precompile(processedTemplate, {
+        noEscape: true,
+        strict: false
+      })
+    } catch (error) {
+      console.error('Error precompiling template:', error)
+      throw new Error(`Template precompilation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
 
+  /**
+   * Render a template with context data
+   * If precompiledTemplate is provided, uses runtime (Workers-safe)
+   * Otherwise falls back to compile() (development only)
+   */
+  render(template: string, context: TemplateContext, precompiledTemplate?: string): string {
+    try {
+      if (precompiledTemplate) {
+        // Use precompiled template with runtime (Workers-safe)
+        // Note: eval() of precompiled templates is allowed in Workers because the template
+        // is already compiled (static code), not dynamically generated at runtime
+        try {
+          const templateSpec = eval(`(${precompiledTemplate})`)
+          const compiledFn = this.runtime.template(templateSpec)
+          return compiledFn(context)
+        } catch (evalError) {
+          console.error('Error using precompiled template, falling back to runtime compilation:', evalError)
+          // Fall through to runtime compilation
+        }
+      }
+
+      // Fallback to compile (uses new Function - only works in Node/dev, NOT in Workers)
+      const processedTemplate = this.preprocessTemplate(template)
       const compiledTemplate = this.handlebars.compile(processedTemplate, {
-        noEscape: true, // Don't escape HTML in rendered output
-        strict: false   // Allow missing variables
+        noEscape: true,
+        strict: false
       })
       return compiledTemplate(context)
     } catch (error) {
       console.error('Error rendering template:', error)
 
       // Provide helpful error message
-      if (error instanceof Error && error.message.includes('Parse error')) {
-        throw new Error(`Template contains invalid Handlebars syntax. Please check your template for unsupported syntax like pipes (|) or other non-Handlebars constructs. Original error: ${error.message}`)
+      if (error instanceof Error) {
+        if (error.message.includes('Parse error')) {
+          throw new Error(`Template contains invalid Handlebars syntax. Please check your template for unsupported syntax like pipes (|) or other non-Handlebars constructs. Original error: ${error.message}`)
+        }
+        if (error.message.includes('Code generation from strings disallowed')) {
+          throw new Error('Template compilation failed in Workers environment. This template needs to be re-uploaded to generate a precompiled version.')
+        }
       }
 
       throw new Error(`Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`)

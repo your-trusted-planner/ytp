@@ -1,0 +1,1 @@
+ALTER TABLE `document_templates` ADD `compiled_template` text;

@@ -207,7 +207,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Render HTML for preview
-  const renderedContent = renderer.render(template.content, context)
+  // Use precompiled template if available (Workers-safe), otherwise fall back to runtime compilation
+  const renderedContent = renderer.render(template.content, context, template.compiledTemplate || undefined)
 
   // Generate DOCX if template has a blob key
   let docxBlobKey = null

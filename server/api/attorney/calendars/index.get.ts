@@ -1,8 +1,8 @@
 // Get attorney's Google Calendar configurations
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireRole(event, ['LAWYER', 'ADMIN'])
+  const user = requireRole(event, ['LAWYER', 'ADMIN'])
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, and, desc } = await import('drizzle-orm')

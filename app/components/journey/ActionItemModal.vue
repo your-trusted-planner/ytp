@@ -185,11 +185,38 @@
 
         <!-- E-Signature Configuration -->
         <div v-else-if="form.actionType === 'ESIGN'" class="space-y-3">
-          <UiInput
-            v-model="form.config.documentName"
-            label="Document Name"
-            placeholder="e.g., Trust Agreement"
-          />
+          <!-- Document Selector (Required) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Document to Sign <span class="text-red-500">*</span>
+            </label>
+            <select
+              v-model="form.config.documentId"
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500 sm:text-sm"
+              required
+            >
+              <option value="">Select a document...</option>
+              <option
+                v-for="doc in availableDocuments"
+                :key="doc.id"
+                :value="doc.id"
+                :disabled="doc.status === 'SIGNED'"
+              >
+                {{ doc.title }} ({{ doc.status }})
+              </option>
+            </select>
+            <p v-if="loadingDocuments" class="text-xs text-gray-500 mt-1">Loading documents...</p>
+            <p v-else-if="availableDocuments.length === 0" class="text-xs text-amber-600 mt-1">
+              No documents found. Create a document first before adding an ESIGN action.
+            </p>
+          </div>
+
+          <!-- Signature Tier -->
+          <UiSelect v-model="form.config.signatureTier" label="Signature Tier">
+            <option value="STANDARD">Standard (email verification)</option>
+            <option value="ENHANCED">Enhanced (identity verification required)</option>
+          </UiSelect>
+
           <div class="flex items-center">
             <input
               v-model="form.config.requiresWitness"
@@ -201,18 +228,9 @@
               Requires witness
             </label>
           </div>
-          <div class="flex items-center">
-            <input
-              v-model="form.systemIntegrationType"
-              type="checkbox"
-              id="esign-integration"
-              true-value="document"
-              false-value=""
-              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="esign-integration" class="ml-2 block text-sm text-gray-900">
-              Integrate with e-signature platform
-            </label>
+
+          <div class="p-3 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+            <p><strong>Journey Integration:</strong> When this document is signed, this action item will automatically be marked as complete.</p>
           </div>
         </div>
 
@@ -328,6 +346,30 @@ const isOpen = computed({
 })
 
 const saving = ref(false)
+const loadingDocuments = ref(false)
+const availableDocuments = ref<Array<{ id: string; title: string; status: string }>>([])
+
+// Fetch documents when ESIGN action type is selected
+async function fetchDocuments() {
+  loadingDocuments.value = true
+  try {
+    const response = await $fetch<{ documents: Array<{ id: string; title: string; status: string }> }>('/api/documents')
+    // Filter to only show documents that haven't been signed
+    availableDocuments.value = response.documents.filter((doc: any) => doc.status !== 'SIGNED')
+  } catch (error) {
+    console.error('Failed to fetch documents:', error)
+    availableDocuments.value = []
+  } finally {
+    loadingDocuments.value = false
+  }
+}
+
+// Watch for ESIGN selection to load documents
+watch(() => form.value.actionType, (newType) => {
+  if (newType === 'ESIGN' && availableDocuments.value.length === 0) {
+    fetchDocuments()
+  }
+})
 
 const actionTypes = [
   { value: 'QUESTIONNAIRE', label: 'Questionnaire', icon: FileText, description: 'Client fills out form' },
@@ -386,6 +428,10 @@ watch(() => props.editingItem, (item) => {
       verificationCriteriaText: item.verificationCriteria ? JSON.parse(item.verificationCriteria) : '',
       config: item.config ? JSON.parse(item.config) : {}
     }
+    // Fetch documents if editing an ESIGN action
+    if (item.actionType === 'ESIGN') {
+      fetchDocuments()
+    }
   } else {
     // Reset form for new item
     form.value = {
@@ -431,8 +477,19 @@ async function handleSubmit() {
     return
   }
 
+  // Validate ESIGN requires documentId
+  if (form.value.actionType === 'ESIGN' && !form.value.config.documentId) {
+    alert('Please select a document for e-signature')
+    return
+  }
+
   saving.value = true
   try {
+    // For ESIGN actions, ensure systemIntegrationType is set
+    const systemIntegrationType = form.value.actionType === 'ESIGN'
+      ? 'document'
+      : form.value.systemIntegrationType
+
     const payload = {
       stepId: props.step.id,
       actionType: form.value.actionType,
@@ -441,7 +498,7 @@ async function handleSubmit() {
       assignedTo: form.value.assignedTo,
       priority: form.value.priority,
       config: form.value.config,
-      systemIntegrationType: form.value.systemIntegrationType,
+      systemIntegrationType,
       isServiceDeliveryVerification: form.value.isServiceDeliveryVerification,
       verificationCriteria: form.value.isServiceDeliveryVerification ? form.value.verificationCriteriaText : null
     }

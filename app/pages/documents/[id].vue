@@ -34,11 +34,36 @@
               Preview Document
             </button>
             <button
+              v-if="!isSigned"
               @click="downloadDocx"
               class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
             >
               <Download class="w-4 h-4 mr-2" />
               Download DOCX
+            </button>
+            <button
+              v-if="isSigned && document?.signedPdfBlobKey"
+              @click="downloadSignedPdf"
+              class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+            >
+              <Download class="w-4 h-4 mr-2" />
+              Download Signed PDF
+            </button>
+            <button
+              v-if="canSendForSignature"
+              @click="showSignatureModal = true"
+              class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+            >
+              <PenTool class="w-4 h-4 mr-2" />
+              Send for E-Signature
+            </button>
+            <button
+              v-if="canDelete"
+              @click="showDeleteModal = true"
+              class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete Document
             </button>
           </div>
         </div>
@@ -46,11 +71,13 @@
           v-if="document"
           v-model="selectedStatus"
           @change="updateStatus"
+          :disabled="isSigned"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-500"
           :class="{
             'bg-green-50 text-green-700 border-green-300': selectedStatus === 'SIGNED' || selectedStatus === 'COMPLETED',
             'bg-yellow-50 text-yellow-700 border-yellow-300': selectedStatus === 'SENT' || selectedStatus === 'VIEWED',
-            'bg-gray-50 text-gray-700': selectedStatus === 'DRAFT'
+            'bg-gray-50 text-gray-700': selectedStatus === 'DRAFT',
+            'opacity-60 cursor-not-allowed': isSigned
           }"
         >
           <option value="DRAFT">DRAFT</option>
@@ -129,8 +156,8 @@
         </UiCard>
       </div>
 
-      <!-- Signature Section (if not signed yet) -->
-      <UiCard v-if="!isSigned && document.status === 'SENT'" title="Sign Document">
+      <!-- Signature Section (only for clients signing their own documents directly) -->
+      <UiCard v-if="!isSigned && document.status === 'SENT' && isClientSigningOwnDocument" title="Sign Document">
         <div class="space-y-4">
           <p class="text-sm text-gray-600">
             Please sign below to complete this document. Your signature will be securely stored.
@@ -254,12 +281,203 @@
         </UiButton>
       </template>
     </UiModal>
+
+    <!-- E-Signature Modal -->
+    <UiModal v-model="showSignatureModal" title="Send for E-Signature" size="md">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600">
+          Create a secure signing link to send to the client. They will be able to review and sign the document.
+        </p>
+
+        <!-- Signature Tier -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Signature Type</label>
+          <div class="space-y-2">
+            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'STANDARD' }">
+              <input type="radio" v-model="signatureTier" value="STANDARD" class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]" />
+              <div class="ml-3">
+                <span class="font-medium text-gray-900">Standard</span>
+                <p class="text-sm text-gray-500">Email verification + audit trail. Suitable for engagement letters, permissions.</p>
+              </div>
+            </label>
+            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'ENHANCED' }">
+              <input type="radio" v-model="signatureTier" value="ENHANCED" class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]" />
+              <div class="ml-3">
+                <span class="font-medium text-gray-900">Enhanced</span>
+                <p class="text-sm text-gray-500">Requires identity verification. For distribution acknowledgements, affirmations.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Expiration -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Link Expires In</label>
+          <select v-model="signatureExpiry" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#C41E3A] focus:ring-[#C41E3A]">
+            <option value="24h">24 hours</option>
+            <option value="48h">48 hours</option>
+            <option value="7d">7 days</option>
+          </select>
+        </div>
+
+        <!-- Send Email Option -->
+        <div class="border-t border-gray-200 pt-4">
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="sendSignatureEmail"
+              class="rounded border-gray-300 text-[#C41E3A] focus:ring-[#C41E3A]"
+            />
+            <span class="ml-3 text-sm text-gray-700">Email signing link to client</span>
+          </label>
+          <p class="mt-1 ml-6 text-xs text-gray-500">
+            Send an email notification with the signing link to {{ clientEmail || 'the client' }}
+          </p>
+        </div>
+
+        <!-- Optional Message (shown when email is enabled) -->
+        <div v-if="sendSignatureEmail">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Message (optional)</label>
+          <textarea
+            v-model="signatureEmailMessage"
+            rows="3"
+            placeholder="Add a personal message to include in the email..."
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#C41E3A] focus:ring-[#C41E3A] text-sm"
+          ></textarea>
+        </div>
+
+        <!-- Error message -->
+        <div v-if="signatureError" class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p class="text-sm text-red-700">{{ signatureError }}</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showSignatureModal = false">
+          Cancel
+        </UiButton>
+        <UiButton @click="createSignatureSession" :is-loading="creatingSession">
+          Create Signing Link
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Signing Link Created Modal -->
+    <UiModal v-model="showSigningLinkModal" title="Signing Link Created" size="md">
+      <div class="space-y-4">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div class="flex items-center">
+            <CheckCircle class="w-5 h-5 text-green-600 mr-2" />
+            <span class="font-medium text-green-800">Signing session created successfully!</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Signing URL</label>
+          <div class="flex">
+            <input
+              type="text"
+              :value="signingUrl"
+              readonly
+              class="flex-1 rounded-l-md border-gray-300 bg-gray-50 text-sm"
+            />
+            <button
+              @click="copySigningUrl"
+              class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-200 transition-colors"
+            >
+              {{ copied ? 'Copied!' : 'Copy' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="text-sm text-gray-600 space-y-1">
+          <p><strong>Expires:</strong> {{ signatureSessionData?.expiresAt ? new Date(signatureSessionData.expiresAt).toLocaleString() : 'N/A' }}</p>
+          <p><strong>Signer:</strong> {{ signatureSessionData?.signer?.name }} ({{ signatureSessionData?.signer?.email }})</p>
+          <p><strong>Type:</strong> {{ signatureSessionData?.tier }}</p>
+          <p v-if="signatureSessionData?.emailSent" class="text-green-600">
+            <strong>Email:</strong> Sent to {{ signatureSessionData?.signer?.email }}
+          </p>
+        </div>
+
+        <div v-if="!signatureSessionData?.emailSent" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p class="text-sm text-blue-700">
+            <strong>Tip:</strong> Copy this URL and send it to the client via email, or open in an incognito window to test the signing flow.
+          </p>
+        </div>
+        <div v-else class="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p class="text-sm text-green-700">
+            The client has been notified by email. You can also copy the link above if you need to send it through another channel.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showSigningLinkModal = false">
+          Close
+        </UiButton>
+        <UiButton @click="openSigningUrl">
+          Open Signing Page
+        </UiButton>
+      </template>
+    </UiModal>
+
+    <!-- Delete Confirmation Modal -->
+    <UiModal v-model="showDeleteModal" title="Delete Document" size="md">
+      <div class="space-y-4">
+        <div v-if="document" class="space-y-3">
+          <p class="text-sm text-gray-700">
+            Are you sure you want to delete "<strong>{{ document.title }}</strong>"?
+          </p>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="text-sm text-gray-600 space-y-1">
+              <p><strong>Status:</strong> {{ document.status }}</p>
+              <p v-if="document.signedAt"><strong>Signed:</strong> {{ formatDateTime(document.signedAt) }}</p>
+            </div>
+          </div>
+
+          <div v-if="document.status !== 'DRAFT'" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm text-yellow-800">
+              <strong>Warning:</strong> This document has status {{ document.status }}. This action cannot be undone.
+            </p>
+            <label class="flex items-center mt-2">
+              <input
+                type="checkbox"
+                v-model="confirmDelete"
+                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+              />
+              <span class="ml-2 text-sm text-yellow-900">I understand this action is permanent</span>
+            </label>
+          </div>
+
+          <div v-if="document.status === 'SIGNED' || document.status === 'COMPLETED'" class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p class="text-sm text-red-800">
+              <strong>Legal Document:</strong> This signed document may have legal significance. Only admins can delete signed documents.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="showDeleteModal = false; confirmDelete = false">
+          Cancel
+        </UiButton>
+        <UiButton
+          variant="danger"
+          @click="handleDeleteDocument"
+          :is-loading="deleting"
+          :disabled="requiresConfirmation && !confirmDelete"
+        >
+          Delete Document
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon } from 'lucide-vue-next'
+import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon, PenTool, Trash2 } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
 
 definePageMeta({
@@ -280,6 +498,20 @@ const selectedStatus = ref<string>('DRAFT')
 // Modal state
 const showEditVariablesModal = ref(false)
 const showPreviewModal = ref(false)
+const showSignatureModal = ref(false)
+const showSigningLinkModal = ref(false)
+const showDeleteModal = ref(false)
+
+// E-Signature state
+const signatureTier = ref<'STANDARD' | 'ENHANCED'>('STANDARD')
+const signatureExpiry = ref('48h')
+const creatingSession = ref(false)
+const signatureError = ref('')
+const signingUrl = ref('')
+const signatureSessionData = ref<any>(null)
+const copied = ref(false)
+const sendSignatureEmail = ref(true) // Default to sending email
+const signatureEmailMessage = ref('')
 
 // Dropdown state
 const showActionsDropdown = ref(false)
@@ -287,12 +519,69 @@ const showActionsDropdown = ref(false)
 // Collapsible sections state
 const showMetadata = ref(true)
 
+// Deletion state
+const deleting = ref(false)
+const requiresConfirmation = ref(false)
+const confirmDelete = ref(false)
+
 const signatureCanvas = ref<HTMLCanvasElement | null>(null)
 const isDrawing = ref(false)
 const ctx = ref<CanvasRenderingContext2D | null>(null)
 
 const isSigned = computed(() => {
   return document.value?.status === 'SIGNED' || document.value?.status === 'COMPLETED'
+})
+
+const clientEmail = computed(() => {
+  return document.value?.clientEmail || null
+})
+
+// Can send for signature if document is in DRAFT status and has content
+const canSendForSignature = computed(() => {
+  if (!document.value) return false
+  // Allow sending for signature if document is in DRAFT or has been previously sent
+  return ['DRAFT', 'SENT', 'VIEWED'].includes(document.value.status)
+})
+
+// Can delete document based on role and document status
+const canDelete = computed(() => {
+  if (!document.value || !user.value) return false
+
+  // Admin level 2+ can delete anything
+  if (user.value.adminLevel >= 2 || user.value.role === 'ADMIN') {
+    return true
+  }
+
+  // For SIGNED/COMPLETED documents, only admin level 2+ can delete
+  if (document.value.status === 'SIGNED' || document.value.status === 'COMPLETED') {
+    return false
+  }
+
+  // Staff can delete DRAFT documents
+  if (user.value.role === 'STAFF' && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  // Lawyers can delete DRAFT documents
+  if (user.value.role === 'LAWYER' && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  // Creator (client) can delete their own DRAFT documents
+  if (user.value.role === 'CLIENT' && document.value.clientId === user.value.id && document.value.status === 'DRAFT') {
+    return true
+  }
+
+  return false
+})
+
+// Only show direct signing UI for clients viewing their own document (legacy path)
+// New flow uses /sign/[token] page instead
+const { user } = useUserSession()
+const isClientSigningOwnDocument = computed(() => {
+  if (!document.value || !user.value) return false
+  // Only show for CLIENT role viewing their own document
+  return user.value.role === 'CLIENT' && document.value.clientId === user.value.id
 })
 
 // Get variable mappings from template
@@ -518,6 +807,144 @@ const downloadDocx = async () => {
   } catch (error) {
     console.error('Download error:', error)
     alert(`Failed to download document: ${error.message || 'Unknown error'}`)
+  }
+}
+
+const downloadSignedPdf = async () => {
+  try {
+    const response = await fetch(`/api/documents/${documentId}/download-signed`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Download failed: ${response.status} - ${errorText}`)
+    }
+
+    const blob = await response.blob()
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `${document.value?.title || 'document'} - Signed.pdf`
+
+    // Trigger download
+    window.document.body.appendChild(link)
+    link.click()
+
+    // Cleanup
+    window.document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Download signed PDF error:', error)
+    alert(`Failed to download signed PDF: ${error.message || 'Unknown error'}`)
+  }
+}
+
+// E-Signature methods
+const createSignatureSession = async () => {
+  signatureError.value = ''
+  creatingSession.value = true
+
+  try {
+    // First, mark document as ready for signature if needed
+    if (!document.value.readyForSignature) {
+      await $fetch(`/api/documents/${documentId}/status`, {
+        method: 'PUT',
+        body: {
+          status: 'DRAFT',
+          readyForSignature: true,
+          attorneyApproved: true
+        }
+      })
+    }
+
+    const response = await $fetch(`/api/documents/${documentId}/signature-session`, {
+      method: 'POST',
+      body: {
+        tier: signatureTier.value,
+        expiresIn: signatureExpiry.value,
+        sendEmail: sendSignatureEmail.value,
+        message: signatureEmailMessage.value || undefined
+      }
+    })
+
+    if (response.success) {
+      signingUrl.value = response.data.signingUrl
+      signatureSessionData.value = response.data
+      showSignatureModal.value = false
+      showSigningLinkModal.value = true
+
+      // Refresh document to get updated status
+      await fetchDocument()
+    }
+  } catch (error: any) {
+    signatureError.value = error.data?.message || error.message || 'Failed to create signature session'
+  } finally {
+    creatingSession.value = false
+  }
+}
+
+const copySigningUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(signingUrl.value)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = window.document.createElement('textarea')
+    textArea.value = signingUrl.value
+    window.document.body.appendChild(textArea)
+    textArea.select()
+    window.document.execCommand('copy')
+    window.document.body.removeChild(textArea)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  }
+}
+
+const openSigningUrl = () => {
+  window.open(signingUrl.value, '_blank')
+}
+
+// Delete document
+const handleDeleteDocument = async () => {
+  if (!document.value) return
+
+  // Check if confirmation is required
+  const needsConfirmation = document.value.status !== 'DRAFT'
+  requiresConfirmation.value = needsConfirmation
+
+  if (needsConfirmation && !confirmDelete.value) {
+    // Show confirmation checkbox
+    return
+  }
+
+  deleting.value = true
+  try {
+    // Use query param instead of body (readBody fails in CF Workers)
+    const url = `/api/documents/${documentId}${needsConfirmation ? '?confirmDelete=true' : ''}`
+    const response = await $fetch(url, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      // Navigate back to documents list
+      await navigateTo('/documents')
+    }
+  } catch (error: any) {
+    if (error.statusCode === 400 && error.data?.error === 'Confirmation required') {
+      // Server requires confirmation
+      requiresConfirmation.value = true
+      alert(`This document has status ${document.value.status}. Please check the confirmation box to proceed.`)
+    } else {
+      alert(`Failed to delete document: ${error.data?.message || error.message || 'Unknown error'}`)
+    }
+  } finally {
+    deleting.value = false
   }
 }
 
