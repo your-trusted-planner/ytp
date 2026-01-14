@@ -1,16 +1,57 @@
-name: Deploy
+name: CI/CD
 
 on:
+  pull_request:
+    branches:
+      - main
+      - stage
   push:
     branches:
       - main
       - stage
 
 jobs:
-  deploy:
-    name: "Deploy to Cloudflare"
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    # Use GitHub environment based on branch for environment-specific secrets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run unit tests
+        run: pnpm test:run
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run e2e tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
     permissions:
       contents: read
@@ -50,7 +91,6 @@ jobs:
             echo "✗ FIREBASE_AUTH_DOMAIN is NOT set"
           fi
         env:
-          # API key is a secret, others are variables
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
@@ -60,7 +100,6 @@ jobs:
         env:
           NUXT_GIT_COMMIT: ${{ github.sha }}
           NUXT_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
-          # Firebase config: API key from secrets, others from vars
           NUXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
