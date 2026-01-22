@@ -34,13 +34,13 @@ export default defineEventHandler(async (event) => {
     const catalogId = serviceCatalog.id
     log.push(`📋 Found WYDAPT service catalog entry: ${catalogId}`)
 
-    // Get journey IDs for this catalog
-    const journeys = await db.select({ id: schema.journeys.id })
-      .from(schema.journeys)
-      .where(eq(schema.journeys.serviceCatalogId, catalogId))
+    // Get journey IDs for this catalog via junction table
+    const journeyLinks = await db.select({ journeyId: schema.journeysToCatalog.journeyId })
+      .from(schema.journeysToCatalog)
+      .where(eq(schema.journeysToCatalog.catalogId, catalogId))
       .all()
 
-    const journeyIds = journeys.map(j => j.id)
+    const journeyIds = journeyLinks.map(j => j.journeyId)
 
     // Delete journey steps
     let stepsDeleted = 0
@@ -51,10 +51,18 @@ export default defineEventHandler(async (event) => {
     }
     log.push(`✅ Deleted ${stepsDeleted} journey steps`)
 
+    // Delete junction table entries
+    await db.delete(schema.journeysToCatalog)
+      .where(eq(schema.journeysToCatalog.catalogId, catalogId))
+    log.push(`✅ Deleted journey-to-catalog links`)
+
     // Delete journeys
-    const journeysResult = await db.delete(schema.journeys)
-      .where(eq(schema.journeys.serviceCatalogId, catalogId))
-    const journeysDeleted = journeysResult.rowsAffected || 0
+    let journeysDeleted = 0
+    if (journeyIds.length > 0) {
+      const journeysResult = await db.delete(schema.journeys)
+        .where(inArray(schema.journeys.id, journeyIds))
+      journeysDeleted = journeysResult.rowsAffected || 0
+    }
     log.push(`✅ Deleted ${journeysDeleted} journeys`)
 
     // Delete document templates with WYDAPT-related descriptions

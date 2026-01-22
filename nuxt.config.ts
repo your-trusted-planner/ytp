@@ -9,7 +9,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@nuxt/eslint',
     '@nuxtjs/tailwindcss',
-    'nuxt-auth-utils'
+    'nuxt-auth-utils',
+    '@pinia/nuxt'
   ],
 
   // Disable auto-import of password functions from nuxt-auth-utils

@@ -364,13 +364,6 @@ async function fetchDocuments() {
   }
 }
 
-// Watch for ESIGN selection to load documents
-watch(() => form.value.actionType, (newType) => {
-  if (newType === 'ESIGN' && availableDocuments.value.length === 0) {
-    fetchDocuments()
-  }
-})
-
 const actionTypes = [
   { value: 'QUESTIONNAIRE', label: 'Questionnaire', icon: FileText, description: 'Client fills out form' },
   { value: 'UPLOAD', label: 'Upload', icon: Upload, description: 'Client uploads documents' },
@@ -412,6 +405,13 @@ const form = ref({
   isServiceDeliveryVerification: false,
   verificationCriteriaText: '',
   config: {} as any
+})
+
+// Watch for ESIGN selection to load documents
+watch(() => form.value.actionType, (newType) => {
+  if (newType === 'ESIGN' && availableDocuments.value.length === 0) {
+    fetchDocuments()
+  }
 })
 
 // Initialize form when editing

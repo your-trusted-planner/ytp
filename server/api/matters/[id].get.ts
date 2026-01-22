@@ -104,6 +104,16 @@ export default defineEventHandler(async (event) => {
       status: matter.status,
       lead_attorney_id: matter.leadAttorneyId,
       engagement_journey_id: matter.engagementJourneyId,
+      // Google Drive sync fields
+      google_drive_folder_id: matter.googleDriveFolderId,
+      google_drive_folder_url: matter.googleDriveFolderUrl,
+      google_drive_sync_status: matter.googleDriveSyncStatus,
+      google_drive_sync_error: matter.googleDriveSyncError,
+      google_drive_last_sync_at: matter.googleDriveLastSyncAt instanceof Date
+        ? Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000)
+        : matter.googleDriveLastSyncAt,
+      google_drive_subfolder_ids: matter.googleDriveSubfolderIds,
+      // Timestamps
       created_at: matter.createdAt instanceof Date ? matter.createdAt.getTime() : matter.createdAt,
       updated_at: matter.updatedAt instanceof Date ? matter.updatedAt.getTime() : matter.updatedAt,
       ...clientInfo,

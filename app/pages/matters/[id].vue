@@ -11,13 +11,13 @@
             {{ matter.title }}
           </h1>
           <div v-if="matter" class="flex items-center space-x-3 mt-1">
-            <span class="text-gray-600">Matter #: {{ matter.matter_number }}</span>
+            <span class="text-gray-600">Matter #: {{ matter.matterNumber }}</span>
             <UiBadge :variant="getStatusVariant(matter.status)">
               {{ matter.status }}
             </UiBadge>
             <DriveStatusBadge
-              :status="matter.google_drive_sync_status"
-              :folder-url="matter.google_drive_folder_url"
+              :status="matter.googleDriveSyncStatus"
+              :folder-url="matter.googleDriveFolderUrl"
               :show-label="true"
             />
           </div>
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div v-if="matterStore.loading" class="flex justify-center py-12">
       <Loader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
@@ -69,7 +69,7 @@
                 </div>
                 <div>
                   <span class="text-gray-600">Matter Number:</span>
-                  <span class="ml-2 font-medium">{{ matter.matter_number }}</span>
+                  <span class="ml-2 font-medium">{{ matter.matterNumber }}</span>
                 </div>
                 <div>
                   <span class="text-gray-600">Status:</span>
@@ -79,27 +79,21 @@
                 </div>
                 <div>
                   <span class="text-gray-600">Client:</span>
-                  <span class="ml-2 font-medium">{{ clientName }}</span>
+                  <span class="ml-2 font-medium">{{ matterStore.clientName }}</span>
                 </div>
-                <div v-if="matter.contract_date">
-                  <span class="text-gray-600">Contract Date:</span>
-                  <span class="ml-2">{{ formatDate(matter.contract_date) }}</span>
-                </div>
-                <div v-if="matter.lead_attorney_first_name">
+                <div v-if="matterStore.leadAttorneyName">
                   <span class="text-gray-600">Lead Attorney:</span>
-                  <span class="ml-2 font-medium">
-                    {{ matter.lead_attorney_first_name }} {{ matter.lead_attorney_last_name }}
-                  </span>
+                  <span class="ml-2 font-medium">{{ matterStore.leadAttorneyName }}</span>
                 </div>
-                <div v-if="matter.engagement_journey_name">
+                <div v-if="matter.engagementJourneyName">
                   <span class="text-gray-600">Engagement Journey:</span>
-                  <span class="ml-2 font-medium">{{ matter.engagement_journey_name }}</span>
+                  <span class="ml-2 font-medium">{{ matter.engagementJourneyName }}</span>
                   <button
-                    v-if="matter.engagement_journey_id"
-                    @click="viewEngagementJourney(matter.engagement_journey_id)"
+                    v-if="matter.engagementJourneyId"
+                    @click="viewEngagementJourney(matter.engagementJourneyId)"
                     class="ml-2 text-burgundy-600 hover:text-burgundy-800 text-sm"
                   >
-                    View Progress →
+                    View Progress
                   </button>
                 </div>
                 <div v-if="matter.description">
@@ -115,25 +109,25 @@
               <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Engaged Services</span>
-                  <span class="font-semibold text-burgundy-600">{{ services.length }}</span>
+                  <span class="font-semibold text-burgundy-600">{{ matterStore.services.length }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Active Journeys</span>
-                  <span class="font-semibold">{{ journeys.length }}</span>
+                  <span class="font-semibold">{{ matterStore.journeys.length }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Total Payments</span>
-                  <span class="font-semibold">{{ formatCurrency(totalPayments) }}</span>
+                  <span class="font-semibold">{{ formatCurrency(matterStore.totalPayments) }}</span>
                 </div>
               </div>
             </UiCard>
 
             <!-- Google Drive Status -->
             <DriveStatusSection
-              :sync-status="matter.google_drive_sync_status"
-              :folder-url="matter.google_drive_folder_url"
-              :last-sync-at="matter.google_drive_last_sync_at"
-              :sync-error="matter.google_drive_sync_error"
+              :sync-status="matter.googleDriveSyncStatus"
+              :folder-url="matter.googleDriveFolderUrl"
+              :last-sync-at="matter.googleDriveLastSyncAt"
+              :sync-error="matter.googleDriveSyncError"
               entity-type="matter"
               :entity-id="matterId"
               @synced="handleDriveSynced"
@@ -151,7 +145,7 @@
                 Add Service
               </UiButton>
             </div>
-            <MatterServicesTable :services="services" />
+            <MatterServicesTable :services="servicesForTable" />
           </UiCard>
         </div>
 
@@ -163,25 +157,25 @@
               <p class="text-sm text-gray-500 mt-1">Journeys are automatically created when you add a service with an associated journey template</p>
             </div>
 
-            <div v-if="journeys.length === 0" class="text-center py-8 text-gray-500">
+            <div v-if="matterStore.journeys.length === 0" class="text-center py-8 text-gray-500">
               No journeys started yet. Add a service to begin.
             </div>
 
             <div v-else class="space-y-3">
               <div
-                v-for="journey in journeys"
+                v-for="journey in matterStore.journeys"
                 :key="journey.id"
                 class="p-4 border border-gray-200 rounded-lg hover:border-burgundy-500 transition-colors cursor-pointer"
                 @click="viewJourney(journey.id)"
               >
                 <div class="flex justify-between items-start">
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{ journey.journey_name }}</h4>
-                    <p v-if="journey.service_name" class="text-sm text-gray-600 mt-1">
-                      Service: {{ journey.service_name }}
+                    <h4 class="font-semibold text-gray-900">{{ journey.journeyName }}</h4>
+                    <p v-if="journey.serviceName" class="text-sm text-gray-600 mt-1">
+                      Service: {{ journey.serviceName }}
                     </p>
-                    <p v-if="journey.current_step_name" class="text-sm text-gray-600">
-                      Current: {{ journey.current_step_name }}
+                    <p v-if="journey.currentStepName" class="text-sm text-gray-600">
+                      Current: {{ journey.currentStepName }}
                     </p>
                   </div>
                   <UiBadge :variant="getJourneyStatusVariant(journey.status)">
@@ -204,15 +198,84 @@
               </UiButton>
             </div>
             <p class="text-sm text-gray-500 mb-4">Payment management will be available in Phase 3</p>
-            <MatterPaymentsTable :payments="payments" />
+            <MatterPaymentsTable :payments="paymentsForTable" />
           </UiCard>
         </div>
 
         <!-- Documents Tab -->
-        <div v-if="activeTab === 'documents'">
-          <UiCard>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Matter Documents</h3>
-            <p class="text-sm text-gray-500">Document management by matter will be implemented in a future phase</p>
+        <div v-if="activeTab === 'documents'" class="space-y-4">
+          <!-- View Toggle -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
+              <button
+                @click="setDocumentView('local')"
+                :class="[
+                  'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  documentView === 'local'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                ]"
+              >
+                <Database class="w-4 h-4 inline-block mr-1.5" />
+                System Documents
+              </button>
+              <button
+                @click="setDocumentView('drive')"
+                :disabled="!matterStore.hasDriveFolder"
+                :class="[
+                  'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  documentView === 'drive'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900',
+                  !matterStore.hasDriveFolder && 'opacity-50 cursor-not-allowed'
+                ]"
+              >
+                <IconsGoogleDrive :size="16" class="inline-block mr-1.5" />
+                Google Drive
+              </button>
+            </div>
+            <UiButton
+              v-if="documentView === 'local'"
+              size="sm"
+              variant="outline"
+              @click="matterStore.fetchDocuments()"
+              :is-loading="matterStore.loadingDocuments"
+            >
+              <RefreshCw class="w-4 h-4 mr-1" />
+              Refresh
+            </UiButton>
+          </div>
+
+          <!-- Local Documents View -->
+          <UiCard v-if="documentView === 'local'">
+            <div v-if="matterStore.loadingDocuments" class="flex justify-center py-8">
+              <Loader class="w-6 h-6 animate-spin text-burgundy-600" />
+            </div>
+            <MatterDocumentsTable
+              v-else
+              :documents="matterStore.documents"
+              :uploads="matterStore.uploads"
+              @download="handleDownloadDocument"
+              @view="handleViewDocument"
+              @download-upload="handleDownloadUpload"
+            />
+          </UiCard>
+
+          <!-- Google Drive View -->
+          <UiCard v-else-if="documentView === 'drive'">
+            <div v-if="!matterStore.hasDriveFolder" class="text-center py-8">
+              <FolderX class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p class="text-gray-500 mb-4">This matter is not synced to Google Drive yet</p>
+              <UiButton size="sm" @click="activeTab = 'overview'">
+                Go to Overview to Sync
+              </UiButton>
+            </div>
+            <DriveTreeBrowser
+              v-else
+              :root-folder-id="matter.googleDriveFolderId!"
+              :root-folder-name="matter.title"
+              :folder-url="matter.googleDriveFolderUrl"
+            />
           </UiCard>
         </div>
       </div>
@@ -242,7 +305,7 @@
     <!-- Edit Matter Modal -->
     <MatterFormModal
       v-model="showEditModal"
-      :editing-matter="matter"
+      :editing-matter="matterForEditModal"
       :clients="clients"
       :lawyers="lawyers"
       :engagement-journeys="engagementJourneys"
@@ -255,8 +318,10 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, FolderSync } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
+import { useMatterStore } from '~/stores/useMatterStore'
+import { usePreferencesStore } from '~/stores/usePreferencesStore'
 
 definePageMeta({
   middleware: ['auth'],
@@ -265,18 +330,20 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const matterId = route.params.id as string
 
-const loading = ref(true)
+// Use stores
+const matterStore = useMatterStore()
+const preferencesStore = usePreferencesStore()
+
+// Local UI state (not in store)
 const activeTab = ref('overview')
 const showAddServiceModal = ref(false)
 const showEditModal = ref(false)
-const saving = ref(false)
+const documentView = ref<'local' | 'drive'>('local') // Default, will sync from store after hydration
 
-const matter = ref<any>(null)
-const services = ref<any[]>([])
-const journeys = ref<any[]>([])
-const payments = ref<any[]>([])
+// Form data for modals
 const catalog = ref<any[]>([])
 const clients = ref<any[]>([])
 const lawyers = ref<any[]>([])
@@ -296,43 +363,50 @@ const tabs = [
   { id: 'documents', label: 'Documents' }
 ]
 
-const clientName = computed(() => {
-  if (!matter.value) return ''
-  return `${matter.value.client_first_name || ''} ${matter.value.client_last_name || ''}`.trim()
+// Computed from store
+const matter = computed(() => matterStore.currentMatter)
+
+// Transform services to snake_case for the existing table component
+// (can be removed once we update the table component to use camelCase)
+const servicesForTable = computed(() => {
+  return matterStore.services.map(s => ({
+    catalog_id: s.catalogId,
+    name: s.name,
+    category: s.category,
+    price: s.price,
+    status: s.status,
+    engaged_at: s.engagedAt,
+    assigned_attorney_name: s.assignedAttorneyName
+  }))
 })
 
-const totalPayments = computed(() => {
-  return payments.value.reduce((sum, p) => sum + (p.amount || 0), 0)
+// Transform payments to snake_case for the existing table component
+const paymentsForTable = computed(() => {
+  return matterStore.payments.map(p => ({
+    id: p.id,
+    payment_type: p.paymentType,
+    amount: p.amount,
+    status: p.status,
+    paid_at: p.paidAt
+  }))
 })
 
-
-// Fetch matter data
-async function fetchMatter() {
-  loading.value = true
-  try {
-    // Fetch matter details
-    const { matter: matterData } = await $fetch(`/api/matters/${matterId}`)
-    matter.value = matterData
-
-    // Fetch engaged services
-    const { services: servicesData } = await $fetch(`/api/matters/${matterId}/services`)
-    services.value = servicesData || []
-
-    // Fetch journeys
-    const { journeys: journeysData } = await $fetch(`/api/client-journeys/matter/${matterId}`)
-    journeys.value = journeysData || []
-
-    // Fetch payments
-    const { payments: paymentsData } = await $fetch(`/api/payments/matter/${matterId}`)
-    payments.value = paymentsData || []
-  } catch (error) {
-    console.error('Error fetching matter:', error)
-  } finally {
-    loading.value = false
+// Transform matter for edit modal (expects snake_case)
+const matterForEditModal = computed(() => {
+  if (!matter.value) return null
+  return {
+    id: matter.value.id,
+    client_id: matter.value.clientId,
+    title: matter.value.title,
+    matter_number: matter.value.matterNumber,
+    description: matter.value.description,
+    status: matter.value.status,
+    lead_attorney_id: matter.value.leadAttorneyId,
+    engagement_journey_id: matter.value.engagementJourneyId
   }
-}
+})
 
-// Fetch service catalog
+// Fetch service catalog (for add service modal)
 async function fetchCatalog() {
   try {
     const response = await $fetch<any>('/api/catalog')
@@ -340,48 +414,6 @@ async function fetchCatalog() {
   } catch (error) {
     console.error('Failed to fetch catalog:', error)
   }
-}
-
-// Add service to matter
-async function handleAddService() {
-  if (!newServiceForm.value.catalogId) return
-
-  addingService.value = true
-  try {
-    const response = await $fetch(`/api/matters/${matterId}/services`, {
-      method: 'POST',
-      body: { catalogId: newServiceForm.value.catalogId }
-    })
-
-    // Refresh services list
-    const { services: servicesData } = await $fetch(`/api/matters/${matterId}/services`)
-    services.value = servicesData || []
-
-    // Reset form and close modal
-    showAddServiceModal.value = false
-    newServiceForm.value.catalogId = ''
-
-    console.log('Service engaged successfully:', response.engagement)
-  } catch (error: any) {
-    console.error('Failed to add service:', error)
-
-    // Handle specific error cases
-    if (error.statusCode === 409) {
-      alert('This service is already engaged for this matter')
-    } else if (error.statusCode === 404) {
-      alert('Service not found in catalog')
-    } else {
-      alert(error.data?.message || 'Failed to add service')
-    }
-  } finally {
-    addingService.value = false
-  }
-}
-
-// Edit matter
-async function handleMatterSaved() {
-  showEditModal.value = false
-  await fetchMatter()
 }
 
 // Fetch clients for dropdown
@@ -397,7 +429,7 @@ async function fetchClients() {
 // Fetch lawyers for dropdown
 async function fetchLawyers() {
   try {
-    const response = await $api<{ lawyers: any[] }>('/api/matters/lawyers')
+    const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
     lawyers.value = response.lawyers || []
   } catch (error) {
     console.error('Failed to fetch lawyers:', error)
@@ -414,6 +446,45 @@ async function fetchEngagementJourneys() {
   }
 }
 
+// Add service to matter
+async function handleAddService() {
+  if (!newServiceForm.value.catalogId) return
+
+  addingService.value = true
+  try {
+    await $fetch(`/api/matters/${matterId}/services`, {
+      method: 'POST',
+      body: { catalogId: newServiceForm.value.catalogId }
+    })
+
+    // Refresh services in store
+    await matterStore.refreshServices()
+
+    // Reset form and close modal
+    showAddServiceModal.value = false
+    newServiceForm.value.catalogId = ''
+    toast.success('Service added successfully')
+  } catch (error: any) {
+    console.error('Failed to add service:', error)
+
+    if (error.statusCode === 409) {
+      toast.error('This service is already engaged for this matter')
+    } else if (error.statusCode === 404) {
+      toast.error('Service not found in catalog')
+    } else {
+      toast.error(error.data?.message || 'Failed to add service')
+    }
+  } finally {
+    addingService.value = false
+  }
+}
+
+// Edit matter
+async function handleMatterSaved() {
+  showEditModal.value = false
+  await matterStore.refreshMatter()
+}
+
 function viewJourney(journeyId: string) {
   router.push(`/my-journeys/${journeyId}`)
 }
@@ -422,22 +493,12 @@ function viewEngagementJourney(clientJourneyId: string) {
   router.push(`/my-journeys/${clientJourneyId}`)
 }
 
-function formatDate(timestamp: number) {
-  if (!timestamp) return ''
-  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-
-function getStatusVariant(status: string): 'success' | 'primary' | 'default' | 'danger' {
+function getStatusVariant(status: string): 'success' | 'info' | 'default' | 'danger' {
   switch (status) {
     case 'OPEN':
       return 'success'
     case 'PENDING':
-      return 'primary'
+      return 'info'
     case 'CLOSED':
       return 'default'
     case 'CANCELLED':
@@ -447,12 +508,12 @@ function getStatusVariant(status: string): 'success' | 'primary' | 'default' | '
   }
 }
 
-function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'default' | 'danger' {
+function getJourneyStatusVariant(status: string): 'success' | 'info' | 'default' | 'danger' {
   switch (status) {
     case 'COMPLETED':
       return 'success'
     case 'IN_PROGRESS':
-      return 'primary'
+      return 'info'
     case 'PAUSED':
       return 'default'
     case 'CANCELLED':
@@ -462,20 +523,60 @@ function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'defau
   }
 }
 
-// Handle Drive synced
-function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
-  if (matter.value) {
-    matter.value.google_drive_folder_id = data.folderId
-    matter.value.google_drive_folder_url = data.folderUrl
-    matter.value.google_drive_sync_status = 'SYNCED'
-    matter.value.google_drive_sync_error = null
-    matter.value.google_drive_last_sync_at = Math.floor(Date.now() / 1000)
-  }
+// Document action handlers
+function handleDownloadDocument(docId: string) {
+  window.open(`/api/documents/${docId}/download`, '_blank')
 }
 
+function handleViewDocument(docId: string) {
+  router.push(`/documents/${docId}`)
+}
+
+function handleDownloadUpload(uploadId: string) {
+  window.open(`/api/document-uploads/${uploadId}/download`, '_blank')
+}
+
+// Handle Drive synced - update store
+function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
+  matterStore.updateDriveSync(data)
+}
+
+// Set document view and save preference
+function setDocumentView(view: 'local' | 'drive') {
+  documentView.value = view
+  preferencesStore.setDocumentsDefaultView(view)
+}
+
+// Watch for tab changes to load documents on demand
+watch(activeTab, (newTab) => {
+  if (newTab === 'documents' && matterStore.documents.length === 0 && !matterStore.loadingDocuments) {
+    matterStore.fetchDocuments()
+  }
+})
+
+// Fall back to 'local' if preference is 'drive' but matter has no Drive folder
+watch(() => matterStore.hasDriveFolder, (hasDriveFolder) => {
+  if (!hasDriveFolder && documentView.value === 'drive') {
+    documentView.value = 'local'
+  }
+}, { immediate: true })
+
+// Clear store on unmount (optional - depends on your caching strategy)
+onUnmounted(() => {
+  // Optionally clear the store when leaving the page
+  // matterStore.clearCurrentMatter()
+})
+
 onMounted(async () => {
+  // Hydrate preferences from localStorage and apply to local state
+  preferencesStore.hydrateFromStorage()
+  documentView.value = preferencesStore.documentsDefaultView
+
+  // Fetch matter data via store
+  await matterStore.fetchMatter(matterId)
+
+  // Fetch dropdown data for modals (these could also be in separate stores)
   await Promise.all([
-    fetchMatter(),
     fetchCatalog(),
     fetchClients(),
     fetchLawyers(),

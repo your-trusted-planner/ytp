@@ -33,8 +33,7 @@ export default defineEventHandler(async (event) => {
       const journey = await db.select({
         name: schema.journeys.name,
         description: schema.journeys.description,
-        estimatedDurationDays: schema.journeys.estimatedDurationDays,
-        serviceCatalogId: schema.journeys.serviceCatalogId
+        estimatedDurationDays: schema.journeys.estimatedDurationDays
       })
         .from(schema.journeys)
         .where(eq(schema.journeys.id, cj.journeyId))
@@ -58,11 +57,13 @@ export default defineEventHandler(async (event) => {
         .where(eq(schema.journeySteps.journeyId, cj.journeyId))
         .get()
 
-      // Get service catalog info if journey has one
-      const service = journey?.serviceCatalogId
+      // Get service catalog info from client journey's catalogId (for SERVICE journeys)
+      // or from selectedCatalogId (for completed ENGAGEMENT journeys)
+      const serviceCatalogId = cj.catalogId || cj.selectedCatalogId
+      const service = serviceCatalogId
         ? await db.select({ name: schema.serviceCatalog.name })
           .from(schema.serviceCatalog)
-          .where(eq(schema.serviceCatalog.id, journey.serviceCatalogId))
+          .where(eq(schema.serviceCatalog.id, serviceCatalogId))
           .get()
         : null
 
@@ -83,6 +84,7 @@ export default defineEventHandler(async (event) => {
         client_id: cj.clientId,
         matter_id: cj.matterId,
         catalog_id: cj.catalogId,
+        selected_catalog_id: cj.selectedCatalogId,
         journey_id: cj.journeyId,
         current_step_id: cj.currentStepId,
         status: cj.status,

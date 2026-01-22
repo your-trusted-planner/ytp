@@ -9,7 +9,7 @@
         </div>
         <p class="text-gray-600 mt-1">Manage workflows and client experiences</p>
       </div>
-      <UiButton @click="showCreateModal = true">
+      <UiButton @click="openCreateModal">
         <IconPlus class="w-4 h-4 mr-2" />
         Create Journey
       </UiButton>
@@ -63,7 +63,7 @@
       <IconMap class="w-16 h-16 mx-auto text-gray-400 mb-4" />
       <h3 class="text-lg font-medium text-gray-900 mb-2">No journeys yet</h3>
       <p class="text-gray-600 mb-4">Create your first client journey to get started</p>
-      <UiButton @click="showCreateModal = true">Create Journey</UiButton>
+      <UiButton @click="openCreateModal">Create Journey</UiButton>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -96,9 +96,20 @@
         </div>
 
         <div class="space-y-2 text-sm">
-          <div v-if="journey.service_name" class="flex items-center text-gray-600">
-            <IconFolder class="w-4 h-4 mr-2" />
-            {{ journey.service_name }}
+          <!-- Show catalog items -->
+          <div v-if="journey.catalog_items?.length > 0" class="flex items-start text-gray-600">
+            <IconFolder class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <span v-if="journey.catalog_items.length === 1">
+                {{ journey.catalog_items[0].name }}
+              </span>
+              <span v-else>
+                {{ journey.catalog_items.length }} services
+                <span class="text-xs text-gray-500 block">
+                  {{ journey.catalog_items.map((s: any) => s.name).join(', ') }}
+                </span>
+              </span>
+            </div>
           </div>
           <div class="flex items-center text-gray-600">
             <IconList class="w-4 h-4 mr-2" />
@@ -148,15 +159,42 @@
           :rows="3"
         />
 
-        <UiSelect
-          v-model="form.serviceCatalogId"
-          label="Associated Service (Optional)"
-        >
-          <option value="">-- Select Service --</option>
-          <option v-for="service in serviceCatalog" :key="service.id" :value="service.id">
-            {{ service.name }}
-          </option>
-        </UiSelect>
+        <!-- Service Catalog Selection -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            {{ form.journeyType === 'ENGAGEMENT' ? 'Available Services (client chooses at end)' : 'Associated Service' }}
+          </label>
+          <p class="text-sm text-gray-500 mb-3">
+            {{ form.journeyType === 'ENGAGEMENT'
+              ? 'Select which services this engagement journey can lead to'
+              : 'Select the service this journey delivers' }}
+          </p>
+          <div class="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+            <label
+              v-for="service in serviceCatalog"
+              :key="service.id"
+              class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+              :class="{ 'bg-burgundy-50': form.catalogIds.includes(service.id) }"
+            >
+              <input
+                type="checkbox"
+                :value="service.id"
+                v-model="form.catalogIds"
+                class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+              />
+              <div class="ml-3">
+                <div class="text-sm font-medium text-gray-900">{{ service.name }}</div>
+                <div v-if="service.category" class="text-xs text-gray-500">{{ service.category }}</div>
+              </div>
+            </label>
+            <div v-if="serviceCatalog.length === 0" class="p-3 text-sm text-gray-500 text-center">
+              No services in catalog
+            </div>
+          </div>
+          <p v-if="form.catalogIds.length > 0" class="mt-2 text-sm text-gray-600">
+            {{ form.catalogIds.length }} service{{ form.catalogIds.length === 1 ? '' : 's' }} selected
+          </p>
+        </div>
 
         <UiInput
           v-model.number="form.estimatedDurationDays"
@@ -233,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { Plus as IconPlus, Loader as IconLoader, Map as IconMap, Folder as IconFolder, List as IconList, Users as IconUsers, Clock as IconClock } from 'lucide-vue-next'
+// import { Plus as IconPlus, Loader as IconLoader, Map as IconMap, Folder as IconFolder, List as IconList, Users as IconUsers, Clock as IconClock } from 'lucide-vue-next'
 import { createSquarePenCursor } from '~/utils/createCursor'
 
 definePageMeta({
@@ -260,9 +298,9 @@ const activeFilter = ref('all') // 'all', 'SERVICE', 'ENGAGEMENT'
 const form = ref({
   name: '',
   description: '',
-  serviceCatalogId: '',
-  estimatedDurationDays: null,
-  journeyType: 'SERVICE' // NEW - default to SERVICE
+  catalogIds: [] as string[],
+  estimatedDurationDays: null as number | null,
+  journeyType: 'SERVICE' as 'SERVICE' | 'ENGAGEMENT'
 })
 
 // Fetch journeys
@@ -294,6 +332,18 @@ async function fetchServiceCatalog() {
   } catch (error) {
     console.error('Error fetching service catalog:', error)
   }
+}
+
+// Open create modal with fresh form
+function openCreateModal() {
+  form.value = {
+    name: '',
+    description: '',
+    catalogIds: [],
+    estimatedDurationDays: null,
+    journeyType: 'SERVICE'
+  }
+  showCreateModal.value = true
 }
 
 // Create journey
@@ -330,19 +380,20 @@ async function handleJourneySaved(journey: any, data: any) {
   // Update local state
   journey.name = data.name
   journey.description = data.description
-  journey.service_catalog_id = data.serviceCatalogId
   journey.estimated_duration_days = data.estimatedDurationDays
 
-  // Refresh to get updated service name
+  // Refresh to get updated catalog items
   await fetchJourneys()
 }
 
 // Duplicate journey
 async function duplicateJourney(journey: any) {
+  // Extract catalog IDs from catalog_items array
+  const catalogIds = journey.catalog_items?.map((item: any) => item.id) || []
   form.value = {
     name: `${journey.name} (Copy)`,
     description: journey.description || '',
-    serviceCatalogId: journey.service_catalog_id || '',
+    catalogIds,
     estimatedDurationDays: journey.estimated_duration_days,
     journeyType: journey.journey_type || 'SERVICE'
   }
@@ -357,7 +408,7 @@ async function saveJourneyName(journey: any, newName: string | number) {
       body: {
         name: newName.toString(),
         description: journey.description,
-        serviceCatalogId: journey.service_catalog_id,
+        // Don't update catalogIds when just renaming - only send name changes
         isActive: Boolean(journey.is_active),
         estimatedDurationDays: journey.estimated_duration_days
       }

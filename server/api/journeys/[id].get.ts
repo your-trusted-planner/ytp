@@ -28,16 +28,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get service catalog info if exists
-  const service = journey.serviceCatalogId
-    ? await db.select({
-        name: schema.serviceCatalog.name,
-        category: schema.serviceCatalog.category
-      })
-      .from(schema.serviceCatalog)
-      .where(eq(schema.serviceCatalog.id, journey.serviceCatalogId))
-      .get()
-    : null
+  // Get linked catalog items via junction table
+  const catalogItems = await db.select({
+    id: schema.serviceCatalog.id,
+    name: schema.serviceCatalog.name,
+    category: schema.serviceCatalog.category,
+    price: schema.serviceCatalog.price
+  })
+    .from(schema.journeysToCatalog)
+    .innerJoin(schema.serviceCatalog, eq(schema.journeysToCatalog.catalogId, schema.serviceCatalog.id))
+    .where(eq(schema.journeysToCatalog.journeyId, journeyId))
+    .all()
 
   // Get all steps for this journey
   const steps = await db.select()
@@ -68,16 +69,14 @@ export default defineEventHandler(async (event) => {
   return {
     journey: {
       id: journey.id,
-      service_catalog_id: journey.serviceCatalogId,
+      catalog_items: catalogItems,
       name: journey.name,
       description: journey.description,
       journey_type: journey.journeyType,
       is_active: journey.isActive ? 1 : 0,
       estimated_duration_days: journey.estimatedDurationDays,
       created_at: journey.createdAt instanceof Date ? journey.createdAt.getTime() : journey.createdAt,
-      updated_at: journey.updatedAt instanceof Date ? journey.updatedAt.getTime() : journey.updatedAt,
-      service_name: service?.name || null,
-      service_category: service?.category || null
+      updated_at: journey.updatedAt instanceof Date ? journey.updatedAt.getTime() : journey.updatedAt
     },
     steps: stepsWithSnakeCase
   }

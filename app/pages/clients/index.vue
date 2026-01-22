@@ -13,6 +13,42 @@
       </UiButton>
     </div>
 
+    <!-- Google Drive Status Alert -->
+    <div
+      v-if="driveStatus.show"
+      class="rounded-lg p-4 flex items-start justify-between"
+      :class="driveStatus.success ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'"
+    >
+      <div class="flex items-start space-x-3">
+        <CheckCircle v-if="driveStatus.success" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+        <AlertTriangle v-else class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p :class="driveStatus.success ? 'text-green-800' : 'text-yellow-800'">
+            {{ driveStatus.message }}
+          </p>
+          <a
+            v-if="driveStatus.folderUrl"
+            :href="driveStatus.folderUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-green-600 hover:text-green-800 underline mt-1 inline-block"
+          >
+            Open in Google Drive
+          </a>
+          <p v-if="!driveStatus.success" class="text-sm text-yellow-700 mt-1">
+            You can manually create the folder later from the client's profile or Settings &rarr; Google Drive.
+          </p>
+        </div>
+      </div>
+      <button
+        @click="driveStatus.show = false"
+        class="flex-shrink-0 ml-4"
+        :class="driveStatus.success ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800'"
+      >
+        <X class="w-5 h-5" />
+      </button>
+    </div>
+
     <!-- Clients List -->
     <UiCard>
       <div v-if="loading" class="text-center py-12">
@@ -184,7 +220,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { ChevronUp as IconChevronUp, ChevronDown as IconChevronDown, ChevronsUpDown as IconChevronsUpDown } from 'lucide-vue-next'
+import {
+  ChevronUp as IconChevronUp,
+  ChevronDown as IconChevronDown,
+  ChevronsUpDown as IconChevronsUpDown,
+  CheckCircle,
+  AlertTriangle,
+  X
+} from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -207,6 +250,14 @@ const newClient = ref({
   password: ''
 })
 
+// Google Drive feedback after client creation
+const driveStatus = ref<{
+  show: boolean
+  success: boolean
+  message: string
+  folderUrl?: string
+}>({ show: false, success: false, message: '' })
+
 const fetchClients = async () => {
   loading.value = true
   try {
@@ -221,11 +272,23 @@ const fetchClients = async () => {
 
 const handleAddClient = async () => {
   saving.value = true
+  driveStatus.value = { show: false, success: false, message: '' }
+
   try {
-    await $fetch('/api/clients', {
+    const response = await $fetch<{
+      success: boolean
+      userId: string
+      googleDrive: {
+        enabled: boolean
+        success: boolean
+        folderUrl?: string
+        error?: string
+      }
+    }>('/api/clients', {
       method: 'POST',
       body: newClient.value
     })
+
     showAddModal.value = false
     newClient.value = {
       firstName: '',
@@ -235,6 +298,30 @@ const handleAddClient = async () => {
       password: ''
     }
     await fetchClients()
+
+    // Show Google Drive status if integration is enabled
+    if (response.googleDrive?.enabled) {
+      if (response.googleDrive.success) {
+        driveStatus.value = {
+          show: true,
+          success: true,
+          message: 'Client created successfully. Google Drive folder created.',
+          folderUrl: response.googleDrive.folderUrl
+        }
+      } else {
+        driveStatus.value = {
+          show: true,
+          success: false,
+          message: `Client created, but Google Drive folder creation failed: ${response.googleDrive.error || 'Unknown error'}`
+        }
+      }
+      // Auto-hide success message after 10 seconds
+      if (response.googleDrive.success) {
+        setTimeout(() => {
+          driveStatus.value.show = false
+        }, 10000)
+      }
+    }
   } catch (error: any) {
     alert(error.data?.message || 'Failed to add client')
   } finally {

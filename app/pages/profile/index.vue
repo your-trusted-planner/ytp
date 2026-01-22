@@ -6,76 +6,80 @@
     </div>
 
     <!-- Personal Information -->
-    <UiCard title="Personal Information">
-      <form @submit.prevent="handleSave" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <ClientOnly>
+      <UiCard title="Personal Information">
+        <form @submit.prevent="handleSave" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <UiInput
+              v-model="profile.firstName"
+              label="First Name"
+              autocomplete="given-name"
+              required
+            />
+            <UiInput
+              v-model="profile.lastName"
+              label="Last Name"
+              autocomplete="family-name"
+              required
+            />
+          </div>
           <UiInput
-            v-model="profile.firstName"
-            label="First Name"
-            autocomplete="given-name"
-            required
+            v-model="profile.email"
+            label="Email"
+            type="email"
+            autocomplete="email"
+            disabled
           />
           <UiInput
-            v-model="profile.lastName"
-            label="Last Name"
-            autocomplete="family-name"
-            required
+            v-model="profile.phone"
+            label="Phone"
+            autocomplete="tel"
           />
-        </div>
-        <UiInput
-          v-model="profile.email"
-          label="Email"
-          type="email"
-          autocomplete="email"
-          disabled
-        />
-        <UiInput
-          v-model="profile.phone"
-          label="Phone"
-          autocomplete="tel"
-        />
-        <div class="flex justify-end space-x-3">
-          <UiButton variant="outline" type="button" @click="resetProfile">
-            Cancel
-          </UiButton>
-          <UiButton type="submit" :is-loading="saving">
-            Save Changes
-          </UiButton>
-        </div>
-      </form>
-    </UiCard>
+          <div class="flex justify-end space-x-3">
+            <UiButton variant="outline" type="button" @click="resetProfile">
+              Cancel
+            </UiButton>
+            <UiButton type="submit" :is-loading="saving">
+              Save Changes
+            </UiButton>
+          </div>
+        </form>
+      </UiCard>
+    </ClientOnly>
 
-    <!-- Change Password -->
-    <UiCard v-if="showPasswordSection" title="Change Password">
-      <form @submit.prevent="handlePasswordChange" class="space-y-4">
-        <UiInput
-          v-model="passwordForm.currentPassword"
-          label="Current Password"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
-        <UiInput
-          v-model="passwordForm.newPassword"
-          label="New Password"
-          type="password"
-          autocomplete="new-password"
-          required
-        />
-        <UiInput
-          v-model="passwordForm.confirmPassword"
-          label="Confirm New Password"
-          type="password"
-          autocomplete="new-password"
-          required
-        />
-        <div class="flex justify-end">
-          <UiButton type="submit" :is-loading="changingPassword">
-            Update Password
-          </UiButton>
-        </div>
-      </form>
-    </UiCard>
+    <!-- Change Password (client-only to avoid hydration mismatch) -->
+    <ClientOnly>
+      <UiCard v-if="hasPassword" title="Change Password">
+        <form @submit.prevent="handlePasswordChange" class="space-y-4">
+          <UiInput
+            v-model="passwordForm.currentPassword"
+            label="Current Password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+          <UiInput
+            v-model="passwordForm.newPassword"
+            label="New Password"
+            type="password"
+            autocomplete="new-password"
+            required
+          />
+          <UiInput
+            v-model="passwordForm.confirmPassword"
+            label="Confirm New Password"
+            type="password"
+            autocomplete="new-password"
+            required
+          />
+          <div class="flex justify-end">
+            <UiButton type="submit" :is-loading="changingPassword">
+              Update Password
+            </UiButton>
+          </div>
+        </form>
+      </UiCard>
+    </ClientOnly>
 
     <!-- Stored Signature -->
     <UiCard title="E-Signature">
@@ -87,20 +91,26 @@
 
     <!-- Notification Settings -->
     <UiCard title="Notification Settings">
-      <div class="space-y-4">
+      <template #header-actions>
+        <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
+          <Construction class="w-3 h-3" />
+          Placeholder
+        </span>
+      </template>
+      <div class="space-y-4 opacity-60 pointer-events-none">
         <div class="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
             <h3 class="font-medium text-gray-900">Email Notifications</h3>
             <p class="text-sm text-gray-500">Receive email updates about your account</p>
           </div>
-          <UiToggle v-model="preferences.emailNotifications" />
+          <UiToggle v-model="accountPreferences.emailNotifications" />
         </div>
         <div class="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
             <h3 class="font-medium text-gray-900">SMS Notifications</h3>
             <p class="text-sm text-gray-500">Receive text message reminders</p>
           </div>
-          <UiToggle v-model="preferences.smsNotifications" />
+          <UiToggle v-model="accountPreferences.smsNotifications" />
         </div>
         <div class="flex items-center justify-between py-3">
           <div>
@@ -117,20 +127,72 @@
     <!-- Preferences -->
     <UiCard title="Preferences">
       <div class="space-y-4">
-        <UiSelect v-model="preferences.timezone" label="Time Zone">
-          <option value="America/New_York">Eastern Time</option>
-          <option value="America/Chicago">Central Time</option>
-          <option value="America/Denver">Mountain Time</option>
-          <option value="America/Los_Angeles">Pacific Time</option>
-        </UiSelect>
-        <UiSelect v-model="preferences.language" label="Language">
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-        </UiSelect>
-        <div class="flex justify-end">
-          <UiButton @click="savePreferences" :is-loading="savingPreferences">
-            Save Preferences
-          </UiButton>
+        <!-- UI Preferences (stored locally - client only) -->
+        <div class="pb-4 border-b border-gray-200">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Display Preferences</h4>
+          <ClientOnly>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Default Document View</label>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="documentView"
+                      value="local"
+                      :checked="localDocumentView === 'local'"
+                      @change="setDocumentView('local')"
+                      class="text-burgundy-600 focus:ring-burgundy-500"
+                    />
+                    <span class="text-sm text-gray-700">System Documents</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="documentView"
+                      value="drive"
+                      :checked="localDocumentView === 'drive'"
+                      @change="setDocumentView('drive')"
+                      class="text-burgundy-600 focus:ring-burgundy-500"
+                    />
+                    <span class="text-sm text-gray-700">Google Drive</span>
+                  </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Choose which view to show by default on the Matter Documents tab</p>
+              </div>
+            </div>
+            <template #fallback>
+              <div class="text-sm text-gray-500">Loading preferences...</div>
+            </template>
+          </ClientOnly>
+        </div>
+
+        <!-- Account Preferences (stored on server) - PLACEHOLDER -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <h4 class="text-sm font-medium text-gray-700">Account Preferences</h4>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
+              <Construction class="w-3 h-3" />
+              Placeholder
+            </span>
+          </div>
+          <div class="space-y-4 opacity-60 pointer-events-none">
+            <UiSelect v-model="accountPreferences.timezone" label="Time Zone">
+              <option value="America/New_York">Eastern Time</option>
+              <option value="America/Chicago">Central Time</option>
+              <option value="America/Denver">Mountain Time</option>
+              <option value="America/Los_Angeles">Pacific Time</option>
+            </UiSelect>
+            <UiSelect v-model="accountPreferences.language" label="Language">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+            </UiSelect>
+            <div class="flex justify-end">
+              <UiButton disabled>
+                Save Preferences
+              </UiButton>
+            </div>
+          </div>
         </div>
       </div>
     </UiCard>
@@ -153,32 +215,35 @@
             <div class="flex-1">
               <div class="flex items-center space-x-2">
                 <h3 class="font-medium text-gray-900">{{ calendar.calendar_name }}</h3>
-                <UiBadge v-if="calendar.is_primary" variant="primary" size="sm">Primary</UiBadge>
+                <UiBadge v-if="calendar.is_primary" variant="info" size="sm">Primary</UiBadge>
                 <UiBadge v-if="!calendar.is_active" variant="default" size="sm">Inactive</UiBadge>
               </div>
               <p class="text-sm text-gray-500 mt-1">{{ calendar.calendar_email }}</p>
               <p class="text-xs text-gray-400 mt-1">Timezone: {{ calendar.timezone }}</p>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 opacity-50">
               <UiButton
                 v-if="!calendar.is_primary"
                 variant="outline"
                 size="sm"
-                @click="setPrimaryCalendar(calendar.id)"
+                disabled
+                title="Not yet implemented"
               >
                 Set Primary
               </UiButton>
               <UiButton
                 variant="outline"
                 size="sm"
-                @click="toggleCalendarActive(calendar.id, !calendar.is_active)"
+                disabled
+                title="Not yet implemented"
               >
                 {{ calendar.is_active ? 'Deactivate' : 'Activate' }}
               </UiButton>
               <UiButton
                 variant="danger"
                 size="sm"
-                @click="deleteCalendar(calendar.id)"
+                disabled
+                title="Not yet implemented"
               >
                 Delete
               </UiButton>
@@ -250,7 +315,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Calendar } from 'lucide-vue-next'
+import { Calendar, Construction } from 'lucide-vue-next'
+import { usePreferencesStore } from '~/stores/usePreferencesStore'
+import type { DocumentViewPreference } from '~/stores/usePreferencesStore'
 
 definePageMeta({
   middleware: 'auth',
@@ -259,6 +326,7 @@ definePageMeta({
 
 const { data: sessionData } = await useFetch('/api/auth/session')
 const currentUser = computed(() => sessionData.value?.user)
+const preferencesStore = usePreferencesStore()
 
 // Check if user is a firm member (can manage calendars)
 const isFirmMember = computed(() => {
@@ -266,10 +334,14 @@ const isFirmMember = computed(() => {
   return ['ADMIN', 'LAWYER', 'STAFF'].includes(role)
 })
 
+// Computed for password section - derived from session data (stable)
+const hasPassword = computed(() => !!sessionData.value?.user?.hasPassword)
+
+// Initialize profile from session data (available on both server and client)
 const profile = ref({
-  firstName: '',
-  lastName: '',
-  email: '',
+  firstName: sessionData.value?.user?.firstName || '',
+  lastName: sessionData.value?.user?.lastName || '',
+  email: sessionData.value?.user?.email || '',
   phone: ''
 })
 
@@ -279,12 +351,21 @@ const passwordForm = ref({
   confirmPassword: ''
 })
 
-const preferences = ref({
+// Account preferences (server-stored)
+const accountPreferences = ref({
   emailNotifications: true,
   smsNotifications: false,
   timezone: 'America/New_York',
   language: 'en'
 })
+
+// Local document view preference (client-only, backed by localStorage)
+const localDocumentView = ref<DocumentViewPreference>('local')
+
+const setDocumentView = (view: DocumentViewPreference) => {
+  localDocumentView.value = view
+  preferencesStore.setDocumentsDefaultView(view)
+}
 
 const calendars = ref<any[]>([])
 const calendarForm = ref({
@@ -298,23 +379,14 @@ const calendarForm = ref({
 const saving = ref(false)
 const changingPassword = ref(false)
 const savingPreferences = ref(false)
-const showPasswordSection = ref(false)
 const showAddCalendarModal = ref(false)
 const addingCalendar = ref(false)
 
 onMounted(async () => {
-  // Set password section visibility after hydration to avoid SSR mismatch
-  showPasswordSection.value = !!sessionData.value?.user?.hasPassword
-
-  if (sessionData.value?.user) {
-    const user = sessionData.value.user
-    profile.value = {
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email || '',
-      phone: ''
-    }
-  }
+  // Hydrate preferences from localStorage on client
+  preferencesStore.hydrateFromStorage()
+  // Sync local state with store after hydration
+  localDocumentView.value = preferencesStore.documentsDefaultView
 
   // Load calendars for firm members
   if (isFirmMember.value) {

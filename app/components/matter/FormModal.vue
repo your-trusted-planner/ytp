@@ -160,9 +160,17 @@ const props = withDefaults(defineProps<Props>(), {
   defaultClientId: ''
 })
 
+interface GoogleDriveStatus {
+  enabled: boolean
+  success: boolean
+  folderUrl?: string
+  error?: string
+  clientHasFolder?: boolean
+}
+
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'save': [matterId?: string]
+  'save': [matterId?: string, googleDrive?: GoogleDriveStatus]
   'cancel': []
 }>()
 
@@ -223,6 +231,8 @@ async function handleSubmit() {
 
   saving.value = true
   try {
+    let googleDriveStatus: GoogleDriveStatus | undefined
+
     if (props.editingMatter) {
       // Update existing matter
       await $fetch(`/api/matters/${props.editingMatter.id}`, {
@@ -237,7 +247,11 @@ async function handleSubmit() {
       })
     } else {
       // Create new matter
-      const response = await $fetch('/api/matters', {
+      const response = await $fetch<{
+        success: boolean
+        matter: any
+        googleDrive?: GoogleDriveStatus
+      }>('/api/matters', {
         method: 'POST',
         body: {
           title: form.value.title,
@@ -249,9 +263,10 @@ async function handleSubmit() {
           serviceIds: selectedServices.value
         }
       })
+      googleDriveStatus = response.googleDrive
     }
 
-    emit('save', props.editingMatter?.id)
+    emit('save', props.editingMatter?.id, googleDriveStatus)
     isOpen.value = false
   } catch (error: any) {
     console.error('Error saving matter:', error)

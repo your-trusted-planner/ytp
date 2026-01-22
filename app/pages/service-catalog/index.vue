@@ -92,11 +92,11 @@
             required
           >
             <option value="">Select category</option>
-            <option value="Trust">Trust</option>
-            <option value="LLC Formation">LLC Formation</option>
-            <option value="Other">Other</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.name">
+              {{ cat.name }}
+            </option>
           </UiSelect>
-          
+
           <UiSelect
             v-model="matterForm.type"
             label="Type"
@@ -106,6 +106,10 @@
             <option value="RECURRING">Recurring Service</option>
           </UiSelect>
         </div>
+
+        <p v-if="categories.length === 0" class="text-sm text-gray-500">
+          No categories defined. <NuxtLink to="/service-catalog/service-categories" class="text-burgundy-600 hover:text-burgundy-800 underline">Add categories</NuxtLink>.
+        </p>
         
         <div class="grid grid-cols-2 gap-4">
           <UiInput
@@ -151,7 +155,15 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+interface Category {
+  id: string
+  name: string
+  description: string | null
+  display_order: number
+}
+
 const matters = ref<any[]>([])
+const categories = ref<Category[]>([])
 const showAddModal = ref(false)
 const saving = ref(false)
 const editingMatter = ref<any>(null)
@@ -165,6 +177,14 @@ const matterForm = ref({
   duration: ''
 })
 
+const fetchCategories = async () => {
+  try {
+    const { categories: data } = await $fetch<{ categories: Category[] }>('/api/service-categories')
+    categories.value = data
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
+  }
+}
 
 const fetchMatters = async () => {
   try {
@@ -244,6 +264,7 @@ const closeModal = () => {
 
 onMounted(() => {
   fetchMatters()
+  fetchCategories()
 })
 </script>
 

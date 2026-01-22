@@ -56,6 +56,40 @@
           </div>
         </UiCard>
       </NuxtLink>
+
+      <!-- Service Categories -->
+      <NuxtLink to="/service-catalog/service-categories" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-purple-50 rounded-lg">
+              <FolderOpen class="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Service Categories</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Manage categories for organizing your service catalog
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
+      <!-- Google Drive Integration -->
+      <NuxtLink to="/settings/google-drive" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <IconsGoogleDrive :size="24" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Google Drive</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Configure automatic file sync to Google Drive Shared Drives
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
     </div>
 
     <!-- Admin Info -->
@@ -75,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Calendar, Info } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Calendar, FolderOpen, Info } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',

@@ -122,13 +122,26 @@ export class SimpleTemplateRenderer {
     })
   }
 
+  // Dangerous keys that could lead to prototype pollution
+  private static readonly DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
   // Get a value from context using dot notation (e.g., "user.name")
   private getValue(path: string, context: TemplateContext): any {
     const parts = path.split('.')
+
+    // Check for dangerous keys to prevent prototype pollution
+    if (parts.some(part => SimpleTemplateRenderer.DANGEROUS_KEYS.has(part))) {
+      return undefined
+    }
+
     let value: any = context
 
     for (const part of parts) {
       if (value === null || value === undefined) {
+        return undefined
+      }
+      // Additional safety: only access own properties
+      if (typeof value === 'object' && !Object.hasOwn(value, part)) {
         return undefined
       }
       value = value[part]

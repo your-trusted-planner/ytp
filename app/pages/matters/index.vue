@@ -10,6 +10,43 @@
       </UiButton>
     </div>
 
+    <!-- Google Drive Status Alert -->
+    <div
+      v-if="driveStatus.show"
+      class="rounded-lg p-4 flex items-start justify-between"
+      :class="driveStatus.success ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'"
+    >
+      <div class="flex items-start space-x-3">
+        <CheckCircle v-if="driveStatus.success" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+        <AlertTriangle v-else class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p :class="driveStatus.success ? 'text-green-800' : 'text-yellow-800'">
+            {{ driveStatus.message }}
+          </p>
+          <a
+            v-if="driveStatus.folderUrl"
+            :href="driveStatus.folderUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-green-600 hover:text-green-800 underline mt-1 inline-flex items-center gap-1"
+          >
+            <IconsGoogleDrive :size="14" />
+            Open in Google Drive
+          </a>
+          <p v-if="!driveStatus.success" class="text-sm text-yellow-700 mt-1">
+            You can manually create the folder later from the matter details page or Settings &rarr; Google Drive.
+          </p>
+        </div>
+      </div>
+      <button
+        @click="driveStatus.show = false"
+        class="flex-shrink-0 ml-4"
+        :class="driveStatus.success ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800'"
+      >
+        <X class="w-5 h-5" />
+      </button>
+    </div>
+
     <!-- Filters -->
     <UiCard>
       <div class="flex flex-wrap gap-4 items-end">
@@ -93,10 +130,10 @@
             >
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">{{ matter.title }}</div>
-                <div class="text-xs text-gray-500">{{ matter.matterNumber || 'No # assigned' }}</div>
+                <div class="text-xs text-gray-500">{{ matter.matter_number || 'No # assigned' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ getClientName(matter.clientId) }}</div>
+                <div class="text-sm text-gray-900">{{ getClientName(matter.client_id) }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getStatusVariant(matter.status)">
@@ -105,7 +142,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-500">
-                  {{ matter.contractDate ? formatDate(matter.contractDate) : '-' }}
+                  {{ matter.contract_date ? formatDate(matter.contract_date) : '-' }}
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -140,6 +177,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { formatCurrency } from '~/utils/format'
+import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -165,6 +203,14 @@ const clientFilter = ref('')
 const lawyers = ref<any[]>([])
 const engagementJourneys = ref<any[]>([])
 
+// Google Drive feedback after matter creation
+const driveStatus = ref<{
+  show: boolean
+  success: boolean
+  message: string
+  folderUrl?: string
+}>({ show: false, success: false, message: '' })
+
 // Computed: Check if any filters are active
 const hasActiveFilters = computed(() => {
   return searchQuery.value || statusFilter.value || clientFilter.value
@@ -181,16 +227,16 @@ const filteredMatters = computed(() => {
 
   // Filter by client
   if (clientFilter.value) {
-    result = result.filter(m => m.clientId === clientFilter.value)
+    result = result.filter(m => m.client_id === clientFilter.value)
   }
 
   // Filter by search query
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(m => {
-      const clientName = getClientName(m.clientId).toLowerCase()
+      const clientName = getClientName(m.client_id).toLowerCase()
       const title = (m.title || '').toLowerCase()
-      const matterNumber = (m.matterNumber || m.matter_number || '').toLowerCase()
+      const matterNumber = (m.matter_number || '').toLowerCase()
       return title.includes(query) || matterNumber.includes(query) || clientName.includes(query)
     })
   }
@@ -208,8 +254,8 @@ const clearFilters = () => {
 const fetchMatters = async () => {
   loading.value = true
   try {
-    const response = await $fetch<{ matters: any[] }>('/api/matters')
-    matters.value = response.matters || response // Handle both wrapped and unwrapped responses
+    const response = await $fetch<any[]>('/api/matters')
+    matters.value = response || []
   } catch (error) {
     console.error('Failed to fetch matters:', error)
   } finally {
@@ -264,13 +310,60 @@ const formatDate = (dateInput: string | Date | number) => {
 
 
 const editMatter = async (matter: any) => {
-  editingMatter.value = matter
+  // Transform to camelCase for the modal
+  editingMatter.value = {
+    id: matter.id,
+    title: matter.title,
+    clientId: matter.client_id,
+    description: matter.description,
+    status: matter.status,
+    leadAttorneyId: matter.lead_attorney_id,
+    engagementJourneyId: matter.engagement_journey_id
+  }
   showAddModal.value = true
 }
 
-const handleMatterSaved = async (matterId?: string) => {
+interface GoogleDriveStatus {
+  enabled: boolean
+  success: boolean
+  folderUrl?: string
+  error?: string
+  clientHasFolder?: boolean
+}
+
+const handleMatterSaved = async (matterId?: string, googleDrive?: GoogleDriveStatus) => {
+  driveStatus.value = { show: false, success: false, message: '' }
+
   await fetchMatters()
   closeModal()
+
+  // Show Google Drive status if integration is enabled
+  if (googleDrive?.enabled) {
+    if (googleDrive.success) {
+      driveStatus.value = {
+        show: true,
+        success: true,
+        message: 'Matter created successfully. Google Drive folder created.',
+        folderUrl: googleDrive.folderUrl
+      }
+      // Auto-hide success message after 10 seconds
+      setTimeout(() => {
+        driveStatus.value.show = false
+      }, 10000)
+    } else if (!googleDrive.clientHasFolder) {
+      driveStatus.value = {
+        show: true,
+        success: false,
+        message: 'Matter created, but Google Drive folder was not created because the client does not have a Drive folder yet. Create the client folder first.'
+      }
+    } else {
+      driveStatus.value = {
+        show: true,
+        success: false,
+        message: `Matter created, but Google Drive folder creation failed: ${googleDrive.error || 'Unknown error'}`
+      }
+    }
+  }
 }
 
 const closeModal = () => {
