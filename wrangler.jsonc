@@ -66,6 +66,10 @@
       {
         "queue": "document-generation",
         "binding": "DOCUMENT_GENERATION_QUEUE"
+      },
+      {
+        "queue": "drive-sync",
+        "binding": "DRIVE_SYNC_QUEUE"
       }
     ],
     "consumers": [
@@ -78,6 +82,11 @@
         "queue": "document-generation",
         "max_batch_size": 5,
         "max_batch_timeout": 2
+      },
+      {
+        "queue": "drive-sync",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
       }
     ]
   },
@@ -145,6 +154,10 @@
           {
             "queue": "document-generation-preview",
             "binding": "DOCUMENT_GENERATION_QUEUE"
+          },
+          {
+            "queue": "drive-sync-preview",
+            "binding": "DRIVE_SYNC_QUEUE"
           }
         ],
         "consumers": [
@@ -157,6 +170,11 @@
             "queue": "document-generation-preview",
             "max_batch_size": 5,
             "max_batch_timeout": 2
+          },
+          {
+            "queue": "drive-sync-preview",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
           }
         ]
       },

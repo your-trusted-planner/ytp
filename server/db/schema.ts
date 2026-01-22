@@ -83,6 +83,13 @@ export const clientProfiles = sqliteTable('client_profiles', {
   initialAttributionMedium: text('initial_attribution_medium'),
   initialAttributionCampaign: text('initial_attribution_campaign'),
 
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'), // Drive folder ID for this client
+  googleDriveFolderUrl: text('google_drive_folder_url'), // Web URL to folder
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -165,6 +172,14 @@ export const documents = sqliteTable('documents', {
   signatureData: text('signature_data'),
   viewedAt: integer('viewed_at', { mode: 'timestamp' }),
   sentAt: integer('sent_at', { mode: 'timestamp' }),
+
+  // Google Drive sync tracking
+  googleDriveFileId: text('google_drive_file_id'), // Drive file ID
+  googleDriveFileUrl: text('google_drive_file_url'), // Web URL to file
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'PENDING', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveSyncedAt: integer('google_drive_synced_at', { mode: 'timestamp' }),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -226,6 +241,17 @@ export const settings = sqliteTable('settings', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
+// Service Categories - categories for organizing services in the catalog
+export const serviceCategories = sqliteTable('service_categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  displayOrder: integer('display_order').notNull().default(0),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
 // Service Catalog (formerly matters - products/services definitions)
 export const serviceCatalog = sqliteTable('service_catalog', {
   id: text('id').primaryKey(),
@@ -254,6 +280,16 @@ export const matters = sqliteTable('matters', {
   status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
   leadAttorneyId: text('lead_attorney_id').references(() => users.id), // For engagement letter mapping
   engagementJourneyId: text('engagement_journey_id').references(() => clientJourneys.id), // Track engagement journey
+
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'), // Drive folder ID for this matter
+  googleDriveFolderUrl: text('google_drive_folder_url'), // Web URL to folder
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
+  // Store subfolder IDs as JSON: {"Generated Documents": "...", "Client Uploads": "..."}
+  googleDriveSubfolderIds: text('google_drive_subfolder_ids'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -317,7 +353,6 @@ export const questionnaireResponses = sqliteTable('questionnaire_responses', {
 // Journeys - The overall journey/workflow (replaces "pipeline" concept)
 export const journeys = sqliteTable('journeys', {
   id: text('id').primaryKey(),
-  serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Which product/service this journey is for
   name: text('name').notNull(), // e.g., "Trust Formation Journey", "Annual Maintenance Journey"
   description: text('description'),
   journeyType: text('journey_type', { enum: ['ENGAGEMENT', 'SERVICE'] }).notNull().default('SERVICE'), // Engagement vs service journey
@@ -326,6 +361,16 @@ export const journeys = sqliteTable('journeys', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
+
+// Journeys to Catalog - Junction table for many-to-many relationship
+// Allows an engagement journey to be associated with multiple service products
+export const journeysToCatalog = sqliteTable('journeys_to_catalog', {
+  journeyId: text('journey_id').notNull().references(() => journeys.id, { onDelete: 'cascade' }),
+  catalogId: text('catalog_id').notNull().references(() => serviceCatalog.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, (table) => ({
+  pk: primaryKey({ columns: [table.journeyId, table.catalogId] })
+}))
 
 // Journey Steps - Individual steps in a journey (can be MILESTONE or BRIDGE)
 export const journeySteps = sqliteTable('journey_steps', {
@@ -355,11 +400,13 @@ export const clientJourneys = sqliteTable('client_journeys', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   matterId: text('matter_id'), // Links to the specific matter (engagement)
-  catalogId: text('catalog_id'), // Links to the service catalog item
+  catalogId: text('catalog_id'), // Links to the service catalog item (for SERVICE journeys)
   journeyId: text('journey_id').notNull().references(() => journeys.id),
   currentStepId: text('current_step_id').references(() => journeySteps.id), // Current position
   status: text('status', { enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'PAUSED', 'CANCELLED'] }).notNull().default('NOT_STARTED'),
   priority: text('priority', { enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }).notNull().default('MEDIUM'),
+  // For ENGAGEMENT journeys: tracks which service the client selected at journey completion
+  selectedCatalogId: text('selected_catalog_id').references(() => serviceCatalog.id),
   startedAt: integer('started_at', { mode: 'timestamp' }),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   pausedAt: integer('paused_at', { mode: 'timestamp' }),
@@ -473,6 +520,14 @@ export const documentUploads = sqliteTable('document_uploads', {
   reviewNotes: text('review_notes'),
   version: integer('version').notNull().default(1), // Version control
   replacesUploadId: text('replaces_upload_id').references((): any => documentUploads.id), // Self-reference for versions
+
+  // Google Drive sync tracking
+  googleDriveFileId: text('google_drive_file_id'), // Drive file ID
+  googleDriveFileUrl: text('google_drive_file_url'), // Web URL to file
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'PENDING', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveSyncedAt: integer('google_drive_synced_at', { mode: 'timestamp' }),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -803,4 +858,67 @@ export const matterRelationships = sqliteTable('matter_relationships', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// GOOGLE DRIVE INTEGRATION
+// ===================================
+
+// Google Drive Configuration - Stores service account and sync settings
+export const googleDriveConfig = sqliteTable('google_drive_config', {
+  id: text('id').primaryKey(),
+  isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(false),
+  serviceAccountEmail: text('service_account_email'), // Service account email
+  serviceAccountPrivateKey: text('service_account_private_key'), // Encrypted private key
+  sharedDriveId: text('shared_drive_id'), // Required: Shared Drive ID
+  rootFolderId: text('root_folder_id'), // Root folder within Shared Drive
+  rootFolderName: text('root_folder_name').notNull().default('YTP Client Files'),
+  impersonateEmail: text('impersonate_email'), // User to impersonate for domain-wide delegation
+  matterSubfolders: text('matter_subfolders').notNull()
+    .default('["Generated Documents", "Client Uploads", "Signed Documents", "Correspondence"]'),
+  syncGeneratedDocuments: integer('sync_generated_documents', { mode: 'boolean' }).notNull().default(true),
+  syncClientUploads: integer('sync_client_uploads', { mode: 'boolean' }).notNull().default(true),
+  syncSignedDocuments: integer('sync_signed_documents', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// NOTIFICATION SYSTEM
+// ===================================
+
+// Notices - System notifications and alerts
+export const notices = sqliteTable('notices', {
+  id: text('id').primaryKey(),
+  type: text('type', {
+    enum: [
+      'DRIVE_SYNC_ERROR',
+      'DOCUMENT_SIGNED',
+      'CLIENT_FILE_UPLOADED',
+      'JOURNEY_ACTION_REQUIRED',
+      'SYSTEM_ANNOUNCEMENT',
+      'PAYMENT_RECEIVED'
+    ]
+  }).notNull(),
+  severity: text('severity', { enum: ['INFO', 'WARNING', 'ERROR', 'SUCCESS'] }).notNull().default('INFO'),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  targetType: text('target_type'), // 'client', 'matter', 'document'
+  targetId: text('target_id'),
+  actionUrl: text('action_url'), // URL to navigate to when clicking the notice
+  actionLabel: text('action_label'), // Label for the action button
+  metadata: text('metadata'), // JSON for additional data
+  createdByUserId: text('created_by_user_id').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Notice Recipients - Links notices to specific users or roles
+export const noticeRecipients = sqliteTable('notice_recipients', {
+  id: text('id').primaryKey(),
+  noticeId: text('notice_id').notNull().references(() => notices.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // Specific user
+  targetRole: text('target_role'), // For role-broadcast: 'LAWYER', 'ADMIN', 'STAFF', etc.
+  readAt: integer('read_at', { mode: 'timestamp' }),
+  dismissedAt: integer('dismissed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })

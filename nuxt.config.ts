@@ -87,5 +87,10 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
-  }
+  },
+
+  // Global CSS
+  css: [
+    '~/assets/css/toast.css'
+  ]
 })

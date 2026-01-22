@@ -17,6 +17,12 @@
         <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : 'default'">
           {{ client.status }}
         </UiBadge>
+        <DriveStatusBadge
+          v-if="clientProfile"
+          :status="clientProfile.google_drive_sync_status"
+          :folder-url="clientProfile.google_drive_folder_url"
+          :show-label="true"
+        />
         <UiButton variant="outline" size="sm" @click="openEditModal">
           <Edit class="w-4 h-4 mr-1" />
           Edit Client
@@ -83,6 +89,18 @@
             </div>
           </div>
         </div>
+
+        <!-- Google Drive Status -->
+        <DriveStatusSection
+          v-if="clientProfile"
+          :sync-status="clientProfile.google_drive_sync_status"
+          :folder-url="clientProfile.google_drive_folder_url"
+          :last-sync-at="clientProfile.google_drive_last_sync_at"
+          :sync-error="clientProfile.google_drive_sync_error"
+          entity-type="client"
+          :entity-id="clientId"
+          @synced="handleDriveSynced"
+        />
 
         <!-- People & Relationships -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -491,7 +509,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Edit, X } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Edit, X, FolderSync } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: ['auth'],
@@ -760,6 +778,17 @@ function formatDate(timestamp: number) {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// Handle Drive synced
+function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
+  if (clientProfile.value) {
+    clientProfile.value.google_drive_folder_id = data.folderId
+    clientProfile.value.google_drive_folder_url = data.folderUrl
+    clientProfile.value.google_drive_sync_status = 'SYNCED'
+    clientProfile.value.google_drive_sync_error = null
+    clientProfile.value.google_drive_last_sync_at = Math.floor(Date.now() / 1000)
+  }
 }
 
 onMounted(() => {

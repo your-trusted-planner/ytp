@@ -78,6 +78,28 @@ export default defineEventHandler(async (event) => {
     updatedAt: now
   })
 
+  // Queue for Google Drive sync if enabled and journey is associated
+  if (clientJourneyId) {
+    try {
+      const { isDriveEnabled, syncUploadToDrive } = await import('../../utils/google-drive')
+      const { eq } = await import('drizzle-orm')
+
+      if (await isDriveEnabled()) {
+        // Mark upload as pending sync
+        await db.update(schema.documentUploads)
+          .set({ googleDriveSyncStatus: 'PENDING' })
+          .where(eq(schema.documentUploads.id, uploadId))
+
+        // Queue the sync (async, non-blocking)
+        syncUploadToDrive(uploadId).catch(error => {
+          console.error('Failed to sync upload to Google Drive:', error)
+        })
+      }
+    } catch (error) {
+      console.error('Error checking Drive sync status:', error)
+    }
+  }
+
   // Return upload object for compatibility
   return {
     upload: {

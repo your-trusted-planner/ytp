@@ -1,10 +1,157 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-21
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Google Drive Integration, Toast Notifications & Notices System (2026-01-21)
+- **Status**: Complete ✅
+- **What**: Comprehensive Google Drive folder sync, toast notification system, and in-app notices for user alerts
+
+**Phase 1: Toast Notification System**
+- **Library**: vue-toastification@next
+- **Features**:
+  - Position: top-right, stacks up to 5 toasts
+  - Auto-dismiss: 5s for info/success, 8s for errors
+  - Draggable to dismiss
+  - Custom Tailwind-themed styling
+- **Files Created**:
+  - `/app/plugins/toast.client.ts` - Toast plugin initialization (client-only)
+  - `/app/composables/useToast.ts` - Composable with `success()`, `error()`, `warning()`, `info()`, `dismiss()` methods
+  - `/app/assets/css/toast.css` - Custom Tailwind theme overrides
+- **Usage**:
+  ```typescript
+  const toast = useToast()
+  toast.success('Operation completed')
+  toast.error('Something went wrong')
+  ```
+
+**Phase 2: Google Drive Status Indicators**
+- **Components Created**:
+  - `/app/components/drive/StatusBadge.vue` - Compact badge (SYNCED/NOT_SYNCED/ERROR) with folder link
+  - `/app/components/drive/StatusSection.vue` - Full status card with folder link, last sync time, error display, resync buttons
+- **Integration Points**:
+  - Client detail page (`/clients/[id]`) - Badge in header, section after Quick Stats
+  - Matter detail page (`/matters/[id]`) - Badge in header, section in Overview tab
+- **Resync Features**:
+  - "Sync Now" / "Verify Folder" button - Creates folder or verifies existing
+  - "Force New Folder" button - Clears old reference and creates new folder in current drive
+  - Handles drive configuration changes gracefully (detects inaccessible folders)
+
+**Phase 3: Google Drive Backend & Sync**
+- **Database Schema** (in `clientProfiles` and `matters` tables):
+  - `googleDriveFolderId` - Drive folder ID
+  - `googleDriveFolderUrl` - Web link to folder
+  - `googleDriveSyncStatus` - 'SYNCED' | 'NOT_SYNCED' | 'ERROR'
+  - `googleDriveSyncError` - Error message if sync failed
+  - `googleDriveLastSyncAt` - Timestamp of last sync
+  - `googleDriveSubfolderIds` - JSON object of subfolder IDs (matters only)
+- **Settings Page**: `/app/pages/settings/google-drive.vue`
+  - Service account email and private key configuration
+  - Shared Drive ID selection (with "Use this" helper from test results)
+  - Root folder name and impersonation email (optional)
+  - Matter subfolder names (configurable list)
+  - Sync toggles for generated docs, client uploads, signed documents
+  - Connection test with diagnostic output (lists accessible drives)
+  - Root folder creation button
+- **API Endpoints Created**:
+  - `GET /api/admin/google-drive/config` - Get current configuration
+  - `POST /api/admin/google-drive/configure` - Save configuration
+  - `POST /api/admin/google-drive/test` - Test connection (returns accessible drives)
+  - `POST /api/admin/google-drive/create-root-folder` - Create root folder in shared drive
+  - `POST /api/google-drive/sync/client/[id]` - Sync client folder (with `?force=true` option)
+  - `POST /api/google-drive/sync/matter/[id]` - Sync matter folder (with `?force=true` option)
+- **Utility**: `/server/utils/google-drive.ts`
+  - JWT-based service account authentication (Web Crypto API compatible with Workers)
+  - `isDriveEnabled()` - Check if Drive is configured
+  - `createClientFolder()` - Create/get client folder
+  - `createMatterFolder()` - Create matter folder with subfolders
+  - `getFile()` - Verify file/folder accessibility
+  - `testDriveConnection()` - Test with diagnostic info
+  - `syncDocumentToDrive()` - Sync document to appropriate subfolder
+  - `syncUploadToDrive()` - Sync client upload to Drive
+- **Auto-Create Client Folder**: When creating a matter, if client doesn't have a Drive folder (or it's inaccessible), automatically creates one before creating the matter folder
+
+**Phase 4: Notices System**
+- **Database Schema**:
+  - `notices` table - Type, severity, title, message, target entity, action URL
+  - `noticeRecipients` table - User/role targeting, read/dismiss tracking
+- **Notice Types**: DRIVE_SYNC_ERROR, DOCUMENT_SIGNED, CLIENT_FILE_UPLOADED, JOURNEY_ACTION_REQUIRED, SYSTEM_ANNOUNCEMENT, PAYMENT_RECEIVED
+- **Severities**: INFO, WARNING, ERROR, SUCCESS
+- **API Endpoints**:
+  - `GET /api/notices` - Get notices for current user (own + role-broadcast)
+  - `GET /api/notices/unread-count` - Get unread count for badge
+  - `POST /api/notices/[id]/read` - Mark as read
+  - `POST /api/notices/[id]/dismiss` - Dismiss notice
+  - `POST /api/notices/mark-all-read` - Mark all as read
+- **Utility**: `/server/utils/notice-service.ts`
+  - `createNotice()` - Create notice with recipients
+  - `notifyDriveSyncError()` - Convenience function for Drive errors
+- **UI Components**:
+  - `/app/components/notices/NotificationBell.vue` - Bell icon with unread count badge
+  - `/app/components/notices/NotificationDropdown.vue` - Dropdown showing recent notices
+  - `/app/components/notices/NotificationItem.vue` - Individual notice display
+  - `/app/pages/notifications/index.vue` - Full notification history page
+- **Composable**: `/app/composables/useNotices.ts` - State management with 60-second polling
+- **Integration**: Notification bell added to dashboard header (before user menu)
+
+**Phase 5: Lucide Icons Plugin & Google Drive Icon**
+- **Plugin**: `/app/plugins/lucide-icons.ts` - Global Lucide icon registration
+- **Custom Icon**: `/app/components/icons/GoogleDrive.vue` - Official multi-color Google Drive logo
+- **Icon Usage** (official Google Drive icon appears in):
+  - Sidebar navigation (Settings → Google Drive)
+  - Settings index page card
+  - Google Drive settings page header
+  - Drive StatusSection header
+  - "Open in Drive" links throughout app
+
+**Files Modified**:
+- `/server/db/schema.ts` - Added notices tables, Drive fields to clientProfiles/matters
+- `/server/api/clients/[id].get.ts` - Returns Google Drive fields in profile
+- `/server/api/matters/index.post.ts` - Auto-creates client folder if missing, creates matter folder
+- `/server/api/matters/lawyers.get.ts` - Fixed missing await, added camelCase fields
+- `/app/layouts/dashboard.vue` - Added notification bell, Google Drive icon in nav
+- `/app/pages/settings/index.vue` - Google Drive icon on settings card
+- `/app/pages/matters/index.vue` - Drive status alert with icon
+- `nuxt.config.ts` - Added toast CSS import
+
+**Environment Variables**:
+- Service account credentials stored in database (not env vars) for easier admin management
+
+**Migration Required**: Run `npx drizzle-kit generate` then `npx drizzle-kit migrate`
+
+---
+
+#### Journey-to-Catalog Many-to-Many Relationship (2026-01-21)
+- **Status**: Complete ✅
+- **What**: Changed engagement journeys from one-to-one to many-to-many relationship with service catalog items
+- **Why**: A single engagement journey process can lead to multiple possible service products - client chooses the service at the end
+- **Schema Changes**:
+  - **Created**: `journeys_to_catalog` junction table with (journeyId, catalogId) composite primary key
+  - **Removed**: `serviceCatalogId` column from `journeys` table
+  - **Added**: `selectedCatalogId` column to `clientJourneys` table (tracks client's service selection at journey completion)
+- **API Endpoints Updated**:
+  - `POST /api/journeys` - Accepts `catalogIds` array (or legacy `serviceCatalogId`)
+  - `GET /api/journeys` - Returns `catalog_items` array instead of single service
+  - `GET /api/journeys/[id]` - Returns `catalog_items` array with id, name, category, price
+  - `PUT /api/journeys/[id]` - Accepts `catalogIds` array, manages junction table
+  - `GET /api/client-journeys/client/[clientId]` - Includes `selected_catalog_id` in response
+  - `POST /api/client-journeys/[id]/advance` - Uses junction table to find service journeys
+  - `POST /api/admin/seed-wydapt` - Uses junction table for journey-catalog linking
+  - `POST /api/admin/cleanup-wydapt` - Uses junction table for cleanup queries
+- **Files Modified**:
+  - `server/db/schema.ts` - New junction table, removed column, added column
+  - `server/api/journeys/index.post.ts`
+  - `server/api/journeys/index.get.ts`
+  - `server/api/journeys/[id].get.ts`
+  - `server/api/journeys/[id].put.ts`
+  - `server/api/client-journeys/client/[clientId].get.ts`
+  - `server/api/client-journeys/[id]/advance.post.ts`
+  - `server/api/admin/seed-wydapt.post.ts`
+  - `server/api/admin/cleanup-wydapt.post.ts`
+- **Migration Required**: Run `npx drizzle-kit generate` then `npx drizzle-kit migrate`
 
 #### E-Signature Integration Phase 3 Complete (2026-01-11)
 - **Status**: Complete ✅
@@ -405,8 +552,10 @@
 Client (1) ──→ Person (1)
 Matter (N) ──→ Client (1)
 Matter (N) ←─→ Service Catalog (N) via matters_to_services
+Journey (N) ←─→ Service Catalog (N) via journeys_to_catalog
 Client Journey (N) ──→ Matter (1)
-Client Journey (N) ──→ Service Catalog (1)
+Client Journey (N) ──→ Journey (1)
+Client Journey (1) ──→ Service Catalog (0..1) via selectedCatalogId (for ENGAGEMENT journeys)
 Payment (N) ──→ Matter (1)
 Document (N) ──→ Matter (1)
 ```
@@ -470,26 +619,15 @@ Document (N) ──→ Matter (1)
 - **Need**: Record payments, view payment history, calculate balances
 - **Location**: Matter detail view (Payments tab)
 
-### 4. Toast Notifications & UI Polish
-- **Status**: Planned
-- **Problem**: Many places in the app use browser `alert()` for notifications (success, error, info messages)
-- **Scope**:
-  - **Toast notifications**: Replace all `alert()` calls with styled toast components (success, error, warning, info variants)
-  - **Styled tooltips**: Improve tooltip styling throughout the app (currently using native `title` attributes)
-  - **Confirmation dialogs**: Consistent styled modals for destructive actions (already have UiModal, ensure consistent usage)
-  - **Loading states**: Audit and improve loading indicators across the app
-- **Files to audit for `alert()` usage**:
-  - `app/pages/signatures.vue` - copySigningLink, sendReminder, revokeSession
-  - `app/pages/documents/[id].vue` - signature session creation, document deletion
-  - `app/pages/templates/index.vue` - template deletion, reactivation
-  - `app/components/signature/SigningCeremony.vue` - download error handling
-  - Various other pages with form submissions
-- **Implementation approach**:
-  - Create `useToast` composable with `toast.success()`, `toast.error()`, `toast.warning()`, `toast.info()` methods
-  - Toast container component in layout (fixed position, stacking)
-  - Auto-dismiss with configurable duration
-  - Optional action buttons in toasts
-- **Libraries to consider**: Vue Toastification, or build lightweight custom solution
+### ~~4. Toast Notifications & UI Polish~~ ✅ COMPLETED (2026-01-21)
+- **Status**: Complete ✅
+- **Implementation**: vue-toastification with custom Tailwind styling
+- See "Google Drive Integration, Toast Notifications & Notices System" in Recently Completed section
+- `useToast()` composable available globally with `success()`, `error()`, `warning()`, `info()` methods
+- **Remaining polish** (optional future work):
+  - Replace remaining `alert()` calls with toast notifications
+  - Improve tooltip styling (currently using native `title` attributes)
+  - Audit loading states across the app
 
 ### 5. API Token Authentication
 - **Status**: Planned
@@ -690,9 +828,48 @@ The following files can be moved to `/doc/archive/` as they represent historical
 - `document-system-analysis.md` - Document system overview
 - `remove-is-template-field.md` - Schema cleanup notes
 
+**Integration Guides** (in `doc/public_site/integrations/`):
+- Google Drive setup and configuration guide (if created)
+
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-21**:
+- **Focus**: Google Drive Integration, Toast Notifications, Notices System
+- **Achievements**:
+  - ✅ Toast notification system with vue-toastification
+  - ✅ Google Drive integration with service account authentication
+  - ✅ Drive folder sync for clients and matters
+  - ✅ Drive status indicators (badges and sections) on detail pages
+  - ✅ Force resync functionality for handling drive configuration changes
+  - ✅ Auto-create client folder when creating matter
+  - ✅ Notices system with database, API, and UI components
+  - ✅ Notification bell in dashboard header with unread count
+  - ✅ Notifications page with full history
+  - ✅ Official Google Drive icon component
+  - ✅ Lucide icons plugin for global icon registration
+  - ✅ Fixed client sync status not persisting after page refresh
+  - ✅ Fixed lawyers endpoint missing await and camelCase fields
+- **Technical Notes**:
+  - Google Drive API requires `supportsAllDrives: true` for Shared Drive operations
+  - Service account with impersonation acts as the impersonated user (sees their drives)
+  - JWT authentication uses Web Crypto API (compatible with Cloudflare Workers)
+  - Drive credentials stored in database for admin-manageable configuration
+  - Notices support both user-specific and role-broadcast targeting
+- **Files Created** (key ones):
+  - `/app/plugins/toast.client.ts` - Toast plugin
+  - `/app/composables/useToast.ts` - Toast composable
+  - `/app/composables/useNotices.ts` - Notices state management
+  - `/app/components/drive/StatusBadge.vue` - Sync status badge
+  - `/app/components/drive/StatusSection.vue` - Full Drive status card
+  - `/app/components/notices/NotificationBell.vue` - Bell with badge
+  - `/app/components/icons/GoogleDrive.vue` - Official Drive icon
+  - `/server/utils/google-drive.ts` - Drive API utilities
+  - `/server/utils/notice-service.ts` - Notice creation utilities
+  - `/app/pages/settings/google-drive.vue` - Drive configuration page
+  - Various API endpoints for Drive sync and notices
+- **Next Up**: Commit and push, then continue with remaining features
 
 **Session 2026-01-11**:
 - **Focus**: E-Signature Integration Phase 3 Completion
@@ -821,9 +998,11 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 **Next Session Options**:
-1. **Payment Management** - Build payment recording UI (separate plan needed) - Only remaining known issue
+1. **Payment Management** - Build payment recording UI (separate plan needed)
 2. **Schema extraction** - Begin document template analysis and journey generation
-3. **Continue API normalization** - Fix remaining ~70 endpoints as features are tested (on-demand)
+3. **Replace remaining alert() calls** - Audit and migrate to toast notifications
+4. **Continue API normalization** - Fix remaining ~70 endpoints as features are tested (on-demand)
+5. **Matter deletion** - Implement delete functionality (deferred from this session)
 
 ---
 

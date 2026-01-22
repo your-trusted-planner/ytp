@@ -1,6 +1,8 @@
 // Get a specific client by ID
+import { requireRole } from '../../utils/auth'
+
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['LAWYER', 'ADMIN'])
+  await requireRole(event, ['LAWYER', 'ADMIN'])
 
   const clientId = getRouterParam(event, 'id')
 
@@ -69,7 +71,15 @@ export default defineEventHandler(async (event) => {
       last_updated: profile.lastUpdated instanceof Date ? profile.lastUpdated.getTime() : profile.lastUpdated,
       assigned_lawyer_id: profile.assignedLawyerId,
       created_at: profile.createdAt instanceof Date ? profile.createdAt.getTime() : profile.createdAt,
-      updated_at: profile.updatedAt instanceof Date ? profile.updatedAt.getTime() : profile.updatedAt
+      updated_at: profile.updatedAt instanceof Date ? profile.updatedAt.getTime() : profile.updatedAt,
+      // Google Drive fields
+      google_drive_folder_id: profile.googleDriveFolderId,
+      google_drive_folder_url: profile.googleDriveFolderUrl,
+      google_drive_sync_status: profile.googleDriveSyncStatus,
+      google_drive_sync_error: profile.googleDriveSyncError,
+      google_drive_last_sync_at: profile.googleDriveLastSyncAt instanceof Date
+        ? Math.floor(profile.googleDriveLastSyncAt.getTime() / 1000)
+        : profile.googleDriveLastSyncAt
     } : null
   }
 })

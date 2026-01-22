@@ -29,6 +29,34 @@
       "when": 1768178704938,
       "tag": "0003_bouncy_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1769025701454,
+      "tag": "0004_blue_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1769028030004,
+      "tag": "0005_chemical_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1769039355897,
+      "tag": "0006_elite_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1769046851184,
+      "tag": "0007_early_thunderbolts",
+      "breakpoints": true
     }
   ]
 }

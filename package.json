@@ -6,7 +6,6 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "dev:remote": "nuxt dev --remote",
-    "generate": "nuxt generate",
     "preview": "wrangler dev dist/server/index.mjs --remote --assets dist/public",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler deploy --env preview",
@@ -49,6 +48,7 @@
     "tailwind-merge": "^2.6.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
+    "vue-toastification": "2.0.0-rc.5",
     "vuedraggable": "^4.1.0",
     "zod": "^3.25.76"
   },

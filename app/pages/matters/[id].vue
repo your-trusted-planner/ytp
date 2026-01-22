@@ -15,6 +15,11 @@
             <UiBadge :variant="getStatusVariant(matter.status)">
               {{ matter.status }}
             </UiBadge>
+            <DriveStatusBadge
+              :status="matter.google_drive_sync_status"
+              :folder-url="matter.google_drive_folder_url"
+              :show-label="true"
+            />
           </div>
         </div>
       </div>
@@ -122,6 +127,17 @@
                 </div>
               </div>
             </UiCard>
+
+            <!-- Google Drive Status -->
+            <DriveStatusSection
+              :sync-status="matter.google_drive_sync_status"
+              :folder-url="matter.google_drive_folder_url"
+              :last-sync-at="matter.google_drive_last_sync_at"
+              :sync-error="matter.google_drive_sync_error"
+              entity-type="matter"
+              :entity-id="matterId"
+              @synced="handleDriveSynced"
+            />
           </div>
         </div>
 
@@ -239,7 +255,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, FolderSync } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
@@ -443,6 +459,17 @@ function getJourneyStatusVariant(status: string): 'success' | 'primary' | 'defau
       return 'danger'
     default:
       return 'default'
+  }
+}
+
+// Handle Drive synced
+function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
+  if (matter.value) {
+    matter.value.google_drive_folder_id = data.folderId
+    matter.value.google_drive_folder_url = data.folderUrl
+    matter.value.google_drive_sync_status = 'SYNCED'
+    matter.value.google_drive_sync_error = null
+    matter.value.google_drive_last_sync_at = Math.floor(Date.now() / 1000)
   }
 }
 

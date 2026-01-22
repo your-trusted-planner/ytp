@@ -11,6 +11,9 @@
 
           <!-- User Menu -->
           <div class="flex items-center space-x-4">
+            <!-- Notification Bell -->
+            <NoticesNotificationBell />
+
             <span class="text-white text-sm">
               {{ user?.firstName }} {{ user?.lastName }}
             </span>
@@ -119,8 +122,11 @@ import {
   Contact,
   KeyRound,
   Activity,
-  PenTool
+  PenTool,
+  FolderOpen,
+  Bell
 } from 'lucide-vue-next'
+import GoogleDriveIcon from '~/components/icons/GoogleDrive.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -160,6 +166,7 @@ const navigationConfig = ref([
     roles: FIRM_ROLES,
     children: [
       { path: '/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
+      { path: '/service-catalog/service-categories', label: 'Service Categories', icon: FolderOpen, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
       { path: '/templates', label: 'Document Templates', icon: Copy, roles: FIRM_ROLES }
     ]
@@ -186,7 +193,8 @@ const navigationConfig = ref([
     children: [
       { path: '/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 }
+      { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/settings/google-drive', label: 'Google Drive', icon: GoogleDriveIcon, roles: ALL_ROLES, minAdminLevel: 2 }
     ]
   },
 

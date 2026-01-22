@@ -28,6 +28,7 @@ Click on any client to see their full profile:
 - **Active Journeys**: Services they're enrolled in
 - **Documents**: Documents assigned to them
 - **Notes**: Internal notes and history
+- **Google Drive**: Sync status and folder link (if enabled)
 
 ![Client Detail](/screenshots/client-detail.png)
 
@@ -39,6 +40,27 @@ Click on any client to see their full profile:
 | **Pending Approval** | Account created, awaiting activation |
 | **Active** | Full portal access |
 | **Inactive** | Account disabled |
+
+## Google Drive Status
+
+If Google Drive integration is enabled, each client and matter detail page shows a **Google Drive** status section:
+
+### Status Indicators
+
+| Status | Meaning |
+|--------|---------|
+| **Synced** (green) | Folder exists and is accessible - click to open in Drive |
+| **Not Synced** (gray) | No folder created yet |
+| **Error** (red) | Sync failed - shows error message |
+
+### Sync Actions
+
+- **Sync Now / Verify Folder**: Creates a folder or verifies existing folder is accessible
+- **Force New Folder**: Creates a new folder in the currently configured drive (use after changing drive settings)
+
+::: tip
+When creating a matter for a client without a Drive folder, the system automatically creates the client folder first, then creates the matter folder inside it.
+:::
 
 ---
 
@@ -89,6 +111,7 @@ Services: WYDAPT, Annual Maintenance
 - Generates a unique matter number (YYYY-###)
 - Creates service engagements for any selected services
 - Sets up journeys for each engaged service
+- Creates Google Drive folders (if enabled) - client folder first if needed, then matter folder with subfolders
 
 ![Matter Detail](/screenshots/matter-detail.png)
 
@@ -224,6 +247,12 @@ A: Update it when the client actually signs the engagement letter. This may be d
 
 **Q: Can I change which services are engaged?**
 A: Yes, you can add services to a matter at any time. Removing services is more complex and should be done with caution.
+
+**Q: Why does my client's Google Drive show "Not Synced" after I already synced it?**
+A: If the Google Drive configuration was changed (different Shared Drive), folders in the old drive won't be accessible. Use "Force New Folder" to create a new folder in the currently configured drive.
+
+**Q: What happens to files if I use "Force New Folder"?**
+A: Files in the old folder remain there but are no longer linked. The new folder starts empty. This is useful when changing Shared Drives, but use with caution.
 
 ---
 
