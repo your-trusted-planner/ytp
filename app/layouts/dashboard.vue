@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, shallowRef, computed, watch, markRaw } from 'vue'
 import {
   LayoutDashboard,
   Users,
@@ -127,6 +127,9 @@ import {
   Bell
 } from 'lucide-vue-next'
 import GoogleDriveIcon from '~/components/icons/GoogleDrive.vue'
+
+// Mark imported component as raw to prevent Vue from making it reactive
+const GoogleDriveIconRaw = markRaw(GoogleDriveIcon)
 
 const router = useRouter()
 const route = useRoute()
@@ -194,7 +197,7 @@ const navigationConfig = ref([
       { path: '/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/settings/google-drive', label: 'Google Drive', icon: GoogleDriveIcon, roles: ALL_ROLES, minAdminLevel: 2 }
+      { path: '/settings/google-drive', label: 'Google Drive', icon: GoogleDriveIconRaw, roles: ALL_ROLES, minAdminLevel: 2 }
     ]
   },
 
@@ -253,6 +256,17 @@ const isActive = (path: string) => {
 
 // Toggle section open/closed state on the original config
 const toggleSection = (label: string) => {
+  // If sidebar is collapsed, expand it first when clicking a section with children
+  if (isSidebarCollapsed.value) {
+    isSidebarCollapsed.value = false
+    // Open the section after expanding sidebar
+    const item = navigationConfig.value.find(i => i.label === label)
+    if (item && 'isOpen' in item) {
+      item.isOpen = true
+    }
+    return
+  }
+
   const item = navigationConfig.value.find(i => i.label === label)
   if (item && 'isOpen' in item) {
     item.isOpen = !item.isOpen
