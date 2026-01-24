@@ -196,6 +196,7 @@ const statusText = computed(() => {
 // Fetch existing integration
 onMounted(async () => {
   await loadIntegration()
+  await loadImportStats()
 })
 
 async function loadIntegration() {
@@ -210,6 +211,29 @@ async function loadIntegration() {
     }
   } catch {
     // Integration not found or no access
+  }
+}
+
+async function loadImportStats() {
+  try {
+    const stats = await $fetch<{
+      users: number
+      people: number
+      clients: number
+      matters: number
+      notes: number
+      activities: number
+    }>('/api/admin/integrations/lawmatics/import-stats')
+
+    entityStats.value = [
+      { type: 'users', label: 'Users', count: stats.users },
+      { type: 'clients', label: 'Clients', count: stats.clients },
+      { type: 'matters', label: 'Matters', count: stats.matters },
+      { type: 'notes', label: 'Notes', count: stats.notes },
+      { type: 'activities', label: 'Activities', count: stats.activities }
+    ]
+  } catch {
+    // Stats not available
   }
 }
 
