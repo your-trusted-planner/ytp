@@ -8,63 +8,81 @@ import { useDrizzle, schema } from '../../../../db'
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle()
+  const results: Record<string, number> = {
+    users: 0,
+    people: 0,
+    clients: 0,
+    matters: 0,
+    notes: 0,
+    activities: 0
+  }
 
+  // Query each table individually to isolate any failures
   try {
-    // Count users imported from Lawmatics
-    const usersResult = await db
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.users)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
+    results.users = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting users:', e)
+  }
 
-    // Count people imported from Lawmatics
-    const peopleResult = await db
+  try {
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.people)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
+    results.people = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting people:', e)
+  }
 
-    // Count clients imported from Lawmatics
-    const clientsResult = await db
+  try {
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.clients)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
+    results.clients = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting clients:', e)
+  }
 
-    // Count matters imported from Lawmatics
-    const mattersResult = await db
+  try {
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.matters)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
+    results.matters = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting matters:', e)
+  }
 
-    // Count notes imported from Lawmatics
-    const notesResult = await db
+  try {
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.notes)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
+    results.notes = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting notes:', e)
+  }
 
-    // Count activities imported from Lawmatics
-    const activitiesResult = await db
+  try {
+    const r = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.activities)
-      .where(sql`json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
+      .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
-
-    return {
-      users: usersResult?.count ?? 0,
-      people: peopleResult?.count ?? 0,
-      clients: clientsResult?.count ?? 0,
-      matters: mattersResult?.count ?? 0,
-      notes: notesResult?.count ?? 0,
-      activities: activitiesResult?.count ?? 0
-    }
-  } catch (error) {
-    console.error('[Lawmatics Import Stats] Error:', error)
-    throw createError({
-      statusCode: 500,
-      message: 'Failed to fetch import statistics'
-    })
+    results.activities = r?.count ?? 0
+  } catch (e) {
+    console.error('[Import Stats] Error counting activities:', e)
   }
+
+  return results
 })
