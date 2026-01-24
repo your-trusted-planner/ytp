@@ -8,9 +8,15 @@
  * 1. DriveStatusBadge visibility in page headers
  * 2. DriveStatusSection visibility in page content
  * 3. Proper conditional rendering based on Drive configuration
+ *
+ * NOTE: These tests require a running dev server with seeded database and
+ * Google Drive configured. They are skipped in CI environments.
  */
 
 import { test, expect } from '@playwright/test'
+
+// Skip all tests in CI - requires seeded database and Google Drive configuration
+test.skip(({ }, testInfo) => !!process.env.CI, 'Skipping in CI - requires local dev environment')
 
 // Test user credentials (from seed.ts)
 const TEST_LAWYER = {
