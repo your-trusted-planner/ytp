@@ -140,11 +140,6 @@ const isLoggingOut = ref(false)
 const appConfigStore = useAppConfigStore()
 const isSidebarCollapsed = ref(false)
 
-// Fetch app configuration on mount (ensures Drive status is loaded on page refresh)
-onMounted(() => {
-  appConfigStore.fetchConfig()
-})
-
 // Role groups for easier configuration
 // FIRM_ROLES: Internal firm employees with broad access (admins, attorneys, paralegals, secretaries, etc.)
 const FIRM_ROLES = ['ADMIN', 'LAWYER', 'STAFF']
