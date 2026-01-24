@@ -78,6 +78,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@parcel/watcher",
+      "better-sqlite3",
       "bufferutil",
       "esbuild",
       "sharp",
