@@ -16,6 +16,7 @@
               {{ matter.status }}
             </UiBadge>
             <DriveStatusBadge
+              v-if="isDriveConfigured"
               :status="matter.googleDriveSyncStatus"
               :folder-url="matter.googleDriveFolderUrl"
               :show-label="true"
@@ -122,8 +123,9 @@
               </div>
             </UiCard>
 
-            <!-- Google Drive Status -->
+            <!-- Google Drive Status (only shown if Drive integration is configured) -->
             <DriveStatusSection
+              v-if="isDriveConfigured"
               :sync-status="matter.googleDriveSyncStatus"
               :folder-url="matter.googleDriveFolderUrl"
               :last-sync-at="matter.googleDriveLastSyncAt"
@@ -278,6 +280,16 @@
             />
           </UiCard>
         </div>
+
+        <!-- Notes Tab -->
+        <div v-if="activeTab === 'notes'">
+          <UiCard>
+            <EntityNotes
+              entity-type="matter"
+              :entity-id="matterId"
+            />
+          </UiCard>
+        </div>
       </div>
     </div>
 
@@ -337,6 +349,10 @@ const matterId = route.params.id as string
 const matterStore = useMatterStore()
 const preferencesStore = usePreferencesStore()
 
+// App config store (includes Google Drive status)
+const appConfigStore = useAppConfigStore()
+const isDriveConfigured = computed(() => appConfigStore.isDriveConfigured)
+
 // Local UI state (not in store)
 const activeTab = ref('overview')
 const showAddServiceModal = ref(false)
@@ -360,7 +376,8 @@ const tabs = [
   { id: 'services', label: 'Services' },
   { id: 'journeys', label: 'Journeys' },
   { id: 'payments', label: 'Payments' },
-  { id: 'documents', label: 'Documents' }
+  { id: 'documents', label: 'Documents' },
+  { id: 'notes', label: 'Notes' }
 ]
 
 // Computed from store

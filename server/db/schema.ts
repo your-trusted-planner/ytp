@@ -33,10 +33,13 @@ export const oauthProviders = sqliteTable('oauth_providers', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Users table
+// Users table - Authentication/authorization accounts
+// Links to people table for identity (Belly Button Principle)
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
-  email: text('email').notNull().unique(),
+  // Link to person identity - every user is a person
+  personId: text('person_id').references(() => people.id),
+  email: text('email').unique(), // Nullable for imported records without email
   password: text('password'), // Nullable for OAuth-only users
   firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users
   role: text('role', { enum: ['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
@@ -50,11 +53,14 @@ export const users = sqliteTable('users', {
   signatureImage: text('signature_image'),
   signatureImageUpdatedAt: integer('signature_image_updated_at', { mode: 'timestamp' }),
   status: text('status', { enum: ['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Client Profiles table
+// Client Profiles table (DEPRECATED: use clients table instead)
+// This table will be removed after data migration to clients table
 export const clientProfiles = sqliteTable('client_profiles', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
@@ -184,11 +190,21 @@ export const documents = sqliteTable('documents', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Notes table
+// Notes table - polymorphic association to multiple entity types
 export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),
   content: text('content').notNull(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Polymorphic association - can attach notes to any entity type
+  entityType: text('entity_type').notNull(), // 'client', 'matter', 'document', 'appointment', etc.
+  entityId: text('entity_id').notNull(),
+
+  // Who created the note
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -227,6 +243,9 @@ export const activities = sqliteTable('activities', {
 
   // Flexible metadata
   metadata: text('metadata'), // JSON string
+
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -289,6 +308,9 @@ export const matters = sqliteTable('matters', {
   googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
   // Store subfolder IDs as JSON: {"Generated Documents": "...", "Client Uploads": "..."}
   googleDriveSubfolderIds: text('google_drive_subfolder_ids'),
+
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
@@ -590,6 +612,8 @@ export const referralPartners = sqliteTable('referral_partners', {
   phone: text('phone'),
   notes: text('notes'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -808,8 +832,11 @@ export const publicBookings = sqliteTable('public_bookings', {
 // ===================================
 
 // People - Separates identity from authentication
+// Every human in the system is a person (Belly Button Principle)
 export const people = sqliteTable('people', {
   id: text('id').primaryKey(),
+  // Person type: individual or entity (trust, corporation, etc.)
+  personType: text('person_type', { enum: ['individual', 'entity'] }).notNull().default('individual'),
   // Personal Information
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -831,12 +858,74 @@ export const people = sqliteTable('people', {
   entityEin: text('entity_ein'),
   // Notes
   notes: text('notes'),
+  // Import tracking
+  importMetadata: text('import_metadata'),
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Client Relationships - Links clients to people
+// Clients - Client-specific data (Belly Button Principle)
+// Every client is a person, but not every person is a client
+// A client may or may not have a user account for portal access
+export const clients = sqliteTable('clients', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().references(() => people.id).unique(),
+  status: text('status', { enum: ['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+
+  // Estate planning (migrated from clientProfiles)
+  hasMinorChildren: integer('has_minor_children', { mode: 'boolean' }).notNull().default(false),
+  childrenInfo: text('children_info'), // JSON string
+  businessName: text('business_name'),
+  businessType: text('business_type'),
+  hasWill: integer('has_will', { mode: 'boolean' }).notNull().default(false),
+  hasTrust: integer('has_trust', { mode: 'boolean' }).notNull().default(false),
+
+  // Referral tracking
+  referralType: text('referral_type', { enum: ['CLIENT', 'PROFESSIONAL', 'EVENT', 'MARKETING'] }),
+  referredByPersonId: text('referred_by_person_id').references(() => people.id),
+  referredByPartnerId: text('referred_by_partner_id'), // References referralPartners.id
+  referralNotes: text('referral_notes'),
+
+  // Initial attribution captured at lead creation
+  initialAttributionSource: text('initial_attribution_source'),
+  initialAttributionMedium: text('initial_attribution_medium'),
+  initialAttributionCampaign: text('initial_attribution_campaign'),
+
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'),
+  googleDriveFolderUrl: text('google_drive_folder_url'),
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'),
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
+  googleDriveSubfolderIds: text('google_drive_subfolder_ids'), // JSON: {"Generated Documents": "...", ...}
+
+  // Assignment
+  assignedLawyerId: text('assigned_lawyer_id').references(() => users.id),
+
+  // Import tracking
+  importMetadata: text('import_metadata'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Relationships - Unified relationship tracking (Belly Button Principle)
+// Links people to people with context for where the relationship applies
+export const relationships = sqliteTable('relationships', {
+  id: text('id').primaryKey(),
+  fromPersonId: text('from_person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  toPersonId: text('to_person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type').notNull(), // SPOUSE, CHILD, TRUSTEE, BENEFICIARY, etc.
+  context: text('context', { enum: ['client', 'matter'] }), // null = general relationship
+  contextId: text('context_id'), // matterId if context='matter'
+  ordinal: integer('ordinal').notNull().default(0),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Client Relationships - Links clients to people (DEPRECATED: use relationships table)
 export const clientRelationships = sqliteTable('client_relationships', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -848,7 +937,7 @@ export const clientRelationships = sqliteTable('client_relationships', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Matter Relationships - Links matters to people
+// Matter Relationships - Links matters to people (DEPRECATED: use relationships table)
 export const matterRelationships = sqliteTable('matter_relationships', {
   id: text('id').primaryKey(),
   matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
@@ -920,5 +1009,87 @@ export const noticeRecipients = sqliteTable('notice_recipients', {
   targetRole: text('target_role'), // For role-broadcast: 'LAWYER', 'ADMIN', 'STAFF', etc.
   readAt: integer('read_at', { mode: 'timestamp' }),
   dismissedAt: integer('dismissed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// DATA MIGRATION SYSTEM
+// ===================================
+
+// Integrations - Stores external system configurations (API keys, settings)
+export const integrations = sqliteTable('integrations', {
+  id: text('id').primaryKey(),
+  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO'] }).notNull(),
+  name: text('name').notNull(), // Display name
+
+  // Encrypted credentials (stored in KV for security, reference here)
+  credentialsKey: text('credentials_key'), // KV key for encrypted credentials
+
+  // Connection status
+  status: text('status', { enum: ['CONFIGURED', 'CONNECTED', 'ERROR'] }).notNull().default('CONFIGURED'),
+  lastTestedAt: integer('last_tested_at', { mode: 'timestamp' }),
+  lastErrorMessage: text('last_error_message'),
+
+  // Settings (JSON: integration-specific settings)
+  settings: text('settings'),
+
+  // Track last sync timestamps per entity type for incremental sync
+  // JSON: { "users": "2025-01-23T14:30:00Z", "contacts": "...", "activities": "..." }
+  lastSyncTimestamps: text('last_sync_timestamps'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Migration Runs - Tracks each migration execution
+export const migrationRuns = sqliteTable('migration_runs', {
+  id: text('id').primaryKey(),
+  integrationId: text('integration_id').notNull().references(() => integrations.id),
+
+  // Run configuration
+  runType: text('run_type', { enum: ['FULL', 'INCREMENTAL'] }).notNull(),
+  entityTypes: text('entity_types').notNull(), // JSON array: ['users', 'contacts', 'prospects', 'notes', 'activities']
+
+  // Status
+  status: text('status', {
+    enum: ['PENDING', 'RUNNING', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED']
+  }).notNull().default('PENDING'),
+
+  // Progress tracking
+  totalEntities: integer('total_entities'), // Estimated total (if known)
+  processedEntities: integer('processed_entities').notNull().default(0),
+  createdRecords: integer('created_records').notNull().default(0),
+  updatedRecords: integer('updated_records').notNull().default(0),
+  skippedRecords: integer('skipped_records').notNull().default(0),
+  errorCount: integer('error_count').notNull().default(0),
+
+  // Checkpoint for resume (JSON: {entity: 'contacts', page: 45, ...})
+  checkpoint: text('checkpoint'),
+
+  // Timing
+  startedAt: integer('started_at', { mode: 'timestamp' }),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Migration Errors - Logs individual record errors for debugging
+export const migrationErrors = sqliteTable('migration_errors', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull().references(() => migrationRuns.id, { onDelete: 'cascade' }),
+
+  entityType: text('entity_type').notNull(), // 'user', 'contact', 'prospect', 'note', 'activity'
+  externalId: text('external_id'), // Source system record ID
+
+  errorType: text('error_type', { enum: ['TRANSFORM', 'VALIDATION', 'INSERT', 'API'] }).notNull(),
+  errorMessage: text('error_message').notNull(),
+  errorDetails: text('error_details'), // JSON: stack trace, raw data, etc.
+
+  // For retry
+  retryCount: integer('retry_count').notNull().default(0),
+  retriedAt: integer('retried_at', { mode: 'timestamp' }),
+  resolved: integer('resolved', { mode: 'boolean' }).notNull().default(false),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })

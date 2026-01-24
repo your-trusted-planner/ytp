@@ -1,0 +1,127 @@
+{
+  "data": [
+    {
+      "id": "lm-activity-001",
+      "type": "email",
+      "attributes": {
+        "description": "Sent welcome email with intake questionnaire link",
+        "activity_type": "email_sent",
+        "subject": "Welcome to Our Firm - Next Steps",
+        "to_email": "john.smith@email.com",
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-activity-002",
+      "type": "call",
+      "attributes": {
+        "description": "Scheduled initial consultation call",
+        "activity_type": "phone_call",
+        "duration_minutes": 45,
+        "outcome": "completed",
+        "created_at": "2024-01-16T14:00:00Z",
+        "updated_at": "2024-01-16T15:00:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-activity-003",
+      "type": "task",
+      "attributes": {
+        "description": "Prepare draft trust documents",
+        "activity_type": "task_completed",
+        "created_at": "2024-01-20T09:00:00Z",
+        "updated_at": "2024-01-25T16:00:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-002", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-activity-004",
+      "type": "meeting",
+      "attributes": {
+        "description": "Document signing meeting at office",
+        "activity_type": "meeting",
+        "location": "Main Office - Conference Room A",
+        "start_time": "2024-02-01T14:00:00Z",
+        "end_time": "2024-02-01T15:30:00Z",
+        "created_at": "2024-01-25T10:00:00Z",
+        "updated_at": "2024-02-01T15:30:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-activity-005",
+      "type": "status_change",
+      "attributes": {
+        "description": "Status changed from 'Intake' to 'Documents'",
+        "activity_type": "status_change",
+        "from_status": "Intake",
+        "to_status": "Documents",
+        "created_at": "2024-01-18T11:00:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-activity-006",
+      "type": "note",
+      "attributes": {
+        "description": "Added case note",
+        "activity_type": "note_added",
+        "created_at": "2024-02-20T14:30:00Z"
+      },
+      "relationships": {
+        "prospect": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        },
+        "user": {
+          "data": { "id": "lm-user-002", "type": "user" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 1,
+      "total_count": 6,
+      "per_page": 25
+    }
+  }
+}

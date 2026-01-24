@@ -65,8 +65,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update session user with current data from database
+    // Include personId for Belly Button Principle support
     const user = {
       id: dbUser.id,
+      personId: dbUser.personId || null, // Link to person identity
       email: dbUser.email,
       role: dbUser.role,
       adminLevel: dbUser.adminLevel ?? 0,
@@ -77,9 +79,22 @@ export default defineEventHandler(async (event) => {
     // Attach user to event context for use in route handlers
     event.context.user = user
     event.context.userId = user.id
+    event.context.personId = user.personId // Also expose personId directly
     event.context.userRole = user.role
     event.context.adminLevel = user.adminLevel
-  } catch (error) {
+
+    // Require admin level 2+ for /api/admin/* routes
+    if (path.startsWith('/api/admin/') && user.adminLevel < 2) {
+      throw createError({
+        statusCode: 403,
+        message: 'Insufficient admin privileges'
+      })
+    }
+  } catch (error: any) {
+    // Re-throw if already an H3 error (like our 403 above)
+    if (error.statusCode) {
+      throw error
+    }
     throw createError({
       statusCode: 401,
       message: 'Authentication required'

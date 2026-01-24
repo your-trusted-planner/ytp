@@ -73,8 +73,9 @@ export default defineEventHandler(async (event) => {
       console.log(`[Firebase Auth] Linked Firebase UID to existing user: ${email}`)
     }
   } else {
-    // Create new user
+    // Create new user with linked person record (Belly Button Principle)
     const userId = crypto.randomUUID()
+    const personId = `person_${userId}`
 
     // Extract name parts from Firebase profile
     let firstName = null
@@ -85,8 +86,24 @@ export default defineEventHandler(async (event) => {
       lastName = nameParts.slice(1).join(' ') || null
     }
 
+    const now = new Date()
+
+    // First create the person record
+    await db.insert(schema.people).values({
+      id: personId,
+      personType: 'individual',
+      firstName,
+      lastName,
+      fullName: name || null,
+      email,
+      createdAt: now,
+      updatedAt: now
+    })
+
+    // Then create the user record linked to the person
     await db.insert(schema.users).values({
       id: userId,
+      personId, // Link to person identity
       email,
       password: null, // OAuth-only user
       firebaseUid,
@@ -95,8 +112,8 @@ export default defineEventHandler(async (event) => {
       firstName,
       lastName,
       avatar: picture || null,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: now,
+      updatedAt: now
     })
 
     // Fetch the newly created user
@@ -106,7 +123,7 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.users.id, userId))
       .get()
 
-    console.log(`[Firebase Auth] Created new user via OAuth: ${email}`)
+    console.log(`[Firebase Auth] Created new user with person record via OAuth: ${email}`)
   }
 
   if (!user) {
@@ -116,14 +133,35 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Fetch person data if user has a linked personId (Belly Button Principle)
+  let personData = null
+  if (user.personId) {
+    personData = await db
+      .select({
+        id: schema.people.id,
+        firstName: schema.people.firstName,
+        lastName: schema.people.lastName,
+        fullName: schema.people.fullName
+      })
+      .from(schema.people)
+      .where(eq(schema.people.id, user.personId))
+      .get()
+  }
+
+  // Use person data for name if available, otherwise fall back to user data
+  const sessionFirstName = personData?.firstName || user.firstName
+  const sessionLastName = personData?.lastName || user.lastName
+
   // Create session using nuxt-auth-utils
   await setUserSession(event, {
     user: {
       id: user.id,
+      personId: user.personId || null, // Include personId in session
       email: user.email,
       role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName
+      adminLevel: user.adminLevel || 0,
+      firstName: sessionFirstName,
+      lastName: sessionLastName
     },
     loggedInAt: new Date()
   })

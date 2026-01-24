@@ -124,7 +124,8 @@ import {
   Activity,
   PenTool,
   FolderOpen,
-  Bell
+  Bell,
+  Link2
 } from 'lucide-vue-next'
 import GoogleDriveIcon from '~/components/icons/GoogleDrive.vue'
 
@@ -136,6 +137,7 @@ const route = useRoute()
 const { data: sessionData } = await useFetch('/api/auth/session')
 const user = computed(() => sessionData.value?.user)
 const isLoggingOut = ref(false)
+const appConfigStore = useAppConfigStore()
 const isSidebarCollapsed = ref(false)
 
 // Role groups for easier configuration
@@ -197,6 +199,7 @@ const navigationConfig = ref([
       { path: '/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 },
+      { path: '/settings/integrations', label: 'Integrations', icon: Link2, roles: ALL_ROLES, minAdminLevel: 2 },
       { path: '/settings/google-drive', label: 'Google Drive', icon: GoogleDriveIconRaw, roles: ALL_ROLES, minAdminLevel: 2 }
     ]
   },
@@ -277,6 +280,8 @@ const handleLogout = async () => {
   isLoggingOut.value = true
   try {
     await $fetch('/api/auth/logout', { method: 'POST' })
+    // Reset app config store on logout
+    appConfigStore.reset()
     await router.push('/login')
   } catch (err) {
     console.error('Logout failed:', err)

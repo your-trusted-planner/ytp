@@ -18,7 +18,7 @@
           {{ client.status }}
         </UiBadge>
         <DriveStatusBadge
-          v-if="clientProfile"
+          v-if="clientProfile && isDriveConfigured"
           :status="clientProfile.google_drive_sync_status"
           :folder-url="clientProfile.google_drive_folder_url"
           :show-label="true"
@@ -90,9 +90,9 @@
           </div>
         </div>
 
-        <!-- Google Drive Status -->
+        <!-- Google Drive Status (only shown if Drive integration is configured) -->
         <DriveStatusSection
-          v-if="clientProfile"
+          v-if="clientProfile && isDriveConfigured"
           :sync-status="clientProfile.google_drive_sync_status"
           :folder-url="clientProfile.google_drive_folder_url"
           :last-sync-at="clientProfile.google_drive_last_sync_at"
@@ -283,28 +283,7 @@
 
         <!-- Notes -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Notes</h3>
-          <div class="space-y-3">
-            <UiTextarea
-              v-model="newNote"
-              placeholder="Add a note about this client..."
-              :rows="3"
-            />
-            <UiButton @click="addNote" :loading="savingNote" size="sm">
-              Add Note
-            </UiButton>
-          </div>
-
-          <div v-if="notes.length > 0" class="mt-4 space-y-2">
-            <div
-              v-for="note in notes"
-              :key="note.id"
-              class="p-3 bg-gray-50 rounded text-sm"
-            >
-              <div class="text-gray-700">{{ note.content }}</div>
-              <div class="text-xs text-gray-500 mt-1">{{ formatDate(note.created_at) }}</div>
-            </div>
-          </div>
+          <EntityNotes entityType="client" :entityId="clientId" />
         </div>
       </div>
     </div>
@@ -520,8 +499,11 @@ const route = useRoute()
 const router = useRouter()
 const clientId = route.params.id as string
 
+// App config store (includes Google Drive status)
+const appConfigStore = useAppConfigStore()
+const isDriveConfigured = computed(() => appConfigStore.isDriveConfigured)
+
 const loading = ref(true)
-const savingNote = ref(false)
 const savingClient = ref(false)
 const savingRelationship = ref(false)
 const showEditModal = ref(false)
@@ -532,11 +514,8 @@ const clientProfile = ref<any>(null)
 const matters = ref<any[]>([])
 const journeys = ref<any[]>([])
 const documents = ref<any[]>([])
-const notes = ref<any[]>([])
 const relationships = ref<any[]>([])
 const availablePeople = ref<any[]>([])
-
-const newNote = ref('')
 
 const relationshipForm = reactive({
   mode: 'existing',
@@ -576,12 +555,11 @@ const totalDocuments = computed(() => documents.value.length)
 async function fetchClient() {
   loading.value = true
   try {
-    const [clientData, mattersData, journeysData, docsData, notesData, relationshipsData, peopleData] = await Promise.all([
+    const [clientData, mattersData, journeysData, docsData, relationshipsData, peopleData] = await Promise.all([
       $fetch(`/api/clients/${clientId}`),
       $fetch(`/api/clients/${clientId}/matters`).catch(() => ({ matters: [] })),
       $fetch(`/api/client-journeys/client/${clientId}`).catch(() => ({ journeys: [] })),
       $fetch(`/api/clients/${clientId}/documents`).catch(() => ({ documents: [] })),
-      $fetch(`/api/clients/${clientId}/notes`).catch(() => ({ notes: [] })),
       $fetch(`/api/clients/${clientId}/relationships`).catch(() => ({ relationships: [] })),
       $fetch('/api/people').catch(() => ({ people: [] }))
     ])
@@ -591,7 +569,6 @@ async function fetchClient() {
     matters.value = mattersData.matters || []
     journeys.value = journeysData.journeys || []
     documents.value = docsData.documents || []
-    notes.value = notesData.notes || []
     relationships.value = relationshipsData.relationships || []
     availablePeople.value = peopleData.people || []
   } catch (error) {
@@ -604,31 +581,6 @@ async function fetchClient() {
 // View journey
 function viewJourney(journeyId: string) {
   router.push(`/my-journeys/${journeyId}`)
-}
-
-// Add note
-async function addNote() {
-  if (!newNote.value.trim()) return
-
-  savingNote.value = true
-  try {
-    await $fetch(`/api/clients/${clientId}/notes`, {
-      method: 'POST',
-      body: {
-        content: newNote.value
-      }
-    })
-
-    newNote.value = ''
-
-    // Refresh notes
-    const { notes: data } = await $fetch(`/api/clients/${clientId}/notes`)
-    notes.value = data || []
-  } catch (error) {
-    console.error('Error adding note:', error)
-  } finally {
-    savingNote.value = false
-  }
 }
 
 // Open edit modal
@@ -771,9 +723,17 @@ function formatRelationshipType(type: string): string {
 }
 
 // Format date
-function formatDate(timestamp: number) {
-  if (!timestamp) return ''
-  return new Date(timestamp).toLocaleDateString('en-US', {
+function formatDate(dateInput: number | string | Date) {
+  if (!dateInput) return ''
+  // Handle Unix timestamp (seconds or milliseconds), ISO string, or Date object
+  let date: Date
+  if (typeof dateInput === 'number') {
+    // If timestamp is in seconds (Unix), convert to milliseconds
+    date = dateInput < 10000000000 ? new Date(dateInput * 1000) : new Date(dateInput)
+  } else {
+    date = new Date(dateInput)
+  }
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'

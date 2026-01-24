@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": "lm-contact-p3-001",
+      "type": "contact",
+      "attributes": {
+        "first_name": "Page Three",
+        "last_name": "Contact G",
+        "email": "page3g@example.com",
+        "phone": "(555) 003-0001",
+        "contact_type": "Individual",
+        "created_at": "2024-03-01T10:00:00Z",
+        "updated_at": "2024-07-07T10:00:00Z"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "current_page": 3,
+      "total_pages": 3,
+      "total_count": 7,
+      "per_page": 3
+    }
+  }
+}

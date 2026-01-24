@@ -15,6 +15,114 @@ This file tracks:
 
 **Always check CURRENT_STATUS.md** before starting work to understand the current state of the project.
 
+## Data Model
+
+### Belly Button Principle Architecture
+
+The data model follows the "Belly Button Principle" - every human in the system has a person record. Identity is separated from authentication.
+
+**Core Structure:**
+- **`people`** = identity (all humans - clients, staff, spouses, beneficiaries, etc.)
+- **`users`** = authentication (accounts that can log in, linked to a person)
+- **`clients`** = client-specific data (linked to a person)
+
+```
+people (identity - ALL humans)
+├── id, firstName, lastName, fullName, email, phone
+├── personType: 'individual' | 'entity'
+├── address, dateOfBirth, ssnLast4
+└── entityName, entityType, entityEin (for trusts/corps)
+
+users (authentication/authorization ONLY)
+├── personId → people.id (links to identity)
+├── email, password, firebaseUid
+├── role, adminLevel, status
+└── avatar, signatureImage
+
+clients (client-specific data)
+├── personId → people.id (the person who is the client)
+├── status: 'LEAD' | 'PROSPECT' | 'ACTIVE' | 'INACTIVE'
+├── estate planning fields (hasMinorChildren, hasWill, etc.)
+├── referral tracking, attribution
+└── Google Drive sync, assignedLawyerId
+
+relationships (unified)
+├── fromPersonId → people.id
+├── toPersonId → people.id
+├── relationshipType (SPOUSE, CHILD, TRUSTEE, BENEFICIARY, etc.)
+└── context: 'client' | 'matter' | null
+```
+
+**Key Principle:** Every user has a person. Not every person has a user. Not every person is a client.
+
+| Entity | people | users | clients |
+|--------|--------|-------|---------|
+| Lawyer | ✓ | ✓ (role=LAWYER) | ✗ |
+| Staff | ✓ | ✓ (role=STAFF) | ✗ |
+| Admin | ✓ | ✓ (role=ADMIN) | ✗ |
+| Client (portal access) | ✓ | ✓ (role=CLIENT) | ✓ |
+| Client (no login) | ✓ | ✗ | ✓ |
+| Spouse/Child | ✓ | ✗ | ✗ |
+| Beneficiary | ✓ | ✗ | ✗ |
+
+### Querying Clients
+
+```typescript
+// NEW: Query clients via clients → people tables
+const [client] = await db.select()
+  .from(schema.clients)
+  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+  .where(eq(schema.clients.id, clientId))
+
+// LEGACY (still works during transition): Query by user role
+const [client] = await db.select()
+  .from(schema.users)
+  .where(and(
+    eq(schema.users.id, clientId),
+    eq(schema.users.role, 'CLIENT')
+  ))
+```
+
+### User Roles
+
+The `users` table has a `role` column with these values:
+- `ADMIN` - Full system access, can manage all users and settings
+- `LAWYER` - Primary legal practitioner role
+- `STAFF` - Office staff with limited access
+- `CLIENT` - Customers/clients with portal access
+- `LEAD`, `PROSPECT` - Pre-client stages
+- `INACTIVE` - Deactivated users (cannot login)
+
+### Key Entity Tables
+
+| Entity | Table | Name Resolution |
+|--------|-------|-----------------|
+| Person | `people` | `fullName` or `firstName + ' ' + lastName` |
+| Client | `clients` → `people` | Via `personId` to people |
+| User | `users` → `people` | Via `personId` to people |
+| Matter | `matters` | `title` |
+| Document | `documents` | `title` |
+| Journey | `clientJourneys` | `journeyName` |
+| Template | `templates` | `name` |
+| Referral Partner | `referralPartners` | `name` |
+| Service | `serviceCatalog` | `name` |
+| Appointment | `appointments` | `title` |
+| Note | `notes` | Generic "Note" (no title field) |
+
+### People & Relationships
+
+The `people` table stores ALL humans in the system:
+- Each person can optionally have a `users` record (for login)
+- Each person can optionally have a `clients` record (if they're a client)
+- The `relationships` table links people to people with context
+
+**Relationship contexts:**
+- `null` - General relationship (e.g., spouse, child)
+- `'client'` - Client-level relationship
+- `'matter'` - Matter-specific relationship (e.g., beneficiary for a specific trust)
+
+---
+
 ## Database & ORM
 
 ### Technology Stack
@@ -131,6 +239,167 @@ const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).fir
    - Server validates Firebase tokens
    - Creates/links users in local database
 
+### API Route Protection
+
+The server middleware (`server/middleware/auth.ts`) automatically protects API routes based on path conventions:
+
+| Path Pattern | Protection | Use Case |
+|--------------|------------|----------|
+| `/api/admin/*` | Requires `adminLevel >= 2` | Admin-only features (integrations, migrations, system settings) |
+| `/api/public/*` | No auth required | Public endpoints (landing pages, public forms) |
+| `/api/signature/*` | Token-based auth | E-signature flows (handled by endpoint) |
+| `/api/auth/*` | Mixed | Login/logout/session endpoints |
+| `/api/*` (other) | Requires valid session | Standard authenticated endpoints |
+
+**Creating New Endpoints:**
+
+```typescript
+// Admin endpoint - just put it in /api/admin/
+// Middleware automatically requires adminLevel >= 2
+// server/api/admin/settings/index.get.ts
+export default defineEventHandler(async (event) => {
+  // No need to check auth - middleware handles it
+  // User available at event.context.user
+  const user = event.context.user
+  // ...
+})
+
+// Standard authenticated endpoint
+// server/api/clients/index.get.ts
+export default defineEventHandler(async (event) => {
+  // User is guaranteed to be authenticated
+  const user = event.context.user
+  // ...
+})
+
+// Public endpoint - put it in /api/public/
+// server/api/public/health.get.ts
+export default defineEventHandler(async (event) => {
+  // No auth required
+  return { status: 'ok' }
+})
+```
+
+**Available Context:**
+After middleware runs, these are available on `event.context`:
+- `user` - Full user object (`{ id, email, role, adminLevel, firstName, lastName }`)
+- `userId` - User ID string
+- `userRole` - User role string
+- `adminLevel` - Admin level number (0-3)
+
+**Do NOT** call `requireAdminLevel()` in `/api/admin/*` endpoints - the middleware handles it.
+
+## Activity Logging System
+
+The activity logging system tracks user actions with structured entity references for linkable, historical audit trails.
+
+### Core Concepts
+
+**EntityRef** - Standardized reference to any entity:
+```typescript
+interface EntityRef {
+  type: EntityType  // 'client' | 'matter' | 'document' | etc.
+  id: string        // Entity ID for linking
+  name: string      // Name snapshot at log time
+}
+```
+
+**EntityType** - Supported entity types:
+```typescript
+type EntityType =
+  | 'user' | 'client' | 'matter' | 'document'
+  | 'journey' | 'template' | 'referral_partner'
+  | 'service' | 'appointment' | 'note' | 'setting'
+```
+
+### Using logActivity
+
+Located in `server/utils/activity-logger.ts`:
+
+```typescript
+import { logActivity } from '../../utils/activity-logger'
+import { resolveEntityName } from '../../utils/entity-resolver'
+import type { EntityType } from '../../utils/activity-logger'
+
+// Resolve the entity name first
+const entityName = await resolveEntityName('client', clientId)
+
+// Log with structured references
+await logActivity({
+  type: 'CLIENT_UPDATED',
+  userId: user.id,
+  userRole: user.role,
+  target: { type: 'client', id: clientId, name: entityName || 'Unknown' },
+  relatedEntities: [
+    { type: 'matter', id: matterId, name: matterTitle }
+  ],
+  event,
+  details: {
+    changes: ['email', 'phone']  // Activity-specific data
+  }
+})
+```
+
+### Entity Name Resolution
+
+**Always use the centralized resolver** in `server/utils/entity-resolver.ts`:
+
+```typescript
+import { resolveEntityName, resolveEntityNames } from '../../utils/entity-resolver'
+
+// Single entity
+const name = await resolveEntityName('client', clientId)
+
+// Batch resolution (more efficient)
+const names = await resolveEntityNames([
+  { type: 'client', id: clientId },
+  { type: 'matter', id: matterId }
+])
+const clientName = names.get('client:' + clientId)
+const matterName = names.get('matter:' + matterId)
+```
+
+**Why use the resolver**: It centralizes the knowledge of how to look up names for each entity type, avoiding bugs like using `schema.clients` (which doesn't exist).
+
+### Activity Types
+
+Common activity types (defined in `activity-logger.ts`):
+- `USER_LOGIN`, `USER_LOGOUT`, `USER_CREATED`, `USER_UPDATED`
+- `CLIENT_CREATED`, `CLIENT_UPDATED`, `CLIENT_VIEWED`
+- `MATTER_CREATED`, `MATTER_UPDATED`
+- `DOCUMENT_CREATED`, `DOCUMENT_VIEWED`, `DOCUMENT_SIGNED`, `DOCUMENT_DOWNLOADED`, `DOCUMENT_DELETED`
+- `NOTE_CREATED`, `NOTE_UPDATED`, `NOTE_DELETED`
+- `JOURNEY_STARTED`, `JOURNEY_STEP_COMPLETED`, `JOURNEY_COMPLETED`
+- `TEMPLATE_CREATED`, `TEMPLATE_UPDATED`, `TEMPLATE_DELETED`
+- `REFERRAL_PARTNER_CREATED`, `REFERRAL_PARTNER_UPDATED`
+
+## Server Utilities
+
+Key utilities in `server/utils/`:
+
+| Utility | Purpose |
+|---------|---------|
+| `activity-logger.ts` | Log user activities with structured entity refs |
+| `activity-description.ts` | Generate human-readable activity descriptions |
+| `entity-resolver.ts` | Resolve entity IDs to names (centralized lookups) |
+| `auth.ts` | `hashPassword()`, `verifyPassword()` |
+| `rbac.ts` | Role-based access control helpers |
+| `email.ts` | Email sending via Resend |
+| `pdf.ts` | PDF generation |
+| `google-drive.ts` | Google Drive integration |
+| `document-renderer.ts` | Document template rendering |
+| `validation.ts` | Common validation schemas |
+
+### RBAC Utilities
+
+```typescript
+// Require specific roles
+const user = requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
+
+// Check permissions
+if (hasPermission(user, 'MANAGE_CLIENTS')) { ... }
+```
+
 ## Deployment & Environments
 
 ### Branch Strategy
@@ -193,6 +462,72 @@ wrangler secret put SECRET_NAME --env preview
 
 ## Code Patterns
 
+### Attribute Case Conventions
+
+**⚠️ IMPORTANT**: The codebase has mixed conventions due to migration from raw SQL to Drizzle ORM. Follow these rules:
+
+| Layer | Convention | Example |
+|-------|------------|---------|
+| Database columns | snake_case | `first_name`, `created_at` |
+| Drizzle schema | camelCase | `firstName`, `createdAt` |
+| API request bodies | camelCase | `{ firstName: "John" }` |
+| API responses | **camelCase** (preferred) | `{ firstName: "John" }` |
+
+**Drizzle handles the mapping** between camelCase TypeScript and snake_case DB columns:
+```typescript
+// In schema.ts - camelCase property maps to snake_case column
+firstName: text('first_name'),
+createdAt: integer('created_at', { mode: 'timestamp' }),
+```
+
+**Request bodies** - Use camelCase in Zod schemas:
+```typescript
+// ✅ CORRECT
+const schema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  createdAt: z.date().optional()
+})
+
+// ❌ WRONG - don't use snake_case in request validation
+const schema = z.object({
+  first_name: z.string(),  // Don't do this
+})
+```
+
+**API responses** - Prefer camelCase (modern convention):
+```typescript
+// ✅ PREFERRED - camelCase responses
+return {
+  client: {
+    id: client.id,
+    firstName: client.firstName,
+    lastName: client.lastName,
+    createdAt: client.createdAt
+  }
+}
+
+// ⚠️ LEGACY - some endpoints return snake_case for backward compatibility
+// Don't add new snake_case responses
+return {
+  client: {
+    first_name: client.firstName,  // Legacy pattern
+    firstName: client.firstName     // Some endpoints return both!
+  }
+}
+```
+
+**Known legacy endpoints with snake_case responses:**
+- `GET /api/clients` - Returns both `first_name` and `firstName`
+- `GET /api/clients/[id]` - Returns snake_case (`first_name`, `created_at`)
+- Various profile endpoints return snake_case for compatibility
+
+**When updating existing endpoints**: Maintain backward compatibility. Do NOT opportunistically refactor snake_case to camelCase — this breaks frontend components expecting the old shape.
+
+**When creating new endpoints**: Use camelCase consistently for both input and output.
+
+**Legacy cleanup**: Requires a coordinated refactor of backend API + frontend components together. Do not attempt piecemeal. Track as a separate task if needed.
+
 ### API Endpoints
 - Use Zod for input validation
 - Use `requireRole(event, ['ADMIN', 'LAWYER'])` for authorization
@@ -249,14 +584,49 @@ tests/
 
 ## File Organization
 
-- `server/api/` - API endpoints
-- `server/middleware/` - Server middleware (auth, etc.)
-- `server/utils/` - Shared server utilities
-- `server/db/` - Database schema, migrations, utilities
-- `app/pages/` - Nuxt pages (Vue components)
-- `app/components/` - Reusable Vue components
-- `app/middleware/` - Client-side route middleware
-- `app/layouts/` - Page layouts
+### Server (`server/`)
+```
+server/
+├── api/                    # API endpoints (auto-routed)
+│   ├── auth/               # Login, logout, session
+│   ├── clients/            # Client management (uses users table!)
+│   ├── documents/          # Document CRUD
+│   ├── matters/            # Legal matters
+│   ├── notes/              # Notes for any entity
+│   ├── templates/          # Document templates
+│   ├── dashboard/          # Dashboard data (activity, stats)
+│   └── referral-partners/  # Referral partner management
+├── middleware/             # Server middleware (auth.ts)
+├── utils/                  # Shared utilities
+│   ├── activity-logger.ts  # Activity logging with EntityRef
+│   ├── activity-description.ts  # Description generation
+│   ├── entity-resolver.ts  # Centralized name resolution
+│   ├── auth.ts             # Password hashing
+│   ├── rbac.ts             # Role-based access control
+│   └── ...                 # 20+ more utilities
+└── db/
+    ├── schema.ts           # Drizzle schema (source of truth)
+    ├── migrations/         # Generated migrations
+    └── index.ts            # DB connection helpers
+```
+
+### App (`app/`)
+```
+app/
+├── pages/                  # Nuxt pages (file-based routing)
+│   ├── activity.vue        # Activity log page
+│   ├── clients/            # Client pages
+│   ├── matters/            # Matter pages
+│   └── ...
+├── components/             # Reusable Vue components
+│   ├── dashboard/          # Dashboard widgets
+│   ├── ui/                 # Base UI components
+│   └── ...
+├── middleware/             # Client-side route guards
+├── layouts/                # Page layouts
+├── stores/                 # Pinia stores
+└── composables/            # Vue composables
+```
 
 ## Best Practices
 
@@ -270,18 +640,88 @@ tests/
 ## Common Pitfalls
 
 ### ❌ Don't Do This:
+
+**Data Model Mistakes (Belly Button Principle):**
+- Create users without linked person records - every user needs a person
+- Query clients from `users` table directly - use `clients` → `people` join
+- Use deprecated `clientRelationships` or `matterRelationships` - use unified `relationships` table
+- Duplicate entity name resolution logic - use `entity-resolver.ts` instead
+- Assume entity tables have a `name` field (some use `title`, some use `firstName + lastName`)
+
+**Case Convention Mistakes:**
+- Use snake_case in new Zod schemas (`first_name`) - use camelCase (`firstName`)
+- Return snake_case in new API responses - use camelCase
+- Forget that Drizzle maps `firstName` → `first_name` automatically
+- Mix conventions inconsistently within the same endpoint
+
+**Database & Migrations:**
 - Write manual migration SQL files
 - Use sqlite3 or NuxtHub CLI to apply migrations (NuxtHub CLI is deprecated)
 - Create migrations without updating schema.ts
 - Skip schema.ts and only write migrations
+
+**Authentication:**
 - Use `@node-rs/argon2` for password hashing (use bcryptjs)
 
 ### ✅ Do This:
+
+**Data Model (Belly Button Principle):**
+- Create a `people` record first, then link `users` and/or `clients` to it
+- Query clients via `schema.clients` joined with `schema.people` by `personId`
+- Use `schema.relationships` for all person-to-person relationships
+- Use `resolveEntityName()` from `entity-resolver.ts` for name lookups
+- Check the "Key Entity Tables" section above for name resolution patterns
+
+**Database & Migrations:**
 - Modify schema.ts for database changes
 - Tell developer to run `npx drizzle-kit generate`
 - Use Drizzle ORM for database operations
-- Use bcryptjs via `hashPassword()` and `verifyPassword()`
 - Keep migrations and schema.ts in sync
+
+**Activity Logging:**
+- Use structured `target` and `relatedEntities` in `logActivity()`
+- Always resolve entity names before logging
+- Use bcryptjs via `hashPassword()` and `verifyPassword()`
+
+## NuxtHub Services
+
+### KV Storage
+
+Use the `@nuxthub/kv` package for key-value storage:
+
+```typescript
+import { kv } from '@nuxthub/kv'
+
+// Set a value
+await kv.set('key', 'value')
+await kv.set('key', { data: 'json' }, { ttl: 3600 }) // with TTL in seconds
+
+// Get a value
+const value = await kv.get('key')
+
+// Check existence
+const exists = await kv.has('key')
+
+// Delete
+await kv.del('key')
+
+// List keys
+const keys = await kv.keys()
+const prefixedKeys = await kv.keys('prefix:')
+```
+
+**Do NOT use** the old `hubKV()` pattern - it's deprecated.
+
+### Blob Storage
+
+Use dynamic imports for blob storage in handlers:
+
+```typescript
+export default defineEventHandler(async (event) => {
+  const { blob } = await import('hub:blob')
+  // ... use blob
+})
+```
 
 ## Cloudflare Workers Gotchas
 
@@ -330,9 +770,96 @@ export default defineEventHandler(async (event) => {
 ## When Uncertain
 
 If unsure about:
-- Migration approach → Modify schema.ts, let developer generate migration
-- Database access pattern → Use Drizzle ORM unless there's a specific reason not to
-- Authentication flow → Check existing patterns in `server/middleware/auth.ts`
-- Vue component structure → Look at similar existing components
+- **Migration approach** → Modify schema.ts, let developer generate migration
+- **Database access pattern** → Use Drizzle ORM unless there's a specific reason not to
+- **Authentication flow** → Check existing patterns in `server/middleware/auth.ts`
+- **Vue component structure** → Look at similar existing components
+- **Entity name resolution** → Use `resolveEntityName()` from `server/utils/entity-resolver.ts`
+- **Where clients are stored** → The `users` table with `role = 'CLIENT'`
+- **Activity logging** → Check existing endpoints for `logActivity()` patterns
 
 Ask the developer rather than making assumptions that could break existing functionality.
+
+## Quick Reference
+
+### Entity Queries Cheat Sheet
+
+```typescript
+// Get a client by ID (NEW: Belly Button Principle)
+const [client] = await db.select({
+  clientId: schema.clients.id,
+  personId: schema.clients.personId,
+  status: schema.clients.status,
+  firstName: schema.people.firstName,
+  lastName: schema.people.lastName,
+  email: schema.people.email
+})
+  .from(schema.clients)
+  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+  .where(eq(schema.clients.id, clientId))
+
+// Get all active clients
+const clients = await db.select()
+  .from(schema.clients)
+  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+  .where(eq(schema.clients.status, 'ACTIVE'))
+
+// Get a person by ID
+const [person] = await db.select()
+  .from(schema.people)
+  .where(eq(schema.people.id, personId))
+
+// Create a new person + user (for staff/lawyers/admins)
+const personId = `person_${userId}`
+await db.insert(schema.people).values({
+  id: personId,
+  personType: 'individual',
+  firstName, lastName, email
+})
+await db.insert(schema.users).values({
+  id: userId,
+  personId, // Link to person
+  email, role: 'STAFF'
+})
+
+// Create a new client (with or without user account)
+const personId = crypto.randomUUID()
+const clientId = crypto.randomUUID()
+await db.insert(schema.people).values({ id: personId, firstName, lastName, email })
+await db.insert(schema.clients).values({ id: clientId, personId, status: 'PROSPECT' })
+// Optionally create user account if client needs portal access:
+// await db.insert(schema.users).values({ id: userId, personId, email, role: 'CLIENT' })
+
+// Resolve entity name (use this pattern!)
+import { resolveEntityName } from '../../utils/entity-resolver'
+const name = await resolveEntityName('client', clientId)  // Returns "John Smith" or null
+const personName = await resolveEntityName('person', personId)  // Direct person lookup
+```
+
+### Activity Logging Cheat Sheet
+
+```typescript
+import { logActivity } from '../../utils/activity-logger'
+import { resolveEntityName } from '../../utils/entity-resolver'
+import type { EntityType } from '../../utils/activity-logger'
+
+// Standard pattern for logging an action
+const entityName = await resolveEntityName(entityType as EntityType, entityId)
+
+await logActivity({
+  type: 'NOTE_CREATED',  // Activity type
+  userId: user.id,
+  userRole: user.role,
+  target: entityName
+    ? { type: entityType as EntityType, id: entityId, name: entityName }
+    : undefined,
+  relatedEntities: [
+    { type: 'note', id: noteId, name: 'Note' }
+  ],
+  event,  // H3 event for IP/geo tracking
+  details: {
+    // Activity-specific data
+    contentPreview: content.substring(0, 100)
+  }
+})
+```

@@ -145,6 +145,7 @@ interface OAuthProvider {
 const router = useRouter()
 const route = useRoute()
 const { signInWithProvider, handleRedirectResult } = useFirebaseAuth()
+const appConfigStore = useAppConfigStore()
 
 const email = ref('')
 const password = ref('')
@@ -198,6 +199,8 @@ async function verifyAndCreateSession(idToken: string) {
     })
 
     if (response.success) {
+      // Fetch app config after successful login
+      await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
   } catch (err: any) {
@@ -255,6 +258,8 @@ const handleSubmit = async () => {
     })
 
     if (response.user) {
+      // Fetch app config after successful login
+      await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
   } catch (err: any) {

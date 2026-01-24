@@ -95,25 +95,48 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // Fetch person data if user has a linked personId (Belly Button Principle)
+  let personData = null
+  if (user.personId) {
+    personData = await db
+      .select({
+        id: schema.people.id,
+        firstName: schema.people.firstName,
+        lastName: schema.people.lastName,
+        fullName: schema.people.fullName,
+        email: schema.people.email
+      })
+      .from(schema.people)
+      .where(eq(schema.people.id, user.personId))
+      .get()
+  }
+
+  // Use person data for name if available, otherwise fall back to user data
+  const sessionFirstName = personData?.firstName || user.firstName
+  const sessionLastName = personData?.lastName || user.lastName
+
   await setUserSession(event, {
     user: {
       id: user.id,
+      personId: user.personId || null, // Include personId in session
       email: user.email,
       role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName
+      adminLevel: user.adminLevel || 0,
+      firstName: sessionFirstName,
+      lastName: sessionLastName
     },
     loggedInAt: new Date()
   })
 
   // Log successful login
+  const userName = personData?.fullName
+    || [sessionFirstName, sessionLastName].filter(Boolean).join(' ')
+    || user.email
   await logActivity({
     type: 'USER_LOGIN',
-    description: `${user.firstName || user.email} logged in`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'user',
-    targetId: user.id,
+    target: { type: 'user', id: user.id, name: userName },
     event
   })
 

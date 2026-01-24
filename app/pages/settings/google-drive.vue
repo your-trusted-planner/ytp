@@ -307,6 +307,8 @@
 <script setup lang="ts">
 import { Check, AlertCircle, RefreshCw, FolderPlus, Trash2 } from 'lucide-vue-next'
 
+const appConfigStore = useAppConfigStore()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -397,8 +399,9 @@ async function saveConfiguration() {
     // Clear the private key field after saving
     form.value.serviceAccountPrivateKey = ''
 
-    // Refresh config
+    // Refresh config (local page state and global app config store)
     await fetchConfig()
+    await appConfigStore.fetchConfig()
 
     alert('Configuration saved successfully')
   } catch (error: any) {
