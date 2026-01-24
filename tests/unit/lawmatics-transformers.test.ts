@@ -1070,7 +1070,7 @@ describe('transformNote', () => {
 
     expect(result).not.toBeNull()
     expect(result?.content).toBe('Client meeting notes')
-    expect(result?.entityType).toBe('client')
+    expect(result?.entityType).toBe('person')
     expect(result?.entityId).toBe('internal-client-001')
     expect(result?.createdBy).toBe('internal-user-001')
   })
@@ -1107,7 +1107,7 @@ describe('transformNote', () => {
 
     const result = transformNote(note, baseOptions)
 
-    expect(result?.entityType).toBe('client')
+    expect(result?.entityType).toBe('person')
     expect(result?.entityId).toBe('internal-client-001')
   })
 
@@ -1254,7 +1254,7 @@ describe('transformActivity', () => {
     expect(result).not.toBeNull()
     expect(result?.type).toBe('EMAIL_SENT')
     expect(result?.description).toBe('Sent welcome email')
-    expect(result?.targetType).toBe('client')
+    expect(result?.targetType).toBe('person')
     expect(result?.targetId).toBe('internal-client-001')
     expect(result?.userId).toBe('internal-user-001')
   })
