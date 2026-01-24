@@ -12,7 +12,7 @@ import { useDrizzle, schema } from '../../../db'
 import { encrypt } from '../../../utils/encryption'
 
 const createIntegrationSchema = z.object({
-  type: z.enum(['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO']),
+  type: z.enum(['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', 'RESEND']),
   name: z.string().min(1).max(100),
   accessToken: z.string().min(1, 'API access token is required'),
   settings: z.record(z.any()).optional()

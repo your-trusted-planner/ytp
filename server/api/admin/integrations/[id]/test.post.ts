@@ -114,6 +114,9 @@ export default defineEventHandler(async (event) => {
     case 'LAWMATICS':
       testResult = await testLawmaticsConnection(decryptedToken)
       break
+    case 'RESEND':
+      testResult = await testResendConnection(decryptedToken)
+      break
     case 'WEALTHCOUNSEL':
     case 'CLIO':
       // Placeholder for future integrations
@@ -153,6 +156,48 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
+
+/**
+ * Test Resend API connection
+ */
+async function testResendConnection(
+  apiKey: string
+): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+  try {
+    const response = await fetch('https://api.resend.com/domains', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: 'Invalid API key. Please check your Resend API key.'
+        }
+      }
+      const errorText = await response.text()
+      return {
+        success: false,
+        error: `API error (${response.status}): ${errorText}`
+      }
+    }
+
+    const data = await response.json() as { data?: Array<{ id: string; name: string }> }
+    return {
+      success: true,
+      details: {
+        message: 'Successfully connected to Resend API',
+        domainCount: data.data?.length || 0,
+        domains: data.data?.map(d => d.name) || []
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `Connection failed: ${error instanceof Error ? error.message : String(error)}`
+    }
+  }
+}
 
 /**
  * Test Lawmatics API connection

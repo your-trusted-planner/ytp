@@ -18,6 +18,9 @@ export default defineEventHandler(async (event) => {
     path === '/api/auth/logout' ||
     path === '/api/auth/session' || // Allow checking session status
     path === '/api/auth/firebase' || // Firebase OAuth authentication
+    path === '/api/auth/forgot-password' || // Password reset flow
+    path === '/api/auth/reset-password' || // Password reset flow
+    path.startsWith('/api/auth/verify-reset-token') || // Password reset flow (has query params)
     path === '/api/oauth-providers/enabled' || // Public list of enabled OAuth providers
     path === '/api/seed-remote' // Remote seeding (token-based auth)
   ) {

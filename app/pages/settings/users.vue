@@ -12,11 +12,33 @@
 
     <!-- Users List -->
     <UiCard>
+      <!-- Filter Summary -->
+      <div v-if="hasActiveFilters" class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+          Showing {{ filteredUsers.length }} of {{ users.length }} users
+        </div>
+        <button
+          @click="clearAllFilters"
+          class="text-sm text-burgundy-600 hover:text-burgundy-800"
+        >
+          Clear all filters
+        </button>
+      </div>
+
       <div v-if="loading" class="text-center py-12">
         <p class="text-gray-500">Loading users...</p>
       </div>
       <div v-else-if="users.length === 0" class="text-center py-12">
         <p class="text-gray-500">No users found</p>
+      </div>
+      <div v-else-if="filteredUsers.length === 0" class="text-center py-12">
+        <p class="text-gray-500">No users match the current filters</p>
+        <button
+          @click="clearAllFilters"
+          class="mt-2 text-sm text-burgundy-600 hover:text-burgundy-800"
+        >
+          Clear filters
+        </button>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -24,14 +46,141 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin Level</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <!-- Role Filter -->
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div class="relative">
+                  <button
+                    @click="toggleFilter('role')"
+                    class="flex items-center gap-1 hover:text-gray-700"
+                    :class="{ 'text-burgundy-600': roleFilter.size > 0 }"
+                  >
+                    Role
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span v-if="roleFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                      {{ roleFilter.size }}
+                    </span>
+                  </button>
+                  <div
+                    v-if="activeFilter === 'role'"
+                    class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
+                  >
+                    <div class="p-2 border-b border-gray-100">
+                      <button @click="clearFilter('role')" class="text-xs text-gray-500 hover:text-gray-700">
+                        Clear filter
+                      </button>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto p-2 space-y-1">
+                      <label
+                        v-for="role in uniqueRoles"
+                        :key="role"
+                        class="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="roleFilter.has(role)"
+                          @change="toggleFilterValue('role', role)"
+                          class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
+                        />
+                        <UiBadge :variant="getRoleBadgeVariant(role)" size="sm">{{ role }}</UiBadge>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <!-- Admin Level Filter -->
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div class="relative">
+                  <button
+                    @click="toggleFilter('adminLevel')"
+                    class="flex items-center gap-1 hover:text-gray-700"
+                    :class="{ 'text-burgundy-600': adminLevelFilter.size > 0 }"
+                  >
+                    Admin Level
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span v-if="adminLevelFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                      {{ adminLevelFilter.size }}
+                    </span>
+                  </button>
+                  <div
+                    v-if="activeFilter === 'adminLevel'"
+                    class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
+                  >
+                    <div class="p-2 border-b border-gray-100">
+                      <button @click="clearFilter('adminLevel')" class="text-xs text-gray-500 hover:text-gray-700">
+                        Clear filter
+                      </button>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto p-2 space-y-1">
+                      <label
+                        v-for="level in uniqueAdminLevels"
+                        :key="level"
+                        class="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="adminLevelFilter.has(level)"
+                          @change="toggleFilterValue('adminLevel', level)"
+                          class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
+                        />
+                        <span v-if="level === 0" class="text-gray-400 text-sm">None</span>
+                        <UiBadge v-else :variant="getAdminLevelVariant(level)" size="sm">Level {{ level }}</UiBadge>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <!-- Status Filter -->
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div class="relative">
+                  <button
+                    @click="toggleFilter('status')"
+                    class="flex items-center gap-1 hover:text-gray-700"
+                    :class="{ 'text-burgundy-600': statusFilter.size > 0 }"
+                  >
+                    Status
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span v-if="statusFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                      {{ statusFilter.size }}
+                    </span>
+                  </button>
+                  <div
+                    v-if="activeFilter === 'status'"
+                    class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
+                  >
+                    <div class="p-2 border-b border-gray-100">
+                      <button @click="clearFilter('status')" class="text-xs text-gray-500 hover:text-gray-700">
+                        Clear filter
+                      </button>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto p-2 space-y-1">
+                      <label
+                        v-for="status in uniqueStatuses"
+                        :key="status"
+                        class="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="statusFilter.has(status)"
+                          @change="toggleFilterValue('status', status)"
+                          class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
+                        />
+                        <UiBadge :variant="getStatusBadgeVariant(status)" size="sm">{{ status }}</UiBadge>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
+            <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">
                   {{ user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'No name' }}
@@ -62,6 +211,14 @@
                   class="text-burgundy-600 hover:text-burgundy-900"
                 >
                   Edit
+                </button>
+                <button
+                  v-if="user.email && user.status !== 'INACTIVE'"
+                  @click="sendPasswordReset(user)"
+                  class="text-blue-600 hover:text-blue-900"
+                  :disabled="sendingResetFor === user.id"
+                >
+                  {{ sendingResetFor === user.id ? 'Sending...' : 'Reset Password' }}
                 </button>
                 <button
                   @click="confirmDelete(user)"
@@ -211,6 +368,114 @@ const saving = ref(false)
 const deleting = ref(false)
 const editingUser = ref<any>(null)
 const deletingUser = ref<any>(null)
+const sendingResetFor = ref<string | null>(null)
+
+// Filter state
+const activeFilter = ref<string | null>(null)
+const roleFilter = ref<Set<string>>(new Set())
+const adminLevelFilter = ref<Set<number>>(new Set())
+const statusFilter = ref<Set<string>>(new Set())
+
+// Unique values for filter options
+const uniqueRoles = computed(() => {
+  const roles = new Set(users.value.map(u => u.role))
+  return Array.from(roles).sort()
+})
+
+const uniqueAdminLevels = computed(() => {
+  const levels = new Set(users.value.map(u => u.adminLevel ?? 0))
+  return Array.from(levels).sort((a, b) => a - b)
+})
+
+const uniqueStatuses = computed(() => {
+  const statuses = new Set(users.value.map(u => u.status))
+  return Array.from(statuses).sort()
+})
+
+// Filtered users
+const filteredUsers = computed(() => {
+  return users.value.filter(user => {
+    if (roleFilter.value.size > 0 && !roleFilter.value.has(user.role)) {
+      return false
+    }
+    if (adminLevelFilter.value.size > 0 && !adminLevelFilter.value.has(user.adminLevel ?? 0)) {
+      return false
+    }
+    if (statusFilter.value.size > 0 && !statusFilter.value.has(user.status)) {
+      return false
+    }
+    return true
+  })
+})
+
+// Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return roleFilter.value.size > 0 || adminLevelFilter.value.size > 0 || statusFilter.value.size > 0
+})
+
+// Filter functions
+function toggleFilter(filterName: string) {
+  if (activeFilter.value === filterName) {
+    activeFilter.value = null
+  } else {
+    activeFilter.value = filterName
+  }
+}
+
+function toggleFilterValue(filterName: string, value: string | number) {
+  const filterMap: Record<string, Ref<Set<any>>> = {
+    role: roleFilter,
+    adminLevel: adminLevelFilter,
+    status: statusFilter
+  }
+  const filter = filterMap[filterName]
+  if (filter) {
+    const newSet = new Set(filter.value)
+    if (newSet.has(value)) {
+      newSet.delete(value)
+    } else {
+      newSet.add(value)
+    }
+    filter.value = newSet
+  }
+}
+
+function clearFilter(filterName: string) {
+  const filterMap: Record<string, Ref<Set<any>>> = {
+    role: roleFilter,
+    adminLevel: adminLevelFilter,
+    status: statusFilter
+  }
+  const filter = filterMap[filterName]
+  if (filter) {
+    filter.value = new Set()
+  }
+  activeFilter.value = null
+}
+
+function clearAllFilters() {
+  roleFilter.value = new Set()
+  adminLevelFilter.value = new Set()
+  statusFilter.value = new Set()
+  activeFilter.value = null
+}
+
+// Close filter dropdown when clicking outside
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (!target.closest('th')) {
+    activeFilter.value = null
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  fetchUsers()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const editForm = ref({
   email: '',
@@ -350,6 +615,26 @@ async function handleSaveUser() {
   }
 }
 
+async function sendPasswordReset(user: any) {
+  if (!user.email) return
+
+  sendingResetFor.value = user.id
+  try {
+    const response = await $fetch<{ success: boolean; message: string }>(`/api/users/${user.id}/send-password-reset`, {
+      method: 'POST'
+    })
+
+    if (response.success) {
+      alert(response.message)
+    }
+  } catch (error: any) {
+    console.error('Failed to send password reset:', error)
+    alert(error.data?.message || 'Failed to send password reset email')
+  } finally {
+    sendingResetFor.value = null
+  }
+}
+
 function confirmDelete(user: any) {
   deletingUser.value = user
   showDeleteModal.value = true
@@ -413,7 +698,4 @@ function getStatusBadgeVariant(status: string) {
   }
 }
 
-onMounted(() => {
-  fetchUsers()
-})
 </script>

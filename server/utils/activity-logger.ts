@@ -36,6 +36,7 @@ export type ActivityType =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_PASSWORD_CHANGED'
+  | 'PASSWORD_RESET'
   // Client events
   | 'CLIENT_CREATED'
   | 'CLIENT_UPDATED'
@@ -296,6 +297,7 @@ export function formatActivityDescription(
     USER_CREATED: `${actorName} account created`,
     USER_UPDATED: `${actorName} profile updated`,
     USER_PASSWORD_CHANGED: `${actorName} changed password`,
+    PASSWORD_RESET: `${actorName} reset password via email`,
     CLIENT_CREATED: targetName ? `${actorName} created client ${targetName}` : `${actorName} created a new client`,
     CLIENT_UPDATED: targetName ? `${actorName} updated client ${targetName}` : `${actorName} updated client`,
     CLIENT_VIEWED: targetName ? `${actorName} viewed client ${targetName}` : `${actorName} viewed client`,

@@ -72,14 +72,24 @@
               autocomplete="email"
             />
 
-            <UiInput
-              v-model="password"
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              required
-              autocomplete="current-password"
-            />
+            <div>
+              <UiInput
+                v-model="password"
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+              />
+              <div class="mt-1 text-right">
+                <NuxtLink
+                  to="/forgot-password"
+                  class="text-sm text-accent-500 hover:text-accent-600"
+                >
+                  Forgot password?
+                </NuxtLink>
+              </div>
+            </div>
 
             <UiButton
               type="submit"

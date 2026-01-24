@@ -1019,7 +1019,7 @@ export const noticeRecipients = sqliteTable('notice_recipients', {
 // Integrations - Stores external system configurations (API keys, settings)
 export const integrations = sqliteTable('integrations', {
   id: text('id').primaryKey(),
-  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO'] }).notNull(),
+  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', 'RESEND'] }).notNull(),
   name: text('name').notNull(), // Display name
 
   // Encrypted credentials (stored in KV for security, reference here)
@@ -1091,5 +1091,19 @@ export const migrationErrors = sqliteTable('migration_errors', {
   retriedAt: integer('retried_at', { mode: 'timestamp' }),
   resolved: integer('resolved', { mode: 'boolean' }).notNull().default(false),
 
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// PASSWORD RESET TOKENS
+// ===================================
+
+// Password Reset Tokens - For email-based password reset flow
+export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(), // Secure random token
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  usedAt: integer('used_at', { mode: 'timestamp' }), // Null until used
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
