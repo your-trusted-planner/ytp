@@ -1,10 +1,41 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-21
+**Last Updated**: 2026-01-23
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### UiDataTable Component & Clients Page Migration (2026-01-23)
+- **Status**: Complete ✅
+- **What**: Created reusable data table component and migrated clients page
+- **Component**: `/app/components/ui/DataTable.vue`
+  - Sortable columns
+  - Row click handling
+  - Customizable slots for cell content
+  - Loading and empty states
+- **Files Modified**:
+  - `app/pages/clients/[id].vue` - Uses new DataTable component
+  - `app/pages/matters/[id].vue` - Uses new DataTable component
+
+#### Activity Attribution System Enhancement (2026-01-23)
+- **Status**: Complete ✅
+- **What**: Redesigned activity logging to provide structured, linkable entity references
+- **Key Features**:
+  - **EntityRef pattern**: Standardized `{ type, id, name }` references for all entities
+  - **Historical accuracy**: Name snapshots at log time preserved
+  - **Current name resolution**: API can resolve current names for display
+  - **Clickable entity badges**: Activity log shows linked badges to referenced entities
+- **New Utilities Created**:
+  - `server/utils/entity-resolver.ts` - Centralized entity name resolution
+  - `server/utils/activity-description.ts` - Human-readable description generation
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Added EntityRef types, structured logging
+  - `server/api/dashboard/activity.get.ts` - Added `resolveNames=true` parameter
+  - `app/pages/activity.vue` - Entity badges with links
+  - `app/components/dashboard/ActivityFeed.vue` - Entity badges with links
+  - 14 API endpoints updated to use structured entity references
+- **Documentation**: See CLAUDE.md "Activity Logging System" section
 
 #### Google Drive Integration, Toast Notifications & Notices System (2026-01-21)
 - **Status**: Complete ✅
@@ -63,6 +94,7 @@
   - `POST /api/admin/google-drive/create-root-folder` - Create root folder in shared drive
   - `POST /api/google-drive/sync/client/[id]` - Sync client folder (with `?force=true` option)
   - `POST /api/google-drive/sync/matter/[id]` - Sync matter folder (with `?force=true` option)
+  - `POST /api/google-drive/sync/document/[id]` - Sync document to Drive
 - **Utility**: `/server/utils/google-drive.ts`
   - JWT-based service account authentication (Web Crypto API compatible with Workers)
   - `isDriveEnabled()` - Check if Drive is configured
@@ -302,8 +334,8 @@
   - `server/api/users/[id].put.ts` - STAFF in enum, FIRM_ROLES logic
   - `server/api/referral-partners/*.ts` - Added STAFF to allowed roles
   - `app/layouts/dashboard.vue` - FIRM_ROLES navigation
-  - `app/pages/dashboard/settings/users.vue` - STAFF option, FIRM_ROLES logic
-  - `app/pages/dashboard/profile/index.vue` - isFirmMember for calendar access
+  - `app/pages/settings/users.vue` - STAFF option, FIRM_ROLES logic
+  - `app/pages/profile/index.vue` - isFirmMember for calendar access
   - `tests/unit/rbac.test.ts` - STAFF role tests
 - **Note**: Many API endpoints still use `['LAWYER', 'ADMIN']` - STAFF access can be added as needed
 
@@ -316,14 +348,14 @@
   - Added referral tracking fields to `clientProfiles`
   - Created `server/utils/request-context.ts` - Captures IP, user agent, geo from Cloudflare headers
   - Created `server/utils/activity-logger.ts` - Structured logging utility
-  - Activity log page at `/dashboard/activity` with filtering and CSV export
+  - Activity log page at `/activity` with filtering and CSV export
   - Wired logging into login, client creation, document signing, document generation
 - **Files Created**:
   - `server/utils/request-context.ts`
   - `server/utils/activity-logger.ts`
   - `server/api/referral-partners/index.get.ts`, `index.post.ts`, `[id].put.ts`
   - `app/components/dashboard/ActivityFeed.vue`
-  - `app/pages/dashboard/activity.vue`
+  - `app/pages/activity.vue`
 - **Migration**: `0024_large_gertrude_yorkes.sql`
 
 #### Firebase Authentication with OAuth Providers (2026-01-08)
@@ -336,7 +368,7 @@
   - Installed `firebase` and `firebase-admin` packages
   - Built client-side Firebase plugin and auth composable
   - Server-side token verification with automatic user creation/linking
-  - Admin UI for managing OAuth providers at `/dashboard/settings/oauth-providers`
+  - Admin UI for managing OAuth providers at `/settings/oauth-providers`
   - Role-based navigation refactored for better configurability
 - **Key Features**:
   - Automatic account linking by email (OAuth login links to existing email/password account)
@@ -354,7 +386,7 @@
   - `/server/middleware/auth.ts` - Added public routes for Firebase auth
   - `/app/pages/login.vue` - Added OAuth buttons, wrapped in ClientOnly for hydration
   - `/app/layouts/dashboard.vue` - Role-based navigation configuration
-  - `/app/pages/dashboard/profile/index.vue` - Conditional password section
+  - `/app/pages/profile/index.vue` - Conditional password section
   - `/server/api/auth/session.get.ts` - Added hasPassword/hasFirebaseAuth flags
   - `/public/icons/*.svg` - Provider logos (google, microsoft, facebook, apple)
 - **Environment Variables Required**:
@@ -376,7 +408,7 @@
 - **Files Modified**:
   - `/server/database/schema.ts` - Custom jsonArray type + People table definitions
   - `/server/api/people/*.ts` - All 5 endpoints (POST, PUT, GET, GET by ID, DELETE)
-  - `/app/pages/dashboard/people/index.vue` - Progressive disclosure UI
+  - `/app/pages/people/index.vue` - Progressive disclosure UI
   - `/app/layouts/dashboard.vue` - Added People menu item
 - **Pattern Established**: ORM-layer serialization via Drizzle custom types (reusable for other JSON data)
 
@@ -410,7 +442,7 @@
   - `/server/api/action-items/*.ts` - 6 endpoints (POST, PUT, DELETE, GET by step, GET by journey, complete)
   - `/server/api/journeys/[id]/validate.get.ts` - Journey validation endpoint
   - `/app/components/journey/ActionItemModal.vue` - Action item configuration modal (NEW)
-  - `/app/pages/dashboard/journeys/[id].vue` - Enhanced with action items display and validation
+  - `/app/pages/journeys/[id].vue` - Enhanced with action items display and validation
 - **Plan Document**: `/doc/action-items-task-management-plan.md` (comprehensive)
 - **Draft Document Action Type**: Stubbed with integration hooks for future document generation system
   - Configuration: document name, template ID, drafting notes
@@ -429,9 +461,9 @@
   - `/app/utils/format.ts` - Added formatCurrency function
   - `/app/components/matter/ServicesTable.vue` - Bug fixed
   - `/app/components/matter/PaymentsTable.vue` - Bug fixed
-  - `/app/pages/dashboard/service-catalog/index.vue`
-  - `/app/pages/dashboard/matters/index.vue`
-  - `/app/pages/dashboard/matters/[id].vue`
+  - `/app/pages/service-catalog/index.vue`
+  - `/app/pages/matters/index.vue`
+  - `/app/pages/matters/[id].vue`
   - `/app/pages/matters/index.vue`
 
 #### Matters API Route Structure Fixed (2026-01-06)
@@ -455,9 +487,27 @@
   - Auto-populates form with current matter data
   - Saves changes and refreshes matter view
 - **Files Modified**:
-  - `/app/pages/dashboard/matters/[id].vue` - Added edit modal and handler
+  - `/app/pages/matters/[id].vue` - Added edit modal and handler
 
 ### Currently In Progress 🔄
+
+#### Entity Notes System (2026-01-23)
+- **Status**: In Progress 🔄
+- **What**: Polymorphic notes system allowing notes to be attached to any entity type
+- **Supported Entity Types**: client, matter, document, appointment, journey
+- **Components**:
+  - `app/components/EntityNotes.vue` - Reusable notes component (NEW)
+- **API Endpoints**:
+  - `POST /api/notes` - Create note for any entity type
+  - `PUT /api/notes/[id]` - Update note (creator or admin only)
+  - `DELETE /api/notes/[id]` - Delete note (creator or admin only)
+  - `GET /api/clients/[id]/notes` - Get notes for a client
+  - `POST /api/clients/[id]/notes` - Create note for a client (legacy endpoint)
+- **Database**: `notes` table with `entityType` and `entityId` columns
+- **Integration Points**:
+  - Client detail page (`/clients/[id]`) - Notes tab
+  - Matter detail page (`/matters/[id]`) - Notes section
+- **Migration**: `0008_wide_venom.sql`
 
 #### NuxtHub 0.10.x Upgrade & API Response Normalization (2026-01-07)
 - **Status**: Core migration complete ✅ - Remaining endpoints on-demand
@@ -515,20 +565,15 @@
 - `/server/api/{matters,clients,journeys,action-items,etc}/**/*.get.ts` - 26 endpoints with snake_case conversion
 - `/doc/NUXTHUB_010_API_MIGRATION.md` - Migration reference guide
 
-#### UI Restructuring Plan: Matter-Centric Architecture
-- **Status**: Planned (Phases 1-2 targeted)
+#### ~~UI Restructuring Plan: Matter-Centric Architecture~~ ✅ COMPLETED
+- **Status**: Complete ✅
+- **What Was Done**: Pages moved from `/app/pages/dashboard/` to flat structure at `/app/pages/`
 - **Plan File**: `/Users/owenhathaway/.claude/plans/lexical-plotting-wadler.md`
-- **Goal**: Align UI with domain model where Matters are primary unit of engagement
-- **Next Steps**:
-  - **Phase 1**: Rename pages to fix terminology confusion
-    - Move `/dashboard/matters/` → `/dashboard/service-catalog/`
-    - Move `/dashboard/cases/` → `/dashboard/matters/`
-    - Update navigation links
-  - **Phase 2**: Create comprehensive Matter detail view
-    - New file: `/app/pages/dashboard/matters/[id].vue`
-    - Tabs: Overview, Engaged Services, Client Journeys, Payments, Documents
-    - New API endpoints for journeys/payments by matter
-- **Future Phases** (3-6): Payment management, journey workflow fixes, enhanced lists, client experience
+- **Completed**:
+  - ✅ Page restructuring (flat structure)
+  - ✅ Matter detail view at `/app/pages/matters/[id].vue`
+  - ✅ Navigation updated
+  - ✅ Service catalog at `/app/pages/service-catalog/`
 
 ---
 
@@ -658,7 +703,27 @@ Document (N) ──→ Matter (1)
   - Existing endpoints work with both auth types
   - New `/api/api-keys/*` endpoints for key management
 
-### ~~6. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
+### 6. API Case Convention Refactor (snake_case → camelCase)
+- **Status**: Planned (requires coordinated effort)
+- **Problem**: Mixed conventions in API responses due to migration from raw SQL to Drizzle ORM
+  - Some endpoints return snake_case (`first_name`, `created_at`)
+  - Some return camelCase (`firstName`, `createdAt`)
+  - Some return BOTH for backward compatibility
+- **Goal**: Standardize all API responses to camelCase
+- **Scope**:
+  - Audit all API endpoints for response format
+  - Update frontend components to use camelCase consistently
+  - Remove snake_case fallbacks after frontend migration
+- **Why coordinated effort**: Changing API response shapes breaks frontend components expecting the old format
+- **Approach**:
+  1. Inventory all endpoints with snake_case responses
+  2. Update frontend components endpoint-by-endpoint
+  3. Remove snake_case from backend after frontend updated
+  4. Test each endpoint/component pair before moving to next
+- **Documentation**: See CLAUDE.md "Attribute Case Conventions" section for current rules
+- **DO NOT** attempt opportunistic cleanup - requires frontend + backend changes together
+
+### ~~7. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - **Implementation**: Auto-start service journeys when engagement journey completes
 - When ENGAGEMENT journey completes, automatically creates client journeys for all engaged services

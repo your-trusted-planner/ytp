@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { sql, eq } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../db'
-import { requireRole, generateId } from '../../utils/auth'
+import { generateId } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { isDriveEnabled, createMatterFolder, createClientFolder, getFile } from '../../utils/google-drive'
 import { notifyDriveSyncError } from '../../utils/notice-service'
 

@@ -25,8 +25,9 @@
     "seed:wydapt": "npx tsx scripts/seed-wydapt.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.0",
     "@nuxt/eslint": "^1.11.0",
-    "@nuxthub/core": "^0.10.4",
+    "@nuxthub/core": "0.10.5",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@pinia/nuxt": "^0.11.3",
     "bcryptjs": "^2.4.3",
@@ -48,6 +49,7 @@
     "pinia": "^3.0.4",
     "pizzip": "^3.2.0",
     "tailwind-merge": "^2.6.0",
+    "unstorage": "^1.17.4",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
     "vue-toastification": "2.0.0-rc.5",
@@ -65,6 +67,7 @@
     "better-sqlite3": "^12.5.0",
     "drizzle-kit": "^0.30.6",
     "eslint": "^9.39.1",
+    "msw": "^2.12.7",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.1.3",

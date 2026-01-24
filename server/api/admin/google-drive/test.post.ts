@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod'
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 import { testDriveConnection, getDriveConfig } from '../../../utils/google-drive'
 
 const testSchema = z.object({

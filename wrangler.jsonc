@@ -60,33 +60,43 @@
   "queues": {
     "producers": [
       {
-        "queue": "document-template-processing",
+        "queue": "ytp-document-template-processing",
         "binding": "TEMPLATE_PROCESSING_QUEUE"
       },
       {
-        "queue": "document-generation",
+        "queue": "ytp-document-generation",
         "binding": "DOCUMENT_GENERATION_QUEUE"
       },
       {
-        "queue": "drive-sync",
+        "queue": "ytp-drive-sync",
         "binding": "DRIVE_SYNC_QUEUE"
+      },
+      {
+        "queue": "ytp-lawmatics-import",
+        "binding": "LAWMATICS_IMPORT_QUEUE"
       }
     ],
     "consumers": [
       {
-        "queue": "document-template-processing",
+        "queue": "ytp-document-template-processing",
         "max_batch_size": 10,
         "max_batch_timeout": 5
       },
       {
-        "queue": "document-generation",
+        "queue": "ytp-document-generation",
         "max_batch_size": 5,
         "max_batch_timeout": 2
       },
       {
-        "queue": "drive-sync",
+        "queue": "ytp-drive-sync",
         "max_batch_size": 10,
         "max_batch_timeout": 5
+      },
+      {
+        "queue": "ytp-lawmatics-import",
+        "max_batch_size": 1,
+        "max_retries": 3,
+        "dead_letter_queue": "ytp-lawmatics-import-dlq"
       }
     ]
   },
@@ -148,33 +158,43 @@
       "queues": {
         "producers": [
           {
-            "queue": "document-template-processing-preview",
+            "queue": "ytp-document-template-processing-preview",
             "binding": "TEMPLATE_PROCESSING_QUEUE"
           },
           {
-            "queue": "document-generation-preview",
+            "queue": "ytp-document-generation-preview",
             "binding": "DOCUMENT_GENERATION_QUEUE"
           },
           {
-            "queue": "drive-sync-preview",
+            "queue": "ytp-drive-sync-preview",
             "binding": "DRIVE_SYNC_QUEUE"
+          },
+          {
+            "queue": "ytp-lawmatics-import-preview",
+            "binding": "LAWMATICS_IMPORT_QUEUE"
           }
         ],
         "consumers": [
           {
-            "queue": "document-template-processing-preview",
+            "queue": "ytp-document-template-processing-preview",
             "max_batch_size": 10,
             "max_batch_timeout": 5
           },
           {
-            "queue": "document-generation-preview",
+            "queue": "ytp-document-generation-preview",
             "max_batch_size": 5,
             "max_batch_timeout": 2
           },
           {
-            "queue": "drive-sync-preview",
+            "queue": "ytp-drive-sync-preview",
             "max_batch_size": 10,
             "max_batch_timeout": 5
+          },
+          {
+            "queue": "ytp-lawmatics-import-preview",
+            "max_batch_size": 1,
+            "max_retries": 3,
+            "dead_letter_queue": "ytp-lawmatics-import-dlq-preview"
           }
         ]
       },

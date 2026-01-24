@@ -264,15 +264,12 @@ export default defineEventHandler(async (event) => {
   // Log signing activity
   await logActivity({
     type: 'DOCUMENT_SIGNED',
-    description: `${signer.firstName || signer.email} signed "${document.title}" via e-signature`,
     userId: signer.id,
     userRole: signer.role,
-    targetType: 'document',
-    targetId: document.id,
+    target: { type: 'document', id: document.id, name: document.title },
     matterId: document.matterId || undefined,
     event,
-    metadata: {
-      documentTitle: document.title,
+    details: {
       signatureSessionId: session.id,
       signatureTier: session.signatureTier,
       certificateId: certificate.certificateId,

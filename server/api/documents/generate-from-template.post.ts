@@ -270,22 +270,18 @@ export default defineEventHandler(async (event) => {
   })
 
   // Log document creation activity
+  const documentTitle = body.title || template.name
   await logActivity({
     type: 'DOCUMENT_CREATED',
-    description: `${user.firstName || user.email} created document "${body.title || template.name}" for ${clientFullName}`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'document',
-    targetId: documentId,
+    target: { type: 'document', id: documentId, name: documentTitle },
+    relatedEntities: [
+      { type: 'client', id: body.clientId, name: clientFullName },
+      { type: 'template', id: template.id, name: template.name }
+    ],
     matterId: body.matterId || undefined,
-    event,
-    metadata: {
-      documentTitle: body.title || template.name,
-      templateId: template.id,
-      templateName: template.name,
-      clientId: body.clientId,
-      clientName: clientFullName
-    }
+    event
   })
 
   // Queue for Google Drive sync if enabled and matter is associated

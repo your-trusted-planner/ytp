@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../db'
-import { hashPassword, generateId, requireRole } from '../../utils/auth'
+import { hashPassword, generateId } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { logActivity } from '../../utils/activity-logger'
 import { isDriveEnabled, createClientFolder } from '../../utils/google-drive'
 import { notifyDriveSyncError } from '../../utils/notice-service'
@@ -66,17 +67,15 @@ export default defineEventHandler(async (event) => {
   })
 
   // Log activity
+  const clientName = `${firstName} ${lastName}`
   await logActivity({
     type: 'CLIENT_CREATED',
-    description: `${user.firstName || user.email} created client ${firstName} ${lastName}`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'client',
-    targetId: userId,
+    target: { type: 'client', id: userId, name: clientName },
     event,
-    metadata: {
-      clientEmail: email,
-      clientName: `${firstName} ${lastName}`
+    details: {
+      clientEmail: email
     }
   })
 

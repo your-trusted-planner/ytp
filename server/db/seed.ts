@@ -37,7 +37,7 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
     email: 'admin@trustandlegacy.test',
     password: hashedPassword,
     role: 'ADMIN',
-    adminLevel: 2,
+    adminLevel: 3,
     firstName: 'Sarah',
     lastName: 'Admin',
     status: 'ACTIVE'

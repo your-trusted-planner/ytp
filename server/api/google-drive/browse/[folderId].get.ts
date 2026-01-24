@@ -4,7 +4,7 @@
  * Returns files and subfolders for tree view navigation
  */
 
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 import { getDriveConfig, isDriveEnabled } from '../../../utils/google-drive'
 
 const GOOGLE_DRIVE_API = 'https://www.googleapis.com/drive/v3'

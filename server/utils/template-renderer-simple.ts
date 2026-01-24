@@ -17,14 +17,14 @@
  * - Partials
  */
 
-// Template context interface
-export interface TemplateContext {
+// Template context interface (renamed to avoid conflict with template-renderer.ts)
+export interface SimpleTemplateContext {
   [key: string]: any
 }
 
 export class SimpleTemplateRenderer {
   // Render a template with context data
-  render(template: string, context: TemplateContext): string {
+  render(template: string, context: SimpleTemplateContext): string {
     try {
       let result = template
 
@@ -46,7 +46,7 @@ export class SimpleTemplateRenderer {
   }
 
   // Process {{#if condition}}...{{/if}} blocks
-  private processConditionals(template: string, context: TemplateContext): string {
+  private processConditionals(template: string, context: SimpleTemplateContext): string {
     const ifPattern = /\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g
 
     return template.replace(ifPattern, (match, condition, content) => {
@@ -57,7 +57,7 @@ export class SimpleTemplateRenderer {
   }
 
   // Process {{#each items}}...{{/each}} blocks
-  private processLoops(template: string, context: TemplateContext): string {
+  private processLoops(template: string, context: SimpleTemplateContext): string {
     const eachPattern = /\{\{#each\s+([^}]+)\}\}([\s\S]*?)\{\{\/each\}\}/g
 
     return template.replace(eachPattern, (match, arrayName, content) => {
@@ -81,7 +81,7 @@ export class SimpleTemplateRenderer {
   }
 
   // Process helper functions: {{formatDate date}}, {{formatCurrency amount}}, etc.
-  private processHelpers(template: string, context: TemplateContext): string {
+  private processHelpers(template: string, context: SimpleTemplateContext): string {
     // Match patterns like {{helperName argument}}
     const helperPattern = /\{\{(\w+)\s+([^}]+)\}\}/g
 
@@ -112,7 +112,7 @@ export class SimpleTemplateRenderer {
   }
 
   // Process simple variable substitution: {{variable}} or {{user.name}}
-  private processVariables(template: string, context: TemplateContext): string {
+  private processVariables(template: string, context: SimpleTemplateContext): string {
     // Match {{variableName}} but not {{#if}} or {{/if}} or helpers
     const variablePattern = /\{\{(?!#|\/|\w+\s+)([^}]+)\}\}/g
 
@@ -126,7 +126,7 @@ export class SimpleTemplateRenderer {
   private static readonly DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
   // Get a value from context using dot notation (e.g., "user.name")
-  private getValue(path: string, context: TemplateContext): any {
+  private getValue(path: string, context: SimpleTemplateContext): any {
     const parts = path.split('.')
 
     // Check for dangerous keys to prevent prototype pollution
@@ -219,14 +219,14 @@ export class SimpleTemplateRenderer {
   }
 }
 
-// Export singleton
-let rendererInstance: SimpleTemplateRenderer | null = null
+// Export singleton (renamed to avoid conflict with template-renderer.ts)
+let simpleRendererInstance: SimpleTemplateRenderer | null = null
 
-export function useTemplateRenderer() {
-  if (!rendererInstance) {
-    rendererInstance = new SimpleTemplateRenderer()
+export function useSimpleTemplateRenderer() {
+  if (!simpleRendererInstance) {
+    simpleRendererInstance = new SimpleTemplateRenderer()
   }
-  return rendererInstance
+  return simpleRendererInstance
 }
 
 export default SimpleTemplateRenderer

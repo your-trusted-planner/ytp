@@ -1,6 +1,7 @@
 // Add Google Calendar configuration for attorney
 import { z } from 'zod'
-import { requireRole, generateId } from '../../../utils/auth'
+import { generateId } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 
 const addCalendarSchema = z.object({
   calendarId: z.string().min(1), // Google Calendar ID

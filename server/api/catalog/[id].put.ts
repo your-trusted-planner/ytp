@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../db'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { mockDb } from '../../utils/mock-db'
 
 const updateCatalogItemSchema = z.object({

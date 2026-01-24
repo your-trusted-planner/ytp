@@ -1,6 +1,6 @@
 // Get all documents for a matter
 import { eq, desc } from 'drizzle-orm'
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])

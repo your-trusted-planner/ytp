@@ -11,7 +11,7 @@
 
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 import { calculateTokenExpiration } from '../../../utils/signature-certificate'
 
 const resendSchema = z.object({

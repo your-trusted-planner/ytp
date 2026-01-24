@@ -1,6 +1,6 @@
 import { desc } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../db'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { mockDb, initMockMatters } from '../../utils/mock-db'
 
 export default defineEventHandler(async (event) => {

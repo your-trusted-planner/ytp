@@ -1,5 +1,5 @@
 // NuxtHub 0.10.x: Import the pre-configured Drizzle instance
-import { db } from 'hub:db'
+import { db } from '@nuxthub/db'
 import * as schema from './schema'
 
 export { schema }

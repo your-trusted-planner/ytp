@@ -3,7 +3,7 @@
  * Get Google Drive configuration (without sensitive credentials)
  */
 
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['ADMIN'])

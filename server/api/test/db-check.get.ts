@@ -15,10 +15,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     databaseAvailable: available,
-    drizzleAvailable: drizzleWorks,
-    // Legacy checks for backwards compatibility
-    hubDatabaseType: typeof hubDatabase,
-    hubDatabaseExists: typeof hubDatabase !== 'undefined'
+    drizzleAvailable: drizzleWorks
   }
 })
 

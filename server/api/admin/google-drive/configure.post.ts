@@ -5,7 +5,8 @@
 
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { requireRole, generateId } from '../../../utils/auth'
+import { generateId } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 
 const configureSchema = z.object({
   isEnabled: z.boolean(),

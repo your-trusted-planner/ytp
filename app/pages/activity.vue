@@ -41,11 +41,21 @@
               <option value="DOCUMENT_VIEWED">Document Viewed</option>
               <option value="DOCUMENT_SIGNED">Document Signed</option>
               <option value="DOCUMENT_DOWNLOADED">Document Downloaded</option>
+              <option value="DOCUMENT_DELETED">Document Deleted</option>
             </optgroup>
             <optgroup label="Journey Events">
               <option value="JOURNEY_STARTED">Journey Started</option>
               <option value="JOURNEY_STEP_COMPLETED">Step Completed</option>
               <option value="JOURNEY_COMPLETED">Journey Completed</option>
+            </optgroup>
+            <optgroup label="Note Events">
+              <option value="NOTE_CREATED">Note Created</option>
+              <option value="NOTE_UPDATED">Note Updated</option>
+              <option value="NOTE_DELETED">Note Deleted</option>
+            </optgroup>
+            <optgroup label="Template Events">
+              <option value="TEMPLATE_CREATED">Template Created</option>
+              <option value="TEMPLATE_DELETED">Template Deleted</option>
             </optgroup>
           </select>
         </div>
@@ -64,6 +74,8 @@
             <option value="matter">Matters</option>
             <option value="journey">Journeys</option>
             <option value="template">Templates</option>
+            <option value="note">Notes</option>
+            <option value="referral_partner">Referral Partners</option>
           </select>
         </div>
 
@@ -147,8 +159,53 @@
                 </span>
               </div>
 
-              <!-- Metadata badges -->
-              <div v-if="activity.metadata" class="flex flex-wrap gap-2 mt-2">
+              <!-- Entity link badges (new structured format) -->
+              <div class="flex flex-wrap gap-2 mt-2">
+                <!-- Primary target entity badge -->
+                <NuxtLink
+                  v-if="activity.target?.link"
+                  :to="activity.target.link"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-burgundy-50 text-burgundy-700 hover:bg-burgundy-100 transition-colors group"
+                  :title="getNameDiffTooltip(activity.target)"
+                >
+                  <component :is="getEntityTypeIcon(activity.target.type)" class="w-3 h-3" />
+                  {{ formatEntityTypeLabel(activity.target.type) }}: {{ activity.target.currentName }}
+                  <span
+                    v-if="activity.target.snapshotName !== activity.target.currentName"
+                    class="text-burgundy-400 text-[10px]"
+                  >(was: {{ activity.target.snapshotName }})</span>
+                  <ExternalLink class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </NuxtLink>
+
+                <!-- Related entity badges -->
+                <template v-if="activity.relatedEntities?.length">
+                  <NuxtLink
+                    v-for="entity in activity.relatedEntities"
+                    :key="`${entity.type}:${entity.id}`"
+                    :to="entity.link || '#'"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors group"
+                    :class="{ 'pointer-events-none': !entity.link }"
+                    :title="getNameDiffTooltip(entity)"
+                  >
+                    <component :is="getEntityTypeIcon(entity.type)" class="w-3 h-3" />
+                    {{ formatEntityTypeLabel(entity.type) }}: {{ entity.currentName }}
+                    <ExternalLink v-if="entity.link" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </NuxtLink>
+                </template>
+
+                <!-- Legacy entity link badge (backward compatibility) -->
+                <NuxtLink
+                  v-else-if="!activity.target && activity.metadata?.entityType && activity.metadata?.entityId"
+                  :to="getLegacyEntityLink(activity.metadata.entityType, activity.metadata.entityId)"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-burgundy-50 text-burgundy-700 hover:bg-burgundy-100 transition-colors"
+                >
+                  {{ formatEntityTypeLabel(activity.metadata.entityType) }}: {{ activity.metadata.entityName || activity.metadata.entityId }}
+                  <ExternalLink class="w-3 h-3" />
+                </NuxtLink>
+              </div>
+
+              <!-- Other metadata badges -->
+              <div v-if="activity.metadata && hasOtherMetadata(activity.metadata)" class="flex flex-wrap gap-2 mt-2">
                 <span
                   v-for="(value, key) in getDisplayMetadata(activity.metadata)"
                   :key="key"
@@ -159,9 +216,9 @@
               </div>
             </div>
 
-            <!-- Link -->
+            <!-- View Link (legacy fallback for targetType/targetId) -->
             <NuxtLink
-              v-if="getTargetLink(activity)"
+              v-if="!activity.target && getTargetLink(activity)"
               :to="getTargetLink(activity)"
               class="text-burgundy-600 hover:text-burgundy-700 text-sm font-medium flex-shrink-0"
             >
@@ -215,13 +272,27 @@ import {
   UserPlus,
   Briefcase,
   Activity,
-  Route
+  Route,
+  ExternalLink,
+  StickyNote,
+  Calendar,
+  Handshake,
+  Package
 } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
 })
+
+// Entity reference with resolved names
+interface ResolvedEntityRef {
+  type: string
+  id: string
+  snapshotName: string
+  currentName: string
+  link: string | null
+}
 
 interface ActivityItem {
   id: string
@@ -243,6 +314,9 @@ interface ActivityItem {
     email: string
   } | null
   metadata: Record<string, any> | null
+  // New structured entity references
+  target?: ResolvedEntityRef
+  relatedEntities?: ResolvedEntityRef[]
 }
 
 const activities = ref<ActivityItem[]>([])
@@ -266,7 +340,8 @@ async function fetchActivities() {
   try {
     const params = new URLSearchParams({
       limit: pagination.limit.toString(),
-      offset: pagination.offset.toString()
+      offset: pagination.offset.toString(),
+      resolveNames: 'true' // Request resolved entity names
     })
 
     if (filters.type) params.set('type', filters.type)
@@ -336,15 +411,38 @@ function getActivityIcon(type: string) {
     DOCUMENT_VIEWED: Eye,
     DOCUMENT_SIGNED: PenTool,
     DOCUMENT_DOWNLOADED: Download,
+    DOCUMENT_DELETED: FileText,
     JOURNEY_STARTED: Play,
     JOURNEY_STEP_COMPLETED: CheckCircle,
     JOURNEY_COMPLETED: CheckCircle,
     TEMPLATE_CREATED: FileText,
     TEMPLATE_UPDATED: FileText,
+    TEMPLATE_DELETED: FileText,
     ADMIN_ACTION: Settings,
-    REFERRAL_PARTNER_CREATED: Users
+    REFERRAL_PARTNER_CREATED: Users,
+    REFERRAL_PARTNER_UPDATED: Users,
+    NOTE_CREATED: StickyNote,
+    NOTE_UPDATED: StickyNote,
+    NOTE_DELETED: StickyNote
   }
   return icons[type] || Route
+}
+
+function getEntityTypeIcon(type: string) {
+  const icons: Record<string, any> = {
+    user: User,
+    client: Users,
+    matter: Briefcase,
+    document: FileText,
+    journey: Route,
+    template: FileText,
+    referral_partner: Handshake,
+    service: Package,
+    appointment: Calendar,
+    note: StickyNote,
+    setting: Settings
+  }
+  return icons[type] || FileText
 }
 
 function getActivityIconBg(type: string): string {
@@ -362,6 +460,12 @@ function getActivityIconBg(type: string): string {
   }
   if (type.includes('MATTER')) {
     return 'bg-indigo-100'
+  }
+  if (type.includes('NOTE')) {
+    return 'bg-yellow-100'
+  }
+  if (type.includes('TEMPLATE')) {
+    return 'bg-pink-100'
   }
   return 'bg-gray-100'
 }
@@ -382,6 +486,12 @@ function getActivityIconColor(type: string): string {
   if (type.includes('MATTER')) {
     return 'text-indigo-600'
   }
+  if (type.includes('NOTE')) {
+    return 'text-yellow-600'
+  }
+  if (type.includes('TEMPLATE')) {
+    return 'text-pink-600'
+  }
   return 'text-gray-600'
 }
 
@@ -393,15 +503,57 @@ function getTargetLink(activity: ActivityItem): string | null {
     document: `/documents/${activity.targetId}`,
     matter: `/matters/${activity.targetId}`,
     journey: `/journeys/${activity.targetId}`,
-    template: `/templates/${activity.targetId}`
+    template: `/templates/${activity.targetId}`,
+    referral_partner: `/referral-partners/${activity.targetId}`
   }
 
   return routes[activity.targetType] || null
 }
 
+function getLegacyEntityLink(entityType: string, entityId: string): string {
+  const routes: Record<string, string> = {
+    client: `/clients/${entityId}`,
+    matter: `/matters/${entityId}`,
+    document: `/documents/${entityId}`,
+    journey: `/journeys/${entityId}`,
+    appointment: `/appointments/${entityId}`,
+    template: `/templates/${entityId}`,
+    referral_partner: `/referral-partners/${entityId}`
+  }
+  return routes[entityType] || '#'
+}
+
+function formatEntityTypeLabel(entityType: string): string {
+  const typeMap: Record<string, string> = {
+    user: 'User',
+    client: 'Client',
+    matter: 'Matter',
+    document: 'Document',
+    journey: 'Journey',
+    template: 'Template',
+    referral_partner: 'Referral Partner',
+    service: 'Service',
+    appointment: 'Appointment',
+    note: 'Note',
+    setting: 'Setting'
+  }
+  return typeMap[entityType] || entityType
+}
+
+function getNameDiffTooltip(entity: ResolvedEntityRef): string {
+  if (entity.snapshotName !== entity.currentName) {
+    return `Originally: "${entity.snapshotName}", now: "${entity.currentName}"`
+  }
+  return entity.currentName
+}
+
 function getDisplayMetadata(metadata: Record<string, any>): Record<string, any> {
-  // Filter out sensitive or internal fields
-  const hiddenKeys = ['signedAt', 'templateId', 'clientId']
+  // Filter out sensitive, internal, and entity-related fields (entity fields shown as linked badge)
+  const hiddenKeys = [
+    'signedAt', 'templateId', 'clientId',
+    'entityType', 'entityId', 'entityName',
+    'target', 'relatedEntities', 'details' // Hide new structured fields
+  ]
   const result: Record<string, any> = {}
 
   for (const [key, value] of Object.entries(metadata)) {
@@ -411,6 +563,10 @@ function getDisplayMetadata(metadata: Record<string, any>): Record<string, any> 
   }
 
   return result
+}
+
+function hasOtherMetadata(metadata: Record<string, any>): boolean {
+  return Object.keys(getDisplayMetadata(metadata)).length > 0
 }
 
 function formatMetadataKey(key: string): string {

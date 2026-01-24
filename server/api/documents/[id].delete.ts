@@ -105,23 +105,16 @@ export default defineEventHandler(async (event) => {
   }
 
   // Log activity before deletion
-  const actorName = user.firstName || user.email
   await logActivity({
     type: 'DOCUMENT_DELETED',
-    description: `${actorName} deleted document "${document.title}" (status: ${document.status})`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'document',
-    targetId: id,
+    target: { type: 'document', id: id, name: document.title },
     matterId: document.matterId || undefined,
     event,
-    metadata: {
-      documentTitle: document.title,
+    details: {
       documentStatus: document.status,
-      templateId: document.templateId,
-      clientId: document.clientId,
       hadSignature: !!document.signatureData,
-      deletedByAdminLevel: user.adminLevel,
       confirmationRequired: requiresConfirmation,
       signatureSessionsDeleted: deletionDetails.signatureSessions,
       blobsDeleted: deletionDetails.blobsDeleted

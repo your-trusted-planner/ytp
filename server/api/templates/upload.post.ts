@@ -1,4 +1,4 @@
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { processTemplateUpload } from '../../utils/template-upload'
 
 export default defineEventHandler(async (event) => {

@@ -7,7 +7,7 @@
  */
 
 import { eq } from 'drizzle-orm'
-import { requireRole } from '../../../../utils/auth'
+import { requireRole } from '../../../../utils/rbac'
 import { isDriveEnabled, createClientFolder, getFile, getDriveConfig } from '../../../../utils/google-drive'
 
 export default defineEventHandler(async (event) => {
