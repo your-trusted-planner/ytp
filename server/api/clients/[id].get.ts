@@ -33,11 +33,49 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get client profile
-  const profile = await db.select()
+  // Get client profile from legacy table
+  const legacyProfile = await db.select()
     .from(schema.clientProfiles)
     .where(eq(schema.clientProfiles.userId, clientId))
     .get()
+
+  // Get client record from new clients table (People Consolidation)
+  // The client record is linked via personId on the user
+  let clientRecord = null
+  if (client.personId) {
+    clientRecord = await db.select()
+      .from(schema.clients)
+      .where(eq(schema.clients.personId, client.personId))
+      .get()
+  }
+
+  // Merge profile data - prefer new clients table, fall back to legacy
+  const profile = legacyProfile || clientRecord ? {
+    // From legacy profile or defaults
+    id: legacyProfile?.id || clientRecord?.id,
+    userId: clientId,
+    dateOfBirth: legacyProfile?.dateOfBirth,
+    address: legacyProfile?.address,
+    city: legacyProfile?.city,
+    state: legacyProfile?.state,
+    zipCode: legacyProfile?.zipCode,
+    hasMinorChildren: clientRecord?.hasMinorChildren ?? legacyProfile?.hasMinorChildren ?? false,
+    childrenInfo: clientRecord?.childrenInfo ?? legacyProfile?.childrenInfo,
+    businessName: clientRecord?.businessName ?? legacyProfile?.businessName,
+    businessType: clientRecord?.businessType ?? legacyProfile?.businessType,
+    hasWill: clientRecord?.hasWill ?? legacyProfile?.hasWill ?? false,
+    hasTrust: clientRecord?.hasTrust ?? legacyProfile?.hasTrust ?? false,
+    lastUpdated: legacyProfile?.lastUpdated,
+    assignedLawyerId: clientRecord?.assignedLawyerId ?? legacyProfile?.assignedLawyerId,
+    createdAt: clientRecord?.createdAt ?? legacyProfile?.createdAt,
+    updatedAt: clientRecord?.updatedAt ?? legacyProfile?.updatedAt,
+    // Google Drive fields - prefer new clients table
+    googleDriveFolderId: clientRecord?.googleDriveFolderId ?? legacyProfile?.googleDriveFolderId,
+    googleDriveFolderUrl: clientRecord?.googleDriveFolderUrl ?? legacyProfile?.googleDriveFolderUrl,
+    googleDriveSyncStatus: clientRecord?.googleDriveSyncStatus ?? legacyProfile?.googleDriveSyncStatus,
+    googleDriveSyncError: clientRecord?.googleDriveSyncError ?? legacyProfile?.googleDriveSyncError,
+    googleDriveLastSyncAt: clientRecord?.googleDriveLastSyncAt ?? legacyProfile?.googleDriveLastSyncAt
+  } : null
 
   // Convert to snake_case for API compatibility
   return {
