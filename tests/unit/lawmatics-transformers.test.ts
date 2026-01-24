@@ -478,13 +478,38 @@ describe('transformUser', () => {
     expect(result.email).toBe('attorney@lawfirm.com')
     expect(result.firstName).toBe('John')
     expect(result.lastName).toBe('Attorney')
-    expect(result.role).toBe('LAWYER')
+    // All imported users come in as STAFF - admins set permissions manually
+    expect(result.role).toBe('STAFF')
     expect(result.adminLevel).toBe(0)
     expect(result.status).toBe('INACTIVE')
     expect(result.id).toBeDefined()
   })
 
-  it('maps owner role to ADMIN with adminLevel 2', () => {
+  it('imports all users as STAFF regardless of Lawmatics role', () => {
+    // All users import as STAFF with adminLevel 0
+    // Admins manually set appropriate roles/permissions after import
+    const roles = ['owner', 'admin', 'attorney', 'paralegal', 'staff', undefined]
+
+    for (const role of roles) {
+      const lawmaticsUser: LawmaticsUser = {
+        id: 'lm-user-001',
+        type: 'user',
+        attributes: {
+          email: 'test@lawfirm.com',
+          first_name: 'Test',
+          role,
+          active: true
+        }
+      }
+
+      const result = transformUser(lawmaticsUser)
+
+      expect(result.role).toBe('STAFF')
+      expect(result.adminLevel).toBe(0)
+    }
+  })
+
+  it('preserves original Lawmatics role in import metadata', () => {
     const lawmaticsUser: LawmaticsUser = {
       id: 'lm-user-001',
       type: 'user',
@@ -497,45 +522,12 @@ describe('transformUser', () => {
     }
 
     const result = transformUser(lawmaticsUser)
+    const metadata = JSON.parse(result.importMetadata) as ImportMetadata
 
-    expect(result.role).toBe('ADMIN')
-    expect(result.adminLevel).toBe(2)
-  })
-
-  it('maps admin role to ADMIN with adminLevel 2', () => {
-    const lawmaticsUser: LawmaticsUser = {
-      id: 'lm-user-001',
-      type: 'user',
-      attributes: {
-        email: 'admin@lawfirm.com',
-        first_name: 'Admin',
-        role: 'admin',
-        active: true
-      }
-    }
-
-    const result = transformUser(lawmaticsUser)
-
-    expect(result.role).toBe('ADMIN')
-    expect(result.adminLevel).toBe(2)
-  })
-
-  it('maps paralegal role to STAFF', () => {
-    const lawmaticsUser: LawmaticsUser = {
-      id: 'lm-user-001',
-      type: 'user',
-      attributes: {
-        email: 'paralegal@lawfirm.com',
-        first_name: 'Para',
-        role: 'paralegal',
-        active: true
-      }
-    }
-
-    const result = transformUser(lawmaticsUser)
-
+    // User imported as STAFF, but original role preserved in metadata
     expect(result.role).toBe('STAFF')
     expect(result.adminLevel).toBe(0)
+    expect(metadata.sourceData?.role).toBe('owner')
   })
 
   it('includes import metadata with source data', () => {

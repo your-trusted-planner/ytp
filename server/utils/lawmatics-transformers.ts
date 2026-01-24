@@ -330,19 +330,12 @@ export function extractCustomFields(
 
 /**
  * Map Lawmatics user role to our role
+ *
+ * All imported users come in as STAFF with no admin access.
+ * Admins should manually set appropriate roles and permissions after import.
+ * The original Lawmatics role is preserved in importMetadata for reference.
  */
-function mapUserRole(lawmaticsRole: string | undefined): { role: 'ADMIN' | 'LAWYER' | 'STAFF'; adminLevel: number } {
-  const role = lawmaticsRole?.toLowerCase() || ''
-
-  if (role === 'owner' || role === 'admin') {
-    return { role: 'ADMIN', adminLevel: 2 }
-  }
-
-  if (role === 'attorney' || role === 'lawyer') {
-    return { role: 'LAWYER', adminLevel: 0 }
-  }
-
-  // Paralegal, Staff, or any other role
+function mapUserRole(_lawmaticsRole: string | undefined): { role: 'ADMIN' | 'LAWYER' | 'STAFF'; adminLevel: number } {
   return { role: 'STAFF', adminLevel: 0 }
 }
 
