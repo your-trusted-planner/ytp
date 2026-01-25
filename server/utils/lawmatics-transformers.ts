@@ -808,21 +808,46 @@ export function transformNote(
   let entityType: string | null = null
   let entityId: string | null = null
 
-  // Check for contact relationship
-  const contactRelation = note.relationships?.contact?.data
-  const contactExternalId = Array.isArray(contactRelation)
-    ? contactRelation[0]?.id
-    : contactRelation?.id
+  // Lawmatics uses a polymorphic "notable" relationship
+  // The type field indicates whether it's a "contact" or "prospect"
+  const notableRelation = note.relationships?.notable?.data
+  const notableData = Array.isArray(notableRelation)
+    ? notableRelation[0]
+    : notableRelation
 
-  if (contactExternalId) {
-    const personId = options.contactLookup(contactExternalId)
-    if (personId) {
-      entityType = 'person'
-      entityId = personId
+  if (notableData?.id && notableData?.type) {
+    if (notableData.type === 'contact') {
+      const personId = options.contactLookup(notableData.id)
+      if (personId) {
+        entityType = 'person'
+        entityId = personId
+      }
+    } else if (notableData.type === 'prospect') {
+      const matterId = options.prospectLookup(notableData.id)
+      if (matterId) {
+        entityType = 'matter'
+        entityId = matterId
+      }
     }
   }
 
-  // Check for prospect/matter relationship if no contact
+  // Fallback: Check for explicit contact relationship (legacy/alternative format)
+  if (!entityId) {
+    const contactRelation = note.relationships?.contact?.data
+    const contactExternalId = Array.isArray(contactRelation)
+      ? contactRelation[0]?.id
+      : contactRelation?.id
+
+    if (contactExternalId) {
+      const personId = options.contactLookup(contactExternalId)
+      if (personId) {
+        entityType = 'person'
+        entityId = personId
+      }
+    }
+  }
+
+  // Fallback: Check for explicit prospect/matter relationship
   if (!entityId) {
     const prospectRelation = note.relationships?.prospect?.data ||
       note.relationships?.matter?.data
@@ -860,15 +885,26 @@ export function transformNote(
   }
 
   const metadata = buildImportMetadata(note.id, {
-    importRunId: options.importRunId
+    importRunId: options.importRunId,
+    sourceData: {
+      name: note.attributes.name // Preserve the note title/name
+    }
   })
 
   const createdAt = parseDate(note.attributes.created_at) || new Date()
   const updatedAt = parseDate(note.attributes.updated_at) || new Date()
 
+  // Lawmatics uses "body" for note content, not "content"
+  // Also include the name as a prefix if it exists
+  const noteTitle = note.attributes.name
+  const noteBody = note.attributes.body || note.attributes.content || ''
+  const content = noteTitle && noteBody
+    ? `**${noteTitle}**\n\n${noteBody}`
+    : noteBody || noteTitle || ''
+
   return {
     id: nanoid(),
-    content: note.attributes.content || '',
+    content,
     entityType,
     entityId,
     createdBy,

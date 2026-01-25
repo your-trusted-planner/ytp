@@ -1364,6 +1364,133 @@ describe('transformNote', () => {
     expect(metadata.externalId).toBe('lm-note-001')
     expect(metadata.importRunId).toBe('run-123')
   })
+
+  // Tests for Lawmatics "notable" polymorphic relationship format
+  describe('notable relationship format', () => {
+    it('transforms note with notable contact relationship', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          name: 'Client Meeting',
+          body: '<p>Meeting notes content</p>',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'lm-contact-001', type: 'contact' } }
+        }
+      }
+
+      const result = transformNote(note, baseOptions)
+
+      expect(result).not.toBeNull()
+      expect(result?.entityType).toBe('person')
+      expect(result?.entityId).toBe('internal-client-001')
+      expect(result?.content).toContain('**Client Meeting**')
+      expect(result?.content).toContain('<p>Meeting notes content</p>')
+    })
+
+    it('transforms note with notable prospect relationship', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          name: 'Case Update',
+          body: '<p>Case update notes</p>',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'lm-prospect-001', type: 'prospect' } }
+        }
+      }
+
+      const result = transformNote(note, baseOptions)
+
+      expect(result?.entityType).toBe('matter')
+      expect(result?.entityId).toBe('internal-matter-001')
+    })
+
+    it('handles note with name but no body', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          name: 'Quick Note',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'lm-contact-001', type: 'contact' } }
+        }
+      }
+
+      const result = transformNote(note, baseOptions)
+
+      expect(result?.content).toBe('Quick Note')
+    })
+
+    it('handles note with body but no name', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          body: '<p>Just body content</p>',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'lm-contact-001', type: 'contact' } }
+        }
+      }
+
+      const result = transformNote(note, baseOptions)
+
+      expect(result?.content).toBe('<p>Just body content</p>')
+    })
+
+    it('returns null for unresolvable notable relationship', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          name: 'Note',
+          body: 'Content',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'unknown-id', type: 'prospect' } }
+        }
+      }
+
+      const result = transformNote(note, baseOptions)
+
+      expect(result).toBeNull()
+    })
+
+    it('preserves note name in import metadata', () => {
+      const note: LawmaticsNote = {
+        id: 'lm-note-001',
+        type: 'note',
+        attributes: {
+          name: 'Important Note Title',
+          body: 'Content',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        relationships: {
+          notable: { data: { id: 'lm-contact-001', type: 'contact' } }
+        }
+      }
+
+      const result = transformNote(note, { ...baseOptions, importRunId: 'run-123' })
+      const metadata = JSON.parse(result!.importMetadata) as ImportMetadata
+
+      expect(metadata.sourceData?.name).toBe('Important Note Title')
+    })
+  })
 })
 
 // ===================================

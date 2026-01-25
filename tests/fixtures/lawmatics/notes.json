@@ -4,16 +4,14 @@
       "id": "lm-note-001",
       "type": "note",
       "attributes": {
-        "content": "Initial consultation completed. Client interested in comprehensive estate plan including revocable living trust, pour-over will, and healthcare directives.",
+        "name": "Initial Consultation",
+        "body": "<p>Initial consultation completed. Client interested in comprehensive estate plan including revocable living trust, pour-over will, and healthcare directives.</p>",
         "created_at": "2024-01-15T11:00:00Z",
         "updated_at": "2024-01-15T11:00:00Z"
       },
       "relationships": {
-        "prospect": {
+        "notable": {
           "data": { "id": "lm-prospect-001", "type": "prospect" }
-        },
-        "user": {
-          "data": { "id": "lm-user-001", "type": "user" }
         }
       }
     },
@@ -21,16 +19,14 @@
       "id": "lm-note-002",
       "type": "note",
       "attributes": {
-        "content": "Follow-up call regarding document signing. Client confirmed availability for Thursday at 2pm.",
+        "name": "Follow-up Call",
+        "body": "<p>Follow-up call regarding document signing. Client confirmed availability for Thursday at 2pm.</p>",
         "created_at": "2024-02-20T14:30:00Z",
         "updated_at": "2024-02-20T14:30:00Z"
       },
       "relationships": {
-        "prospect": {
+        "notable": {
           "data": { "id": "lm-prospect-001", "type": "prospect" }
-        },
-        "user": {
-          "data": { "id": "lm-user-002", "type": "user" }
         }
       }
     },
@@ -38,16 +34,14 @@
       "id": "lm-note-003",
       "type": "note",
       "attributes": {
-        "content": "<p>HTML content in note with <strong>bold</strong> and <em>italic</em> formatting.</p><ul><li>Item 1</li><li>Item 2</li></ul>",
+        "name": "Document Review",
+        "body": "<p>HTML content in note with <strong>bold</strong> and <em>italic</em> formatting.</p><ul><li>Item 1</li><li>Item 2</li></ul>",
         "created_at": "2024-03-15T09:00:00Z",
         "updated_at": "2024-03-15T10:00:00Z"
       },
       "relationships": {
-        "prospect": {
+        "notable": {
           "data": { "id": "lm-prospect-002", "type": "prospect" }
-        },
-        "user": {
-          "data": { "id": "lm-user-001", "type": "user" }
         }
       }
     },
@@ -55,16 +49,14 @@
       "id": "lm-note-004",
       "type": "note",
       "attributes": {
-        "content": "",
+        "name": "Contact Note",
+        "body": "",
         "created_at": "2024-04-01T08:00:00Z",
         "updated_at": "2024-04-01T08:00:00Z"
       },
       "relationships": {
-        "contact": {
+        "notable": {
           "data": { "id": "lm-contact-001", "type": "contact" }
-        },
-        "user": {
-          "data": { "id": "lm-user-001", "type": "user" }
         }
       }
     },
@@ -72,16 +64,14 @@
       "id": "lm-note-005",
       "type": "note",
       "attributes": {
-        "content": "Note with unicode: \u4e2d\u6587\u6587\u672c, \u00e9\u00e0\u00fc\u00f1, \u0420\u0443\u0441\u0441\u043a\u0438\u0439",
+        "name": "Unicode Test",
+        "body": "<p>Note with unicode: 中文文本, éàüñ, Русский</p>",
         "created_at": "2024-05-01T10:00:00Z",
         "updated_at": "2024-05-01T10:00:00Z"
       },
       "relationships": {
-        "contact": {
+        "notable": {
           "data": { "id": "lm-contact-005", "type": "contact" }
-        },
-        "user": {
-          "data": { "id": "lm-user-001", "type": "user" }
         }
       }
     }
