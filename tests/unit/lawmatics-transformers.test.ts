@@ -219,12 +219,28 @@ describe('isProbablyPerson', () => {
     expect(isProbablyPerson(contact)).toBe(false)
   })
 
-  it('returns true for first name only with no business indicators', () => {
+  it('returns false for first name only without contact info', () => {
+    // First-name-only records without contact info are too ambiguous
+    // (could be short business names, incomplete data, etc.)
     const contact: LawmaticsContact = {
       id: 'c1',
       type: 'contact',
       attributes: {
         first_name: 'Jennifer'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns true for first name only with contact info', () => {
+    // First-name-only is OK if there's other personal info
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Jennifer',
+        phone: '555-1234'
       }
     }
 
@@ -253,6 +269,156 @@ describe('isProbablyPerson', () => {
     }
 
     expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  // Address detection tests
+  it('returns false for street address in name', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: '10 Aspen Lane - Windsor, CO'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for address starting with number', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: '123 Main Street'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for PO Box', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'P.O. Box 1234'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  // Financial product detection tests
+  it('returns false for IRA account', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'John Smith',
+        last_name: 'IRA'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for Roth IRA', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Smith Family Roth IRA'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for 401k account', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Jane Doe 401(k)'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for annuity', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Smith Annuity'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for life insurance policy', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'John Smith Life Insurance'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for financial institution account', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Fidelity IRA - John Smith'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for brokerage account', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Smith Brokerage Account'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('returns false for account with policy number', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Lincoln Financial #12345'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(false)
+  })
+
+  it('does not false-positive on name Brian (contains "ira")', () => {
+    // Make sure word boundary prevents "Brian" from matching "ira"
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        first_name: 'Brian',
+        last_name: 'Smith',
+        phone: '555-1234'
+      }
+    }
+
+    expect(isProbablyPerson(contact)).toBe(true)
   })
 })
 
