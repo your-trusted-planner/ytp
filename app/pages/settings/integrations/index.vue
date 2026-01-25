@@ -59,6 +59,9 @@
                 <UiBadge v-if="resendStatus === 'connected'" variant="success">
                   Connected
                 </UiBadge>
+                <UiBadge v-else-if="resendStatus === 'configured'" variant="warning">
+                  Configured (Not Tested)
+                </UiBadge>
                 <UiBadge v-else-if="resendStatus === 'error'" variant="danger">
                   Connection Error
                 </UiBadge>
@@ -214,7 +217,7 @@ const lawmaticsStatus = ref<'connected' | 'error' | 'not_configured'>('not_confi
 const lawmaticsLastSync = ref<string | null>(null)
 
 // Resend state
-const resendStatus = ref<'connected' | 'error' | 'not_configured'>('not_configured')
+const resendStatus = ref<'connected' | 'configured' | 'error' | 'not_configured'>('not_configured')
 const resendLastTested = ref<string | null>(null)
 const resendIntegration = ref<Integration | null>(null)
 const showResendModal = ref(false)
@@ -251,6 +254,7 @@ async function loadIntegrations() {
     if (resend) {
       resendIntegration.value = resend
       resendStatus.value = resend.status === 'CONNECTED' ? 'connected' :
+                           resend.status === 'CONFIGURED' ? 'configured' :
                            resend.status === 'ERROR' ? 'error' : 'not_configured'
       resendLastTested.value = resend.lastTestedAt
       resendApiKey.value = '••••••••••••••••'
