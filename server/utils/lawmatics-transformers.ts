@@ -236,6 +236,73 @@ function looksLikeAddress(text: string): boolean {
 }
 
 /**
+ * Check if a string looks like a financial account or insurance product
+ */
+function looksLikeFinancialProduct(text: string): boolean {
+  const lower = text.toLowerCase()
+
+  // Retirement account types
+  const retirementPatterns = [
+    /\bira\b/,           // IRA (word boundary to avoid matching "Brian")
+    /\broth\b/,          // Roth
+    /\b401\s*[\(\[]?\s*k\s*[\)\]]?\b/i,  // 401k, 401(k), 401 k
+    /\b403\s*[\(\[]?\s*b\s*[\)\]]?\b/i,  // 403b, 403(b)
+    /\bsep\s+ira\b/,     // SEP IRA
+    /\bsimple\s+ira\b/,  // SIMPLE IRA
+    /\bkeogh\b/,         // Keogh plan
+    /\bpension\b/,       // Pension
+    /\b457\s*[\(\[]?\s*b?\s*[\)\]]?\b/i  // 457, 457(b)
+  ]
+  if (retirementPatterns.some(pattern => pattern.test(lower))) {
+    return true
+  }
+
+  // Insurance and annuity products
+  const insuranceTerms = [
+    'annuity', 'annuities',
+    'life insurance', 'whole life', 'term life', 'universal life',
+    'variable life', 'indexed life', 'permanent life',
+    'long term care', 'ltc policy', 'disability insurance',
+    'policy #', 'policy no', 'pol #', 'pol no'
+  ]
+  if (insuranceTerms.some(term => lower.includes(term))) {
+    return true
+  }
+
+  // Investment account types
+  const investmentTerms = [
+    'brokerage', 'trading account', 'investment account',
+    'mutual fund', 'index fund', 'money market',
+    'cd ', 'certificate of deposit',  // note space after cd to avoid matching names
+    'savings bond', 'treasury'
+  ]
+  if (investmentTerms.some(term => lower.includes(term))) {
+    return true
+  }
+
+  // Financial institutions commonly seen in account names
+  const institutions = [
+    'fidelity', 'vanguard', 'schwab', 'ameritrade', 'td ameritrade',
+    'merrill', 'merrill lynch', 'morgan stanley', 'edward jones',
+    'northwestern mutual', 'lincoln financial', 'lincoln national',
+    'prudential', 'metlife', 'new york life', 'mass mutual', 'massmutual',
+    'transamerica', 'pacific life', 'american general', 'aig',
+    'nationwide', 'principal financial', 'tiaa', 'cref',
+    'jackson national', 'athene', 'allianz', 'brighthouse'
+  ]
+  if (institutions.some(inst => lower.includes(inst))) {
+    return true
+  }
+
+  // Account/policy number patterns (e.g., "John Smith #12345", "Acct 98765")
+  if (/#\s*\d{3,}/.test(text) || /acct\s*#?\s*\d+/i.test(text)) {
+    return true
+  }
+
+  return false
+}
+
+/**
  * Check if a contact is probably a person (not a business/entity/address)
  */
 export function isProbablyPerson(contact: LawmaticsContact): boolean {
@@ -248,6 +315,11 @@ export function isProbablyPerson(contact: LawmaticsContact): boolean {
 
   // Check if the "name" looks like an address
   if (looksLikeAddress(rawFullName) || looksLikeAddress(rawFirstName)) {
+    return false
+  }
+
+  // Check if the "name" looks like a financial account or insurance product
+  if (looksLikeFinancialProduct(rawFullName) || looksLikeFinancialProduct(rawFirstName)) {
     return false
   }
 
