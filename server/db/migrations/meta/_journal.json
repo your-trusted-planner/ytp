@@ -85,6 +85,13 @@
       "when": 1769291632684,
       "tag": "0011_mighty_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1769303171481,
+      "tag": "0012_loud_gunslinger",
+      "breakpoints": true
     }
   ]
 }
