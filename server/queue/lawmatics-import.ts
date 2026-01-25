@@ -436,29 +436,37 @@ async function processRecords(
     }
 
     case 'contacts': {
-      // Contacts are imported as people (not clients)
-      // Non-person records (businesses, trusts, etc.) are skipped
+      // Get existing emails to detect duplicates
+      const existingEmails = await getExistingEmails()
+
       for (const record of records) {
         try {
-          const transformed = transformers.transformContactToPerson(record, {
-            importRunId: runId
-          })
-
           // Skip non-person records (entities, businesses, trusts, etc.)
-          if (!transformed) {
+          if (!transformers.isProbablyPerson(record)) {
             result.skippedCount++
             continue
           }
 
-          const upsertResult = await upsert.upsertPerson(transformed)
+          // Transform contact to client (user + profile)
+          const transformed = transformers.transformContact(record, {
+            importRunId: runId,
+            existingEmails
+          })
+
+          const upsertResult = await upsert.upsertClient(transformed)
 
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
 
-          // Update people cache
-          if (peopleLookupCache) {
-            peopleLookupCache.set(record.id, upsertResult.id)
+          // Update client cache with the user ID
+          if (clientLookupCache) {
+            clientLookupCache.set(record.id, upsertResult.id)
+          }
+
+          // Track email to prevent duplicates in same batch
+          if (transformed.user.email) {
+            existingEmails.add(transformed.user.email.toLowerCase())
           }
         } catch (error) {
           result.errors.push({
@@ -472,6 +480,7 @@ async function processRecords(
     }
 
     case 'prospects': {
+      // Contacts are imported as users with role='CLIENT', so use client lookup
       const clientLookup = await getOrBuildClientLookup()
       const userLookup = await getOrBuildUserLookup()
 
