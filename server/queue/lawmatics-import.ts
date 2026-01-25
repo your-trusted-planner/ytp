@@ -674,6 +674,8 @@ async function processRecords(
       const matterLookup = await getOrBuildMatterLookup()
       const userLookup = await getOrBuildUserLookup()
 
+      console.log(`[Lawmatics Import] Notes phase - peopleLookup has ${peopleLookup.size} entries, matterLookup has ${matterLookup.size} entries`)
+
       // Get a default user ID for notes without a creator
       const { useDrizzle, schema } = await import('../db')
       const db = useDrizzle()
@@ -695,9 +697,17 @@ async function processRecords(
 
           if (!transformed) {
             // Skip - couldn't resolve entity
+            // Log what we were trying to resolve
+            const contactRel = record.relationships?.contact?.data
+            const prospectRel = record.relationships?.prospect?.data || record.relationships?.matter?.data
+            const contactId = Array.isArray(contactRel) ? contactRel[0]?.id : contactRel?.id
+            const prospectId = Array.isArray(prospectRel) ? prospectRel[0]?.id : prospectRel?.id
+
+            console.log(`[Lawmatics Import] Note ${record.id} failed - contactId: ${contactId || 'none'}, prospectId: ${prospectId || 'none'}`)
+
             result.errors.push({
               externalId: record.id,
-              message: 'Could not resolve entity for note',
+              message: `Could not resolve entity for note (contact: ${contactId || 'none'}, prospect: ${prospectId || 'none'})`,
               type: 'TRANSFORM'
             })
             continue
