@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
       or(
         like(schema.people.fullName, searchPattern),
         like(schema.people.email, searchPattern),
-        like(schema.people.entityName, searchPattern)
+        like(schema.people.phone, searchPattern)
       )
     )
   }
@@ -41,9 +41,6 @@ export default defineEventHandler(async (event) => {
       zipCode: p.zipCode,
       dateOfBirth: p.dateOfBirth ? p.dateOfBirth.getTime() : null,
       ssnLast4: p.ssnLast4,
-      entityName: p.entityName,
-      entityType: p.entityType,
-      entityEin: p.entityEin,
       notes: p.notes,
       createdAt: p.createdAt ? p.createdAt.getTime() : Date.now(),
       updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now(),
@@ -55,9 +52,6 @@ export default defineEventHandler(async (event) => {
       zip_code: p.zipCode,
       date_of_birth: p.dateOfBirth ? p.dateOfBirth.getTime() : null,
       ssn_last_4: p.ssnLast4,
-      entity_name: p.entityName,
-      entity_type: p.entityType,
-      entity_ein: p.entityEin,
       created_at: p.createdAt ? p.createdAt.getTime() : Date.now(),
       updated_at: p.updatedAt ? p.updatedAt.getTime() : Date.now()
     }))

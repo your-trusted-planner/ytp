@@ -65,19 +65,14 @@ export async function resolveEntityNames(
             firstName: schema.people.firstName,
             lastName: schema.people.lastName,
             fullName: schema.people.fullName,
-            email: schema.people.email,
-            entityName: schema.people.entityName,
-            personType: schema.people.personType
+            email: schema.people.email
           })
           .from(schema.people)
           .where(inArray(schema.people.id, personIds))
           .all()
 
         for (const person of people) {
-          // For entities, use entityName; for individuals, use name parts
-          const name = person.personType === 'entity'
-            ? person.entityName || 'Unknown Entity'
-            : person.fullName || [person.firstName, person.lastName].filter(Boolean).join(' ') || person.email || 'Unknown'
+          const name = person.fullName || [person.firstName, person.lastName].filter(Boolean).join(' ') || person.email || 'Unknown'
           results.set(`person:${person.id}`, name)
         }
       })()
@@ -97,9 +92,7 @@ export async function resolveEntityNames(
             firstName: schema.people.firstName,
             lastName: schema.people.lastName,
             fullName: schema.people.fullName,
-            email: schema.people.email,
-            entityName: schema.people.entityName,
-            personType: schema.people.personType
+            email: schema.people.email
           })
           .from(schema.clients)
           .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
@@ -108,9 +101,7 @@ export async function resolveEntityNames(
 
         const resolvedClientIds = new Set<string>()
         for (const client of clientsWithPeople) {
-          const name = client.personType === 'entity'
-            ? client.entityName || 'Unknown Entity'
-            : client.fullName || [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Unknown'
+          const name = client.fullName || [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Unknown'
           results.set(`client:${client.clientId}`, name)
           resolvedClientIds.add(client.clientId)
         }

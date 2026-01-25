@@ -109,9 +109,6 @@ export interface TransformedPerson {
   state: string | null
   zipCode: string | null
   dateOfBirth: Date | null
-  // For corporate entities detected by isProbablyPerson
-  entityName: string | null
-  entityType: string | null
   notes: string | null
   importMetadata: string
   createdAt: Date
@@ -541,8 +538,6 @@ export function transformContactToPerson(
     state: addressData.state,
     zipCode: addressData.zipCode,
     dateOfBirth,
-    entityName: null,
-    entityType: null,
     notes: null,
     importMetadata: serializeImportMetadata(metadata),
     createdAt,

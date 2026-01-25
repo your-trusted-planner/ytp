@@ -38,7 +38,7 @@
             to="/settings/integrations/lawmatics"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
           >
-            Configure
+            Manage
           </NuxtLink>
         </div>
       </UiCard>

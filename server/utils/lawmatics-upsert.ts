@@ -333,8 +333,6 @@ export async function upsertPerson(
         state: transformed.state,
         zipCode: transformed.zipCode,
         dateOfBirth: transformed.dateOfBirth,
-        entityName: transformed.entityName,
-        entityType: transformed.entityType,
         importMetadata: updateImportMetadataTimestamp(transformed.importMetadata),
         updatedAt: new Date()
       })
@@ -356,8 +354,6 @@ export async function upsertPerson(
     state: transformed.state,
     zipCode: transformed.zipCode,
     dateOfBirth: transformed.dateOfBirth,
-    entityName: transformed.entityName,
-    entityType: transformed.entityType,
     notes: transformed.notes,
     importMetadata: transformed.importMetadata,
     createdAt: transformed.createdAt,

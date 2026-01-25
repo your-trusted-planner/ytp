@@ -852,10 +852,6 @@ export const people = sqliteTable('people', {
   // Additional Details
   dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
   ssnLast4: text('ssn_last_4'),
-  // For Corporate Entities
-  entityName: text('entity_name'),
-  entityType: text('entity_type'),
-  entityEin: text('entity_ein'),
   // Notes
   notes: text('notes'),
   // Import tracking
