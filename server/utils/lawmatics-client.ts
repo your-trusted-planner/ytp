@@ -297,12 +297,45 @@ export class LawmaticsClient {
 
     const response = await this.request<T>(endpoint, params)
 
-    const pagination = response.meta?.pagination ?? {
-      current_page: page,
-      total_pages: 1,
-      total_count: response.data.length,
-      per_page: perPage
+    // Parse pagination from various possible response formats
+    const meta = response.meta as Record<string, any> | undefined
+    const paginationData = meta?.pagination
+
+    // Log raw pagination data for debugging
+    this.log(`Raw pagination data for ${endpoint}:`, {
+      meta,
+      paginationData,
+      dataLength: response.data.length
+    })
+
+    // Handle different pagination field names that Lawmatics might use
+    const apiPerPage = paginationData?.per_page ?? paginationData?.limit ?? response.data.length
+    const pagination = {
+      current_page: paginationData?.current_page ?? paginationData?.page ?? page,
+      total_pages: paginationData?.total_pages ?? paginationData?.pages ?? paginationData?.page_count ?? 1,
+      total_count: paginationData?.total_count ?? paginationData?.total ?? paginationData?.count ?? response.data.length,
+      per_page: apiPerPage
     }
+
+    // Calculate hasMore based on available data
+    // If we got a full page of results (based on what API actually returned as per_page), assume there might be more
+    // Also check if totalCount > records we've seen so far
+    const recordsSeen = (pagination.current_page - 1) * pagination.per_page + response.data.length
+    const hasMore = pagination.current_page < pagination.total_pages ||
+      (pagination.total_pages <= 1 && response.data.length >= apiPerPage && response.data.length > 0) ||
+      (pagination.total_count > recordsSeen)
+
+    this.log(`Parsed pagination for ${endpoint}:`, {
+      currentPage: pagination.current_page,
+      totalPages: pagination.total_pages,
+      totalCount: pagination.total_count,
+      perPage: pagination.per_page,
+      requestedPerPage: perPage,
+      apiPerPage,
+      recordsSeen,
+      hasMore,
+      receivedCount: response.data.length
+    })
 
     return {
       data: response.data,
@@ -311,7 +344,7 @@ export class LawmaticsClient {
         totalPages: pagination.total_pages,
         totalCount: pagination.total_count,
         perPage: pagination.per_page,
-        hasMore: pagination.current_page < pagination.total_pages && response.data.length > 0
+        hasMore
       }
     }
   }
@@ -321,13 +354,16 @@ export class LawmaticsClient {
    */
   async fetchAll<T extends LawmaticsEntity>(
     endpoint: string,
-    options: PaginationOptions & { fields?: string; onProgress?: (page: number, total: number) => void } = {}
+    options: PaginationOptions & { fields?: string; onProgress?: (page: number, total: number) => void; maxPages?: number } = {}
   ): Promise<T[]> {
     const allData: T[] = []
     let page = options.page ?? 1
     const perPage = options.perPage ?? DEFAULT_PAGE_SIZE
+    // Safety limit to prevent infinite loops (default 1000 pages = 100k records at 100/page)
+    const maxPages = options.maxPages ?? 1000
+    let consecutiveEmptyPages = 0
 
-    while (true) {
+    while (page <= maxPages) {
       const result = await this.fetchPage<T>(endpoint, {
         ...options,
         page,
@@ -340,11 +376,26 @@ export class LawmaticsClient {
         options.onProgress(page, result.pagination.totalPages)
       }
 
+      // Track empty pages to detect end of data even if hasMore is wrong
+      if (result.data.length === 0) {
+        consecutiveEmptyPages++
+        if (consecutiveEmptyPages >= 2) {
+          this.log(`Breaking due to ${consecutiveEmptyPages} consecutive empty pages`)
+          break
+        }
+      } else {
+        consecutiveEmptyPages = 0
+      }
+
       if (!result.pagination.hasMore) {
         break
       }
 
       page++
+    }
+
+    if (page > maxPages) {
+      this.log(`Warning: Hit max pages limit (${maxPages}) while fetching ${endpoint}`)
     }
 
     return allData

@@ -141,11 +141,13 @@ async function handleImportPage(
   }
 
   // Get Lawmatics client (pass env context for decryption)
+  // Enable debug mode to log pagination details
   const { createLawmaticsClientFromIntegration } = await import('../utils/lawmatics-client')
   const client = await createLawmaticsClientFromIntegration(
     { cloudflareEnv: env },
     integration.id,
-    integration.credentialsKey
+    integration.credentialsKey,
+    { debug: true }
   )
 
   // Fetch page based on phase
