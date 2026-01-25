@@ -55,11 +55,15 @@
         :data="clients"
         :columns="columns"
         :loading="loading"
+        :pagination="pagination ?? undefined"
         loading-text="Loading clients..."
         empty-text="No clients yet"
         default-sort-key="createdAt"
         default-sort-direction="desc"
         @row-click="navigateToClient"
+        @sort="handleSort"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
       >
         <!-- Name column with custom rendering -->
         <template #cell-name="{ row }">
@@ -135,7 +139,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
-import type { Column } from '~/components/ui/DataTable.vue'
+import type { Column, PaginationMeta } from '~/components/ui/DataTable.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -147,6 +151,11 @@ const clients = ref<any[]>([])
 const loading = ref(true)
 const showAddModal = ref(false)
 const saving = ref(false)
+const pagination = ref<PaginationMeta | null>(null)
+const currentPage = ref(1)
+const currentLimit = ref(25)
+const sortBy = ref<string>('createdAt')
+const sortDirection = ref<'asc' | 'desc'>('desc')
 
 const newClient = ref({
   firstName: '',
@@ -219,13 +228,40 @@ const driveStatus = ref<{
 const fetchClients = async () => {
   loading.value = true
   try {
-    const response = await $fetch<{ clients: any[] }>('/api/clients')
+    const response = await $fetch<{ clients: any[], pagination?: PaginationMeta }>('/api/clients', {
+      params: {
+        page: currentPage.value,
+        limit: currentLimit.value,
+        sortBy: sortBy.value,
+        sortDirection: sortDirection.value
+      }
+    })
     clients.value = response.clients
+    pagination.value = response.pagination || null
   } catch (error) {
     console.error('Failed to fetch clients:', error)
   } finally {
     loading.value = false
   }
+}
+
+// Pagination handlers
+const handlePageChange = async (page: number) => {
+  currentPage.value = page
+  await fetchClients()
+}
+
+const handlePageSizeChange = async (limit: number) => {
+  currentLimit.value = limit
+  currentPage.value = 1 // Reset to first page
+  await fetchClients()
+}
+
+const handleSort = async (key: string, direction: 'asc' | 'desc') => {
+  sortBy.value = key
+  sortDirection.value = direction
+  currentPage.value = 1 // Reset to first page
+  await fetchClients()
 }
 
 const handleAddClient = async () => {

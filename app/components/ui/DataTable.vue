@@ -68,14 +68,62 @@
       </table>
     </div>
 
-    <!-- Footer slot for summaries, pagination, etc. -->
+    <!-- Pagination Footer (when pagination prop is provided) -->
+    <div v-if="pagination" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+      <!-- Page info -->
+      <div class="text-sm text-gray-700">
+        Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Page size selector -->
+        <div class="flex items-center gap-2">
+          <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+          <select
+            id="page-size"
+            :value="pagination.limit"
+            class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+            @change="handlePageSizeChange"
+          >
+            <option v-for="size in effectivePageSizeOptions" :key="size" :value="size">
+              {{ size }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Page navigation -->
+        <div class="flex items-center gap-2">
+          <button
+            :disabled="!pagination.hasPrevPage"
+            class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="handlePrevPage"
+          >
+            <ChevronLeft class="w-5 h-5" />
+          </button>
+
+          <span class="text-sm text-gray-700">
+            Page {{ pagination.page }} of {{ pagination.totalPages }}
+          </span>
+
+          <button
+            :disabled="!pagination.hasNextPage"
+            class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="handleNextPage"
+          >
+            <ChevronRight class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer slot for summaries, custom pagination, etc. -->
     <slot name="footer" :data="sortedData"></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 export interface Column {
   /** Field key - supports nested paths like 'user.name' */
@@ -100,6 +148,15 @@ export interface Column {
   stopPropagation?: boolean
 }
 
+export interface PaginationMeta {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 interface Props {
   /** Array of data objects to display */
   data: any[]
@@ -117,6 +174,10 @@ interface Props {
   defaultSortKey?: string
   /** Initial sort direction */
   defaultSortDirection?: 'asc' | 'desc'
+  /** Pagination metadata (if provided, shows pagination controls) */
+  pagination?: PaginationMeta
+  /** Available page size options */
+  pageSizeOptions?: number[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -124,12 +185,15 @@ const props = withDefaults(defineProps<Props>(), {
   loadingText: 'Loading...',
   emptyText: 'No data available',
   rowKey: 'id',
-  defaultSortDirection: 'asc'
+  defaultSortDirection: 'asc',
+  pageSizeOptions: () => [10, 25, 50, 100]
 })
 
 const emit = defineEmits<{
   (e: 'row-click', row: any): void
   (e: 'sort', key: string, direction: 'asc' | 'desc'): void
+  (e: 'page-change', page: number): void
+  (e: 'page-size-change', limit: number): void
 }>()
 
 // Check if row click handler is bound
@@ -217,6 +281,47 @@ const sortedData = computed(() => {
 // Handle row click
 const handleRowClick = (row: any) => {
   emit('row-click', row)
+}
+
+// Pagination computed properties
+const effectivePageSizeOptions = computed(() => {
+  // Make sure current limit is in the options
+  const options = [...props.pageSizeOptions]
+  if (props.pagination && !options.includes(props.pagination.limit)) {
+    options.push(props.pagination.limit)
+    options.sort((a, b) => a - b)
+  }
+  return options
+})
+
+const paginationStartItem = computed(() => {
+  if (!props.pagination) return 0
+  return (props.pagination.page - 1) * props.pagination.limit + 1
+})
+
+const paginationEndItem = computed(() => {
+  if (!props.pagination) return 0
+  const end = props.pagination.page * props.pagination.limit
+  return Math.min(end, props.pagination.totalCount)
+})
+
+// Pagination handlers
+const handlePageSizeChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const newLimit = parseInt(target.value, 10)
+  emit('page-size-change', newLimit)
+}
+
+const handlePrevPage = () => {
+  if (props.pagination && props.pagination.hasPrevPage) {
+    emit('page-change', props.pagination.page - 1)
+  }
+}
+
+const handleNextPage = () => {
+  if (props.pagination && props.pagination.hasNextPage) {
+    emit('page-change', props.pagination.page + 1)
+  }
 }
 
 // Expose methods for parent component

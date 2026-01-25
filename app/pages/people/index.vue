@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { Plus, Search, Edit, Trash2, X, Building2, User, Minus } from 'lucide-vue-next'
+import { ref, reactive, computed, watch } from 'vue'
+import { Plus, Search, Edit, Trash2, X, Building2, User, Minus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: ['auth'],
@@ -29,6 +29,15 @@ interface Person {
   updatedAt: number
 }
 
+interface PaginationMeta {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 const people = ref<Person[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
@@ -36,6 +45,12 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const editingPerson = ref<Person | null>(null)
 const savingPerson = ref(false)
+
+// Pagination state
+const pagination = ref<PaginationMeta | null>(null)
+const currentPage = ref(1)
+const currentLimit = ref(25)
+const pageSizeOptions = [10, 25, 50, 100]
 
 const personForm = reactive({
   mode: 'person' as 'person' | 'entity',
@@ -86,14 +101,22 @@ function removeMiddleName(index: number) {
   }
 }
 
-// Fetch all people
+// Debounce search
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Fetch all people with pagination
 async function fetchPeople() {
   loading.value = true
   try {
-    const data = await $fetch<{ people: Person[] }>('/api/people', {
-      params: { search: searchQuery.value }
+    const data = await $fetch<{ people: Person[], pagination?: PaginationMeta }>('/api/people', {
+      params: {
+        search: searchQuery.value,
+        page: currentPage.value,
+        limit: currentLimit.value
+      }
     })
     people.value = data.people || []
+    pagination.value = data.pagination || null
   } catch (error) {
     console.error('Error fetching people:', error)
   } finally {
@@ -101,17 +124,41 @@ async function fetchPeople() {
   }
 }
 
-// Filtered people based on search
-const filteredPeople = computed(() => {
-  if (!searchQuery.value) return people.value
+// Handle search with debounce
+function handleSearchInput() {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1 // Reset to first page on search
+    fetchPeople()
+  }, 300)
+}
 
-  const query = searchQuery.value.toLowerCase()
-  return people.value.filter(person =>
-    person.fullName.toLowerCase().includes(query) ||
-    person.email?.toLowerCase().includes(query) ||
-    person.phone?.includes(query) ||
-    person.entityName?.toLowerCase().includes(query)
-  )
+// Pagination handlers
+function goToPage(page: number) {
+  if (pagination.value) {
+    if (page < 1) page = 1
+    if (page > pagination.value.totalPages) page = pagination.value.totalPages
+  }
+  currentPage.value = page
+  fetchPeople()
+}
+
+function setPageSize(limit: number) {
+  currentLimit.value = limit
+  currentPage.value = 1
+  fetchPeople()
+}
+
+// Computed for pagination display
+const paginationStartItem = computed(() => {
+  if (!pagination.value) return 0
+  return (pagination.value.page - 1) * pagination.value.limit + 1
+})
+
+const paginationEndItem = computed(() => {
+  if (!pagination.value) return 0
+  const end = pagination.value.page * pagination.value.limit
+  return Math.min(end, pagination.value.totalCount)
 })
 
 // Reset form
@@ -338,7 +385,7 @@ onMounted(() => {
           type="text"
           placeholder="Search by name, email, phone..."
           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-          @input="fetchPeople"
+          @input="handleSearchInput"
         />
       </div>
     </div>
@@ -349,7 +396,7 @@ onMounted(() => {
         Loading people...
       </div>
 
-      <div v-else-if="filteredPeople.length === 0" class="p-8 text-center text-gray-500">
+      <div v-else-if="people.length === 0" class="p-8 text-center text-gray-500">
         <p>No people found</p>
         <UiButton variant="outline" size="sm" @click="openAddModal" class="mt-4">
           <Plus class="w-4 h-4 mr-2" />
@@ -381,7 +428,7 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr v-for="person in filteredPeople" :key="person.id" class="hover:bg-gray-50">
+          <tr v-for="person in people" :key="person.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <Building2 v-if="person.entityName" class="w-5 h-5 text-gray-400 mr-2" />
@@ -430,6 +477,54 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+
+      <!-- Pagination Controls -->
+      <div v-if="pagination" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <!-- Page info -->
+        <div class="text-sm text-gray-700">
+          Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Page size selector -->
+          <div class="flex items-center gap-2">
+            <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+            <select
+              id="page-size"
+              :value="currentLimit"
+              class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+              @change="setPageSize(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="size in pageSizeOptions" :key="size" :value="size">
+                {{ size }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Page navigation -->
+          <div class="flex items-center gap-2">
+            <button
+              :disabled="!pagination.hasPrevPage"
+              class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="goToPage(pagination.page - 1)"
+            >
+              <ChevronLeft class="w-5 h-5" />
+            </button>
+
+            <span class="text-sm text-gray-700">
+              Page {{ pagination.page }} of {{ pagination.totalPages }}
+            </span>
+
+            <button
+              :disabled="!pagination.hasNextPage"
+              class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="goToPage(pagination.page + 1)"
+            >
+              <ChevronRight class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Add Person Modal -->

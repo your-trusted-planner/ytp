@@ -157,6 +157,54 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="pagination && !hasActiveFilters" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <!-- Page info -->
+        <div class="text-sm text-gray-700">
+          Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Page size selector -->
+          <div class="flex items-center gap-2">
+            <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+            <select
+              id="page-size"
+              :value="currentLimit"
+              class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+              @change="setPageSize(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="size in pageSizeOptions" :key="size" :value="size">
+                {{ size }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Page navigation -->
+          <div class="flex items-center gap-2">
+            <button
+              :disabled="!pagination.hasPrevPage"
+              class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="goToPage(pagination.page - 1)"
+            >
+              <ChevronLeft class="w-5 h-5" />
+            </button>
+
+            <span class="text-sm text-gray-700">
+              Page {{ pagination.page }} of {{ pagination.totalPages }}
+            </span>
+
+            <button
+              :disabled="!pagination.hasNextPage"
+              class="p-1 rounded-md text-gray-500 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="goToPage(pagination.page + 1)"
+            >
+              <ChevronRight class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
     </UiCard>
 
     <!-- Add/Edit Matter Modal -->
@@ -177,12 +225,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { formatCurrency } from '~/utils/format'
-import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, X, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
 })
+
+interface PaginationMeta {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
 
 const router = useRouter()
 
@@ -198,6 +255,12 @@ const defaultClientId = ref('')
 const searchQuery = ref('')
 const statusFilter = ref('')
 const clientFilter = ref('')
+
+// Pagination state
+const pagination = ref<PaginationMeta | null>(null)
+const currentPage = ref(1)
+const currentLimit = ref(25)
+const pageSizeOptions = [10, 25, 50, 100]
 
 // Refs for dropdowns
 const lawyers = ref<any[]>([])
@@ -254,14 +317,54 @@ const clearFilters = () => {
 const fetchMatters = async () => {
   loading.value = true
   try {
-    const response = await $fetch<any[]>('/api/matters')
-    matters.value = response || []
+    const response = await $fetch<any>('/api/matters', {
+      params: {
+        page: currentPage.value,
+        limit: currentLimit.value
+      }
+    })
+    // Handle both paginated and non-paginated responses
+    if (response.matters) {
+      matters.value = response.matters
+      pagination.value = response.pagination || null
+    } else if (Array.isArray(response)) {
+      matters.value = response
+      pagination.value = null
+    }
   } catch (error) {
     console.error('Failed to fetch matters:', error)
   } finally {
     loading.value = false
   }
 }
+
+// Pagination handlers
+function goToPage(page: number) {
+  if (pagination.value) {
+    if (page < 1) page = 1
+    if (page > pagination.value.totalPages) page = pagination.value.totalPages
+  }
+  currentPage.value = page
+  fetchMatters()
+}
+
+function setPageSize(limit: number) {
+  currentLimit.value = limit
+  currentPage.value = 1
+  fetchMatters()
+}
+
+// Computed for pagination display
+const paginationStartItem = computed(() => {
+  if (!pagination.value) return 0
+  return (pagination.value.page - 1) * pagination.value.limit + 1
+})
+
+const paginationEndItem = computed(() => {
+  if (!pagination.value) return 0
+  const end = pagination.value.page * pagination.value.limit
+  return Math.min(end, pagination.value.totalCount)
+})
 
 const fetchClients = async () => {
   try {
