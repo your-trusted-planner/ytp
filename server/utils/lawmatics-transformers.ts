@@ -477,20 +477,20 @@ export function transformContact(
 
 /**
  * Transform a Lawmatics contact to our people table format
+ * Returns null for non-person records (businesses, trusts, etc.) - these are skipped
  */
 export function transformContactToPerson(
   contact: LawmaticsContact,
   options: {
     importRunId?: string
   } = {}
-): TransformedPerson {
-  const flags: ImportFlag[] = []
-
-  // Detect non-person records (businesses, trusts, etc.)
-  const isPersonRecord = isProbablyPerson(contact)
-  if (!isPersonRecord) {
-    flags.push('POSSIBLY_NOT_PERSON')
+): TransformedPerson | null {
+  // Skip non-person records (businesses, trusts, etc.)
+  if (!isProbablyPerson(contact)) {
+    return null
   }
+
+  const flags: ImportFlag[] = []
 
   // Check for missing name
   if (!contact.attributes.first_name && !contact.attributes.last_name) {
@@ -529,15 +529,6 @@ export function transformContactToPerson(
   const lastName = contact.attributes.last_name || null
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || null
 
-  // For non-person records, capture entity info
-  let entityName: string | null = null
-  let entityType: string | null = null
-  if (!isPersonRecord) {
-    // Use the name as entity name
-    entityName = fullName
-    entityType = contact.attributes.contact_type || 'UNKNOWN'
-  }
-
   return {
     id: nanoid(),
     firstName,
@@ -550,8 +541,8 @@ export function transformContactToPerson(
     state: addressData.state,
     zipCode: addressData.zipCode,
     dateOfBirth,
-    entityName,
-    entityType,
+    entityName: null,
+    entityType: null,
     notes: null,
     importMetadata: serializeImportMetadata(metadata),
     createdAt,

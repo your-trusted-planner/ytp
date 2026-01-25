@@ -205,17 +205,20 @@ async function handleImportPage(
   console.log(`[Lawmatics Import] Fetched ${pageResult.data.length} ${phase} records`)
 
   // Transform and upsert records
-  const { processedCount, createdCount, updatedCount, errors } = await processRecords(
+  const { processedCount, createdCount, updatedCount, skippedCount, errors } = await processRecords(
     phase,
     pageResult.data,
     runId
   )
+
+  console.log(`[Lawmatics Import] ${phase} page ${page}: processed=${processedCount}, created=${createdCount}, updated=${updatedCount}, skipped=${skippedCount}, errors=${errors.length}`)
 
   // Update progress
   await updateRunProgress(runId, {
     processedEntities: processedCount,
     createdRecords: createdCount,
     updatedRecords: updatedCount,
+    skippedRecords: skippedCount,
     errorCount: errors.length,
     checkpoint: {
       phase,
@@ -326,6 +329,7 @@ interface ProcessResult {
   processedCount: number
   createdCount: number
   updatedCount: number
+  skippedCount: number
   errors: Array<{ externalId?: string; message: string; type: string }>
 }
 
@@ -401,6 +405,7 @@ async function processRecords(
     processedCount: 0,
     createdCount: 0,
     updatedCount: 0,
+    skippedCount: 0,
     errors: []
   }
 
@@ -432,11 +437,19 @@ async function processRecords(
 
     case 'contacts': {
       // Contacts are imported as people (not clients)
+      // Non-person records (businesses, trusts, etc.) are skipped
       for (const record of records) {
         try {
           const transformed = transformers.transformContactToPerson(record, {
             importRunId: runId
           })
+
+          // Skip non-person records (entities, businesses, trusts, etc.)
+          if (!transformed) {
+            result.skippedCount++
+            continue
+          }
+
           const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
@@ -691,6 +704,7 @@ async function updateRunProgress(
     processedEntities: number
     createdRecords: number
     updatedRecords: number
+    skippedRecords: number
     errorCount: number
     checkpoint: { phase: string; page: number; timestamp: string }
   }
@@ -705,6 +719,7 @@ async function updateRunProgress(
       processedEntities: sql`${schema.migrationRuns.processedEntities} + ${progress.processedEntities}`,
       createdRecords: sql`${schema.migrationRuns.createdRecords} + ${progress.createdRecords}`,
       updatedRecords: sql`${schema.migrationRuns.updatedRecords} + ${progress.updatedRecords}`,
+      skippedRecords: sql`${schema.migrationRuns.skippedRecords} + ${progress.skippedRecords}`,
       errorCount: sql`${schema.migrationRuns.errorCount} + ${progress.errorCount}`,
       checkpoint: JSON.stringify(progress.checkpoint),
       updatedAt: new Date()
