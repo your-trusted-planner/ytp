@@ -393,6 +393,121 @@ export function clearLookupCaches(): void {
   existingEmailsCache = null
 }
 
+/**
+ * Build a map of personId -> userId for people who already have user accounts
+ */
+async function buildPersonToUserMap(): Promise<Map<string, string>> {
+  const { useDrizzle, schema } = await import('../db')
+  const { isNotNull } = await import('drizzle-orm')
+  const db = useDrizzle()
+
+  const users = await db.select({
+    id: schema.users.id,
+    personId: schema.users.personId
+  })
+    .from(schema.users)
+    .where(isNotNull(schema.users.personId))
+    .all()
+
+  const map = new Map<string, string>()
+  for (const user of users) {
+    if (user.personId) {
+      map.set(user.personId, user.id)
+    }
+  }
+  return map
+}
+
+/**
+ * Ensure a person has a client record and a user account.
+ * This is called when we encounter a prospect for a person who was imported as a contact.
+ * Returns the user ID to use as the matter's clientId.
+ */
+async function ensurePersonIsClient(
+  personId: string,
+  contactExternalId: string,
+  runId: string
+): Promise<string> {
+  const { useDrizzle, schema } = await import('../db')
+  const { eq } = await import('drizzle-orm')
+  const { nanoid } = await import('nanoid')
+  const db = useDrizzle()
+
+  // Get the person's details
+  const person = await db.select()
+    .from(schema.people)
+    .where(eq(schema.people.id, personId))
+    .get()
+
+  if (!person) {
+    throw new Error(`Person ${personId} not found`)
+  }
+
+  // Check if a user already exists for this person
+  const existingUser = await db.select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.personId, personId))
+    .get()
+
+  if (existingUser) {
+    return existingUser.id
+  }
+
+  // Create a new user account for this person
+  const userId = nanoid()
+  const now = new Date()
+
+  // Generate a placeholder email if the person doesn't have one
+  const email = person.email || `lawmatics.${contactExternalId}@imported.local`
+
+  await db.insert(schema.users).values({
+    id: userId,
+    personId: personId,
+    email: email,
+    firstName: person.firstName,
+    lastName: person.lastName,
+    phone: person.phone,
+    role: 'CLIENT',
+    status: 'ACTIVE',
+    importMetadata: JSON.stringify({
+      source: 'LAWMATICS',
+      externalId: contactExternalId,
+      importRunId: runId,
+      createdAt: now.toISOString(),
+      note: 'Auto-created when prospect was imported'
+    }),
+    createdAt: now,
+    updatedAt: now
+  })
+
+  // Check if a client record already exists for this person
+  const existingClient = await db.select({ id: schema.clients.id })
+    .from(schema.clients)
+    .where(eq(schema.clients.personId, personId))
+    .get()
+
+  if (!existingClient) {
+    // Create a client record
+    const clientId = nanoid()
+    await db.insert(schema.clients).values({
+      id: clientId,
+      personId: personId,
+      status: 'ACTIVE',
+      importMetadata: JSON.stringify({
+        source: 'LAWMATICS',
+        externalId: contactExternalId,
+        importRunId: runId,
+        createdAt: now.toISOString(),
+        note: 'Auto-created when prospect was imported'
+      }),
+      createdAt: now,
+      updatedAt: now
+    })
+  }
+
+  return userId
+}
+
 async function processRecords(
   phase: ImportPhase,
   records: any[],
@@ -436,37 +551,29 @@ async function processRecords(
     }
 
     case 'contacts': {
-      // Get existing emails to detect duplicates
-      const existingEmails = await getExistingEmails()
-
+      // Contacts are imported as people (not clients)
+      // Non-person records (businesses, trusts, etc.) are skipped
       for (const record of records) {
         try {
+          const transformed = transformers.transformContactToPerson(record, {
+            importRunId: runId
+          })
+
           // Skip non-person records (entities, businesses, trusts, etc.)
-          if (!transformers.isProbablyPerson(record)) {
+          if (!transformed) {
             result.skippedCount++
             continue
           }
 
-          // Transform contact to client (user + profile)
-          const transformed = transformers.transformContact(record, {
-            importRunId: runId,
-            existingEmails
-          })
-
-          const upsertResult = await upsert.upsertClient(transformed)
+          const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
 
-          // Update client cache with the user ID
-          if (clientLookupCache) {
-            clientLookupCache.set(record.id, upsertResult.id)
-          }
-
-          // Track email to prevent duplicates in same batch
-          if (transformed.user.email) {
-            existingEmails.add(transformed.user.email.toLowerCase())
+          // Update people cache
+          if (peopleLookupCache) {
+            peopleLookupCache.set(record.id, upsertResult.id)
           }
         } catch (error) {
           result.errors.push({
@@ -480,23 +587,62 @@ async function processRecords(
     }
 
     case 'prospects': {
-      // Contacts are imported as users with role='CLIENT', so use client lookup
-      const clientLookup = await getOrBuildClientLookup()
+      // Contacts are imported as people - we need to ensure they become clients/users
+      const peopleLookup = await getOrBuildPeopleLookup()
       const userLookup = await getOrBuildUserLookup()
+
+      // Build a map of personId -> userId for people who already have user accounts
+      const personToUserMap = await buildPersonToUserMap()
 
       for (const record of records) {
         try {
+          // First, find the person for this prospect's contact
+          const contactRelation = record.relationships?.contact?.data
+          const contactExternalId = Array.isArray(contactRelation)
+            ? contactRelation[0]?.id
+            : contactRelation?.id
+
+          if (!contactExternalId) {
+            result.errors.push({
+              externalId: record.id,
+              message: 'Prospect has no contact relationship',
+              type: 'TRANSFORM'
+            })
+            continue
+          }
+
+          const personId = peopleLookup.get(contactExternalId)
+          if (!personId) {
+            result.errors.push({
+              externalId: record.id,
+              message: `Could not find person for contact ${contactExternalId}`,
+              type: 'TRANSFORM'
+            })
+            continue
+          }
+
+          // Ensure this person has a user account (creates client + user if needed)
+          let userId = personToUserMap.get(personId)
+          if (!userId) {
+            userId = await ensurePersonIsClient(personId, contactExternalId, runId)
+            personToUserMap.set(personId, userId)
+            // Also update the client lookup cache
+            if (clientLookupCache) {
+              clientLookupCache.set(contactExternalId, userId)
+            }
+          }
+
+          // Now transform the prospect with the user ID as the client
           const transformed = transformers.transformProspect(record, {
             importRunId: runId,
-            clientLookup: (externalId) => clientLookup.get(externalId) || null,
+            clientLookup: (extId) => extId === contactExternalId ? userId! : null,
             userLookup: (externalId) => userLookup.get(externalId) || null
           })
 
           if (!transformed) {
-            // Skip - couldn't resolve client
             result.errors.push({
               externalId: record.id,
-              message: 'Could not resolve client for prospect',
+              message: 'Could not transform prospect',
               type: 'TRANSFORM'
             })
             continue
