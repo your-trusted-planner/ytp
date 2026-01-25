@@ -81,7 +81,7 @@ const lastSync = ref<string | null>(null)
 onMounted(async () => {
   try {
     const { integrations } = await $fetch<{ integrations: any[] }>('/api/admin/integrations')
-    const lawmatics = integrations.find(i => i.type === 'lawmatics')
+    const lawmatics = integrations.find(i => i.type === 'LAWMATICS')
     if (lawmatics) {
       lawmaticsStatus.value = lawmatics.status === 'CONNECTED' ? 'connected' :
                               lawmatics.status === 'ERROR' ? 'error' : 'not_configured'

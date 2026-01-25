@@ -14,7 +14,37 @@
       </div>
     </div>
 
-    <!-- Connection Status Card -->
+    <!-- Data Migration Card -->
+    <UiCard v-if="integration?.status === 'CONNECTED'">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Data Migration</h3>
+            <p class="text-sm text-gray-600 mt-1">Import data from Lawmatics into the system</p>
+          </div>
+          <NuxtLink to="/settings/integrations/lawmatics/migrate">
+            <UiButton>
+              <Upload class="w-4 h-4 mr-2" />
+              Start Migration
+            </UiButton>
+          </NuxtLink>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+          <div v-for="entity in entityStats" :key="entity.type" class="p-4 bg-gray-50 rounded-lg">
+            <p class="text-2xl font-bold text-gray-900">{{ entity.count }}</p>
+            <p class="text-sm text-gray-600">{{ entity.label }}</p>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 text-center">
+          Total records imported from Lawmatics
+        </p>
+      </div>
+    </UiCard>
+
+    <!-- Connection Settings Card -->
     <UiCard title="Connection Settings">
       <div class="space-y-6">
         <!-- Status Indicator -->
@@ -100,36 +130,6 @@
       </div>
     </UiCard>
 
-    <!-- Data Migration Card -->
-    <UiCard v-if="integration?.status === 'CONNECTED'">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900">Data Migration</h3>
-            <p class="text-sm text-gray-600 mt-1">Import data from Lawmatics into the system</p>
-          </div>
-          <NuxtLink to="/settings/integrations/lawmatics/migrate">
-            <UiButton>
-              <Upload class="w-4 h-4 mr-2" />
-              Start Migration
-            </UiButton>
-          </NuxtLink>
-        </div>
-      </template>
-
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-          <div v-for="entity in entityStats" :key="entity.type" class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-2xl font-bold text-gray-900">{{ entity.count }}</p>
-            <p class="text-sm text-gray-600">{{ entity.label }}</p>
-          </div>
-        </div>
-        <p class="text-xs text-gray-500 text-center">
-          Total records imported from Lawmatics
-        </p>
-      </div>
-    </UiCard>
-
     <!-- Danger Zone -->
     <UiCard v-if="integration?.id" class="border-red-200">
       <template #header>
@@ -177,6 +177,7 @@ const testResult = ref<{ success: boolean; error?: string } | null>(null)
 
 const entityStats = ref([
   { type: 'users', label: 'Users', count: 0 },
+  { type: 'people', label: 'People', count: 0 },
   { type: 'clients', label: 'Clients', count: 0 },
   { type: 'matters', label: 'Matters', count: 0 },
   { type: 'notes', label: 'Notes', count: 0 },
@@ -227,6 +228,7 @@ async function loadImportStats() {
 
     entityStats.value = [
       { type: 'users', label: 'Users', count: stats.users },
+      { type: 'people', label: 'People', count: stats.people },
       { type: 'clients', label: 'Clients', count: stats.clients },
       { type: 'matters', label: 'Matters', count: stats.matters },
       { type: 'notes', label: 'Notes', count: stats.notes },
