@@ -135,14 +135,46 @@
       <template #header>
         <h3 class="text-lg font-semibold text-red-700">Danger Zone</h3>
       </template>
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-700">Remove this integration</p>
-          <p class="text-xs text-gray-500">This will delete the stored credentials. Imported data will not be affected.</p>
+      <div class="space-y-6">
+        <!-- Clean Up Imports -->
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-700">Clean up imported data</p>
+            <p class="text-xs text-gray-500">Remove all records imported from Lawmatics (people, clients, users, relationships, notes)</p>
+          </div>
+          <div class="flex gap-2">
+            <UiButton variant="outline" size="sm" @click="previewCleanup" :is-loading="cleanupPreviewing">
+              Preview
+            </UiButton>
+            <UiButton variant="danger" size="sm" @click="cleanupImports" :is-loading="cleanupRunning" :disabled="!cleanupPreview">
+              Clean Up
+            </UiButton>
+          </div>
         </div>
-        <UiButton variant="danger" @click="deleteIntegration" :is-loading="deleting">
-          Delete Integration
-        </UiButton>
+
+        <!-- Cleanup Preview -->
+        <div v-if="cleanupPreview" class="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p class="text-sm font-medium text-red-800 mb-2">Records to be deleted:</p>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+            <div v-for="(count, type) in cleanupPreview" :key="type" class="bg-white rounded p-2">
+              <p class="text-lg font-bold text-red-700">{{ count }}</p>
+              <p class="text-xs text-gray-600 capitalize">{{ type }}</p>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-gray-200" />
+
+        <!-- Delete Integration -->
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-700">Remove this integration</p>
+            <p class="text-xs text-gray-500">This will delete the stored credentials. Imported data will not be affected.</p>
+          </div>
+          <UiButton variant="danger" @click="deleteIntegration" :is-loading="deleting">
+            Delete Integration
+          </UiButton>
+        </div>
       </div>
     </UiCard>
   </div>
@@ -174,6 +206,11 @@ const saving = ref(false)
 const testing = ref(false)
 const deleting = ref(false)
 const testResult = ref<{ success: boolean; error?: string } | null>(null)
+
+// Cleanup state
+const cleanupPreviewing = ref(false)
+const cleanupRunning = ref(false)
+const cleanupPreview = ref<Record<string, number> | null>(null)
 
 const entityStats = ref([
   { type: 'users', label: 'Users', count: 0 },
@@ -324,6 +361,47 @@ async function deleteIntegration() {
     toast.error(error.data?.message || 'Failed to delete integration')
   } finally {
     deleting.value = false
+  }
+}
+
+async function previewCleanup() {
+  cleanupPreviewing.value = true
+  cleanupPreview.value = null
+
+  try {
+    const result = await $fetch<{ dryRun: boolean; wouldDelete: Record<string, number> }>(
+      '/api/admin/integrations/lawmatics/cleanup-imports?dryRun=true',
+      { method: 'DELETE' }
+    )
+    cleanupPreview.value = result.wouldDelete
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to preview cleanup')
+  } finally {
+    cleanupPreviewing.value = false
+  }
+}
+
+async function cleanupImports() {
+  if (!cleanupPreview.value) return
+
+  const total = Object.values(cleanupPreview.value).reduce((a, b) => a + b, 0)
+  if (!confirm(`Are you sure you want to delete ${total} imported records? This cannot be undone.`)) return
+
+  cleanupRunning.value = true
+
+  try {
+    const result = await $fetch<{ success: boolean; deleted: Record<string, number> }>(
+      '/api/admin/integrations/lawmatics/cleanup-imports',
+      { method: 'DELETE' }
+    )
+    const deletedTotal = Object.values(result.deleted).reduce((a, b) => a + b, 0)
+    toast.success(`Successfully deleted ${deletedTotal} imported records`)
+    cleanupPreview.value = null
+    await loadImportStats()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to clean up imports')
+  } finally {
+    cleanupRunning.value = false
   }
 }
 
