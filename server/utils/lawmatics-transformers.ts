@@ -201,12 +201,55 @@ export function serializeImportMetadata(metadata: ImportMetadata): string {
 }
 
 /**
- * Check if a contact is probably a person (not a business/entity)
+ * Check if a string looks like an address
+ */
+function looksLikeAddress(text: string): boolean {
+  const lower = text.toLowerCase()
+
+  // Starts with a number (e.g., "123 Main St", "10 Aspen Lane")
+  if (/^\d+\s/.test(text)) {
+    return true
+  }
+
+  // Contains street type words
+  const streetTypes = [
+    'street', 'st.', 'avenue', 'ave.', 'ave,', 'road', 'rd.', 'rd,',
+    'lane', 'ln.', 'ln,', 'drive', 'dr.', 'dr,', 'boulevard', 'blvd',
+    'court', 'ct.', 'ct,', 'circle', 'cir', 'place', 'pl.', 'pl,',
+    'way', 'parkway', 'pkwy', 'highway', 'hwy', 'trail', 'terrace'
+  ]
+  if (streetTypes.some(type => lower.includes(type))) {
+    return true
+  }
+
+  // Contains "City, State" or "City, ST" pattern (e.g., "Windsor, CO")
+  if (/,\s*[a-z]{2}\s*$/i.test(text) || /,\s*[a-z]{2}\s*\d{5}/i.test(text)) {
+    return true
+  }
+
+  // Contains PO Box
+  if (/p\.?o\.?\s*box/i.test(text)) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Check if a contact is probably a person (not a business/entity/address)
  */
 export function isProbablyPerson(contact: LawmaticsContact): boolean {
   const firstName = contact.attributes.first_name?.toLowerCase() || ''
   const lastName = contact.attributes.last_name?.toLowerCase() || ''
   const fullName = `${firstName} ${lastName}`.trim()
+  const rawFirstName = contact.attributes.first_name || ''
+  const rawLastName = contact.attributes.last_name || ''
+  const rawFullName = `${rawFirstName} ${rawLastName}`.trim()
+
+  // Check if the "name" looks like an address
+  if (looksLikeAddress(rawFullName) || looksLikeAddress(rawFirstName)) {
+    return false
+  }
 
   // Red flags for non-person records
   const nonPersonIndicators = [
@@ -215,11 +258,19 @@ export function isProbablyPerson(contact: LawmaticsContact): boolean {
     'company', 'partners', 'partnership', 'holdings',
     'estate of', 'the estate', 'revocable', 'irrevocable',
     'charitable', 'family office', 'ventures', 'capital',
-    'investments', 'properties', 'realty', 'associates'
+    'investments', 'properties', 'realty', 'associates',
+    'group', 'services', 'solutions', 'enterprises', 'limited',
+    'ltd', 'plc', 'gmbh', 'co.', 'organization', 'org'
   ]
 
   // Check if name contains non-person indicators
   if (nonPersonIndicators.some(indicator => fullName.includes(indicator))) {
+    return false
+  }
+
+  // Names that are all caps might be business names (but short ones like "JOE SMITH" are OK)
+  if (rawFullName === rawFullName.toUpperCase() && rawFullName.length > 20) {
+    // Long all-caps name is suspicious
     return false
   }
 
@@ -228,22 +279,35 @@ export function isProbablyPerson(contact: LawmaticsContact): boolean {
   const hasLastName = !!contact.attributes.last_name?.trim()
   const hasBirthdate = !!contact.attributes.birthdate
   const hasPhone = !!(contact.attributes.phone || contact.attributes.phone_number)
+  const hasEmail = !!(contact.attributes.email || contact.attributes.email_address)
 
-  // If has both first and last name, and either birthdate or phone, likely a person
-  if (hasFirstName && hasLastName && (hasBirthdate || hasPhone)) {
+  // Strong positive: has both first and last name, and birthdate
+  if (hasFirstName && hasLastName && hasBirthdate) {
     return true
   }
 
-  // If only has first name (no last name), might be a business
-  if (hasFirstName && !hasLastName) {
-    // Check if first_name looks like a business name
-    if (nonPersonIndicators.some(indicator => firstName.includes(indicator))) {
-      return false
-    }
+  // Strong positive: has first name, last name, and personal contact info
+  if (hasFirstName && hasLastName && (hasPhone || hasEmail)) {
+    return true
   }
 
-  // Default to treating as person if we have a first name
-  return hasFirstName
+  // If only has first name (no last name), likely not a person
+  // Real people typically have both names in CRM systems
+  if (hasFirstName && !hasLastName) {
+    // Unless it's a very short simple name with contact info
+    if (firstName.length < 15 && !firstName.includes(' ') && (hasPhone || hasEmail || hasBirthdate)) {
+      return true
+    }
+    return false
+  }
+
+  // Has both names but no contact info - cautiously accept
+  if (hasFirstName && hasLastName) {
+    return true
+  }
+
+  // No first name - not a person record
+  return false
 }
 
 /**
