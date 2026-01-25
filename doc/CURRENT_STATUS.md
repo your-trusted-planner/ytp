@@ -1,10 +1,78 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-23
+**Last Updated**: 2026-01-24
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Lawmatics Import Fix - Prospects Processing (2026-01-24)
+- **Status**: Complete ✅
+- **What**: Fixed issue where all prospects/matters failed to import with "Could not resolve client for prospect" error
+- **Root Cause**: Contacts were imported into the `people` table (correct per Belly Button Principle), but prospects processing was looking up clients in the `users` table, which was empty
+- **Solution**:
+  - Added `buildPersonToUserMap()` function to map personId → userId for existing user accounts
+  - Added `ensurePersonIsClient()` function that:
+    - Looks up person in people table
+    - Creates `users` record with role='CLIENT' if not exists
+    - Creates `clients` record if not exists
+    - Returns userId for matter's clientId FK reference
+  - Updated prospects processing to use peopleLookup + ensurePersonIsClient
+  - Cache personToUserMap entries so multiple matters for same client reuse the same user
+- **Files Modified**:
+  - `server/queue/lawmatics-import.ts` - Added new helper functions and updated prospects case
+- **Tests Created**:
+  - `tests/unit/lawmatics-import-prospects.test.ts` - 22 regression tests covering:
+    - Contact to Person to Client flow
+    - Multiple matters for same client (key regression scenario)
+    - Error handling for orphan prospects
+    - Import metadata generation
+    - buildPersonToUserMap logic
+    - ensurePersonIsClient logic
+    - Prospects phase processing integration
+- **Key Insight**: "By definition, a person who has a matter associated with them is a client" - so we look up contacts in people table, then promote them to client/user when they have a prospect
+
+#### Server-Side Pagination for Index Endpoints (2026-01-24)
+- **Status**: Complete ✅
+- **What**: Added server-side pagination to index endpoints and UiDataTable component
+- **Design Decisions**:
+  - Page-based pagination (not offset-based) - better UX for table navigation
+  - Default page size: 25 items
+  - Max page size: 100 items (enforced server-side)
+  - Server-side sorting applied before pagination
+  - Backward compatible - endpoints without pagination params return all data
+- **Files Created**:
+  - `server/utils/pagination.ts` - Backend pagination helpers (`parsePaginationParams`, `buildPaginationMeta`, `calculateOffset`, `isPaginationRequested`)
+  - `app/composables/usePaginatedData.ts` - Frontend composable for paginated data fetching
+  - `tests/unit/pagination.test.ts` - Unit tests for pagination utilities (19 tests)
+- **Files Modified**:
+  - `app/components/ui/DataTable.vue` - Added pagination UI (page info, size selector, prev/next buttons)
+  - `server/api/clients/index.get.ts` - Added pagination support
+  - `server/api/people/index.get.ts` - Added pagination support
+  - `server/api/matters/index.get.ts` - Added pagination support
+  - `server/api/referral-partners/index.get.ts` - Added pagination support
+  - `app/pages/clients/index.vue` - Connected pagination to DataTable
+  - `app/pages/people/index.vue` - Connected pagination to DataTable
+  - `app/pages/matters/index.vue` - Connected pagination to custom table
+- **Query Parameters**:
+  - `page` - Page number (default: 1)
+  - `limit` - Items per page (default: 25, max: 100)
+  - `sortBy` - Column to sort by
+  - `sortDirection` - 'asc' or 'desc'
+- **Response Format**:
+  ```typescript
+  {
+    clients: [...],
+    pagination: {
+      page: 1,
+      limit: 25,
+      totalCount: 150,
+      totalPages: 6,
+      hasNextPage: true,
+      hasPrevPage: false
+    }
+  }
+  ```
 
 #### UiDataTable Component & Clients Page Migration (2026-01-23)
 - **Status**: Complete ✅
@@ -899,6 +967,33 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-24**:
+- **Focus**: Server-side pagination and Lawmatics import fix
+- **Achievements**:
+  - ✅ Created server-side pagination utility (`server/utils/pagination.ts`)
+  - ✅ Created frontend pagination composable (`app/composables/usePaginatedData.ts`)
+  - ✅ Added pagination UI to UiDataTable component
+  - ✅ Updated 4 backend endpoints (clients, people, matters, referral-partners)
+  - ✅ Updated 3 frontend pages (clients, people, matters)
+  - ✅ Created 19 unit tests for pagination utilities
+  - ✅ Fixed Lawmatics import - prospects were failing because contacts imported as people but lookup used users table
+  - ✅ Added `buildPersonToUserMap()` and `ensurePersonIsClient()` functions
+  - ✅ Created 22 regression tests for Lawmatics import fix
+- **Technical Notes**:
+  - Pagination is backward compatible - endpoints without params return all data
+  - Multiple matters for same client now reuse the same user account (cached in personToUserMap)
+  - Contacts imported as people are promoted to client/user when they have a prospect/matter
+- **Key Insight**: "By definition, a person who has a matter associated with them is a client"
+- **Files Created**:
+  - `server/utils/pagination.ts`
+  - `app/composables/usePaginatedData.ts`
+  - `tests/unit/pagination.test.ts`
+  - `tests/unit/lawmatics-import-prospects.test.ts`
+- **Files Modified**:
+  - `app/components/ui/DataTable.vue`
+  - `server/queue/lawmatics-import.ts`
+  - 4 backend endpoints + 3 frontend pages
 
 **Session 2026-01-21**:
 - **Focus**: Google Drive Integration, Toast Notifications, Notices System
