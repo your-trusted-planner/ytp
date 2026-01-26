@@ -184,9 +184,12 @@ async function handleImportPage(
       break
 
     case 'notes':
-      const notesResult = await client.fetchAllNotes({ perPage, updatedSince: filter?.updatedSince })
-      // For notes, we fetch all at once since they're typically smaller
-      pageResult = { data: notesResult, hasMore: false }
+      const notesResult = await client.fetchNotesPage({ page, perPage, updatedSince: filter?.updatedSince })
+      pageResult = {
+        data: notesResult.data,
+        hasMore: notesResult.pagination.hasMore,
+        totalCount: notesResult.pagination.totalCount
+      }
       break
 
     case 'activities':

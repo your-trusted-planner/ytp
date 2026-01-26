@@ -506,8 +506,18 @@ export class LawmaticsClient {
   }
 
   /**
+   * Fetch a single page of notes (across all entities)
+   * Use for paginated bulk import
+   */
+  async fetchNotesPage(options: PaginationOptions = {}): Promise<PageResult<LawmaticsNote>> {
+    return this.fetchPage<LawmaticsNote>('/notes', options)
+  }
+
+  /**
    * Fetch all notes (across all entities)
    * Use for bulk import; filters by updated_since for incremental
+   * WARNING: This fetches ALL pages at once - can be very large!
+   * Consider using fetchNotesPage for paginated processing
    */
   async fetchAllNotes(
     options: Omit<PaginationOptions, 'page'> & { onProgress?: (page: number, total: number) => void } = {}
