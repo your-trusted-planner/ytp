@@ -3,7 +3,7 @@
  * Get migration run status and progress
  */
 
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
@@ -48,6 +48,16 @@ export default defineEventHandler(async (event) => {
     .limit(100)
     .all()
 
+  // Get duplicate count (duplicates that were auto-linked)
+  const duplicatesResult = await db.select({
+    count: sql<number>`count(*)`
+  })
+    .from(schema.importDuplicates)
+    .where(eq(schema.importDuplicates.runId, id))
+    .get()
+
+  const duplicatesLinked = duplicatesResult?.count || 0
+
   // Parse checkpoint for current phase info
   let currentPhase: string | null = null
   let currentPage: number | null = null
@@ -90,6 +100,7 @@ export default defineEventHandler(async (event) => {
       updatedRecords: run.updatedRecords,
       skippedRecords: run.skippedRecords,
       errorCount: run.errorCount,
+      duplicatesLinked, // Duplicates that were auto-linked to existing records
       progressPercent: progressPercentage,
       estimatedTimeRemaining: estimatedSecondsRemaining,
       currentPhase,

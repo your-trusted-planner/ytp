@@ -1103,3 +1103,32 @@ export const passwordResetTokens = sqliteTable('password_reset_tokens', {
   usedAt: integer('used_at', { mode: 'timestamp' }), // Null until used
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
+
+// Import Duplicates - Track detected duplicates during import for review/resolution
+// Critical for preventing cascade failures: when a duplicate is detected, we link to
+// the existing person and log it here, rather than skipping entirely
+export const importDuplicates = sqliteTable('import_duplicates', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull().references(() => migrationRuns.id, { onDelete: 'cascade' }),
+
+  // Source record
+  source: text('source').notNull(), // 'LAWMATICS'
+  externalId: text('external_id').notNull(), // Lawmatics contact ID
+  entityType: text('entity_type').notNull(), // 'contact'
+  sourceData: text('source_data'), // JSON: original record
+
+  // Match info
+  duplicateType: text('duplicate_type').notNull(), // 'EMAIL', 'NAME', 'PHONE'
+  matchingField: text('matching_field'), // The field that matched
+  matchingValue: text('matching_value'), // The value that matched
+  confidenceScore: integer('confidence_score'), // 0-100
+
+  // Existing record
+  existingPersonId: text('existing_person_id').references(() => people.id),
+
+  // Resolution
+  resolution: text('resolution', { enum: ['LINKED', 'CREATED_NEW', 'SKIPPED', 'PENDING'] }).notNull().default('LINKED'),
+  resolvedPersonId: text('resolved_person_id'), // Person ID used in lookup cache
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})

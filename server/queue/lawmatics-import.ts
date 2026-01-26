@@ -344,6 +344,7 @@ let clientLookupCache: Map<string, string> | null = null
 let peopleLookupCache: Map<string, string> | null = null
 let matterLookupCache: Map<string, string> | null = null
 let existingEmailsCache: Set<string> | null = null
+let emailIndexCache: Map<string, { personId: string; originalEmail: string }> | null = null
 
 async function getOrBuildUserLookup(): Promise<Map<string, string>> {
   if (!userLookupCache) {
@@ -389,6 +390,14 @@ async function getExistingEmails(): Promise<Set<string>> {
   return existingEmailsCache
 }
 
+async function getOrBuildEmailIndex(): Promise<Map<string, { personId: string; originalEmail: string }>> {
+  if (!emailIndexCache) {
+    const { buildEmailIndex } = await import('../utils/duplicate-detector')
+    emailIndexCache = await buildEmailIndex()
+  }
+  return emailIndexCache
+}
+
 // Clear caches when starting a new run
 export function clearLookupCaches(): void {
   userLookupCache = null
@@ -396,6 +405,7 @@ export function clearLookupCaches(): void {
   peopleLookupCache = null
   matterLookupCache = null
   existingEmailsCache = null
+  emailIndexCache = null
 }
 
 /**
@@ -558,18 +568,67 @@ async function processRecords(
     case 'contacts': {
       // Contacts are imported as people (not clients)
       // Non-person records (businesses, trusts, etc.) are skipped
+      // Duplicates are detected and linked to existing records
+
+      // Get the email index for duplicate detection
+      const emailIndex = await getOrBuildEmailIndex()
+      const { checkForDuplicates } = await import('../utils/duplicate-detector')
+      const { useDrizzle, schema } = await import('../db')
+      const db = useDrizzle()
+
       for (const record of records) {
         try {
+          // 1. Check for duplicate BEFORE transform
+          const duplicateCheck = checkForDuplicates(record, emailIndex)
+
+          if (duplicateCheck.isDuplicate && duplicateCheck.bestMatch) {
+            // CRITICAL: Add to lookup cache even though not creating new record
+            // This prevents cascade failures for prospects and notes
+            if (peopleLookupCache) {
+              peopleLookupCache.set(record.id, duplicateCheck.bestMatch.existingPersonId)
+            }
+
+            // Log for review in import_duplicates table
+            try {
+              await db.insert(schema.importDuplicates).values({
+                id: nanoid(),
+                runId,
+                source: 'LAWMATICS',
+                externalId: record.id,
+                entityType: 'contact',
+                sourceData: JSON.stringify(record),
+                duplicateType: duplicateCheck.bestMatch.type,
+                matchingField: duplicateCheck.bestMatch.matchingField,
+                matchingValue: duplicateCheck.bestMatch.matchingValue,
+                confidenceScore: duplicateCheck.bestMatch.confidenceScore,
+                existingPersonId: duplicateCheck.bestMatch.existingPersonId,
+                resolution: 'LINKED',
+                resolvedPersonId: duplicateCheck.bestMatch.existingPersonId,
+                createdAt: new Date()
+              })
+            } catch (logError) {
+              console.error('[Lawmatics Import] Failed to log duplicate:', logError)
+              // Don't fail the import if logging fails
+            }
+
+            result.skippedCount++
+            continue
+          }
+
+          // 2. Non-person check (existing logic)
           const transformed = transformers.transformContactToPerson(record, {
             importRunId: runId
           })
 
           // Skip non-person records (entities, businesses, trusts, etc.)
+          // Note: These legitimately don't get a lookup entry - prospects
+          // referencing them should fail (data issue in Lawmatics)
           if (!transformed) {
             result.skippedCount++
             continue
           }
 
+          // 3. Normal upsert flow (existing logic)
           const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
@@ -579,6 +638,18 @@ async function processRecords(
           // Update people cache
           if (peopleLookupCache) {
             peopleLookupCache.set(record.id, upsertResult.id)
+          }
+
+          // Also add to email index so subsequent duplicates in same batch are caught
+          const contactEmail = record.attributes.email || record.attributes.email_address
+          if (contactEmail) {
+            const normalizedEmail = contactEmail.toLowerCase().trim()
+            if (!normalizedEmail.includes('@imported.local') && !normalizedEmail.includes('@placeholder.local')) {
+              emailIndex.set(normalizedEmail, {
+                personId: upsertResult.id,
+                originalEmail: contactEmail
+              })
+            }
           }
         } catch (error) {
           result.errors.push({

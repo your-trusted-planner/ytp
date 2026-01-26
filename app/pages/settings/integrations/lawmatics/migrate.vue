@@ -181,6 +181,7 @@ interface MigrationRun {
   updatedRecords: number
   skippedRecords: number
   errorCount: number
+  duplicatesLinked?: number // Duplicates that were auto-linked to existing people
   currentPhase: string | null
   progressPercent: number | null
   estimatedTimeRemaining: number | null

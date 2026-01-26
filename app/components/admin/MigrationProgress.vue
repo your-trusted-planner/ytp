@@ -71,7 +71,7 @@
       </div>
 
       <!-- Stats Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="text-center p-3 bg-gray-50 rounded-lg">
           <p class="text-2xl font-bold text-gray-900">{{ run.processedEntities.toLocaleString() }}</p>
           <p class="text-xs text-gray-500">Processed</p>
@@ -87,6 +87,14 @@
         <div class="text-center p-3 bg-gray-50 rounded-lg">
           <p class="text-2xl font-bold text-gray-500">{{ run.skippedRecords.toLocaleString() }}</p>
           <p class="text-xs text-gray-500">Skipped</p>
+        </div>
+        <div
+          v-if="run.duplicatesLinked !== undefined && run.duplicatesLinked > 0"
+          class="text-center p-3 bg-amber-50 rounded-lg"
+          :title="'Duplicate contacts that were auto-linked to existing people'"
+        >
+          <p class="text-2xl font-bold text-amber-700">{{ run.duplicatesLinked.toLocaleString() }}</p>
+          <p class="text-xs text-gray-500">Duplicates Linked</p>
         </div>
         <div
           class="text-center p-3 rounded-lg cursor-pointer transition-colors"
@@ -135,6 +143,7 @@ interface MigrationRun {
   updatedRecords: number
   skippedRecords: number
   errorCount: number
+  duplicatesLinked?: number // Duplicates that were auto-linked to existing people
   currentPhase: string | null
   progressPercent: number | null
   estimatedTimeRemaining: number | null
