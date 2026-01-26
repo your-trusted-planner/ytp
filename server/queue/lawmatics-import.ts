@@ -41,12 +41,14 @@ export type LawmaticsImportMessage = ImportPageMessage | PhaseCompleteMessage
 const PHASE_ORDER: ImportPhase[] = ['users', 'contacts', 'prospects', 'notes', 'activities']
 
 // Default page sizes per phase
+// Keep sizes small to stay within Cloudflare Workers subrequest limits
+// Each record requires ~2-3 DB queries (findByExternalId + upsert)
 const PAGE_SIZES: Record<ImportPhase, number> = {
-  users: 100,
-  contacts: 100,
-  prospects: 100,
-  notes: 100,
-  activities: 25 // Activities are larger, use smaller pages
+  users: 50,
+  contacts: 50,
+  prospects: 25, // Prospects also create users/clients, more queries per record
+  notes: 25,     // Reduced from 100 to avoid "too many API requests" errors
+  activities: 25
 }
 
 // ===================================
