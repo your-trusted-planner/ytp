@@ -324,7 +324,7 @@ This persona focuses on aggregate practice health, performance metrics, and oper
 |----------|-------|--------|
 | MVP | As an attorney, I want to import clients from Lawmatics so that I don't have to re-enter data | 📋 |
 | MVP | As an attorney, I want to import estate plan metadata from WealthCounsel XML so that I have client plan information | 📋 |
-| v1.1 | As an attorney, I want to import matters and documents from Lawmatics so that historical data is preserved | 📋 |
+| v1.1 | As an attorney, I want to import matters and notes from Lawmatics so that historical data is preserved | 📋 |
 | Future | As an attorney, I want to import from Clio so that firms switching from Clio can migrate | 📋 |
 
 ---

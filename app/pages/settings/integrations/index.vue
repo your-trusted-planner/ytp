@@ -83,6 +83,34 @@
         </div>
       </UiCard>
 
+      <!-- WealthCounsel Integration Card -->
+      <UiCard>
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <FileCode class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">WealthCounsel</h3>
+              <p class="text-sm text-gray-600 mt-1">
+                Import estate plans from WealthCounsel XML exports
+              </p>
+              <div class="flex items-center gap-4 mt-3">
+                <UiBadge variant="success">
+                  Available
+                </UiBadge>
+              </div>
+            </div>
+          </div>
+          <NuxtLink
+            to="/settings/integrations/wealthcounsel"
+            class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+          >
+            Manage
+          </NuxtLink>
+        </div>
+      </UiCard>
+
       <!-- Placeholder for future integrations -->
       <UiCard class="opacity-60">
         <div class="flex items-start justify-between">
@@ -195,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import { Database, Cloud, Mail, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-vue-next'
+import { Database, Cloud, Mail, Eye, EyeOff, CheckCircle, XCircle, FileCode } from 'lucide-vue-next'
 
 const toast = useToast()
 

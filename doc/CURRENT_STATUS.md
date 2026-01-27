@@ -1,10 +1,87 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-24
+**Last Updated**: 2026-01-26
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### WealthCounsel Import - Person Deduplication & UI (2026-01-26)
+- **Status**: Complete ✅
+- **What**: Added comprehensive person deduplication to WealthCounsel import with a review UI
+- **Problem**: When importing estate plans from WealthCounsel XML, people could be created as duplicates if they already existed in the system. Also, the same person could appear multiple times in plan roles.
+- **Solution**:
+  - **Person Matching Utilities**: Extracted reusable matching logic to `server/utils/person-matching.ts`
+    - `PersonExtractor` class for batch extraction with role aggregation
+    - `calculateMatchConfidence()` - Confidence scoring (SSN=99%, NAME_EMAIL=95%, NAME_DOB=85%, NAME_ONLY=60%)
+    - `findPersonMatches()` / `findPersonMatchesBatch()` - Database matching
+    - `buildDecisionLookup()` / `buildPersonIdLookupFromDecisions()` - Decision handling
+  - **Person Matching UI**: Created Vue components for user review
+    - `app/components/person/ConfidenceBadge.vue` - Badge showing match confidence with color coding
+    - `app/components/person/MatchCard.vue` - Card for individual person with matches and radio buttons
+    - `app/components/person/MatchingReview.vue` - Container with filter tabs, quick actions, summary
+  - **Role Deduplication**: Fixed duplicate plan roles being created
+    - Added deduplication in `transformRoles()` based on `(personId, roleType, forPersonId)` tuple
+    - Prevents same person having same role type multiple times in a plan
+- **Files Created**:
+  - `server/utils/person-matching.ts` - Reusable matching utilities
+  - `app/components/person/ConfidenceBadge.vue` - Match confidence badge
+  - `app/components/person/MatchCard.vue` - Person match selection card
+  - `app/components/person/MatchingReview.vue` - Person matching review container
+  - `tests/unit/person-matching.test.ts` - 42 tests for matching utilities
+- **Files Modified**:
+  - `server/api/admin/integrations/wealthcounsel/parse.post.ts` - Uses PersonExtractor
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Handles person decisions
+  - `server/api/admin/integrations/wealthcounsel/pending/[parseId].get.ts` - Returns extractedPeople
+  - `server/utils/wealthcounsel-transformers.ts` - Role deduplication fix
+  - `app/pages/settings/integrations/wealthcounsel/import.vue` - Integrated PersonMatchingReview
+  - `tests/unit/wealthcounsel-transformers.test.ts` - Added 5 deduplication tests
+  - `tests/unit/wealthcounsel-import-api.test.ts` - Added person decision tests
+- **Test Coverage**: 939 tests passing (7 new tests added)
+- **UI Features**:
+  - Filter tabs by role type (client, spouse, child, beneficiary, fiduciary) or "with matches"
+  - Quick actions: "Accept all high-confidence matches", "Create all new"
+  - Role-based color coding (client=blue, spouse=pink, child=purple, beneficiary=green, fiduciary=amber)
+  - Import summary showing create vs link counts
+
+#### Lawmatics Import - Comprehensive Duplicate Handling (2026-01-26)
+- **Status**: Complete ✅
+- **What**: Implemented duplicate detection for contacts during Lawmatics import to prevent cascade failures
+- **Problem**: When a contact was skipped (duplicate OR filtered as non-person), it wasn't added to the lookup cache. This caused cascade failures:
+  ```
+  Contact skipped (duplicate) → NOT in peopleLookup
+    → Prospect referencing that contact → FAILS (can't find person)
+      → NOT in matterLookup
+        → Notes referencing that prospect → FAILS (can't find matter)
+  ```
+- **Solution**:
+  - **Duplicate Detection**: New `server/utils/duplicate-detector.ts` with email-based duplicate detection
+    - `buildEmailIndex()` - Builds email→personId index from people table at start of contacts phase
+    - `checkForDuplicates()` - Checks each contact against the index before transform
+    - Returns match info with confidence score (100 for exact email match)
+  - **Critical Fix**: When duplicate found, add to `peopleLookupCache` with **existing person's ID**
+    ```typescript
+    peopleLookupCache.set(record.id, duplicateCheck.bestMatch.existingPersonId)
+    ```
+  - **Duplicate Tracking**: New `import_duplicates` table logs all detected duplicates for review
+    - Source record info (externalId, entityType, sourceData JSON)
+    - Match info (duplicateType, matchingField, matchingValue, confidenceScore)
+    - Resolution tracking (LINKED, CREATED_NEW, SKIPPED, PENDING)
+  - **Real-time Index Update**: Newly created contacts added to email index to catch duplicates within same batch
+- **Files Created**:
+  - `server/utils/duplicate-detector.ts` - Duplicate detection utilities
+- **Files Modified**:
+  - `server/db/schema.ts` - Added `importDuplicates` table
+  - `server/queue/lawmatics-import.ts` - Integrated duplicate detection in contacts phase
+  - `server/api/admin/migrations/[id].get.ts` - Added `duplicatesLinked` count to response
+  - `app/components/admin/MigrationProgress.vue` - Shows duplicates linked count (amber stat box)
+  - `app/pages/settings/integrations/lawmatics/migrate.vue` - Updated interface for duplicatesLinked
+- **Key Insight**: "By adding the duplicate to the lookup cache with the existing person's ID, all downstream prospects and notes will resolve correctly instead of failing"
+- **Migration**: `0013_dizzy_maverick.sql` - Creates `import_duplicates` table
+- **Future Enhancements** (not in this version):
+  - Full duplicates list endpoint (`GET /api/admin/migrations/[id]/duplicates`)
+  - Manual resolution endpoint (`POST .../duplicates/[id]/resolve`)
+  - Review modal with side-by-side comparison
 
 #### Lawmatics Import Fix - Prospects Processing (2026-01-24)
 - **Status**: Complete ✅
@@ -967,6 +1044,34 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-26**:
+- **Focus**: Lawmatics import duplicate handling to prevent cascade failures
+- **Problem Solved**: Duplicates and non-person contacts were skipped without adding to lookup cache, causing hundreds of note import errors
+- **Achievements**:
+  - ✅ Created `server/utils/duplicate-detector.ts` for email-based duplicate detection
+  - ✅ Added `import_duplicates` table to track detected duplicates for review
+  - ✅ Integrated duplicate detection into contacts phase of queue handler
+  - ✅ Critical fix: Add duplicates to `peopleLookupCache` with existing person's ID
+  - ✅ Updated email index in real-time as new contacts are processed
+  - ✅ Added `duplicatesLinked` count to migration run API response
+  - ✅ Added amber "Duplicates Linked" stat box to migration progress UI
+  - ✅ Updated documentation in CURRENT_STATUS.md
+- **Technical Notes**:
+  - Email index built once at start of contacts phase (efficient O(1) lookups)
+  - Duplicates logged to `import_duplicates` table with full source data JSON
+  - Resolution tracking supports future manual review/resolution UI
+  - Real-time index update catches duplicates within same import batch
+- **Key Insight**: "By adding the duplicate to the lookup cache with the existing person's ID, all downstream prospects and notes will resolve correctly"
+- **Files Created**:
+  - `server/utils/duplicate-detector.ts`
+- **Files Modified**:
+  - `server/db/schema.ts` - Added `importDuplicates` table
+  - `server/queue/lawmatics-import.ts` - Integrated duplicate detection
+  - `server/api/admin/migrations/[id].get.ts` - Added duplicatesLinked count
+  - `app/components/admin/MigrationProgress.vue` - UI for duplicates count
+  - `app/pages/settings/integrations/lawmatics/migrate.vue` - Interface update
+- **Migration**: `0013_dizzy_maverick.sql` (already generated)
 
 **Session 2026-01-24**:
 - **Focus**: Server-side pagination and Lawmatics import fix
