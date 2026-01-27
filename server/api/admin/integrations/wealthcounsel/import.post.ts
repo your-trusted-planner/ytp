@@ -20,6 +20,7 @@ import {
   shouldCreatePerson,
   type PersonMatchDecision
 } from '../../../../utils/person-matching'
+import { logActivity } from '../../../../utils/activity-logger'
 
 // Schema for individual person matching decisions
 const PersonDecisionSchema = z.object({
@@ -350,6 +351,33 @@ export default defineEventHandler(async (event) => {
     result.success = true
     result.planId = planId
     result.versionId = `version_${versionNumber}`
+
+    // Get plan name for activity logging
+    const planName = parsedData.trust?.name ||
+      (parsedData.client.fullName ? `${parsedData.client.fullName} Estate Plan` : 'Estate Plan')
+
+    // Count people linked vs created
+    const peopleLinked = decisions.personDecisions
+      ? decisions.personDecisions.filter(d => d.action === 'use_existing').length
+      : (decisions.clientPersonId ? 1 : 0) + (decisions.spousePersonId ? 1 : 0)
+
+    // Log activity
+    await logActivity({
+      type: decisions.isAmendment ? 'ESTATE_PLAN_AMENDED' : 'ESTATE_PLAN_IMPORTED',
+      userId: user.id,
+      userRole: user.role,
+      target: { type: 'estate_plan', id: planId, name: planName },
+      event,
+      details: {
+        source: 'WealthCounsel',
+        isAmendment: decisions.isAmendment,
+        peopleCreated: result.peopleCreated,
+        peopleLinked,
+        rolesCreated: result.rolesCreated,
+        planType: parsedData.planType,
+        linkedToMatterId: decisions.linkToMatterId
+      }
+    })
 
     return result
 

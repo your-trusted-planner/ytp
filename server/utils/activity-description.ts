@@ -202,6 +202,45 @@ export function generateDescription(
         ? `${actorName} updated referral partner "${targetName}"`
         : `${actorName} updated a referral partner`
 
+    // Estate plan events
+    case 'ESTATE_PLAN_CREATED':
+      return targetName
+        ? `${actorName} created estate plan "${targetName}"`
+        : `${actorName} created an estate plan`
+    case 'ESTATE_PLAN_UPDATED':
+      return targetName
+        ? `${actorName} updated estate plan "${targetName}"`
+        : `${actorName} updated an estate plan`
+    case 'ESTATE_PLAN_AMENDED':
+      return targetName
+        ? `${actorName} amended estate plan "${targetName}"`
+        : `${actorName} amended an estate plan`
+    case 'ESTATE_PLAN_IMPORTED':
+      const source = details?.source as string | undefined
+      const peopleCreated = details?.peopleCreated as number | undefined
+      const rolesCreated = details?.rolesCreated as number | undefined
+      if (targetName && source) {
+        let desc = `${actorName} imported estate plan "${targetName}" from ${source}`
+        if (peopleCreated !== undefined || rolesCreated !== undefined) {
+          const parts = []
+          if (peopleCreated !== undefined) parts.push(`${peopleCreated} people`)
+          if (rolesCreated !== undefined) parts.push(`${rolesCreated} roles`)
+          desc += ` (${parts.join(', ')} created)`
+        }
+        return desc
+      }
+      return targetName
+        ? `${actorName} imported estate plan "${targetName}"`
+        : `${actorName} imported an estate plan`
+    case 'ESTATE_PLAN_STATUS_CHANGED':
+      const planStatus = details?.newStatus || details?.status
+      if (targetName && planStatus) {
+        return `${actorName} changed "${targetName}" status to ${planStatus}`
+      }
+      return targetName
+        ? `${actorName} changed status for "${targetName}"`
+        : `${actorName} changed estate plan status`
+
     // Admin events
     case 'ADMIN_ACTION':
       const actionName = details?.action as string | undefined
@@ -237,7 +276,9 @@ function formatEntityType(type: string): string {
     service: 'Service',
     appointment: 'Appointment',
     note: 'Note',
-    setting: 'Setting'
+    setting: 'Setting',
+    estate_plan: 'Estate Plan',
+    person: 'Person'
   }
   return typeMap[type] || type
 }

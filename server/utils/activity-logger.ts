@@ -17,6 +17,7 @@ export type EntityType =
   | 'appointment'
   | 'note'
   | 'setting'
+  | 'estate_plan'
 
 /**
  * Standardized entity reference for activity logging.
@@ -70,11 +71,17 @@ export type ActivityType =
   // Referral events
   | 'REFERRAL_PARTNER_CREATED'
   | 'REFERRAL_PARTNER_UPDATED'
+  // Estate plan events
+  | 'ESTATE_PLAN_CREATED'
+  | 'ESTATE_PLAN_UPDATED'
+  | 'ESTATE_PLAN_AMENDED'
+  | 'ESTATE_PLAN_IMPORTED'
+  | 'ESTATE_PLAN_STATUS_CHANGED'
   // Admin events
   | 'ADMIN_ACTION'
   | 'SETTINGS_CHANGED'
 
-export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note'
+export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan'
 
 export interface LogActivityParams {
   type: ActivityType
