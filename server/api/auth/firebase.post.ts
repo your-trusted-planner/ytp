@@ -60,17 +60,25 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Link Firebase UID if not already linked
+    // Update Firebase UID and avatar if needed
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
+
     if (!user.firebaseUid) {
+      updates.firebaseUid = firebaseUid
+      console.log(`[Firebase Auth] Linked Firebase UID to existing user: ${email}`)
+    }
+
+    // Update avatar from OAuth provider if we have one and user doesn't have a custom one
+    // or if their current avatar is also from an OAuth provider (update it)
+    if (picture && (!user.avatar || user.avatar.startsWith('http'))) {
+      updates.avatar = picture
+    }
+
+    if (Object.keys(updates).length > 1) { // More than just updatedAt
       await db
         .update(schema.users)
-        .set({
-          firebaseUid,
-          updatedAt: new Date()
-        })
+        .set(updates)
         .where(eq(schema.users.id, user.id))
-
-      console.log(`[Firebase Auth] Linked Firebase UID to existing user: ${email}`)
     }
   } else {
     // Create new user with linked person record (Belly Button Principle)
