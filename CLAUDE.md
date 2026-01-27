@@ -314,6 +314,8 @@ type EntityType =
 
 ### Using logActivity
 
+**Important** - When creating data CRUD functionality of any sort, consider whether that activity should be logged with the activity logger. Close calls go to logging rather than not logging.
+
 Located in `server/utils/activity-logger.ts`:
 
 ```typescript
@@ -630,12 +632,13 @@ app/
 
 ## Best Practices
 
-1. **Read before editing**: Always read existing files before modifying them
-2. **Consistent patterns**: Follow existing code patterns in the file you're editing
-3. **Minimal changes**: Only change what's necessary for the task
-4. **Schema changes**: Update `schema.ts` then tell developer to run `npx drizzle-kit generate`
-5. **Never commit**: Claude should never create git commits unless explicitly requested
-6. **Test locally**: All changes should be testable in local development environment
+1. **Prefer Test Driven Development Pattern**: Not all work requires a test first, but most CRUD patterns do.
+2. **Read before editing**: Always read existing files before modifying them
+3. **Consistent patterns**: Follow existing code patterns in the file you're editing
+4. **Minimal changes**: Only change what's necessary for the task
+5. **Schema changes**: Update `schema.ts` then tell developer to run `npx drizzle-kit generate`
+6. **Never commit**: Claude should never create git commits unless explicitly requested
+7. **Test locally**: All changes should be testable in local development environment
 
 ## Common Pitfalls
 
