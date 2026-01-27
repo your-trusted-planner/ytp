@@ -63,6 +63,16 @@
             <Edit class="w-4 h-4 mr-2" />
             Edit Plan
           </UiButton>
+          <!-- Delete button - only visible to admin level 2+ -->
+          <UiButton
+            v-if="isAdmin2"
+            variant="outline"
+            class="text-red-600 hover:bg-red-50 border-red-200"
+            @click="showDeleteModal = true"
+          >
+            <Trash2 class="w-4 h-4 mr-2" />
+            Delete
+          </UiButton>
         </div>
       </div>
 
@@ -235,6 +245,81 @@
         </UiButton>
       </template>
     </UiModal>
+
+    <!-- Delete Plan Modal - only for admin level 2+ -->
+    <UiModal v-if="isAdmin2" v-model="showDeleteModal" title="Delete Estate Plan">
+      <div class="space-y-4">
+        <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
+          <AlertTriangle class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 class="font-semibold text-red-800">This action cannot be undone</h4>
+            <p class="text-sm text-red-700 mt-1">
+              Deleting this estate plan will permanently remove:
+            </p>
+            <ul class="text-sm text-red-700 mt-2 list-disc list-inside space-y-1">
+              <li>The estate plan record</li>
+              <li>All {{ plan?.roles?.length || 0 }} role designations</li>
+              <li>All {{ plan?.versions?.length || 0 }} version records</li>
+              <li>All {{ plan?.events?.length || 0 }} events</li>
+              <li v-if="plan?.trust">The trust record ({{ plan.trust.trustName }})</li>
+              <li v-if="plan?.wills?.length">{{ plan.wills.length }} will record(s)</li>
+              <li v-if="plan?.linkedMatters?.length">{{ plan.linkedMatters.length }} matter link(s)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-4">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              v-model="deleteOptions.deletePeople"
+              type="checkbox"
+              class="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
+            />
+            <div>
+              <span class="font-medium text-gray-900">Also delete associated people</span>
+              <p class="text-sm text-gray-600 mt-0.5">
+                Delete the {{ uniquePeopleCount }} people who have roles in this plan.
+                <span class="text-amber-600 font-medium">
+                  Warning: This may fail if people have other relationships in the system.
+                </span>
+              </p>
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Type "<strong>{{ plan?.planName || 'delete' }}</strong>" to confirm:
+          </label>
+          <input
+            v-model="deleteOptions.confirmText"
+            type="text"
+            class="w-full rounded-lg border-gray-300 focus:ring-red-500 focus:border-red-500"
+            placeholder="Enter plan name to confirm..."
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <UiButton variant="outline" @click="closeDeleteModal">
+          Cancel
+        </UiButton>
+        <UiButton
+          variant="danger"
+          :disabled="!canDelete || deleting"
+          @click="handleDeletePlan"
+        >
+          <template v-if="deleting">
+            <span class="animate-spin mr-2">⏳</span>
+            Deleting...
+          </template>
+          <template v-else>
+            <Trash2 class="w-4 h-4 mr-2" />
+            Delete Plan
+          </template>
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -242,13 +327,17 @@
 import { ref, computed } from 'vue'
 import {
   ArrowLeft, FileText, Landmark, Plus, Edit, Upload,
-  LayoutDashboard, Users, History, Calendar, File
+  LayoutDashboard, Users, History, Calendar, File, Trash2, AlertTriangle
 } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
 })
+
+// Get session to check admin level
+const { data: sessionData } = await useFetch('/api/auth/session')
+const isAdmin2 = computed(() => (sessionData.value?.user?.adminLevel ?? 0) >= 2)
 
 // API response types
 interface PersonData {
@@ -372,9 +461,66 @@ const { data: plan, pending: loading, error, refresh } = useFetch<EstatePlanDeta
   () => `/api/estate-plans/${planId.value}`
 )
 
+const router = useRouter()
+
 const activeTab = ref('overview')
 const showAddEventModal = ref(false)
 const showAddRoleModal = ref(false)
+const showDeleteModal = ref(false)
+const deleting = ref(false)
+
+// Delete options
+const deleteOptions = ref({
+  deletePeople: false,
+  confirmText: ''
+})
+
+// Compute unique people count from roles
+const uniquePeopleCount = computed(() => {
+  if (!plan.value?.roles) return 0
+  const uniqueIds = new Set(plan.value.roles.map(r => r.personId).filter(Boolean))
+  return uniqueIds.size
+})
+
+// Check if delete can proceed
+const canDelete = computed(() => {
+  if (!plan.value) return false
+  const expectedText = plan.value.planName || 'delete'
+  return deleteOptions.value.confirmText === expectedText
+})
+
+// Close and reset delete modal
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deleteOptions.value = {
+    deletePeople: false,
+    confirmText: ''
+  }
+}
+
+// Handle plan deletion
+async function handleDeletePlan() {
+  if (!plan.value || !canDelete.value) return
+
+  deleting.value = true
+
+  try {
+    const queryParams = deleteOptions.value.deletePeople ? '?deletePeople=true' : ''
+    await $fetch(`/api/admin/estate-plans/${plan.value.id}${queryParams}`, {
+      method: 'DELETE'
+    })
+
+    closeDeleteModal()
+
+    // Navigate back to estate plans list
+    router.push('/estate-plans')
+  } catch (err: any) {
+    console.error('Failed to delete plan:', err)
+    alert(err.data?.message || 'Failed to delete estate plan')
+  } finally {
+    deleting.value = false
+  }
+}
 
 const tabs = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
