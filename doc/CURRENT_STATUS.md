@@ -1,10 +1,40 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-26
+**Last Updated**: 2026-01-27
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Estate Plan Delete with Activity Logging (2026-01-27)
+- **Status**: Complete ✅
+- **What**: Admin-only delete functionality for estate plans with cascading deletion and activity logging
+- **Features**:
+  - **Delete Endpoint**: `DELETE /api/admin/estate-plans/:id`
+    - Requires admin level 2 (enforced by `/api/admin/*` middleware)
+    - Query param `?deletePeople=true` to also delete associated people (default: unlink only)
+    - Cascades through all related tables (roles, versions, events, trusts, wills, ancillary docs, matter links)
+    - Returns detailed deletion summary
+  - **Confirmation UI**: Modal with safeguards
+    - Shows summary of what will be deleted (counts for each entity type)
+    - Checkbox option to also delete people (with warning about potential failures)
+    - Confirmation text input requiring exact plan name
+    - Only visible to admin level 2+
+  - **Activity Logging**: Full audit trail
+    - New entity type: `estate_plan`
+    - New activity types: `ESTATE_PLAN_CREATED`, `ESTATE_PLAN_UPDATED`, `ESTATE_PLAN_AMENDED`, `ESTATE_PLAN_IMPORTED`, `ESTATE_PLAN_STATUS_CHANGED`
+    - Import logging with source, people created/linked, roles created
+    - Delete logging with full summary of deleted entities
+- **Files Created**:
+  - `server/api/admin/estate-plans/[id].delete.ts` - Delete endpoint
+  - `tests/unit/estate-plan-delete.test.ts` - 32 tests for delete logic
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Added estate_plan entity type and activity types
+  - `server/utils/activity-description.ts` - Added descriptions for estate plan activities
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Added activity logging
+  - `app/pages/estate-plans/[id].vue` - Added delete button and modal
+- **Test Coverage**: 969 tests passing (32 new tests added)
+- **Security**: Admin level 2 required at both UI and API levels
 
 #### WealthCounsel Import - Person Deduplication & UI (2026-01-26)
 - **Status**: Complete ✅
@@ -1044,6 +1074,34 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-27**:
+- **Focus**: Estate plan delete functionality and activity logging integration
+- **Achievements**:
+  - ✅ Created `DELETE /api/admin/estate-plans/:id` endpoint with admin level 2 protection
+  - ✅ Added `?deletePeople=true` query param option (default: unlink only)
+  - ✅ Cascade deletes through all related tables
+  - ✅ Added `estate_plan` entity type to activity logger
+  - ✅ Added 5 estate plan activity types (CREATED, UPDATED, AMENDED, IMPORTED, STATUS_CHANGED)
+  - ✅ Added activity descriptions for estate plan events
+  - ✅ Integrated activity logging into WealthCounsel import endpoint
+  - ✅ Added delete button and confirmation modal to estate plan detail page
+  - ✅ Created 32 unit tests for delete functionality
+  - ✅ Fixed CI test failure by using lazy imports for `@nuxthub/db` in person-matching.ts
+- **Technical Notes**:
+  - Delete uses query params (not body) for `deletePeople` option due to Cloudflare Workers DELETE body issue
+  - People deletion is attempted individually to handle cases where people have other relationships
+  - Confirmation requires typing exact plan name to prevent accidental deletion
+  - Activity logging captures full deletion summary for audit trail
+- **Files Created**:
+  - `server/api/admin/estate-plans/[id].delete.ts`
+  - `tests/unit/estate-plan-delete.test.ts`
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Estate plan entity type and activity types
+  - `server/utils/activity-description.ts` - Estate plan activity descriptions
+  - `server/utils/person-matching.ts` - Lazy imports for test compatibility
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Activity logging
+  - `app/pages/estate-plans/[id].vue` - Delete UI
 
 **Session 2026-01-26**:
 - **Focus**: Lawmatics import duplicate handling to prevent cascade failures
