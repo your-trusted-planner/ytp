@@ -6,10 +6,13 @@
  *
  * Used by import processes (WealthCounsel, future integrations) and
  * record creation flows where duplicate detection is needed.
+ *
+ * NOTE: Database functions use lazy imports to allow pure utility functions
+ * to be imported in environments where @nuxthub/db is not available (e.g., tests).
  */
 
-import { useDrizzle, schema } from '../db'
-import { or, eq } from 'drizzle-orm'
+// Database imports are done lazily in functions that need them
+// This allows pure utility functions to be imported without triggering @nuxthub/db
 
 // ===================================
 // TYPES
@@ -187,6 +190,9 @@ export function calculateMatchConfidence(
 /**
  * Find potential matches for a person in the database.
  * Queries by email and/or name and returns matches sorted by confidence.
+ *
+ * NOTE: Uses lazy import for database to allow pure functions to be imported
+ * without triggering @nuxthub/db in test environments.
  */
 export async function findPersonMatches(
   person: PersonToMatch,
@@ -197,6 +203,10 @@ export async function findPersonMatches(
   if (!person.name && !person.email) {
     return []
   }
+
+  // Lazy import database modules
+  const { useDrizzle, schema } = await import('../db')
+  const { or, eq } = await import('drizzle-orm')
 
   const db = useDrizzle()
   const conditions = []
