@@ -1,8 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDrizzle, schema } from '../../db'
-import { hashPassword, generateId, requireRole } from '../../utils/auth'
+import { hashPassword, generateId } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { logActivity } from '../../utils/activity-logger'
+import { isDriveEnabled, createClientFolder } from '../../utils/google-drive'
+import { notifyDriveSyncError } from '../../utils/notice-service'
 
 const createClientSchema = z.object({
   email: z.string().email(),
@@ -64,20 +67,56 @@ export default defineEventHandler(async (event) => {
   })
 
   // Log activity
+  const clientName = `${firstName} ${lastName}`
   await logActivity({
     type: 'CLIENT_CREATED',
-    description: `${user.firstName || user.email} created client ${firstName} ${lastName}`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'client',
-    targetId: userId,
+    target: { type: 'client', id: userId, name: clientName },
     event,
-    metadata: {
-      clientEmail: email,
-      clientName: `${firstName} ${lastName}`
+    details: {
+      clientEmail: email
     }
   })
 
-  return { success: true, userId }
+  // Create Google Drive folder for client
+  let googleDrive: {
+    enabled: boolean
+    success: boolean
+    folderUrl?: string
+    error?: string
+  } = { enabled: false, success: false }
+
+  try {
+    if (await isDriveEnabled()) {
+      googleDrive.enabled = true
+      const clientName = `${lastName}, ${firstName}`
+      const folder = await createClientFolder(userId, clientName)
+      googleDrive.success = true
+      googleDrive.folderUrl = folder.webViewLink
+    }
+  } catch (error) {
+    // Log error but don't fail the client creation
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Failed to create Google Drive folder for client:', error)
+    googleDrive.enabled = true
+    googleDrive.success = false
+    googleDrive.error = errorMessage
+
+    // Create notice for the user about the sync failure
+    try {
+      await notifyDriveSyncError(
+        user.id,
+        'client',
+        userId,
+        `${firstName} ${lastName}`,
+        errorMessage
+      )
+    } catch (noticeError) {
+      console.error('Failed to create Drive sync error notice:', noticeError)
+    }
+  }
+
+  return { success: true, userId, googleDrive }
 })
 

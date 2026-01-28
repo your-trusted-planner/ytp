@@ -15,15 +15,42 @@
         :rows="3"
       />
 
-      <UiSelect
-        v-model="form.serviceCatalogId"
-        label="Associated Service (Optional)"
-      >
-        <option value="">-- Select Service --</option>
-        <option v-for="service in serviceCatalog" :key="service.id" :value="service.id">
-          {{ service.name }}
-        </option>
-      </UiSelect>
+      <!-- Service Catalog Selection -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          {{ form.journeyType === 'ENGAGEMENT' ? 'Available Services (client chooses at end)' : 'Associated Service' }}
+        </label>
+        <p class="text-sm text-gray-500 mb-3">
+          {{ form.journeyType === 'ENGAGEMENT'
+            ? 'Select which services this engagement journey can lead to'
+            : 'Select the service this journey delivers' }}
+        </p>
+        <div class="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+          <label
+            v-for="service in serviceCatalog"
+            :key="service.id"
+            class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+            :class="{ 'bg-burgundy-50': form.catalogIds.includes(service.id) }"
+          >
+            <input
+              type="checkbox"
+              :value="service.id"
+              v-model="form.catalogIds"
+              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+            />
+            <div class="ml-3">
+              <div class="text-sm font-medium text-gray-900">{{ service.name }}</div>
+              <div v-if="service.category" class="text-xs text-gray-500">{{ service.category }}</div>
+            </div>
+          </label>
+          <div v-if="serviceCatalog.length === 0" class="p-3 text-sm text-gray-500 text-center">
+            No services in catalog
+          </div>
+        </div>
+        <p v-if="form.catalogIds.length > 0" class="mt-2 text-sm text-gray-600">
+          {{ form.catalogIds.length }} service{{ form.catalogIds.length === 1 ? '' : 's' }} selected
+        </p>
+      </div>
 
       <UiInput
         v-model.number="form.estimatedDurationDays"
@@ -91,13 +118,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+
+interface CatalogItem {
+  id: string
+  name: string
+  category?: string
+}
 
 interface Journey {
   id: string
   name: string
   description?: string
-  service_catalog_id?: string
+  catalog_items?: CatalogItem[]
   estimated_duration_days?: number
   journey_type?: string
 }
@@ -127,7 +160,7 @@ const saving = ref(false)
 const form = ref({
   name: '',
   description: '',
-  serviceCatalogId: '',
+  catalogIds: [] as string[],
   estimatedDurationDays: null as number | null,
   journeyType: 'SERVICE' as 'SERVICE' | 'ENGAGEMENT'
 })
@@ -135,10 +168,12 @@ const form = ref({
 // Watch for journey changes to populate form
 watch(() => props.journey, (journey) => {
   if (journey) {
+    // Extract catalog IDs from catalog_items array
+    const catalogIds = journey.catalog_items?.map(item => item.id) || []
     form.value = {
       name: journey.name,
       description: journey.description || '',
-      serviceCatalogId: journey.service_catalog_id || '',
+      catalogIds,
       estimatedDurationDays: journey.estimated_duration_days || null,
       journeyType: (journey.journey_type as 'SERVICE' | 'ENGAGEMENT') || 'SERVICE'
     }
@@ -155,7 +190,7 @@ async function handleSubmit() {
       body: {
         name: form.value.name,
         description: form.value.description,
-        serviceCatalogId: form.value.serviceCatalogId,
+        catalogIds: form.value.catalogIds,
         isActive: true,
         estimatedDurationDays: form.value.estimatedDurationDays,
         journeyType: form.value.journeyType

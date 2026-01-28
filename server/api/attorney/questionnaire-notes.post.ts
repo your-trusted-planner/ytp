@@ -1,6 +1,6 @@
 // Add/update attorney notes for questionnaire responses
 import { z } from 'zod'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 
 const notesSchema = z.object({
   responseId: z.string(),

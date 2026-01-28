@@ -1,6 +1,8 @@
 // Get all lawyers for use in lead attorney dropdown
+import { requireRole } from '../../utils/rbac'
+
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['LAWYER', 'ADMIN'])
+  await requireRole(event, ['LAWYER', 'ADMIN'])
 
   const { useDrizzle, schema } = await import('../../db')
   const { eq, or } = await import('drizzle-orm')
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
     )
     .all()
 
-  // Convert to snake_case for API compatibility
+  // Return both snake_case and camelCase for compatibility
   return {
     lawyers: lawyers.map(lawyer => ({
       id: lawyer.id,
@@ -25,6 +27,8 @@ export default defineEventHandler(async (event) => {
       role: lawyer.role,
       first_name: lawyer.firstName,
       last_name: lawyer.lastName,
+      firstName: lawyer.firstName,
+      lastName: lawyer.lastName,
       phone: lawyer.phone,
       avatar: lawyer.avatar,
       status: lawyer.status,

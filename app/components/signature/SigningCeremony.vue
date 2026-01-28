@@ -57,7 +57,7 @@
         <div class="p-6 max-h-[60vh] overflow-y-auto">
           <div
             class="prose prose-slate max-w-none"
-            v-html="document.content"
+            v-html="sanitizedDocumentContent"
           />
         </div>
       </div>
@@ -601,6 +601,7 @@
 import { ref, computed } from 'vue'
 import SignatureCanvas from './SignatureCanvas.vue'
 import IdentityVerification from './IdentityVerification.vue'
+import { useSanitizedHtml } from '~/composables/useSanitizedHtml'
 
 interface DocumentInfo {
   id: string
@@ -652,6 +653,9 @@ const emit = defineEmits<{
 // Local identity verification state (tracks verification within this session)
 const localIdentityVerified = ref(props.identityVerified)
 const localVerificationMethod = ref<string | null>(null)
+
+// Sanitize document content to prevent XSS when rendering with v-html
+const sanitizedDocumentContent = useSanitizedHtml(() => props.document.content)
 
 // Computed: whether identity is verified (from props or local state)
 const identityVerified = computed(() => props.identityVerified || localIdentityVerified.value)

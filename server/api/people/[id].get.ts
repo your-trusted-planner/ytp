@@ -39,9 +39,6 @@ export default defineEventHandler(async (event) => {
     zipCode: person.zipCode,
     dateOfBirth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
     ssnLast4: person.ssnLast4,
-    entityName: person.entityName,
-    entityType: person.entityType,
-    entityEin: person.entityEin,
     notes: person.notes,
     createdAt: person.createdAt ? person.createdAt.getTime() : Date.now(),
     updatedAt: person.updatedAt ? person.updatedAt.getTime() : Date.now(),
@@ -53,9 +50,6 @@ export default defineEventHandler(async (event) => {
     zip_code: person.zipCode,
     date_of_birth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
     ssn_last_4: person.ssnLast4,
-    entity_name: person.entityName,
-    entity_type: person.entityType,
-    entity_ein: person.entityEin,
     created_at: person.createdAt ? person.createdAt.getTime() : Date.now(),
     updated_at: person.updatedAt ? person.updatedAt.getTime() : Date.now()
   }

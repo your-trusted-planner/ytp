@@ -33,16 +33,16 @@ export default defineEventHandler(async (event) => {
   // Enrich with related data
   const enrichedJourneys = await Promise.all(
     journeys.map(async (journey) => {
-      // Get service catalog info
-      const service = journey.serviceCatalogId
-        ? await db.select({
-            name: schema.serviceCatalog.name,
-            category: schema.serviceCatalog.category
-          })
-          .from(schema.serviceCatalog)
-          .where(eq(schema.serviceCatalog.id, journey.serviceCatalogId))
-          .get()
-        : null
+      // Get linked catalog items via junction table
+      const catalogLinks = await db.select({
+        id: schema.serviceCatalog.id,
+        name: schema.serviceCatalog.name,
+        category: schema.serviceCatalog.category
+      })
+        .from(schema.journeysToCatalog)
+        .innerJoin(schema.serviceCatalog, eq(schema.journeysToCatalog.catalogId, schema.serviceCatalog.id))
+        .where(eq(schema.journeysToCatalog.journeyId, journey.id))
+        .all()
 
       // Get step count
       const stepCountResult = await db.select({ count: sql<number>`count(*)` })
@@ -62,7 +62,7 @@ export default defineEventHandler(async (event) => {
       // Convert to snake_case for API compatibility
       return {
         id: journey.id,
-        service_catalog_id: journey.serviceCatalogId,
+        catalog_items: catalogLinks,
         name: journey.name,
         description: journey.description,
         journey_type: journey.journeyType,
@@ -70,8 +70,6 @@ export default defineEventHandler(async (event) => {
         estimated_duration_days: journey.estimatedDurationDays,
         created_at: journey.createdAt instanceof Date ? journey.createdAt.getTime() : journey.createdAt,
         updated_at: journey.updatedAt instanceof Date ? journey.updatedAt.getTime() : journey.updatedAt,
-        service_name: service?.name || null,
-        service_category: service?.category || null,
         step_count: stepCountResult?.count || 0,
         active_clients: activeClientsResult?.count || 0
       }

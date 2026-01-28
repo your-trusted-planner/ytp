@@ -10,13 +10,12 @@
           </div>
 
           <!-- User Menu -->
-          <div class="flex items-center space-x-4">
-            <span class="text-white text-sm">
-              {{ user?.firstName }} {{ user?.lastName }}
-            </span>
-            <UiButton variant="secondary" size="sm" @click="handleLogout" :is-loading="isLoggingOut">
-              Sign Out
-            </UiButton>
+          <div class="flex items-center space-x-2">
+            <!-- Notification Bell -->
+            <NoticesNotificationBell />
+
+            <!-- User Dropdown -->
+            <NavigationUserMenu :user="user" />
           </div>
         </div>
       </div>
@@ -102,10 +101,7 @@ import { ref, computed, watch } from 'vue'
 import {
   LayoutDashboard,
   Users,
-  FileText,
   Calendar,
-  UserCircle,
-  Settings,
   Map,
   HelpCircle,
   Briefcase,
@@ -117,16 +113,16 @@ import {
   ChevronDown,
   Wrench,
   Contact,
-  KeyRound,
   Activity,
-  PenTool
+  PenTool,
+  FolderOpen,
+  ScrollText
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const { data: sessionData } = await useFetch('/api/auth/session')
 const user = computed(() => sessionData.value?.user)
-const isLoggingOut = ref(false)
 const isSidebarCollapsed = ref(false)
 
 // Role groups for easier configuration
@@ -143,12 +139,33 @@ const navigationConfig = ref([
   // Dashboard - visible to all
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
 
-  // Staff-only sections
-  { path: '/clients', label: 'Clients', icon: Users, roles: FIRM_ROLES },
-  { path: '/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
-  { path: '/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
-  { path: '/documents', label: 'Documents', icon: File, roles: FIRM_ROLES },
-  { path: '/signatures', label: 'E-Signatures', icon: PenTool, roles: FIRM_ROLES },
+  // Client Records section - staff only
+  {
+    label: 'Client Records',
+    icon: Users,
+    isOpen: true,
+    roles: FIRM_ROLES,
+    children: [
+      { path: '/clients', label: 'Clients', icon: Users, roles: FIRM_ROLES },
+      { path: '/people', label: 'People', icon: Contact, roles: FIRM_ROLES },
+      { path: '/matters', label: 'Matters', icon: Briefcase, roles: FIRM_ROLES },
+      { path: '/estate-plans', label: 'Estate Plans', icon: ScrollText, roles: FIRM_ROLES }
+    ]
+  },
+
+  // Documents section - staff only
+  {
+    label: 'Documents',
+    icon: File,
+    isOpen: true,
+    roles: FIRM_ROLES,
+    children: [
+      { path: '/documents', label: 'All Documents', icon: File, roles: FIRM_ROLES },
+      { path: '/signatures', label: 'E-Signatures', icon: PenTool, roles: FIRM_ROLES }
+    ]
+  },
+
+  // Standalone items - staff only
   { path: '/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
   { path: '/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
 
@@ -160,6 +177,7 @@ const navigationConfig = ref([
     roles: FIRM_ROLES,
     children: [
       { path: '/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
+      { path: '/service-catalog/service-categories', label: 'Service Categories', icon: FolderOpen, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
       { path: '/templates', label: 'Document Templates', icon: Copy, roles: FIRM_ROLES }
     ]
@@ -172,23 +190,6 @@ const navigationConfig = ref([
   // Appointments - clients and prospects can book/view
   { path: '/appointments', label: 'Appointments', icon: Calendar, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
   { path: '/documents', label: 'My Documents', icon: File, roles: [...CLIENT_ROLES, ...PROSPECT_ROLES] },
-
-  // Profile - visible to all
-  { path: '/profile', label: 'Profile', icon: UserCircle, roles: ALL_ROLES },
-
-  // Settings section - requires admin level 2+
-  {
-    label: 'Settings',
-    icon: Settings,
-    isOpen: false,
-    roles: ALL_ROLES, // Role check bypassed, uses adminLevel instead
-    minAdminLevel: 2,
-    children: [
-      { path: '/settings/users', label: 'Users', icon: UserCircle, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/settings/oauth-providers', label: 'OAuth Providers', icon: KeyRound, roles: ALL_ROLES, minAdminLevel: 2 },
-      { path: '/settings/calendars', label: 'Calendar Admin', icon: Calendar, roles: ALL_ROLES, minAdminLevel: 2 }
-    ]
-  },
 
   // Help - visible to all
   { path: '/help', label: 'Help', icon: HelpCircle, roles: ALL_ROLES }
@@ -245,21 +246,20 @@ const isActive = (path: string) => {
 
 // Toggle section open/closed state on the original config
 const toggleSection = (label: string) => {
+  // If sidebar is collapsed, expand it first when clicking a section with children
+  if (isSidebarCollapsed.value) {
+    isSidebarCollapsed.value = false
+    // Open the section after expanding sidebar
+    const item = navigationConfig.value.find(i => i.label === label)
+    if (item && 'isOpen' in item) {
+      item.isOpen = true
+    }
+    return
+  }
+
   const item = navigationConfig.value.find(i => i.label === label)
   if (item && 'isOpen' in item) {
     item.isOpen = !item.isOpen
-  }
-}
-
-const handleLogout = async () => {
-  isLoggingOut.value = true
-  try {
-    await $fetch('/api/auth/logout', { method: 'POST' })
-    await router.push('/login')
-  } catch (err) {
-    console.error('Logout failed:', err)
-  } finally {
-    isLoggingOut.value = false
   }
 }
 

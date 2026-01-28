@@ -155,15 +155,25 @@ async function autoStartServiceJourneys(
   const startedJourneys: Array<{ id: string; serviceName: string; journeyName: string }> = []
 
   for (const engagement of engagedServices) {
-    // Find the SERVICE journey template for this catalog item
-    const serviceJourney = await db.select()
-      .from(schema.journeys)
+    // Find the SERVICE journey template for this catalog item via junction table
+    const journeyLink = await db.select({
+      journeyId: schema.journeysToCatalog.journeyId
+    })
+      .from(schema.journeysToCatalog)
+      .innerJoin(schema.journeys, eq(schema.journeysToCatalog.journeyId, schema.journeys.id))
       .where(and(
-        eq(schema.journeys.serviceCatalogId, engagement.catalogId),
+        eq(schema.journeysToCatalog.catalogId, engagement.catalogId),
         eq(schema.journeys.journeyType, 'SERVICE'),
         eq(schema.journeys.isActive, true)
       ))
       .get()
+
+    const serviceJourney = journeyLink
+      ? await db.select()
+          .from(schema.journeys)
+          .where(eq(schema.journeys.id, journeyLink.journeyId))
+          .get()
+      : null
 
     if (!serviceJourney) {
       continue // No service journey defined for this service

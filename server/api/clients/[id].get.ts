@@ -1,6 +1,8 @@
 // Get a specific client by ID
+import { requireRole } from '../../utils/rbac'
+
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['LAWYER', 'ADMIN'])
+  await requireRole(event, ['LAWYER', 'ADMIN'])
 
   const clientId = getRouterParam(event, 'id')
 
@@ -15,8 +17,8 @@ export default defineEventHandler(async (event) => {
   const { eq, and } = await import('drizzle-orm')
   const db = useDrizzle()
 
-  // Get client
-  const client = await db.select()
+  // Get user record (clients are users with role='CLIENT')
+  const user = await db.select()
     .from(schema.users)
     .where(and(
       eq(schema.users.id, clientId),
@@ -24,52 +26,72 @@ export default defineEventHandler(async (event) => {
     ))
     .get()
 
-  if (!client) {
+  if (!user) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
     })
   }
 
-  // Get client profile
-  const profile = await db.select()
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, clientId))
-    .get()
+  // Get client record from clients table (linked via personId)
+  let clientRecord = null
+  if (user.personId) {
+    clientRecord = await db.select()
+      .from(schema.clients)
+      .where(eq(schema.clients.personId, user.personId))
+      .get()
+  }
 
-  // Convert to snake_case for API compatibility
+  // Get person record for address/contact info
+  let person = null
+  if (user.personId) {
+    person = await db.select()
+      .from(schema.people)
+      .where(eq(schema.people.id, user.personId))
+      .get()
+  }
+
   return {
     client: {
-      id: client.id,
-      email: client.email,
-      password: client.password,
-      role: client.role,
-      first_name: client.firstName,
-      last_name: client.lastName,
-      phone: client.phone,
-      avatar: client.avatar,
-      status: client.status,
-      created_at: client.createdAt instanceof Date ? client.createdAt.getTime() : client.createdAt,
-      updated_at: client.updatedAt instanceof Date ? client.updatedAt.getTime() : client.updatedAt
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      phone: user.phone,
+      avatar: user.avatar,
+      status: user.status,
+      person_id: user.personId,
+      created_at: user.createdAt instanceof Date ? user.createdAt.getTime() : user.createdAt,
+      updated_at: user.updatedAt instanceof Date ? user.updatedAt.getTime() : user.updatedAt
     },
-    profile: profile ? {
-      id: profile.id,
-      user_id: profile.userId,
-      date_of_birth: profile.dateOfBirth instanceof Date ? profile.dateOfBirth.getTime() : profile.dateOfBirth,
-      address: profile.address,
-      city: profile.city,
-      state: profile.state,
-      zip_code: profile.zipCode,
-      has_minor_children: profile.hasMinorChildren ? 1 : 0,
-      children_info: profile.childrenInfo,
-      business_name: profile.businessName,
-      business_type: profile.businessType,
-      has_will: profile.hasWill ? 1 : 0,
-      has_trust: profile.hasTrust ? 1 : 0,
-      last_updated: profile.lastUpdated instanceof Date ? profile.lastUpdated.getTime() : profile.lastUpdated,
-      assigned_lawyer_id: profile.assignedLawyerId,
-      created_at: profile.createdAt instanceof Date ? profile.createdAt.getTime() : profile.createdAt,
-      updated_at: profile.updatedAt instanceof Date ? profile.updatedAt.getTime() : profile.updatedAt
+    profile: clientRecord ? {
+      id: clientRecord.id,
+      user_id: clientId,
+      // Address from person record
+      address: person?.address,
+      city: person?.city,
+      state: person?.state,
+      zip_code: person?.zipCode,
+      date_of_birth: person?.dateOfBirth instanceof Date ? person.dateOfBirth.getTime() : person?.dateOfBirth,
+      // Client-specific fields
+      has_minor_children: clientRecord.hasMinorChildren ? 1 : 0,
+      children_info: clientRecord.childrenInfo,
+      business_name: clientRecord.businessName,
+      business_type: clientRecord.businessType,
+      has_will: clientRecord.hasWill ? 1 : 0,
+      has_trust: clientRecord.hasTrust ? 1 : 0,
+      assigned_lawyer_id: clientRecord.assignedLawyerId,
+      created_at: clientRecord.createdAt instanceof Date ? clientRecord.createdAt.getTime() : clientRecord.createdAt,
+      updated_at: clientRecord.updatedAt instanceof Date ? clientRecord.updatedAt.getTime() : clientRecord.updatedAt,
+      // Google Drive fields
+      google_drive_folder_id: clientRecord.googleDriveFolderId,
+      google_drive_folder_url: clientRecord.googleDriveFolderUrl,
+      google_drive_sync_status: clientRecord.googleDriveSyncStatus,
+      google_drive_sync_error: clientRecord.googleDriveSyncError,
+      google_drive_last_sync_at: clientRecord.googleDriveLastSyncAt instanceof Date
+        ? Math.floor(clientRecord.googleDriveLastSyncAt.getTime() / 1000)
+        : clientRecord.googleDriveLastSyncAt
     } : null
   }
 })

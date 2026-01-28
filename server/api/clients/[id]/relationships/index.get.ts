@@ -57,9 +57,7 @@ export default defineEventHandler(async (event) => {
         last_name: person.lastName,
         full_name: person.fullName,
         email: person.email,
-        phone: person.phone,
-        entity_name: person.entityName,
-        entity_type: person.entityType
+        phone: person.phone
       } : null
     }
   })

@@ -18,17 +18,14 @@ export default defineEventHandler(async (event) => {
     zipCode,
     dateOfBirth,
     ssnLast4,
-    entityName,
-    entityType,
-    entityEin,
     notes
   } = body
 
-  // Validation
-  if (!firstName && !entityName) {
+  // Validation - require at least a first name
+  if (!firstName) {
     throw createError({
       statusCode: 400,
-      message: 'Either first name or entity name is required'
+      message: 'First name is required'
     })
   }
 
@@ -36,19 +33,14 @@ export default defineEventHandler(async (event) => {
   const personId = nanoid()
 
   // Compute full name with middle names
-  let fullName
-  if (entityName) {
-    fullName = entityName
-  } else {
-    const nameParts = [firstName]
-    if (middleNames && Array.isArray(middleNames) && middleNames.length > 0) {
-      nameParts.push(...middleNames)
-    }
-    if (lastName) {
-      nameParts.push(lastName)
-    }
-    fullName = nameParts.filter(Boolean).join(' ')
+  const nameParts = [firstName]
+  if (middleNames && Array.isArray(middleNames) && middleNames.length > 0) {
+    nameParts.push(...middleNames)
   }
+  if (lastName) {
+    nameParts.push(lastName)
+  }
+  const fullName = nameParts.filter(Boolean).join(' ')
 
   // Insert using Drizzle - jsonArray type handles serialization automatically
   const newPerson = {
@@ -65,9 +57,6 @@ export default defineEventHandler(async (event) => {
     zipCode: zipCode || null,
     dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
     ssnLast4: ssnLast4 || null,
-    entityName: entityName || null,
-    entityType: entityType || null,
-    entityEin: entityEin || null,
     notes: notes || null
   }
 

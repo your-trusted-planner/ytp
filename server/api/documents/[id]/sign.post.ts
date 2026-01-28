@@ -81,16 +81,12 @@ export default defineEventHandler(async (event) => {
   // Log document signing activity (critical for audit trail)
   await logActivity({
     type: 'DOCUMENT_SIGNED',
-    description: `${user.firstName || user.email} signed "${document.title}"`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'document',
-    targetId: id,
+    target: { type: 'document', id: id, name: document.title },
     matterId: document.matterId || undefined,
     event,
-    metadata: {
-      documentTitle: document.title,
-      documentTemplateId: document.templateId,
+    details: {
       signedAt: new Date().toISOString()
     }
   })

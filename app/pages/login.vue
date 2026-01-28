@@ -72,14 +72,24 @@
               autocomplete="email"
             />
 
-            <UiInput
-              v-model="password"
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              required
-              autocomplete="current-password"
-            />
+            <div>
+              <UiInput
+                v-model="password"
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+              />
+              <div class="mt-1 text-right">
+                <NuxtLink
+                  to="/forgot-password"
+                  class="text-sm text-accent-500 hover:text-accent-600"
+                >
+                  Forgot password?
+                </NuxtLink>
+              </div>
+            </div>
 
             <UiButton
               type="submit"
@@ -145,6 +155,7 @@ interface OAuthProvider {
 const router = useRouter()
 const route = useRoute()
 const { signInWithProvider, handleRedirectResult } = useFirebaseAuth()
+const appConfigStore = useAppConfigStore()
 
 const email = ref('')
 const password = ref('')
@@ -198,6 +209,8 @@ async function verifyAndCreateSession(idToken: string) {
     })
 
     if (response.success) {
+      // Fetch app config after successful login
+      await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
   } catch (err: any) {
@@ -255,6 +268,8 @@ const handleSubmit = async () => {
     })
 
     if (response.user) {
+      // Fetch app config after successful login
+      await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
   } catch (err: any) {

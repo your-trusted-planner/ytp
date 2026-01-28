@@ -131,7 +131,7 @@ describe('Database Schema', () => {
       expect(columns).toContain('id')
       expect(columns).toContain('name')
       expect(columns).toContain('journeyType')
-      expect(columns).toContain('serviceCatalogId')
+      expect(columns).toContain('isActive')
     })
 
     it('should have journeySteps table', () => {

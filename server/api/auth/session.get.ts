@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
       adminLevel: dbUser.adminLevel ?? 0,
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
+      avatar: dbUser.avatar,
       status: dbUser.status,
       hasPassword: !!dbUser.password,
       hasFirebaseAuth: !!dbUser.firebaseUid

@@ -25,6 +25,7 @@ export default withMermaid(
       nav: [
         { text: 'Home', link: '/' },
         { text: 'Architecture', link: '/architecture/' },
+        { text: 'Integrations', link: '/integrations/' },
         { text: 'Help Center', link: '/help/' },
         { text: 'Release Notes', link: '/releases/' }
       ],
@@ -50,6 +51,16 @@ export default withMermaid(
             items: [
               { text: 'API Audit Report', link: '/architecture/api-audit' },
               { text: 'Implementation Summary', link: '/architecture/implementation-summary' }
+            ]
+          }
+        ],
+        '/integrations/': [
+          {
+            text: 'Integrations',
+            collapsed: false,
+            items: [
+              { text: 'Overview', link: '/integrations/' },
+              { text: 'Google Drive', link: '/integrations/google-drive' }
             ]
           }
         ],

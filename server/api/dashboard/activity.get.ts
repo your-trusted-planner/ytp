@@ -1,5 +1,15 @@
 import { desc, eq, and, gte, lte, sql } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
+import { resolveEntityNames, getEntityLink } from '../../utils/entity-resolver'
+import type { EntityType, EntityRef } from '../../utils/activity-logger'
+
+interface ResolvedEntityRef {
+  type: EntityType
+  id: string
+  snapshotName: string    // Name at log time
+  currentName: string     // Current name (may differ)
+  link: string | null     // URL path to entity
+}
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
@@ -15,6 +25,7 @@ export default defineEventHandler(async (event) => {
   const userId = query.userId as string | undefined
   const startDate = query.startDate as string | undefined
   const endDate = query.endDate as string | undefined
+  const resolveNames = query.resolveNames === 'true'
 
   const db = useDrizzle()
 
@@ -85,12 +96,104 @@ export default defineEventHandler(async (event) => {
 
   const total = countResult?.count || 0
 
-  return {
-    activities: activities.map(activity => ({
+  // If resolveNames is requested, batch resolve all entity references
+  let currentNames: Map<string, string> | undefined
+  if (resolveNames) {
+    // Collect all entity refs that need resolution
+    const entityRefs: Array<{ type: EntityType; id: string }> = []
+
+    for (const activity of activities) {
+      const metadata = activity.metadata ? JSON.parse(activity.metadata) : null
+
+      // Add target entity ref
+      if (metadata?.target?.type && metadata?.target?.id) {
+        entityRefs.push({
+          type: metadata.target.type as EntityType,
+          id: metadata.target.id
+        })
+      }
+
+      // Add related entity refs
+      if (metadata?.relatedEntities && Array.isArray(metadata.relatedEntities)) {
+        for (const ref of metadata.relatedEntities) {
+          if (ref?.type && ref?.id) {
+            entityRefs.push({
+              type: ref.type as EntityType,
+              id: ref.id
+            })
+          }
+        }
+      }
+
+      // Also resolve legacy targetType/targetId if present and no structured target
+      if (!metadata?.target && activity.targetType && activity.targetId) {
+        entityRefs.push({
+          type: activity.targetType as EntityType,
+          id: activity.targetId
+        })
+      }
+    }
+
+    // Batch resolve all names
+    if (entityRefs.length > 0) {
+      currentNames = await resolveEntityNames(entityRefs)
+    }
+  }
+
+  // Transform activities for response
+  const transformedActivities = activities.map(activity => {
+    const metadata = activity.metadata ? JSON.parse(activity.metadata) : null
+
+    // Build resolved entity references if resolveNames is true
+    let resolvedTarget: ResolvedEntityRef | undefined
+    let resolvedRelatedEntities: ResolvedEntityRef[] | undefined
+
+    if (resolveNames && currentNames) {
+      // Resolve target
+      if (metadata?.target) {
+        const target = metadata.target as EntityRef
+        const currentName = currentNames.get(`${target.type}:${target.id}`) || target.name
+        resolvedTarget = {
+          type: target.type,
+          id: target.id,
+          snapshotName: target.name,
+          currentName,
+          link: getEntityLink(target.type, target.id)
+        }
+      } else if (activity.targetType && activity.targetId) {
+        // Handle legacy targetType/targetId
+        const type = activity.targetType as EntityType
+        const id = activity.targetId
+        const currentName = currentNames.get(`${type}:${id}`) || 'Unknown'
+        resolvedTarget = {
+          type,
+          id,
+          snapshotName: currentName, // Legacy activities don't have snapshot name
+          currentName,
+          link: getEntityLink(type, id)
+        }
+      }
+
+      // Resolve related entities
+      if (metadata?.relatedEntities && Array.isArray(metadata.relatedEntities)) {
+        resolvedRelatedEntities = metadata.relatedEntities.map((ref: EntityRef) => {
+          const currentName = currentNames!.get(`${ref.type}:${ref.id}`) || ref.name
+          return {
+            type: ref.type,
+            id: ref.id,
+            snapshotName: ref.name,
+            currentName,
+            link: getEntityLink(ref.type, ref.id)
+          }
+        })
+      }
+    }
+
+    return {
       id: activity.id,
       type: activity.type,
       description: activity.description,
-      metadata: activity.metadata ? JSON.parse(activity.metadata) : null,
+      metadata,
       userId: activity.userId,
       userRole: activity.userRole,
       targetType: activity.targetType,
@@ -105,8 +208,15 @@ export default defineEventHandler(async (event) => {
         firstName: activity.userFirstName,
         lastName: activity.userLastName,
         email: activity.userEmail
-      } : null
-    })),
+      } : null,
+      // New structured entity references (only included when resolveNames=true)
+      ...(resolveNames && resolvedTarget ? { target: resolvedTarget } : {}),
+      ...(resolveNames && resolvedRelatedEntities && resolvedRelatedEntities.length > 0 ? { relatedEntities: resolvedRelatedEntities } : {})
+    }
+  })
+
+  return {
+    activities: transformedActivities,
     pagination: {
       total,
       limit,
@@ -115,4 +225,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-

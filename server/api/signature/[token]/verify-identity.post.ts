@@ -214,19 +214,14 @@ export default defineEventHandler(async (event) => {
       : `Identity verification failed via ${request.mode} for "${document?.title || 'document'}"`,
     userId: signer.id,
     userRole: signer.role,
-    targetType: 'signature_session',
-    targetId: session.id,
+    target: document ? { type: 'document', id: document.id, name: document.title } : undefined,
     matterId: document?.matterId || undefined,
     event,
-    metadata: {
+    details: {
       signatureSessionId: session.id,
-      documentId: session.documentId,
-      documentTitle: document?.title,
       verificationMode: request.mode,
       verificationSuccess: verificationResult.success,
-      verificationMetadata: verificationResult.metadata,
       ipAddress: requestContext.ipAddress,
-      userAgent: requestContext.userAgent,
       ...(verificationResult.error && { error: verificationResult.error })
     }
   })

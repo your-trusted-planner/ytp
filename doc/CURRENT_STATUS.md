@@ -1,10 +1,364 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-27
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Estate Plan Delete with Activity Logging (2026-01-27)
+- **Status**: Complete ✅
+- **What**: Admin-only delete functionality for estate plans with cascading deletion and activity logging
+- **Features**:
+  - **Delete Endpoint**: `DELETE /api/admin/estate-plans/:id`
+    - Requires admin level 2 (enforced by `/api/admin/*` middleware)
+    - Query param `?deletePeople=true` to also delete associated people (default: unlink only)
+    - Cascades through all related tables (roles, versions, events, trusts, wills, ancillary docs, matter links)
+    - Returns detailed deletion summary
+  - **Confirmation UI**: Modal with safeguards
+    - Shows summary of what will be deleted (counts for each entity type)
+    - Checkbox option to also delete people (with warning about potential failures)
+    - Confirmation text input requiring exact plan name
+    - Only visible to admin level 2+
+  - **Activity Logging**: Full audit trail
+    - New entity type: `estate_plan`
+    - New activity types: `ESTATE_PLAN_CREATED`, `ESTATE_PLAN_UPDATED`, `ESTATE_PLAN_AMENDED`, `ESTATE_PLAN_IMPORTED`, `ESTATE_PLAN_STATUS_CHANGED`
+    - Import logging with source, people created/linked, roles created
+    - Delete logging with full summary of deleted entities
+- **Files Created**:
+  - `server/api/admin/estate-plans/[id].delete.ts` - Delete endpoint
+  - `tests/unit/estate-plan-delete.test.ts` - 32 tests for delete logic
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Added estate_plan entity type and activity types
+  - `server/utils/activity-description.ts` - Added descriptions for estate plan activities
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Added activity logging
+  - `app/pages/estate-plans/[id].vue` - Added delete button and modal
+- **Test Coverage**: 969 tests passing (32 new tests added)
+- **Security**: Admin level 2 required at both UI and API levels
+
+#### WealthCounsel Import - Person Deduplication & UI (2026-01-26)
+- **Status**: Complete ✅
+- **What**: Added comprehensive person deduplication to WealthCounsel import with a review UI
+- **Problem**: When importing estate plans from WealthCounsel XML, people could be created as duplicates if they already existed in the system. Also, the same person could appear multiple times in plan roles.
+- **Solution**:
+  - **Person Matching Utilities**: Extracted reusable matching logic to `server/utils/person-matching.ts`
+    - `PersonExtractor` class for batch extraction with role aggregation
+    - `calculateMatchConfidence()` - Confidence scoring (SSN=99%, NAME_EMAIL=95%, NAME_DOB=85%, NAME_ONLY=60%)
+    - `findPersonMatches()` / `findPersonMatchesBatch()` - Database matching
+    - `buildDecisionLookup()` / `buildPersonIdLookupFromDecisions()` - Decision handling
+  - **Person Matching UI**: Created Vue components for user review
+    - `app/components/person/ConfidenceBadge.vue` - Badge showing match confidence with color coding
+    - `app/components/person/MatchCard.vue` - Card for individual person with matches and radio buttons
+    - `app/components/person/MatchingReview.vue` - Container with filter tabs, quick actions, summary
+  - **Role Deduplication**: Fixed duplicate plan roles being created
+    - Added deduplication in `transformRoles()` based on `(personId, roleType, forPersonId)` tuple
+    - Prevents same person having same role type multiple times in a plan
+- **Files Created**:
+  - `server/utils/person-matching.ts` - Reusable matching utilities
+  - `app/components/person/ConfidenceBadge.vue` - Match confidence badge
+  - `app/components/person/MatchCard.vue` - Person match selection card
+  - `app/components/person/MatchingReview.vue` - Person matching review container
+  - `tests/unit/person-matching.test.ts` - 42 tests for matching utilities
+- **Files Modified**:
+  - `server/api/admin/integrations/wealthcounsel/parse.post.ts` - Uses PersonExtractor
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Handles person decisions
+  - `server/api/admin/integrations/wealthcounsel/pending/[parseId].get.ts` - Returns extractedPeople
+  - `server/utils/wealthcounsel-transformers.ts` - Role deduplication fix
+  - `app/pages/settings/integrations/wealthcounsel/import.vue` - Integrated PersonMatchingReview
+  - `tests/unit/wealthcounsel-transformers.test.ts` - Added 5 deduplication tests
+  - `tests/unit/wealthcounsel-import-api.test.ts` - Added person decision tests
+- **Test Coverage**: 939 tests passing (7 new tests added)
+- **UI Features**:
+  - Filter tabs by role type (client, spouse, child, beneficiary, fiduciary) or "with matches"
+  - Quick actions: "Accept all high-confidence matches", "Create all new"
+  - Role-based color coding (client=blue, spouse=pink, child=purple, beneficiary=green, fiduciary=amber)
+  - Import summary showing create vs link counts
+
+#### Lawmatics Import - Comprehensive Duplicate Handling (2026-01-26)
+- **Status**: Complete ✅
+- **What**: Implemented duplicate detection for contacts during Lawmatics import to prevent cascade failures
+- **Problem**: When a contact was skipped (duplicate OR filtered as non-person), it wasn't added to the lookup cache. This caused cascade failures:
+  ```
+  Contact skipped (duplicate) → NOT in peopleLookup
+    → Prospect referencing that contact → FAILS (can't find person)
+      → NOT in matterLookup
+        → Notes referencing that prospect → FAILS (can't find matter)
+  ```
+- **Solution**:
+  - **Duplicate Detection**: New `server/utils/duplicate-detector.ts` with email-based duplicate detection
+    - `buildEmailIndex()` - Builds email→personId index from people table at start of contacts phase
+    - `checkForDuplicates()` - Checks each contact against the index before transform
+    - Returns match info with confidence score (100 for exact email match)
+  - **Critical Fix**: When duplicate found, add to `peopleLookupCache` with **existing person's ID**
+    ```typescript
+    peopleLookupCache.set(record.id, duplicateCheck.bestMatch.existingPersonId)
+    ```
+  - **Duplicate Tracking**: New `import_duplicates` table logs all detected duplicates for review
+    - Source record info (externalId, entityType, sourceData JSON)
+    - Match info (duplicateType, matchingField, matchingValue, confidenceScore)
+    - Resolution tracking (LINKED, CREATED_NEW, SKIPPED, PENDING)
+  - **Real-time Index Update**: Newly created contacts added to email index to catch duplicates within same batch
+- **Files Created**:
+  - `server/utils/duplicate-detector.ts` - Duplicate detection utilities
+- **Files Modified**:
+  - `server/db/schema.ts` - Added `importDuplicates` table
+  - `server/queue/lawmatics-import.ts` - Integrated duplicate detection in contacts phase
+  - `server/api/admin/migrations/[id].get.ts` - Added `duplicatesLinked` count to response
+  - `app/components/admin/MigrationProgress.vue` - Shows duplicates linked count (amber stat box)
+  - `app/pages/settings/integrations/lawmatics/migrate.vue` - Updated interface for duplicatesLinked
+- **Key Insight**: "By adding the duplicate to the lookup cache with the existing person's ID, all downstream prospects and notes will resolve correctly instead of failing"
+- **Migration**: `0013_dizzy_maverick.sql` - Creates `import_duplicates` table
+- **Future Enhancements** (not in this version):
+  - Full duplicates list endpoint (`GET /api/admin/migrations/[id]/duplicates`)
+  - Manual resolution endpoint (`POST .../duplicates/[id]/resolve`)
+  - Review modal with side-by-side comparison
+
+#### Lawmatics Import Fix - Prospects Processing (2026-01-24)
+- **Status**: Complete ✅
+- **What**: Fixed issue where all prospects/matters failed to import with "Could not resolve client for prospect" error
+- **Root Cause**: Contacts were imported into the `people` table (correct per Belly Button Principle), but prospects processing was looking up clients in the `users` table, which was empty
+- **Solution**:
+  - Added `buildPersonToUserMap()` function to map personId → userId for existing user accounts
+  - Added `ensurePersonIsClient()` function that:
+    - Looks up person in people table
+    - Creates `users` record with role='CLIENT' if not exists
+    - Creates `clients` record if not exists
+    - Returns userId for matter's clientId FK reference
+  - Updated prospects processing to use peopleLookup + ensurePersonIsClient
+  - Cache personToUserMap entries so multiple matters for same client reuse the same user
+- **Files Modified**:
+  - `server/queue/lawmatics-import.ts` - Added new helper functions and updated prospects case
+- **Tests Created**:
+  - `tests/unit/lawmatics-import-prospects.test.ts` - 22 regression tests covering:
+    - Contact to Person to Client flow
+    - Multiple matters for same client (key regression scenario)
+    - Error handling for orphan prospects
+    - Import metadata generation
+    - buildPersonToUserMap logic
+    - ensurePersonIsClient logic
+    - Prospects phase processing integration
+- **Key Insight**: "By definition, a person who has a matter associated with them is a client" - so we look up contacts in people table, then promote them to client/user when they have a prospect
+
+#### Server-Side Pagination for Index Endpoints (2026-01-24)
+- **Status**: Complete ✅
+- **What**: Added server-side pagination to index endpoints and UiDataTable component
+- **Design Decisions**:
+  - Page-based pagination (not offset-based) - better UX for table navigation
+  - Default page size: 25 items
+  - Max page size: 100 items (enforced server-side)
+  - Server-side sorting applied before pagination
+  - Backward compatible - endpoints without pagination params return all data
+- **Files Created**:
+  - `server/utils/pagination.ts` - Backend pagination helpers (`parsePaginationParams`, `buildPaginationMeta`, `calculateOffset`, `isPaginationRequested`)
+  - `app/composables/usePaginatedData.ts` - Frontend composable for paginated data fetching
+  - `tests/unit/pagination.test.ts` - Unit tests for pagination utilities (19 tests)
+- **Files Modified**:
+  - `app/components/ui/DataTable.vue` - Added pagination UI (page info, size selector, prev/next buttons)
+  - `server/api/clients/index.get.ts` - Added pagination support
+  - `server/api/people/index.get.ts` - Added pagination support
+  - `server/api/matters/index.get.ts` - Added pagination support
+  - `server/api/referral-partners/index.get.ts` - Added pagination support
+  - `app/pages/clients/index.vue` - Connected pagination to DataTable
+  - `app/pages/people/index.vue` - Connected pagination to DataTable
+  - `app/pages/matters/index.vue` - Connected pagination to custom table
+- **Query Parameters**:
+  - `page` - Page number (default: 1)
+  - `limit` - Items per page (default: 25, max: 100)
+  - `sortBy` - Column to sort by
+  - `sortDirection` - 'asc' or 'desc'
+- **Response Format**:
+  ```typescript
+  {
+    clients: [...],
+    pagination: {
+      page: 1,
+      limit: 25,
+      totalCount: 150,
+      totalPages: 6,
+      hasNextPage: true,
+      hasPrevPage: false
+    }
+  }
+  ```
+
+#### UiDataTable Component & Clients Page Migration (2026-01-23)
+- **Status**: Complete ✅
+- **What**: Created reusable data table component and migrated clients page
+- **Component**: `/app/components/ui/DataTable.vue`
+  - Sortable columns
+  - Row click handling
+  - Customizable slots for cell content
+  - Loading and empty states
+- **Files Modified**:
+  - `app/pages/clients/[id].vue` - Uses new DataTable component
+  - `app/pages/matters/[id].vue` - Uses new DataTable component
+
+#### Activity Attribution System Enhancement (2026-01-23)
+- **Status**: Complete ✅
+- **What**: Redesigned activity logging to provide structured, linkable entity references
+- **Key Features**:
+  - **EntityRef pattern**: Standardized `{ type, id, name }` references for all entities
+  - **Historical accuracy**: Name snapshots at log time preserved
+  - **Current name resolution**: API can resolve current names for display
+  - **Clickable entity badges**: Activity log shows linked badges to referenced entities
+- **New Utilities Created**:
+  - `server/utils/entity-resolver.ts` - Centralized entity name resolution
+  - `server/utils/activity-description.ts` - Human-readable description generation
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Added EntityRef types, structured logging
+  - `server/api/dashboard/activity.get.ts` - Added `resolveNames=true` parameter
+  - `app/pages/activity.vue` - Entity badges with links
+  - `app/components/dashboard/ActivityFeed.vue` - Entity badges with links
+  - 14 API endpoints updated to use structured entity references
+- **Documentation**: See CLAUDE.md "Activity Logging System" section
+
+#### Google Drive Integration, Toast Notifications & Notices System (2026-01-21)
+- **Status**: Complete ✅
+- **What**: Comprehensive Google Drive folder sync, toast notification system, and in-app notices for user alerts
+
+**Phase 1: Toast Notification System**
+- **Library**: vue-toastification@next
+- **Features**:
+  - Position: top-right, stacks up to 5 toasts
+  - Auto-dismiss: 5s for info/success, 8s for errors
+  - Draggable to dismiss
+  - Custom Tailwind-themed styling
+- **Files Created**:
+  - `/app/plugins/toast.client.ts` - Toast plugin initialization (client-only)
+  - `/app/composables/useToast.ts` - Composable with `success()`, `error()`, `warning()`, `info()`, `dismiss()` methods
+  - `/app/assets/css/toast.css` - Custom Tailwind theme overrides
+- **Usage**:
+  ```typescript
+  const toast = useToast()
+  toast.success('Operation completed')
+  toast.error('Something went wrong')
+  ```
+
+**Phase 2: Google Drive Status Indicators**
+- **Components Created**:
+  - `/app/components/drive/StatusBadge.vue` - Compact badge (SYNCED/NOT_SYNCED/ERROR) with folder link
+  - `/app/components/drive/StatusSection.vue` - Full status card with folder link, last sync time, error display, resync buttons
+- **Integration Points**:
+  - Client detail page (`/clients/[id]`) - Badge in header, section after Quick Stats
+  - Matter detail page (`/matters/[id]`) - Badge in header, section in Overview tab
+- **Resync Features**:
+  - "Sync Now" / "Verify Folder" button - Creates folder or verifies existing
+  - "Force New Folder" button - Clears old reference and creates new folder in current drive
+  - Handles drive configuration changes gracefully (detects inaccessible folders)
+
+**Phase 3: Google Drive Backend & Sync**
+- **Database Schema** (in `clientProfiles` and `matters` tables):
+  - `googleDriveFolderId` - Drive folder ID
+  - `googleDriveFolderUrl` - Web link to folder
+  - `googleDriveSyncStatus` - 'SYNCED' | 'NOT_SYNCED' | 'ERROR'
+  - `googleDriveSyncError` - Error message if sync failed
+  - `googleDriveLastSyncAt` - Timestamp of last sync
+  - `googleDriveSubfolderIds` - JSON object of subfolder IDs (matters only)
+- **Settings Page**: `/app/pages/settings/google-drive.vue`
+  - Service account email and private key configuration
+  - Shared Drive ID selection (with "Use this" helper from test results)
+  - Root folder name and impersonation email (optional)
+  - Matter subfolder names (configurable list)
+  - Sync toggles for generated docs, client uploads, signed documents
+  - Connection test with diagnostic output (lists accessible drives)
+  - Root folder creation button
+- **API Endpoints Created**:
+  - `GET /api/admin/google-drive/config` - Get current configuration
+  - `POST /api/admin/google-drive/configure` - Save configuration
+  - `POST /api/admin/google-drive/test` - Test connection (returns accessible drives)
+  - `POST /api/admin/google-drive/create-root-folder` - Create root folder in shared drive
+  - `POST /api/google-drive/sync/client/[id]` - Sync client folder (with `?force=true` option)
+  - `POST /api/google-drive/sync/matter/[id]` - Sync matter folder (with `?force=true` option)
+  - `POST /api/google-drive/sync/document/[id]` - Sync document to Drive
+- **Utility**: `/server/utils/google-drive.ts`
+  - JWT-based service account authentication (Web Crypto API compatible with Workers)
+  - `isDriveEnabled()` - Check if Drive is configured
+  - `createClientFolder()` - Create/get client folder
+  - `createMatterFolder()` - Create matter folder with subfolders
+  - `getFile()` - Verify file/folder accessibility
+  - `testDriveConnection()` - Test with diagnostic info
+  - `syncDocumentToDrive()` - Sync document to appropriate subfolder
+  - `syncUploadToDrive()` - Sync client upload to Drive
+- **Auto-Create Client Folder**: When creating a matter, if client doesn't have a Drive folder (or it's inaccessible), automatically creates one before creating the matter folder
+
+**Phase 4: Notices System**
+- **Database Schema**:
+  - `notices` table - Type, severity, title, message, target entity, action URL
+  - `noticeRecipients` table - User/role targeting, read/dismiss tracking
+- **Notice Types**: DRIVE_SYNC_ERROR, DOCUMENT_SIGNED, CLIENT_FILE_UPLOADED, JOURNEY_ACTION_REQUIRED, SYSTEM_ANNOUNCEMENT, PAYMENT_RECEIVED
+- **Severities**: INFO, WARNING, ERROR, SUCCESS
+- **API Endpoints**:
+  - `GET /api/notices` - Get notices for current user (own + role-broadcast)
+  - `GET /api/notices/unread-count` - Get unread count for badge
+  - `POST /api/notices/[id]/read` - Mark as read
+  - `POST /api/notices/[id]/dismiss` - Dismiss notice
+  - `POST /api/notices/mark-all-read` - Mark all as read
+- **Utility**: `/server/utils/notice-service.ts`
+  - `createNotice()` - Create notice with recipients
+  - `notifyDriveSyncError()` - Convenience function for Drive errors
+- **UI Components**:
+  - `/app/components/notices/NotificationBell.vue` - Bell icon with unread count badge
+  - `/app/components/notices/NotificationDropdown.vue` - Dropdown showing recent notices
+  - `/app/components/notices/NotificationItem.vue` - Individual notice display
+  - `/app/pages/notifications/index.vue` - Full notification history page
+- **Composable**: `/app/composables/useNotices.ts` - State management with 60-second polling
+- **Integration**: Notification bell added to dashboard header (before user menu)
+
+**Phase 5: Lucide Icons Plugin & Google Drive Icon**
+- **Plugin**: `/app/plugins/lucide-icons.ts` - Global Lucide icon registration
+- **Custom Icon**: `/app/components/icons/GoogleDrive.vue` - Official multi-color Google Drive logo
+- **Icon Usage** (official Google Drive icon appears in):
+  - Sidebar navigation (Settings → Google Drive)
+  - Settings index page card
+  - Google Drive settings page header
+  - Drive StatusSection header
+  - "Open in Drive" links throughout app
+
+**Files Modified**:
+- `/server/db/schema.ts` - Added notices tables, Drive fields to clientProfiles/matters
+- `/server/api/clients/[id].get.ts` - Returns Google Drive fields in profile
+- `/server/api/matters/index.post.ts` - Auto-creates client folder if missing, creates matter folder
+- `/server/api/matters/lawyers.get.ts` - Fixed missing await, added camelCase fields
+- `/app/layouts/dashboard.vue` - Added notification bell, Google Drive icon in nav
+- `/app/pages/settings/index.vue` - Google Drive icon on settings card
+- `/app/pages/matters/index.vue` - Drive status alert with icon
+- `nuxt.config.ts` - Added toast CSS import
+
+**Environment Variables**:
+- Service account credentials stored in database (not env vars) for easier admin management
+
+**Migration Required**: Run `npx drizzle-kit generate` then `npx drizzle-kit migrate`
+
+---
+
+#### Journey-to-Catalog Many-to-Many Relationship (2026-01-21)
+- **Status**: Complete ✅
+- **What**: Changed engagement journeys from one-to-one to many-to-many relationship with service catalog items
+- **Why**: A single engagement journey process can lead to multiple possible service products - client chooses the service at the end
+- **Schema Changes**:
+  - **Created**: `journeys_to_catalog` junction table with (journeyId, catalogId) composite primary key
+  - **Removed**: `serviceCatalogId` column from `journeys` table
+  - **Added**: `selectedCatalogId` column to `clientJourneys` table (tracks client's service selection at journey completion)
+- **API Endpoints Updated**:
+  - `POST /api/journeys` - Accepts `catalogIds` array (or legacy `serviceCatalogId`)
+  - `GET /api/journeys` - Returns `catalog_items` array instead of single service
+  - `GET /api/journeys/[id]` - Returns `catalog_items` array with id, name, category, price
+  - `PUT /api/journeys/[id]` - Accepts `catalogIds` array, manages junction table
+  - `GET /api/client-journeys/client/[clientId]` - Includes `selected_catalog_id` in response
+  - `POST /api/client-journeys/[id]/advance` - Uses junction table to find service journeys
+  - `POST /api/admin/seed-wydapt` - Uses junction table for journey-catalog linking
+  - `POST /api/admin/cleanup-wydapt` - Uses junction table for cleanup queries
+- **Files Modified**:
+  - `server/db/schema.ts` - New junction table, removed column, added column
+  - `server/api/journeys/index.post.ts`
+  - `server/api/journeys/index.get.ts`
+  - `server/api/journeys/[id].get.ts`
+  - `server/api/journeys/[id].put.ts`
+  - `server/api/client-journeys/client/[clientId].get.ts`
+  - `server/api/client-journeys/[id]/advance.post.ts`
+  - `server/api/admin/seed-wydapt.post.ts`
+  - `server/api/admin/cleanup-wydapt.post.ts`
+- **Migration Required**: Run `npx drizzle-kit generate` then `npx drizzle-kit migrate`
 
 #### E-Signature Integration Phase 3 Complete (2026-01-11)
 - **Status**: Complete ✅
@@ -155,8 +509,8 @@
   - `server/api/users/[id].put.ts` - STAFF in enum, FIRM_ROLES logic
   - `server/api/referral-partners/*.ts` - Added STAFF to allowed roles
   - `app/layouts/dashboard.vue` - FIRM_ROLES navigation
-  - `app/pages/dashboard/settings/users.vue` - STAFF option, FIRM_ROLES logic
-  - `app/pages/dashboard/profile/index.vue` - isFirmMember for calendar access
+  - `app/pages/settings/users.vue` - STAFF option, FIRM_ROLES logic
+  - `app/pages/profile/index.vue` - isFirmMember for calendar access
   - `tests/unit/rbac.test.ts` - STAFF role tests
 - **Note**: Many API endpoints still use `['LAWYER', 'ADMIN']` - STAFF access can be added as needed
 
@@ -169,14 +523,14 @@
   - Added referral tracking fields to `clientProfiles`
   - Created `server/utils/request-context.ts` - Captures IP, user agent, geo from Cloudflare headers
   - Created `server/utils/activity-logger.ts` - Structured logging utility
-  - Activity log page at `/dashboard/activity` with filtering and CSV export
+  - Activity log page at `/activity` with filtering and CSV export
   - Wired logging into login, client creation, document signing, document generation
 - **Files Created**:
   - `server/utils/request-context.ts`
   - `server/utils/activity-logger.ts`
   - `server/api/referral-partners/index.get.ts`, `index.post.ts`, `[id].put.ts`
   - `app/components/dashboard/ActivityFeed.vue`
-  - `app/pages/dashboard/activity.vue`
+  - `app/pages/activity.vue`
 - **Migration**: `0024_large_gertrude_yorkes.sql`
 
 #### Firebase Authentication with OAuth Providers (2026-01-08)
@@ -189,7 +543,7 @@
   - Installed `firebase` and `firebase-admin` packages
   - Built client-side Firebase plugin and auth composable
   - Server-side token verification with automatic user creation/linking
-  - Admin UI for managing OAuth providers at `/dashboard/settings/oauth-providers`
+  - Admin UI for managing OAuth providers at `/settings/oauth-providers`
   - Role-based navigation refactored for better configurability
 - **Key Features**:
   - Automatic account linking by email (OAuth login links to existing email/password account)
@@ -207,7 +561,7 @@
   - `/server/middleware/auth.ts` - Added public routes for Firebase auth
   - `/app/pages/login.vue` - Added OAuth buttons, wrapped in ClientOnly for hydration
   - `/app/layouts/dashboard.vue` - Role-based navigation configuration
-  - `/app/pages/dashboard/profile/index.vue` - Conditional password section
+  - `/app/pages/profile/index.vue` - Conditional password section
   - `/server/api/auth/session.get.ts` - Added hasPassword/hasFirebaseAuth flags
   - `/public/icons/*.svg` - Provider logos (google, microsoft, facebook, apple)
 - **Environment Variables Required**:
@@ -229,7 +583,7 @@
 - **Files Modified**:
   - `/server/database/schema.ts` - Custom jsonArray type + People table definitions
   - `/server/api/people/*.ts` - All 5 endpoints (POST, PUT, GET, GET by ID, DELETE)
-  - `/app/pages/dashboard/people/index.vue` - Progressive disclosure UI
+  - `/app/pages/people/index.vue` - Progressive disclosure UI
   - `/app/layouts/dashboard.vue` - Added People menu item
 - **Pattern Established**: ORM-layer serialization via Drizzle custom types (reusable for other JSON data)
 
@@ -263,7 +617,7 @@
   - `/server/api/action-items/*.ts` - 6 endpoints (POST, PUT, DELETE, GET by step, GET by journey, complete)
   - `/server/api/journeys/[id]/validate.get.ts` - Journey validation endpoint
   - `/app/components/journey/ActionItemModal.vue` - Action item configuration modal (NEW)
-  - `/app/pages/dashboard/journeys/[id].vue` - Enhanced with action items display and validation
+  - `/app/pages/journeys/[id].vue` - Enhanced with action items display and validation
 - **Plan Document**: `/doc/action-items-task-management-plan.md` (comprehensive)
 - **Draft Document Action Type**: Stubbed with integration hooks for future document generation system
   - Configuration: document name, template ID, drafting notes
@@ -282,9 +636,9 @@
   - `/app/utils/format.ts` - Added formatCurrency function
   - `/app/components/matter/ServicesTable.vue` - Bug fixed
   - `/app/components/matter/PaymentsTable.vue` - Bug fixed
-  - `/app/pages/dashboard/service-catalog/index.vue`
-  - `/app/pages/dashboard/matters/index.vue`
-  - `/app/pages/dashboard/matters/[id].vue`
+  - `/app/pages/service-catalog/index.vue`
+  - `/app/pages/matters/index.vue`
+  - `/app/pages/matters/[id].vue`
   - `/app/pages/matters/index.vue`
 
 #### Matters API Route Structure Fixed (2026-01-06)
@@ -308,9 +662,27 @@
   - Auto-populates form with current matter data
   - Saves changes and refreshes matter view
 - **Files Modified**:
-  - `/app/pages/dashboard/matters/[id].vue` - Added edit modal and handler
+  - `/app/pages/matters/[id].vue` - Added edit modal and handler
 
 ### Currently In Progress 🔄
+
+#### Entity Notes System (2026-01-23)
+- **Status**: In Progress 🔄
+- **What**: Polymorphic notes system allowing notes to be attached to any entity type
+- **Supported Entity Types**: client, matter, document, appointment, journey
+- **Components**:
+  - `app/components/EntityNotes.vue` - Reusable notes component (NEW)
+- **API Endpoints**:
+  - `POST /api/notes` - Create note for any entity type
+  - `PUT /api/notes/[id]` - Update note (creator or admin only)
+  - `DELETE /api/notes/[id]` - Delete note (creator or admin only)
+  - `GET /api/clients/[id]/notes` - Get notes for a client
+  - `POST /api/clients/[id]/notes` - Create note for a client (legacy endpoint)
+- **Database**: `notes` table with `entityType` and `entityId` columns
+- **Integration Points**:
+  - Client detail page (`/clients/[id]`) - Notes tab
+  - Matter detail page (`/matters/[id]`) - Notes section
+- **Migration**: `0008_wide_venom.sql`
 
 #### NuxtHub 0.10.x Upgrade & API Response Normalization (2026-01-07)
 - **Status**: Core migration complete ✅ - Remaining endpoints on-demand
@@ -368,20 +740,15 @@
 - `/server/api/{matters,clients,journeys,action-items,etc}/**/*.get.ts` - 26 endpoints with snake_case conversion
 - `/doc/NUXTHUB_010_API_MIGRATION.md` - Migration reference guide
 
-#### UI Restructuring Plan: Matter-Centric Architecture
-- **Status**: Planned (Phases 1-2 targeted)
+#### ~~UI Restructuring Plan: Matter-Centric Architecture~~ ✅ COMPLETED
+- **Status**: Complete ✅
+- **What Was Done**: Pages moved from `/app/pages/dashboard/` to flat structure at `/app/pages/`
 - **Plan File**: `/Users/owenhathaway/.claude/plans/lexical-plotting-wadler.md`
-- **Goal**: Align UI with domain model where Matters are primary unit of engagement
-- **Next Steps**:
-  - **Phase 1**: Rename pages to fix terminology confusion
-    - Move `/dashboard/matters/` → `/dashboard/service-catalog/`
-    - Move `/dashboard/cases/` → `/dashboard/matters/`
-    - Update navigation links
-  - **Phase 2**: Create comprehensive Matter detail view
-    - New file: `/app/pages/dashboard/matters/[id].vue`
-    - Tabs: Overview, Engaged Services, Client Journeys, Payments, Documents
-    - New API endpoints for journeys/payments by matter
-- **Future Phases** (3-6): Payment management, journey workflow fixes, enhanced lists, client experience
+- **Completed**:
+  - ✅ Page restructuring (flat structure)
+  - ✅ Matter detail view at `/app/pages/matters/[id].vue`
+  - ✅ Navigation updated
+  - ✅ Service catalog at `/app/pages/service-catalog/`
 
 ---
 
@@ -405,8 +772,10 @@
 Client (1) ──→ Person (1)
 Matter (N) ──→ Client (1)
 Matter (N) ←─→ Service Catalog (N) via matters_to_services
+Journey (N) ←─→ Service Catalog (N) via journeys_to_catalog
 Client Journey (N) ──→ Matter (1)
-Client Journey (N) ──→ Service Catalog (1)
+Client Journey (N) ──→ Journey (1)
+Client Journey (1) ──→ Service Catalog (0..1) via selectedCatalogId (for ENGAGEMENT journeys)
 Payment (N) ──→ Matter (1)
 Document (N) ──→ Matter (1)
 ```
@@ -470,26 +839,15 @@ Document (N) ──→ Matter (1)
 - **Need**: Record payments, view payment history, calculate balances
 - **Location**: Matter detail view (Payments tab)
 
-### 4. Toast Notifications & UI Polish
-- **Status**: Planned
-- **Problem**: Many places in the app use browser `alert()` for notifications (success, error, info messages)
-- **Scope**:
-  - **Toast notifications**: Replace all `alert()` calls with styled toast components (success, error, warning, info variants)
-  - **Styled tooltips**: Improve tooltip styling throughout the app (currently using native `title` attributes)
-  - **Confirmation dialogs**: Consistent styled modals for destructive actions (already have UiModal, ensure consistent usage)
-  - **Loading states**: Audit and improve loading indicators across the app
-- **Files to audit for `alert()` usage**:
-  - `app/pages/signatures.vue` - copySigningLink, sendReminder, revokeSession
-  - `app/pages/documents/[id].vue` - signature session creation, document deletion
-  - `app/pages/templates/index.vue` - template deletion, reactivation
-  - `app/components/signature/SigningCeremony.vue` - download error handling
-  - Various other pages with form submissions
-- **Implementation approach**:
-  - Create `useToast` composable with `toast.success()`, `toast.error()`, `toast.warning()`, `toast.info()` methods
-  - Toast container component in layout (fixed position, stacking)
-  - Auto-dismiss with configurable duration
-  - Optional action buttons in toasts
-- **Libraries to consider**: Vue Toastification, or build lightweight custom solution
+### ~~4. Toast Notifications & UI Polish~~ ✅ COMPLETED (2026-01-21)
+- **Status**: Complete ✅
+- **Implementation**: vue-toastification with custom Tailwind styling
+- See "Google Drive Integration, Toast Notifications & Notices System" in Recently Completed section
+- `useToast()` composable available globally with `success()`, `error()`, `warning()`, `info()` methods
+- **Remaining polish** (optional future work):
+  - Replace remaining `alert()` calls with toast notifications
+  - Improve tooltip styling (currently using native `title` attributes)
+  - Audit loading states across the app
 
 ### 5. API Token Authentication
 - **Status**: Planned
@@ -520,7 +878,27 @@ Document (N) ──→ Matter (1)
   - Existing endpoints work with both auth types
   - New `/api/api-keys/*` endpoints for key management
 
-### ~~6. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
+### 6. API Case Convention Refactor (snake_case → camelCase)
+- **Status**: Planned (requires coordinated effort)
+- **Problem**: Mixed conventions in API responses due to migration from raw SQL to Drizzle ORM
+  - Some endpoints return snake_case (`first_name`, `created_at`)
+  - Some return camelCase (`firstName`, `createdAt`)
+  - Some return BOTH for backward compatibility
+- **Goal**: Standardize all API responses to camelCase
+- **Scope**:
+  - Audit all API endpoints for response format
+  - Update frontend components to use camelCase consistently
+  - Remove snake_case fallbacks after frontend migration
+- **Why coordinated effort**: Changing API response shapes breaks frontend components expecting the old format
+- **Approach**:
+  1. Inventory all endpoints with snake_case responses
+  2. Update frontend components endpoint-by-endpoint
+  3. Remove snake_case from backend after frontend updated
+  4. Test each endpoint/component pair before moving to next
+- **Documentation**: See CLAUDE.md "Attribute Case Conventions" section for current rules
+- **DO NOT** attempt opportunistic cleanup - requires frontend + backend changes together
+
+### ~~7. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
 - **Status**: Complete ✅
 - **Implementation**: Auto-start service journeys when engagement journey completes
 - When ENGAGEMENT journey completes, automatically creates client journeys for all engaged services
@@ -690,9 +1068,131 @@ The following files can be moved to `/doc/archive/` as they represent historical
 - `document-system-analysis.md` - Document system overview
 - `remove-is-template-field.md` - Schema cleanup notes
 
+**Integration Guides** (in `doc/public_site/integrations/`):
+- Google Drive setup and configuration guide (if created)
+
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-01-27**:
+- **Focus**: Estate plan delete functionality and activity logging integration
+- **Achievements**:
+  - ✅ Created `DELETE /api/admin/estate-plans/:id` endpoint with admin level 2 protection
+  - ✅ Added `?deletePeople=true` query param option (default: unlink only)
+  - ✅ Cascade deletes through all related tables
+  - ✅ Added `estate_plan` entity type to activity logger
+  - ✅ Added 5 estate plan activity types (CREATED, UPDATED, AMENDED, IMPORTED, STATUS_CHANGED)
+  - ✅ Added activity descriptions for estate plan events
+  - ✅ Integrated activity logging into WealthCounsel import endpoint
+  - ✅ Added delete button and confirmation modal to estate plan detail page
+  - ✅ Created 32 unit tests for delete functionality
+  - ✅ Fixed CI test failure by using lazy imports for `@nuxthub/db` in person-matching.ts
+- **Technical Notes**:
+  - Delete uses query params (not body) for `deletePeople` option due to Cloudflare Workers DELETE body issue
+  - People deletion is attempted individually to handle cases where people have other relationships
+  - Confirmation requires typing exact plan name to prevent accidental deletion
+  - Activity logging captures full deletion summary for audit trail
+- **Files Created**:
+  - `server/api/admin/estate-plans/[id].delete.ts`
+  - `tests/unit/estate-plan-delete.test.ts`
+- **Files Modified**:
+  - `server/utils/activity-logger.ts` - Estate plan entity type and activity types
+  - `server/utils/activity-description.ts` - Estate plan activity descriptions
+  - `server/utils/person-matching.ts` - Lazy imports for test compatibility
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Activity logging
+  - `app/pages/estate-plans/[id].vue` - Delete UI
+
+**Session 2026-01-26**:
+- **Focus**: Lawmatics import duplicate handling to prevent cascade failures
+- **Problem Solved**: Duplicates and non-person contacts were skipped without adding to lookup cache, causing hundreds of note import errors
+- **Achievements**:
+  - ✅ Created `server/utils/duplicate-detector.ts` for email-based duplicate detection
+  - ✅ Added `import_duplicates` table to track detected duplicates for review
+  - ✅ Integrated duplicate detection into contacts phase of queue handler
+  - ✅ Critical fix: Add duplicates to `peopleLookupCache` with existing person's ID
+  - ✅ Updated email index in real-time as new contacts are processed
+  - ✅ Added `duplicatesLinked` count to migration run API response
+  - ✅ Added amber "Duplicates Linked" stat box to migration progress UI
+  - ✅ Updated documentation in CURRENT_STATUS.md
+- **Technical Notes**:
+  - Email index built once at start of contacts phase (efficient O(1) lookups)
+  - Duplicates logged to `import_duplicates` table with full source data JSON
+  - Resolution tracking supports future manual review/resolution UI
+  - Real-time index update catches duplicates within same import batch
+- **Key Insight**: "By adding the duplicate to the lookup cache with the existing person's ID, all downstream prospects and notes will resolve correctly"
+- **Files Created**:
+  - `server/utils/duplicate-detector.ts`
+- **Files Modified**:
+  - `server/db/schema.ts` - Added `importDuplicates` table
+  - `server/queue/lawmatics-import.ts` - Integrated duplicate detection
+  - `server/api/admin/migrations/[id].get.ts` - Added duplicatesLinked count
+  - `app/components/admin/MigrationProgress.vue` - UI for duplicates count
+  - `app/pages/settings/integrations/lawmatics/migrate.vue` - Interface update
+- **Migration**: `0013_dizzy_maverick.sql` (already generated)
+
+**Session 2026-01-24**:
+- **Focus**: Server-side pagination and Lawmatics import fix
+- **Achievements**:
+  - ✅ Created server-side pagination utility (`server/utils/pagination.ts`)
+  - ✅ Created frontend pagination composable (`app/composables/usePaginatedData.ts`)
+  - ✅ Added pagination UI to UiDataTable component
+  - ✅ Updated 4 backend endpoints (clients, people, matters, referral-partners)
+  - ✅ Updated 3 frontend pages (clients, people, matters)
+  - ✅ Created 19 unit tests for pagination utilities
+  - ✅ Fixed Lawmatics import - prospects were failing because contacts imported as people but lookup used users table
+  - ✅ Added `buildPersonToUserMap()` and `ensurePersonIsClient()` functions
+  - ✅ Created 22 regression tests for Lawmatics import fix
+- **Technical Notes**:
+  - Pagination is backward compatible - endpoints without params return all data
+  - Multiple matters for same client now reuse the same user account (cached in personToUserMap)
+  - Contacts imported as people are promoted to client/user when they have a prospect/matter
+- **Key Insight**: "By definition, a person who has a matter associated with them is a client"
+- **Files Created**:
+  - `server/utils/pagination.ts`
+  - `app/composables/usePaginatedData.ts`
+  - `tests/unit/pagination.test.ts`
+  - `tests/unit/lawmatics-import-prospects.test.ts`
+- **Files Modified**:
+  - `app/components/ui/DataTable.vue`
+  - `server/queue/lawmatics-import.ts`
+  - 4 backend endpoints + 3 frontend pages
+
+**Session 2026-01-21**:
+- **Focus**: Google Drive Integration, Toast Notifications, Notices System
+- **Achievements**:
+  - ✅ Toast notification system with vue-toastification
+  - ✅ Google Drive integration with service account authentication
+  - ✅ Drive folder sync for clients and matters
+  - ✅ Drive status indicators (badges and sections) on detail pages
+  - ✅ Force resync functionality for handling drive configuration changes
+  - ✅ Auto-create client folder when creating matter
+  - ✅ Notices system with database, API, and UI components
+  - ✅ Notification bell in dashboard header with unread count
+  - ✅ Notifications page with full history
+  - ✅ Official Google Drive icon component
+  - ✅ Lucide icons plugin for global icon registration
+  - ✅ Fixed client sync status not persisting after page refresh
+  - ✅ Fixed lawyers endpoint missing await and camelCase fields
+- **Technical Notes**:
+  - Google Drive API requires `supportsAllDrives: true` for Shared Drive operations
+  - Service account with impersonation acts as the impersonated user (sees their drives)
+  - JWT authentication uses Web Crypto API (compatible with Cloudflare Workers)
+  - Drive credentials stored in database for admin-manageable configuration
+  - Notices support both user-specific and role-broadcast targeting
+- **Files Created** (key ones):
+  - `/app/plugins/toast.client.ts` - Toast plugin
+  - `/app/composables/useToast.ts` - Toast composable
+  - `/app/composables/useNotices.ts` - Notices state management
+  - `/app/components/drive/StatusBadge.vue` - Sync status badge
+  - `/app/components/drive/StatusSection.vue` - Full Drive status card
+  - `/app/components/notices/NotificationBell.vue` - Bell with badge
+  - `/app/components/icons/GoogleDrive.vue` - Official Drive icon
+  - `/server/utils/google-drive.ts` - Drive API utilities
+  - `/server/utils/notice-service.ts` - Notice creation utilities
+  - `/app/pages/settings/google-drive.vue` - Drive configuration page
+  - Various API endpoints for Drive sync and notices
+- **Next Up**: Commit and push, then continue with remaining features
 
 **Session 2026-01-11**:
 - **Focus**: E-Signature Integration Phase 3 Completion
@@ -821,9 +1321,11 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 **Next Session Options**:
-1. **Payment Management** - Build payment recording UI (separate plan needed) - Only remaining known issue
+1. **Payment Management** - Build payment recording UI (separate plan needed)
 2. **Schema extraction** - Begin document template analysis and journey generation
-3. **Continue API normalization** - Fix remaining ~70 endpoints as features are tested (on-demand)
+3. **Replace remaining alert() calls** - Audit and migrate to toast notifications
+4. **Continue API normalization** - Fix remaining ~70 endpoints as features are tested (on-demand)
+5. **Matter deletion** - Implement delete functionality (deferred from this session)
 
 ---
 

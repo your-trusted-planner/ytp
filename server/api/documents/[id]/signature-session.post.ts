@@ -10,7 +10,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../../db'
-import { requireRole } from '../../../utils/auth'
+import { requireRole } from '../../../utils/rbac'
 import { generateId } from '../../../utils/auth'
 import {
   generateSigningToken,

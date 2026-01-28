@@ -33,10 +33,13 @@ export const oauthProviders = sqliteTable('oauth_providers', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Users table
+// Users table - Authentication/authorization accounts
+// Links to people table for identity (Belly Button Principle)
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
-  email: text('email').notNull().unique(),
+  // Link to person identity - every user is a person
+  personId: text('person_id').references(() => people.id),
+  email: text('email').unique(), // Nullable for imported records without email
   password: text('password'), // Nullable for OAuth-only users
   firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users
   role: text('role', { enum: ['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT'] }).notNull().default('PROSPECT'),
@@ -50,11 +53,14 @@ export const users = sqliteTable('users', {
   signatureImage: text('signature_image'),
   signatureImageUpdatedAt: integer('signature_image_updated_at', { mode: 'timestamp' }),
   status: text('status', { enum: ['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Client Profiles table
+// Client Profiles table (DEPRECATED: use clients table instead)
+// This table will be removed after data migration to clients table
 export const clientProfiles = sqliteTable('client_profiles', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
@@ -82,6 +88,13 @@ export const clientProfiles = sqliteTable('client_profiles', {
   initialAttributionSource: text('initial_attribution_source'),
   initialAttributionMedium: text('initial_attribution_medium'),
   initialAttributionCampaign: text('initial_attribution_campaign'),
+
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'), // Drive folder ID for this client
+  googleDriveFolderUrl: text('google_drive_folder_url'), // Web URL to folder
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
@@ -165,15 +178,33 @@ export const documents = sqliteTable('documents', {
   signatureData: text('signature_data'),
   viewedAt: integer('viewed_at', { mode: 'timestamp' }),
   sentAt: integer('sent_at', { mode: 'timestamp' }),
+
+  // Google Drive sync tracking
+  googleDriveFileId: text('google_drive_file_id'), // Drive file ID
+  googleDriveFileUrl: text('google_drive_file_url'), // Web URL to file
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'PENDING', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveSyncedAt: integer('google_drive_synced_at', { mode: 'timestamp' }),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Notes table
+// Notes table - polymorphic association to multiple entity types
 export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),
   content: text('content').notNull(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Polymorphic association - can attach notes to any entity type
+  entityType: text('entity_type').notNull(), // 'client', 'matter', 'document', 'appointment', etc.
+  entityId: text('entity_id').notNull(),
+
+  // Who created the note
+  createdBy: text('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -213,6 +244,9 @@ export const activities = sqliteTable('activities', {
   // Flexible metadata
   metadata: text('metadata'), // JSON string
 
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
@@ -222,6 +256,17 @@ export const settings = sqliteTable('settings', {
   key: text('key').notNull().unique(),
   value: text('value').notNull(),
   description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Service Categories - categories for organizing services in the catalog
+export const serviceCategories = sqliteTable('service_categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  displayOrder: integer('display_order').notNull().default(0),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -254,6 +299,19 @@ export const matters = sqliteTable('matters', {
   status: text('status', { enum: ['OPEN', 'CLOSED', 'PENDING'] }).notNull().default('OPEN'),
   leadAttorneyId: text('lead_attorney_id').references(() => users.id), // For engagement letter mapping
   engagementJourneyId: text('engagement_journey_id').references(() => clientJourneys.id), // Track engagement journey
+
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'), // Drive folder ID for this matter
+  googleDriveFolderUrl: text('google_drive_folder_url'), // Web URL to folder
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
+  // Store subfolder IDs as JSON: {"Generated Documents": "...", "Client Uploads": "..."}
+  googleDriveSubfolderIds: text('google_drive_subfolder_ids'),
+
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -317,7 +375,6 @@ export const questionnaireResponses = sqliteTable('questionnaire_responses', {
 // Journeys - The overall journey/workflow (replaces "pipeline" concept)
 export const journeys = sqliteTable('journeys', {
   id: text('id').primaryKey(),
-  serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id), // Which product/service this journey is for
   name: text('name').notNull(), // e.g., "Trust Formation Journey", "Annual Maintenance Journey"
   description: text('description'),
   journeyType: text('journey_type', { enum: ['ENGAGEMENT', 'SERVICE'] }).notNull().default('SERVICE'), // Engagement vs service journey
@@ -326,6 +383,16 @@ export const journeys = sqliteTable('journeys', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
+
+// Journeys to Catalog - Junction table for many-to-many relationship
+// Allows an engagement journey to be associated with multiple service products
+export const journeysToCatalog = sqliteTable('journeys_to_catalog', {
+  journeyId: text('journey_id').notNull().references(() => journeys.id, { onDelete: 'cascade' }),
+  catalogId: text('catalog_id').notNull().references(() => serviceCatalog.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, (table) => ({
+  pk: primaryKey({ columns: [table.journeyId, table.catalogId] })
+}))
 
 // Journey Steps - Individual steps in a journey (can be MILESTONE or BRIDGE)
 export const journeySteps = sqliteTable('journey_steps', {
@@ -355,11 +422,13 @@ export const clientJourneys = sqliteTable('client_journeys', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   matterId: text('matter_id'), // Links to the specific matter (engagement)
-  catalogId: text('catalog_id'), // Links to the service catalog item
+  catalogId: text('catalog_id'), // Links to the service catalog item (for SERVICE journeys)
   journeyId: text('journey_id').notNull().references(() => journeys.id),
   currentStepId: text('current_step_id').references(() => journeySteps.id), // Current position
   status: text('status', { enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'PAUSED', 'CANCELLED'] }).notNull().default('NOT_STARTED'),
   priority: text('priority', { enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }).notNull().default('MEDIUM'),
+  // For ENGAGEMENT journeys: tracks which service the client selected at journey completion
+  selectedCatalogId: text('selected_catalog_id').references(() => serviceCatalog.id),
   startedAt: integer('started_at', { mode: 'timestamp' }),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   pausedAt: integer('paused_at', { mode: 'timestamp' }),
@@ -473,6 +542,14 @@ export const documentUploads = sqliteTable('document_uploads', {
   reviewNotes: text('review_notes'),
   version: integer('version').notNull().default(1), // Version control
   replacesUploadId: text('replaces_upload_id').references((): any => documentUploads.id), // Self-reference for versions
+
+  // Google Drive sync tracking
+  googleDriveFileId: text('google_drive_file_id'), // Drive file ID
+  googleDriveFileUrl: text('google_drive_file_url'), // Web URL to file
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'PENDING', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'), // Error message if sync failed
+  googleDriveSyncedAt: integer('google_drive_synced_at', { mode: 'timestamp' }),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -535,6 +612,8 @@ export const referralPartners = sqliteTable('referral_partners', {
   phone: text('phone'),
   notes: text('notes'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  // Import tracking - JSON with source, externalId, flags, sourceData
+  importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
@@ -753,8 +832,11 @@ export const publicBookings = sqliteTable('public_bookings', {
 // ===================================
 
 // People - Separates identity from authentication
+// Every human in the system is a person (Belly Button Principle)
 export const people = sqliteTable('people', {
   id: text('id').primaryKey(),
+  // Person type: individual or entity (trust, corporation, etc.)
+  personType: text('person_type', { enum: ['individual', 'entity'] }).notNull().default('individual'),
   // Personal Information
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -770,18 +852,76 @@ export const people = sqliteTable('people', {
   // Additional Details
   dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
   ssnLast4: text('ssn_last_4'),
-  // For Corporate Entities
-  entityName: text('entity_name'),
-  entityType: text('entity_type'),
-  entityEin: text('entity_ein'),
   // Notes
   notes: text('notes'),
+  // Import tracking
+  importMetadata: text('import_metadata'),
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Client Relationships - Links clients to people
+// Clients - Client-specific data (Belly Button Principle)
+// Every client is a person, but not every person is a client
+// A client may or may not have a user account for portal access
+export const clients = sqliteTable('clients', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().references(() => people.id).unique(),
+  status: text('status', { enum: ['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+
+  // Estate planning (migrated from clientProfiles)
+  hasMinorChildren: integer('has_minor_children', { mode: 'boolean' }).notNull().default(false),
+  childrenInfo: text('children_info'), // JSON string
+  businessName: text('business_name'),
+  businessType: text('business_type'),
+  hasWill: integer('has_will', { mode: 'boolean' }).notNull().default(false),
+  hasTrust: integer('has_trust', { mode: 'boolean' }).notNull().default(false),
+
+  // Referral tracking
+  referralType: text('referral_type', { enum: ['CLIENT', 'PROFESSIONAL', 'EVENT', 'MARKETING'] }),
+  referredByPersonId: text('referred_by_person_id').references(() => people.id),
+  referredByPartnerId: text('referred_by_partner_id'), // References referralPartners.id
+  referralNotes: text('referral_notes'),
+
+  // Initial attribution captured at lead creation
+  initialAttributionSource: text('initial_attribution_source'),
+  initialAttributionMedium: text('initial_attribution_medium'),
+  initialAttributionCampaign: text('initial_attribution_campaign'),
+
+  // Google Drive sync tracking
+  googleDriveFolderId: text('google_drive_folder_id'),
+  googleDriveFolderUrl: text('google_drive_folder_url'),
+  googleDriveSyncStatus: text('google_drive_sync_status', { enum: ['NOT_SYNCED', 'SYNCED', 'ERROR'] }).default('NOT_SYNCED'),
+  googleDriveSyncError: text('google_drive_sync_error'),
+  googleDriveLastSyncAt: integer('google_drive_last_sync_at', { mode: 'timestamp' }),
+  googleDriveSubfolderIds: text('google_drive_subfolder_ids'), // JSON: {"Generated Documents": "...", ...}
+
+  // Assignment
+  assignedLawyerId: text('assigned_lawyer_id').references(() => users.id),
+
+  // Import tracking
+  importMetadata: text('import_metadata'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Relationships - Unified relationship tracking (Belly Button Principle)
+// Links people to people with context for where the relationship applies
+export const relationships = sqliteTable('relationships', {
+  id: text('id').primaryKey(),
+  fromPersonId: text('from_person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  toPersonId: text('to_person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type').notNull(), // SPOUSE, CHILD, TRUSTEE, BENEFICIARY, etc.
+  context: text('context', { enum: ['client', 'matter'] }), // null = general relationship
+  contextId: text('context_id'), // matterId if context='matter'
+  ordinal: integer('ordinal').notNull().default(0),
+  notes: text('notes'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Client Relationships - Links clients to people (DEPRECATED: use relationships table)
 export const clientRelationships = sqliteTable('client_relationships', {
   id: text('id').primaryKey(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -793,7 +933,7 @@ export const clientRelationships = sqliteTable('client_relationships', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
-// Matter Relationships - Links matters to people
+// Matter Relationships - Links matters to people (DEPRECATED: use relationships table)
 export const matterRelationships = sqliteTable('matter_relationships', {
   id: text('id').primaryKey(),
   matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
@@ -803,4 +943,546 @@ export const matterRelationships = sqliteTable('matter_relationships', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// GOOGLE DRIVE INTEGRATION
+// ===================================
+
+// Google Drive Configuration - Stores service account and sync settings
+export const googleDriveConfig = sqliteTable('google_drive_config', {
+  id: text('id').primaryKey(),
+  isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(false),
+  serviceAccountEmail: text('service_account_email'), // Service account email
+  serviceAccountPrivateKey: text('service_account_private_key'), // Encrypted private key
+  sharedDriveId: text('shared_drive_id'), // Required: Shared Drive ID
+  rootFolderId: text('root_folder_id'), // Root folder within Shared Drive
+  rootFolderName: text('root_folder_name').notNull().default('YTP Client Files'),
+  impersonateEmail: text('impersonate_email'), // User to impersonate for domain-wide delegation
+  matterSubfolders: text('matter_subfolders').notNull()
+    .default('["Generated Documents", "Client Uploads", "Signed Documents", "Correspondence"]'),
+  syncGeneratedDocuments: integer('sync_generated_documents', { mode: 'boolean' }).notNull().default(true),
+  syncClientUploads: integer('sync_client_uploads', { mode: 'boolean' }).notNull().default(true),
+  syncSignedDocuments: integer('sync_signed_documents', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// NOTIFICATION SYSTEM
+// ===================================
+
+// Notices - System notifications and alerts
+export const notices = sqliteTable('notices', {
+  id: text('id').primaryKey(),
+  type: text('type', {
+    enum: [
+      'DRIVE_SYNC_ERROR',
+      'DOCUMENT_SIGNED',
+      'CLIENT_FILE_UPLOADED',
+      'JOURNEY_ACTION_REQUIRED',
+      'SYSTEM_ANNOUNCEMENT',
+      'PAYMENT_RECEIVED'
+    ]
+  }).notNull(),
+  severity: text('severity', { enum: ['INFO', 'WARNING', 'ERROR', 'SUCCESS'] }).notNull().default('INFO'),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  targetType: text('target_type'), // 'client', 'matter', 'document'
+  targetId: text('target_id'),
+  actionUrl: text('action_url'), // URL to navigate to when clicking the notice
+  actionLabel: text('action_label'), // Label for the action button
+  metadata: text('metadata'), // JSON for additional data
+  createdByUserId: text('created_by_user_id').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Notice Recipients - Links notices to specific users or roles
+export const noticeRecipients = sqliteTable('notice_recipients', {
+  id: text('id').primaryKey(),
+  noticeId: text('notice_id').notNull().references(() => notices.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // Specific user
+  targetRole: text('target_role'), // For role-broadcast: 'LAWYER', 'ADMIN', 'STAFF', etc.
+  readAt: integer('read_at', { mode: 'timestamp' }),
+  dismissedAt: integer('dismissed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// DATA MIGRATION SYSTEM
+// ===================================
+
+// Integrations - Stores external system configurations (API keys, settings)
+export const integrations = sqliteTable('integrations', {
+  id: text('id').primaryKey(),
+  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', 'RESEND'] }).notNull(),
+  name: text('name').notNull(), // Display name
+
+  // Encrypted credentials (stored in KV for security, reference here)
+  credentialsKey: text('credentials_key'), // KV key for encrypted credentials
+
+  // Connection status
+  status: text('status', { enum: ['CONFIGURED', 'CONNECTED', 'ERROR'] }).notNull().default('CONFIGURED'),
+  lastTestedAt: integer('last_tested_at', { mode: 'timestamp' }),
+  lastErrorMessage: text('last_error_message'),
+
+  // Settings (JSON: integration-specific settings)
+  settings: text('settings'),
+
+  // Track last sync timestamps per entity type for incremental sync
+  // JSON: { "users": "2025-01-23T14:30:00Z", "contacts": "...", "activities": "..." }
+  lastSyncTimestamps: text('last_sync_timestamps'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Migration Runs - Tracks each migration execution
+export const migrationRuns = sqliteTable('migration_runs', {
+  id: text('id').primaryKey(),
+  integrationId: text('integration_id').notNull().references(() => integrations.id),
+
+  // Run configuration
+  runType: text('run_type', { enum: ['FULL', 'INCREMENTAL'] }).notNull(),
+  entityTypes: text('entity_types').notNull(), // JSON array: ['users', 'contacts', 'prospects', 'notes', 'activities']
+
+  // Status
+  status: text('status', {
+    enum: ['PENDING', 'RUNNING', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED']
+  }).notNull().default('PENDING'),
+
+  // Progress tracking
+  totalEntities: integer('total_entities'), // Estimated total (if known)
+  processedEntities: integer('processed_entities').notNull().default(0),
+  createdRecords: integer('created_records').notNull().default(0),
+  updatedRecords: integer('updated_records').notNull().default(0),
+  skippedRecords: integer('skipped_records').notNull().default(0),
+  errorCount: integer('error_count').notNull().default(0),
+
+  // Checkpoint for resume (JSON: {entity: 'contacts', page: 45, ...})
+  checkpoint: text('checkpoint'),
+
+  // Timing
+  startedAt: integer('started_at', { mode: 'timestamp' }),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Migration Errors - Logs individual record errors for debugging
+export const migrationErrors = sqliteTable('migration_errors', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull().references(() => migrationRuns.id, { onDelete: 'cascade' }),
+
+  entityType: text('entity_type').notNull(), // 'user', 'contact', 'prospect', 'note', 'activity'
+  externalId: text('external_id'), // Source system record ID
+
+  errorType: text('error_type', { enum: ['TRANSFORM', 'VALIDATION', 'INSERT', 'API'] }).notNull(),
+  errorMessage: text('error_message').notNull(),
+  errorDetails: text('error_details'), // JSON: stack trace, raw data, etc.
+
+  // For retry
+  retryCount: integer('retry_count').notNull().default(0),
+  retriedAt: integer('retried_at', { mode: 'timestamp' }),
+  resolved: integer('resolved', { mode: 'boolean' }).notNull().default(false),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// PASSWORD RESET TOKENS
+// ===================================
+
+// Password Reset Tokens - For email-based password reset flow
+export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(), // Secure random token
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  usedAt: integer('used_at', { mode: 'timestamp' }), // Null until used
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Import Duplicates - Track detected duplicates during import for review/resolution
+// Critical for preventing cascade failures: when a duplicate is detected, we link to
+// the existing person and log it here, rather than skipping entirely
+export const importDuplicates = sqliteTable('import_duplicates', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull().references(() => migrationRuns.id, { onDelete: 'cascade' }),
+
+  // Source record
+  source: text('source').notNull(), // 'LAWMATICS'
+  externalId: text('external_id').notNull(), // Lawmatics contact ID
+  entityType: text('entity_type').notNull(), // 'contact'
+  sourceData: text('source_data'), // JSON: original record
+
+  // Match info
+  duplicateType: text('duplicate_type').notNull(), // 'EMAIL', 'NAME', 'PHONE'
+  matchingField: text('matching_field'), // The field that matched
+  matchingValue: text('matching_value'), // The value that matched
+  confidenceScore: integer('confidence_score'), // 0-100
+
+  // Existing record
+  existingPersonId: text('existing_person_id').references(() => people.id),
+
+  // Resolution
+  resolution: text('resolution', { enum: ['LINKED', 'CREATED_NEW', 'SKIPPED', 'PENDING'] }).notNull().default('LINKED'),
+  resolvedPersonId: text('resolved_person_id'), // Person ID used in lookup cache
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// ===================================
+// ESTATE PLAN SYSTEM
+// ===================================
+
+// Estate Plans - The living plan entity (Plan-Centric Architecture)
+// Plans exist independently of matters but connect when work is done
+export const estatePlans = sqliteTable('estate_plans', {
+  id: text('id').primaryKey(),
+
+  // Link to primary person (grantor/testator)
+  // Note: NOT clientId - plan belongs to PERSON, who may become client later
+  primaryPersonId: text('primary_person_id').notNull().references(() => people.id),
+
+  // For joint plans (married couples)
+  secondaryPersonId: text('secondary_person_id').references(() => people.id),
+
+  // Plan identification
+  planType: text('plan_type', { enum: ['TRUST_BASED', 'WILL_BASED'] }).notNull(),
+  planName: text('plan_name'),  // e.g., "Christensen Legacy Family Trust"
+
+  // Version tracking
+  currentVersion: integer('current_version').notNull().default(1),
+
+  // Status lifecycle - designed for full administration
+  status: text('status', {
+    enum: [
+      'DRAFT',           // Being created
+      'ACTIVE',          // Signed and in effect
+      'AMENDED',         // Has been amended (current version > 1)
+      'INCAPACITATED',   // Grantor incapacitated, successor trustee acting
+      'ADMINISTERED',    // Death occurred, in administration
+      'DISTRIBUTED',     // Assets distributed, pending close
+      'CLOSED'           // Fully administered and closed
+    ]
+  }).notNull().default('DRAFT'),
+
+  // Key dates
+  effectiveDate: integer('effective_date', { mode: 'timestamp' }),
+  lastAmendedAt: integer('last_amended_at', { mode: 'timestamp' }),
+  administrationStartedAt: integer('administration_started_at', { mode: 'timestamp' }),
+  closedAt: integer('closed_at', { mode: 'timestamp' }),
+
+  // Matter links (which engagements touched this plan)
+  creationMatterId: text('creation_matter_id').references(() => matters.id),
+
+  // External system references
+  wealthCounselClientId: text('wealthcounsel_client_id'),
+  importMetadata: text('import_metadata'),  // JSON with source info
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Plan Versions - Snapshots over time
+export const planVersions = sqliteTable('plan_versions', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull(),
+
+  // What created this version
+  matterId: text('matter_id').references(() => matters.id),
+  changeType: text('change_type', {
+    enum: ['CREATION', 'AMENDMENT', 'RESTATEMENT', 'CORRECTION', 'ADMIN_UPDATE']
+  }).notNull(),
+  changeDescription: text('change_description'),
+  changeSummary: text('change_summary'),  // Brief description of what changed
+
+  // Effective date
+  effectiveDate: integer('effective_date', { mode: 'timestamp' }),
+
+  // Snapshot of key data at this version (for historical accuracy)
+  roleSnapshot: text('role_snapshot'),  // JSON array of roles at this version
+
+  // Raw source data (preserves original import)
+  sourceType: text('source_type', { enum: ['WEALTHCOUNSEL', 'MANUAL', 'OTHER'] }),
+  sourceXml: text('source_xml'),     // Original XML if from WealthCounsel
+  sourceData: text('source_data'),   // Parsed JSON of all fields
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  createdBy: text('created_by').references(() => users.id)
+})
+
+// Trusts - Trust-specific data
+export const trusts = sqliteTable('trusts', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+
+  // Trust identification
+  trustName: text('trust_name').notNull(),
+  trustType: text('trust_type', {
+    enum: [
+      'REVOCABLE_LIVING',
+      'IRREVOCABLE_LIVING',
+      'TESTAMENTARY',
+      'SPECIAL_NEEDS',
+      'CHARITABLE_REMAINDER',
+      'CHARITABLE_LEAD',
+      'ILIT',           // Irrevocable Life Insurance Trust
+      'GRAT',           // Grantor Retained Annuity Trust
+      'QPRT',           // Qualified Personal Residence Trust
+      'DYNASTY',
+      'OTHER'
+    ]
+  }),
+
+  // Structure
+  isJoint: integer('is_joint', { mode: 'boolean' }).default(false),
+  isRevocable: integer('is_revocable', { mode: 'boolean' }).default(true),
+  jurisdiction: text('jurisdiction'),  // State
+
+  // Key dates
+  formationDate: integer('formation_date', { mode: 'timestamp' }),
+  fundingDate: integer('funding_date', { mode: 'timestamp' }),
+
+  // Administration-related
+  pourOverWillId: text('pour_over_will_id'),  // Forward reference to wills.id
+
+  // External references
+  wealthCounselTrustId: text('wealthcounsel_trust_id'),
+
+  // Extended data from WealthCounsel (trust-specific settings)
+  trustSettings: text('trust_settings'),  // JSON for MC_ prefixed options
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Wills - Will-specific data
+// In joint plans, each principal has their own will
+export const wills = sqliteTable('wills', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+
+  // Whose will is this? (required for joint plans where each spouse has their own will)
+  personId: text('person_id').references(() => people.id),
+
+  // Will identification
+  willType: text('will_type', {
+    enum: ['SIMPLE', 'POUR_OVER', 'TESTAMENTARY_TRUST', 'OTHER']
+  }),
+  executionDate: integer('execution_date', { mode: 'timestamp' }),
+  jurisdiction: text('jurisdiction'),
+
+  // Codicils
+  codicilCount: integer('codicil_count').default(0),
+
+  // Pour-over (links to trust if applicable)
+  pourOverTrustId: text('pour_over_trust_id').references(() => trusts.id),
+
+  // Probate status (for administration)
+  probateStatus: text('probate_status', {
+    enum: ['NOT_FILED', 'FILED', 'ADMITTED', 'CLOSED']
+  }),
+  probateFiledAt: integer('probate_filed_at', { mode: 'timestamp' }),
+  probateCaseNumber: text('probate_case_number'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Ancillary Documents - POAs, healthcare directives, HIPAA authorizations, etc.
+// Each principal in a plan has their own set of ancillary documents
+export const ancillaryDocuments = sqliteTable('ancillary_documents', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+
+  // Whose document is this? (required - each principal has their own)
+  personId: text('person_id').notNull().references(() => people.id),
+
+  // Document type
+  documentType: text('document_type', {
+    enum: [
+      'FINANCIAL_POA',           // Durable Financial Power of Attorney
+      'HEALTHCARE_POA',          // Healthcare Power of Attorney / Healthcare Proxy
+      'ADVANCE_DIRECTIVE',       // Living Will / Advance Directive
+      'HIPAA_AUTHORIZATION',     // HIPAA Authorization
+      'NOMINATION_OF_GUARDIAN',  // Nomination of Guardian (for self if incapacitated)
+      'DECLARATION_OF_GUARDIAN', // Declaration of Guardian for minor children
+      'OTHER'
+    ]
+  }).notNull(),
+
+  // Document details
+  title: text('title'),  // Optional custom title
+  executionDate: integer('execution_date', { mode: 'timestamp' }),
+  jurisdiction: text('jurisdiction'),
+
+  // Document status
+  status: text('status', {
+    enum: ['DRAFT', 'EXECUTED', 'REVOKED', 'SUPERSEDED']
+  }).notNull().default('DRAFT'),
+
+  // Additional metadata
+  notes: text('notes'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Plan Roles - Fiduciaries & beneficiaries (the heart of estate planning)
+export const planRoles = sqliteTable('plan_roles', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+
+  // Version tracking - which version established this role
+  establishedInVersion: integer('established_in_version'),
+  terminatedInVersion: integer('terminated_in_version'),
+
+  // The person in this role
+  personId: text('person_id').notNull().references(() => people.id),
+
+  // For joint plans: whose document does this role apply to?
+  // null = plan-level role (e.g., trustee of joint trust, beneficiary)
+  // personId = person-level role (e.g., agent for Matt's FPOA, executor for Desiree's will)
+  forPersonId: text('for_person_id').references(() => people.id),
+
+  // Link to specific document (optional, for more precise role assignment)
+  willId: text('will_id').references(() => wills.id),
+  ancillaryDocumentId: text('ancillary_document_id').references(() => ancillaryDocuments.id),
+
+  // Snapshot of person data at time of assignment (for historical accuracy)
+  personSnapshot: text('person_snapshot'),  // JSON: name, address, etc.
+
+  // Role classification
+  roleCategory: text('role_category', {
+    enum: ['GRANTOR', 'FIDUCIARY', 'BENEFICIARY', 'GUARDIAN', 'OTHER']
+  }).notNull(),
+
+  roleType: text('role_type', {
+    enum: [
+      // Grantors/Settlors
+      'GRANTOR', 'CO_GRANTOR', 'TESTATOR',
+
+      // Trustees
+      'TRUSTEE', 'CO_TRUSTEE', 'SUCCESSOR_TRUSTEE', 'DISTRIBUTION_TRUSTEE',
+
+      // Beneficiaries
+      'PRIMARY_BENEFICIARY', 'CONTINGENT_BENEFICIARY', 'REMAINDER_BENEFICIARY',
+      'INCOME_BENEFICIARY', 'PRINCIPAL_BENEFICIARY',
+
+      // Will-specific
+      'EXECUTOR', 'CO_EXECUTOR', 'ALTERNATE_EXECUTOR',
+
+      // Powers of Attorney
+      'FINANCIAL_AGENT', 'ALTERNATE_FINANCIAL_AGENT',
+      'HEALTHCARE_AGENT', 'ALTERNATE_HEALTHCARE_AGENT',
+
+      // Guardians
+      'GUARDIAN_OF_PERSON', 'GUARDIAN_OF_ESTATE',
+      'ALTERNATE_GUARDIAN_OF_PERSON', 'ALTERNATE_GUARDIAN_OF_ESTATE',
+
+      // Other fiduciaries
+      'TRUST_PROTECTOR', 'INVESTMENT_ADVISOR',
+
+      // Witnesses/Notary (for record keeping)
+      'WITNESS', 'NOTARY'
+    ]
+  }).notNull(),
+
+  // Ordering (for successors)
+  isPrimary: integer('is_primary', { mode: 'boolean' }).default(false),
+  ordinal: integer('ordinal').default(0),  // 1st successor, 2nd successor, etc.
+
+  // Beneficiary-specific fields
+  sharePercentage: integer('share_percentage'),  // 0-100
+  shareType: text('share_type', {
+    enum: ['PERCENTAGE', 'SPECIFIC_AMOUNT', 'SPECIFIC_PROPERTY', 'REMAINDER', 'PER_STIRPES', 'PER_CAPITA']
+  }),
+  shareAmount: integer('share_amount'),  // In cents, for SPECIFIC_AMOUNT
+  shareDescription: text('share_description'),  // For SPECIFIC_PROPERTY
+  conditions: text('conditions'),  // e.g., "upon reaching age 25"
+
+  // Which trust/subtrust (for plans with multiple trusts)
+  trustId: text('trust_id').references(() => trusts.id),
+  subtrustName: text('subtrust_name'),  // e.g., "Family Trust", "Marital Trust"
+
+  // Status
+  status: text('status', {
+    enum: ['ACTIVE', 'SUCCEEDED', 'DECLINED', 'DECEASED', 'REMOVED', 'TERMINATED']
+  }).notNull().default('ACTIVE'),
+
+  // Dates
+  effectiveDate: integer('effective_date', { mode: 'timestamp' }),
+  terminationDate: integer('termination_date', { mode: 'timestamp' }),
+  terminationReason: text('termination_reason'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Plan Events - Administration timeline
+export const planEvents = sqliteTable('plan_events', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+
+  // Event type
+  eventType: text('event_type', {
+    enum: [
+      // Lifecycle events
+      'PLAN_CREATED', 'PLAN_SIGNED', 'PLAN_AMENDED', 'PLAN_RESTATED',
+
+      // Trigger events
+      'GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED',
+      'GRANTOR_DEATH', 'CO_GRANTOR_DEATH',
+
+      // Administration events
+      'ADMINISTRATION_STARTED', 'SUCCESSOR_TRUSTEE_APPOINTED',
+      'TRUST_FUNDED', 'ASSETS_VALUED',
+      'DISTRIBUTION_MADE', 'PARTIAL_DISTRIBUTION',
+      'TAX_RETURN_FILED', 'NOTICE_SENT',
+
+      // Closure events
+      'FINAL_DISTRIBUTION', 'TRUST_TERMINATED', 'PLAN_CLOSED',
+
+      // Other
+      'NOTE_ADDED', 'DOCUMENT_ADDED', 'OTHER'
+    ]
+  }).notNull(),
+
+  // Event details
+  eventDate: integer('event_date', { mode: 'timestamp' }).notNull(),
+  description: text('description'),
+  notes: text('notes'),
+
+  // Related entities
+  personId: text('person_id').references(() => people.id),  // Person involved
+  roleId: text('role_id').references(() => planRoles.id),   // Role affected
+  matterId: text('matter_id').references(() => matters.id), // Related matter
+
+  // For distributions
+  distributionAmount: integer('distribution_amount'),  // In cents
+  distributionDescription: text('distribution_description'),
+
+  // Metadata
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Plan to Matters - Junction table linking plans to multiple matters
+export const planToMatters = sqliteTable('plan_to_matters', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+  matterId: text('matter_id').notNull().references(() => matters.id, { onDelete: 'cascade' }),
+
+  relationshipType: text('relationship_type', {
+    enum: ['CREATION', 'AMENDMENT', 'ADMINISTRATION', 'REVIEW', 'OTHER']
+  }).notNull(),
+
+  planVersionId: text('plan_version_id').references(() => planVersions.id),
+  notes: text('notes'),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })

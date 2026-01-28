@@ -270,23 +270,41 @@ export default defineEventHandler(async (event) => {
   })
 
   // Log document creation activity
+  const documentTitle = body.title || template.name
   await logActivity({
     type: 'DOCUMENT_CREATED',
-    description: `${user.firstName || user.email} created document "${body.title || template.name}" for ${clientFullName}`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'document',
-    targetId: documentId,
+    target: { type: 'document', id: documentId, name: documentTitle },
+    relatedEntities: [
+      { type: 'client', id: body.clientId, name: clientFullName },
+      { type: 'template', id: template.id, name: template.name }
+    ],
     matterId: body.matterId || undefined,
-    event,
-    metadata: {
-      documentTitle: body.title || template.name,
-      templateId: template.id,
-      templateName: template.name,
-      clientId: body.clientId,
-      clientName: clientFullName
-    }
+    event
   })
+
+  // Queue for Google Drive sync if enabled and matter is associated
+  if (body.matterId && docxBlobKey) {
+    try {
+      const { isDriveEnabled } = await import('../../utils/google-drive')
+      if (await isDriveEnabled()) {
+        // Mark document as pending sync
+        await db.update(schema.documents)
+          .set({ googleDriveSyncStatus: 'PENDING' })
+          .where(eq(schema.documents.id, documentId))
+
+        // Queue the sync (in a real implementation, this would use the queue binding)
+        // For now, we'll do synchronous sync - the queue will be used for retries
+        const { syncDocumentToDrive } = await import('../../utils/google-drive')
+        syncDocumentToDrive(documentId).catch(error => {
+          console.error('Failed to sync document to Google Drive:', error)
+        })
+      }
+    } catch (error) {
+      console.error('Error checking Drive sync status:', error)
+    }
+  }
 
   // Return document object for compatibility
   return {

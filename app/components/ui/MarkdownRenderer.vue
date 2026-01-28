@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { cn } from '~/utils/cn'
 
 interface Props {
@@ -20,9 +21,12 @@ marked.setOptions({
   gfm: true
 })
 
+// Parse markdown and sanitize HTML to prevent XSS attacks
 const renderedContent = computed(() => {
   if (!props.content) return ''
-  return marked.parse(props.content)
+  const parsed = marked.parse(props.content)
+  // Sanitize the rendered HTML to prevent XSS
+  return DOMPurify.sanitize(parsed as string)
 })
 
 const containerClasses = computed(() => {

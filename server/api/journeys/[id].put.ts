@@ -24,17 +24,40 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const now = new Date()
+
+  // Update journey metadata
   await db.update(schema.journeys)
     .set({
       name: body.name,
       description: body.description || null,
-      serviceCatalogId: body.serviceCatalogId || null,
       journeyType: body.journeyType || 'SERVICE',
       isActive: body.isActive ? true : false,
       estimatedDurationDays: body.estimatedDurationDays || null,
-      updatedAt: new Date()
+      updatedAt: now
     })
     .where(eq(schema.journeys.id, journeyId))
+
+  // Update catalog links if provided (many-to-many)
+  // Accept either catalogIds array or legacy serviceCatalogId
+  if (body.catalogIds !== undefined || body.serviceCatalogId !== undefined) {
+    const catalogIds: string[] = body.catalogIds || (body.serviceCatalogId ? [body.serviceCatalogId] : [])
+
+    // Delete existing links
+    await db.delete(schema.journeysToCatalog)
+      .where(eq(schema.journeysToCatalog.journeyId, journeyId))
+
+    // Insert new links
+    if (catalogIds.length > 0) {
+      await db.insert(schema.journeysToCatalog).values(
+        catalogIds.map(catalogId => ({
+          journeyId,
+          catalogId,
+          createdAt: now
+        }))
+      )
+    }
+  }
 
   return { success: true }
 })

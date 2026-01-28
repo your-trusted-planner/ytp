@@ -7,6 +7,7 @@
  */
 
 import { nanoid } from 'nanoid'
+import { kv } from '@nuxthub/kv'
 
 export interface LawPayConnection {
   id: string
@@ -33,7 +34,6 @@ export async function storeLawPayConnection(
 ): Promise<string> {
   const { useDrizzle, schema } = await import('../db')
   const db = useDrizzle()
-  const kv = hubKV()
   const connectionId = nanoid()
   const expiresAtTimestamp = Date.now() + (expiresIn * 1000)
   const now = new Date()
@@ -53,18 +53,18 @@ export async function storeLawPayConnection(
   // 2. Store tokens in KV with TTL (fast access cache)
   const ttlSeconds = Math.floor(expiresIn)
 
-  await kv.put(
+  await kv.set(
     `lawpay:access:${userId}`,
     accessToken,
-    { expirationTtl: ttlSeconds }
+    { ttl: ttlSeconds }
   )
 
   if (refreshToken) {
     // Refresh tokens typically last longer, but set a reasonable TTL
-    await kv.put(
+    await kv.set(
       `lawpay:refresh:${userId}`,
       refreshToken,
-      { expirationTtl: ttlSeconds * 2 } // 2x access token lifetime
+      { ttl: ttlSeconds * 2 } // 2x access token lifetime
     )
   }
 
@@ -76,8 +76,6 @@ export async function storeLawPayConnection(
  * Tries KV cache first, falls back to DB if needed
  */
 export async function getLawPayAccessToken(userId: string): Promise<string | null> {
-  const kv = hubKV()
-
   // Try KV cache first (fast path)
   const cachedToken = await kv.get(`lawpay:access:${userId}`)
   if (cachedToken) {
@@ -139,7 +137,6 @@ export async function revokeLawPayConnection(userId: string): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
   const { eq, and, isNull } = await import('drizzle-orm')
   const db = useDrizzle()
-  const kv = hubKV()
 
   const now = new Date()
 
@@ -155,8 +152,8 @@ export async function revokeLawPayConnection(userId: string): Promise<void> {
     ))
 
   // Clear from KV cache
-  await kv.delete(`lawpay:access:${userId}`)
-  await kv.delete(`lawpay:refresh:${userId}`)
+  await kv.del(`lawpay:access:${userId}`)
+  await kv.del(`lawpay:refresh:${userId}`)
 }
 
 /**
@@ -164,8 +161,6 @@ export async function revokeLawPayConnection(userId: string): Promise<void> {
  * Updates both DB and KV
  */
 export async function refreshLawPayToken(userId: string): Promise<string | null> {
-  const kv = hubKV()
-
   // Get refresh token from KV
   const refreshToken = await kv.get(`lawpay:refresh:${userId}`)
   if (!refreshToken) {

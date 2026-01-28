@@ -197,13 +197,20 @@ export default defineEventHandler(async (event) => {
 
     await db.insert(schema.journeys).values({
       id: journeyId,
-      serviceCatalogId: catalogId,
       name: 'Wyoming Asset Protection Trust Journey',
       description: 'Complete workflow for setting up and managing a Wyoming Asset Protection Trust, including all required documents and ongoing processes.',
+      journeyType: 'SERVICE',
       isActive: true,
       estimatedDurationDays: 60, // ~2 months estimated
       createdAt: now,
       updatedAt: now
+    })
+
+    // Link journey to catalog item via junction table
+    await db.insert(schema.journeysToCatalog).values({
+      journeyId,
+      catalogId,
+      createdAt: now
     })
     log.push(`✅ Journey created: ${journeyId}`)
 

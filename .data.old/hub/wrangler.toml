@@ -1,7 +1,0 @@
-[[r2_buckets]]
-binding = "BLOB"
-bucket_name = "default"
-
-[[kv_namespaces]]
-binding = "KV"
-id = "kv_default"

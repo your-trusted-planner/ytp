@@ -72,29 +72,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Verify Firebase Config
-        run: |
-          echo "Checking Firebase configuration..."
-          if [ -n "$FIREBASE_PROJECT_ID" ]; then
-            echo "✓ FIREBASE_PROJECT_ID is set (value: ${FIREBASE_PROJECT_ID})"
-          else
-            echo "✗ FIREBASE_PROJECT_ID is NOT set"
-          fi
-          if [ -n "$FIREBASE_API_KEY" ]; then
-            echo "✓ FIREBASE_API_KEY is set (length: ${#FIREBASE_API_KEY} chars)"
-          else
-            echo "✗ FIREBASE_API_KEY is NOT set"
-          fi
-          if [ -n "$FIREBASE_AUTH_DOMAIN" ]; then
-            echo "✓ FIREBASE_AUTH_DOMAIN is set (value: $FIREBASE_AUTH_DOMAIN)"
-          else
-            echo "✗ FIREBASE_AUTH_DOMAIN is NOT set"
-          fi
-        env:
-          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
-          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-
       - name: Build
         run: pnpm run build
         env:
@@ -104,7 +81,7 @@ jobs:
           NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
-      - name: Fix Wrangler Config Paths and Inject Preview Environment
+      - name: Fix Wrangler Config Paths and Inject Queues/Environments
         run: |
           node << 'EOF'
           const fs = require('fs');
@@ -120,10 +97,18 @@ jobs:
             });
           }
 
-          // Parse JSONC and inject env section (strip comments and trailing commas)
+          // Parse JSONC and inject env + queues sections (strip comments and trailing commas)
           let sourceText = fs.readFileSync('wrangler.jsonc', 'utf-8');
           sourceText = sourceText.replace(/\/\/.*/g, '').replace(/,(\s*[}\]])/g, '$1');
           const source = JSON.parse(sourceText);
+
+          // Inject root-level queues for production (NuxtHub doesn't auto-generate these)
+          if (source.queues) {
+            generated.queues = source.queues;
+            console.log('Injected queues config with', source.queues.producers?.length || 0, 'producers and', source.queues.consumers?.length || 0, 'consumers');
+          }
+
+          // Inject env section for preview environment
           if (source.env) {
             // Also fix migrations paths in env sections
             Object.keys(source.env).forEach(envName => {

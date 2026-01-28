@@ -20,9 +20,9 @@ export default defineEventHandler(async (event) => {
   const journeyId = nanoid()
   const now = new Date()
 
+  // Create the journey
   await db.insert(schema.journeys).values({
     id: journeyId,
-    serviceCatalogId: body.serviceCatalogId || null,
     name: body.name,
     description: body.description || null,
     journeyType: journeyType,
@@ -32,11 +32,24 @@ export default defineEventHandler(async (event) => {
     updatedAt: now
   })
 
+  // Link to catalog items if provided (many-to-many)
+  // Accept either catalogIds array or legacy serviceCatalogId
+  const catalogIds: string[] = body.catalogIds || (body.serviceCatalogId ? [body.serviceCatalogId] : [])
+  if (catalogIds.length > 0) {
+    await db.insert(schema.journeysToCatalog).values(
+      catalogIds.map(catalogId => ({
+        journeyId,
+        catalogId,
+        createdAt: now
+      }))
+    )
+  }
+
   // Return journey object for compatibility
   return {
     journey: {
       id: journeyId,
-      service_catalog_id: body.serviceCatalogId || null,
+      catalog_ids: catalogIds,
       name: body.name,
       description: body.description || null,
       journey_type: journeyType,

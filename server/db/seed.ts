@@ -37,7 +37,7 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
     email: 'admin@trustandlegacy.test',
     password: hashedPassword,
     role: 'ADMIN',
-    adminLevel: 2,
+    adminLevel: 3,
     firstName: 'Sarah',
     lastName: 'Admin',
     status: 'ACTIVE'
@@ -306,6 +306,44 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
   console.log('Created template folder and document templates')
 
   // ============================================
+  // SERVICE CATEGORIES
+  // ============================================
+
+  await db.insert(schema.serviceCategories).values({
+    id: generateId(),
+    name: 'Estate Planning',
+    description: 'End-of-life planning and related services',
+    displayOrder: 1,
+    isActive: true
+  })
+
+  await db.insert(schema.serviceCategories).values({
+    id: generateId(),
+    name: 'Entity Formation',
+    description: 'LLCs, corporations, and business entities',
+    displayOrder: 2,
+    isActive: true
+  })
+
+  await db.insert(schema.serviceCategories).values({
+    id: generateId(),
+    name: 'Maintenance',
+    description: 'Ongoing administration and compliance services',
+    displayOrder: 3,
+    isActive: true
+  })
+
+  await db.insert(schema.serviceCategories).values({
+    id: generateId(),
+    name: 'Asset Protection',
+    description: 'DAPTs, Asset Protection Trusts, Spendthrift Trusts, etc.',
+    displayOrder: 4,
+    isActive: true
+  })
+
+  console.log('Created service categories')
+
+  // ============================================
   // SERVICE CATALOG
   // ============================================
 
@@ -419,7 +457,6 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
   const journeyId = generateId()
   await db.insert(schema.journeys).values({
     id: journeyId,
-    serviceCatalogId: service1Id,
     name: 'Wyoming Asset Protection Trust',
     description: 'Complete WYDAPT engagement workflow from initial consultation to trust completion',
     journeyType: 'SERVICE',
@@ -427,6 +464,13 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
     estimatedDurationDays: 90,
     createdAt: threeMonthsAgo,
     updatedAt: threeMonthsAgo
+  })
+
+  // Link journey to catalog item via junction table
+  await db.insert(schema.journeysToCatalog).values({
+    journeyId,
+    catalogId: service1Id,
+    createdAt: threeMonthsAgo
   })
 
   console.log('Created WYDAPT journey template')

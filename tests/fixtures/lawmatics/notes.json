@@ -1,0 +1,87 @@
+{
+  "data": [
+    {
+      "id": "lm-note-001",
+      "type": "note",
+      "attributes": {
+        "name": "Initial Consultation",
+        "body": "<p>Initial consultation completed. Client interested in comprehensive estate plan including revocable living trust, pour-over will, and healthcare directives.</p>",
+        "created_at": "2024-01-15T11:00:00Z",
+        "updated_at": "2024-01-15T11:00:00Z"
+      },
+      "relationships": {
+        "notable": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        }
+      }
+    },
+    {
+      "id": "lm-note-002",
+      "type": "note",
+      "attributes": {
+        "name": "Follow-up Call",
+        "body": "<p>Follow-up call regarding document signing. Client confirmed availability for Thursday at 2pm.</p>",
+        "created_at": "2024-02-20T14:30:00Z",
+        "updated_at": "2024-02-20T14:30:00Z"
+      },
+      "relationships": {
+        "notable": {
+          "data": { "id": "lm-prospect-001", "type": "prospect" }
+        }
+      }
+    },
+    {
+      "id": "lm-note-003",
+      "type": "note",
+      "attributes": {
+        "name": "Document Review",
+        "body": "<p>HTML content in note with <strong>bold</strong> and <em>italic</em> formatting.</p><ul><li>Item 1</li><li>Item 2</li></ul>",
+        "created_at": "2024-03-15T09:00:00Z",
+        "updated_at": "2024-03-15T10:00:00Z"
+      },
+      "relationships": {
+        "notable": {
+          "data": { "id": "lm-prospect-002", "type": "prospect" }
+        }
+      }
+    },
+    {
+      "id": "lm-note-004",
+      "type": "note",
+      "attributes": {
+        "name": "Contact Note",
+        "body": "",
+        "created_at": "2024-04-01T08:00:00Z",
+        "updated_at": "2024-04-01T08:00:00Z"
+      },
+      "relationships": {
+        "notable": {
+          "data": { "id": "lm-contact-001", "type": "contact" }
+        }
+      }
+    },
+    {
+      "id": "lm-note-005",
+      "type": "note",
+      "attributes": {
+        "name": "Unicode Test",
+        "body": "<p>Note with unicode: 中文文本, éàüñ, Русский</p>",
+        "created_at": "2024-05-01T10:00:00Z",
+        "updated_at": "2024-05-01T10:00:00Z"
+      },
+      "relationships": {
+        "notable": {
+          "data": { "id": "lm-contact-005", "type": "contact" }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 1,
+      "total_count": 5,
+      "per_page": 100
+    }
+  }
+}

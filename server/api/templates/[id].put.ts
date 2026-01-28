@@ -1,4 +1,4 @@
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])

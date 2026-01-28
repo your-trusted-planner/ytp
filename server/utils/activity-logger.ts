@@ -1,6 +1,33 @@
 import { H3Event } from 'h3'
 import { generateId } from './auth'
 import { captureRequestContext } from './request-context'
+import { generateDescription } from './activity-description'
+
+// Entity types that can be referenced in activities
+export type EntityType =
+  | 'user'
+  | 'person'   // New: Any person in the system (Belly Button Principle)
+  | 'client'
+  | 'matter'
+  | 'document'
+  | 'journey'
+  | 'template'
+  | 'referral_partner'
+  | 'service'
+  | 'appointment'
+  | 'note'
+  | 'setting'
+  | 'estate_plan'
+
+/**
+ * Standardized entity reference for activity logging.
+ * Stores both the ID (for linking) and name snapshot (for historical accuracy).
+ */
+export interface EntityRef {
+  type: EntityType
+  id: string
+  name: string // Name snapshot at log time
+}
 
 // Activity types for structured logging
 export type ActivityType =
@@ -10,6 +37,7 @@ export type ActivityType =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_PASSWORD_CHANGED'
+  | 'PASSWORD_RESET'
   // Client events
   | 'CLIENT_CREATED'
   | 'CLIENT_UPDATED'
@@ -36,23 +64,45 @@ export type ActivityType =
   | 'TEMPLATE_CREATED'
   | 'TEMPLATE_UPDATED'
   | 'TEMPLATE_DELETED'
+  // Note events
+  | 'NOTE_CREATED'
+  | 'NOTE_UPDATED'
+  | 'NOTE_DELETED'
   // Referral events
   | 'REFERRAL_PARTNER_CREATED'
   | 'REFERRAL_PARTNER_UPDATED'
+  // Estate plan events
+  | 'ESTATE_PLAN_CREATED'
+  | 'ESTATE_PLAN_UPDATED'
+  | 'ESTATE_PLAN_AMENDED'
+  | 'ESTATE_PLAN_IMPORTED'
+  | 'ESTATE_PLAN_STATUS_CHANGED'
   // Admin events
   | 'ADMIN_ACTION'
   | 'SETTINGS_CHANGED'
 
-export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting'
+export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan'
 
 export interface LogActivityParams {
   type: ActivityType
-  description: string
   userId: string
   userRole?: string
+
+  // NEW: Structured entity references (preferred)
+  target?: EntityRef                    // Primary entity being acted upon
+  relatedEntities?: EntityRef[]         // Secondary/related entities
+
+  // NEW: Structured details (preferred over metadata for activity-specific data)
+  details?: Record<string, unknown>
+
+  // Description: auto-generated from target/relatedEntities if not provided
+  description?: string
+
+  // LEGACY: Keep for backward compatibility, prefer using target EntityRef
   metadata?: Record<string, any>
   targetType?: TargetType
   targetId?: string
+
   // Funnel dimensions
   journeyId?: string
   journeyStepId?: string
@@ -91,6 +141,29 @@ export interface ActivityRecord {
 }
 
 /**
+ * Helper to get the actor's name from their user ID.
+ */
+async function getActorName(
+  db: ReturnType<typeof import('../db').useDrizzle>,
+  schema: typeof import('../db').schema,
+  userId: string
+): Promise<string> {
+  const { eq } = await import('drizzle-orm')
+  const user = await db
+    .select({
+      firstName: schema.users.firstName,
+      lastName: schema.users.lastName,
+      email: schema.users.email
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .get()
+
+  if (!user) return 'Unknown User'
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || 'Unknown User'
+}
+
+/**
  * Logs an activity to the database with optional request context capture.
  * This is the primary function for recording user actions throughout the application.
  *
@@ -98,7 +171,7 @@ export interface ActivityRecord {
  * @returns The created activity record ID
  *
  * @example
- * // Basic usage
+ * // Basic usage (legacy style)
  * await logActivity({
  *   type: 'USER_LOGIN',
  *   description: 'User logged in successfully',
@@ -108,14 +181,15 @@ export interface ActivityRecord {
  * })
  *
  * @example
- * // With target entity
+ * // With structured entity references (preferred)
  * await logActivity({
  *   type: 'DOCUMENT_SIGNED',
- *   description: 'Client signed engagement letter',
  *   userId: client.id,
  *   userRole: 'CLIENT',
- *   targetType: 'document',
- *   targetId: document.id,
+ *   target: { type: 'document', id: document.id, name: 'Trust Agreement' },
+ *   relatedEntities: [
+ *     { type: 'client', id: client.id, name: 'John Smith' }
+ *   ],
  *   matterId: matter.id,
  *   event
  * })
@@ -147,17 +221,56 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
     }
   }
 
-  // Serialize metadata to JSON if provided
-  const metadataJson = params.metadata ? JSON.stringify(params.metadata) : null
+  // Build structured metadata combining new and legacy formats
+  const structuredMetadata: Record<string, unknown> = {
+    ...(params.metadata || {})
+  }
+
+  // Add new structured fields to metadata
+  if (params.target) {
+    structuredMetadata.target = params.target
+  }
+  if (params.relatedEntities && params.relatedEntities.length > 0) {
+    structuredMetadata.relatedEntities = params.relatedEntities
+  }
+  if (params.details) {
+    structuredMetadata.details = params.details
+  }
+
+  // Serialize metadata to JSON
+  const metadataJson = Object.keys(structuredMetadata).length > 0
+    ? JSON.stringify(structuredMetadata)
+    : null
+
+  // Use target EntityRef to populate targetType/targetId if not explicitly set
+  const targetType = params.targetType || (params.target?.type as TargetType) || null
+  const targetId = params.targetId || params.target?.id || null
+
+  // Generate description if not provided
+  let description = params.description
+  if (!description && params.target) {
+    // Fetch actor name for description generation
+    const actorName = await getActorName(db, schema, params.userId)
+    description = generateDescription(
+      params.type,
+      actorName,
+      params.target,
+      params.relatedEntities,
+      params.details
+    )
+  } else if (!description) {
+    // Fallback for activities without structured refs
+    description = `Activity: ${params.type}`
+  }
 
   await db.insert(schema.activities).values({
     id,
     type: params.type,
-    description: params.description,
+    description,
     userId: params.userId,
     userRole: params.userRole || null,
-    targetType: params.targetType || null,
-    targetId: params.targetId || null,
+    targetType,
+    targetId,
     journeyId: params.journeyId || null,
     journeyStepId: params.journeyStepId || null,
     matterId: params.matterId || null,
@@ -191,6 +304,7 @@ export function formatActivityDescription(
     USER_CREATED: `${actorName} account created`,
     USER_UPDATED: `${actorName} profile updated`,
     USER_PASSWORD_CHANGED: `${actorName} changed password`,
+    PASSWORD_RESET: `${actorName} reset password via email`,
     CLIENT_CREATED: targetName ? `${actorName} created client ${targetName}` : `${actorName} created a new client`,
     CLIENT_UPDATED: targetName ? `${actorName} updated client ${targetName}` : `${actorName} updated client`,
     CLIENT_VIEWED: targetName ? `${actorName} viewed client ${targetName}` : `${actorName} viewed client`,
@@ -215,7 +329,10 @@ export function formatActivityDescription(
     REFERRAL_PARTNER_CREATED: targetName ? `${actorName} added referral partner "${targetName}"` : `${actorName} added a referral partner`,
     REFERRAL_PARTNER_UPDATED: targetName ? `${actorName} updated referral partner "${targetName}"` : `${actorName} updated a referral partner`,
     ADMIN_ACTION: `${actorName} performed an admin action`,
-    SETTINGS_CHANGED: `${actorName} changed system settings`
+    SETTINGS_CHANGED: `${actorName} changed system settings`,
+    NOTE_CREATED: targetName ? `${actorName} added a note to ${targetName}` : `${actorName} added a note`,
+    NOTE_UPDATED: targetName ? `${actorName} updated a note on ${targetName}` : `${actorName} updated a note`,
+    NOTE_DELETED: targetName ? `${actorName} deleted a note from ${targetName}` : `${actorName} deleted a note`
   }
 
   return descriptions[type] || `${actorName} performed ${type}`

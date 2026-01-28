@@ -62,15 +62,14 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.referralPartners.id, id))
 
   // Log activity
+  const partnerName = validated.name || existing.name
   await logActivity({
     type: 'REFERRAL_PARTNER_UPDATED',
-    description: `${user.firstName || user.email} updated referral partner "${validated.name || existing.name}"`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'referral_partner',
-    targetId: id,
+    target: { type: 'referral_partner', id: id, name: partnerName },
     event,
-    metadata: {
+    details: {
       changes: Object.keys(validated).filter(k => validated[k as keyof typeof validated] !== undefined)
     }
   })

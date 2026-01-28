@@ -38,14 +38,11 @@ export default defineEventHandler(async (event) => {
   // Log activity
   await logActivity({
     type: 'REFERRAL_PARTNER_CREATED',
-    description: `${user.firstName || user.email} added referral partner "${validated.name}"`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'referral_partner',
-    targetId: id,
+    target: { type: 'referral_partner', id: id, name: validated.name },
     event,
-    metadata: {
-      partnerName: validated.name,
+    details: {
       partnerType: validated.type,
       company: validated.company
     }

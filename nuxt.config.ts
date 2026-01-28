@@ -9,7 +9,8 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@nuxt/eslint',
     '@nuxtjs/tailwindcss',
-    'nuxt-auth-utils'
+    'nuxt-auth-utils',
+    '@pinia/nuxt'
   ],
 
   // Disable auto-import of password functions from nuxt-auth-utils
@@ -55,7 +56,9 @@ export default defineNuxtConfig({
     resendApiKey: process.env.RESEND_API_KEY || '',
     emailFrom: process.env.EMAIL_FROM || 'Your Trusted Planner <noreply@yourtrustedplanner.com>',
     // Identity verification mode: 'attestation', 'kba', 'manual', 'persona'
-    identityVerificationMode: process.env.IDENTITY_VERIFICATION_MODE || 'attestation'
+    identityVerificationMode: process.env.IDENTITY_VERIFICATION_MODE || 'attestation',
+    // Master encryption key for API credentials (local dev only - use Secrets Store in production)
+    ytpMasterKey: process.env.YTP_MASTER_KEY || ''
   },
 
   // Nitro config
@@ -69,7 +72,7 @@ export default defineNuxtConfig({
 
   // NuxtHub configuration for Cloudflare D1, KV, and R2
   hub: {
-    db: 'sqlite', // Updated for NuxtHub 0.10.x
+    db: 'sqlite',
     blob: true,
     kv: true
   },
@@ -87,5 +90,10 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
-  }
+  },
+
+  // Global CSS
+  css: [
+    '~/assets/css/toast.css'
+  ]
 })

@@ -1,14 +1,18 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql, asc, desc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
+import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calculateOffset } from '../../utils/pagination'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const db = useDrizzle()
-  
-  // Get all users who are clients
-  const clientsData = await db
+  const query = getQuery(event)
+  const usePagination = isPaginationRequested(query)
+  const { page, limit, sortBy, sortDirection } = parsePaginationParams(query)
+
+  // Build base query for clients
+  let clientsQuery = db
     .select({
       id: schema.users.id,
       email: schema.users.email,
@@ -23,7 +27,37 @@ export default defineEventHandler(async (event) => {
     .from(schema.users)
     .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
     .where(eq(schema.users.role, 'CLIENT'))
-    .all()
+
+  // Apply sorting
+  const sortColumn = sortBy === 'firstName' ? schema.users.firstName
+    : sortBy === 'lastName' ? schema.users.lastName
+    : sortBy === 'email' ? schema.users.email
+    : sortBy === 'status' ? schema.users.status
+    : sortBy === 'createdAt' ? schema.users.createdAt
+    : sortBy === 'updatedAt' ? schema.users.updatedAt
+    : schema.users.createdAt // default sort
+
+  clientsQuery = clientsQuery.orderBy(
+    sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)
+  ) as typeof clientsQuery
+
+  // Get total count for pagination (only if pagination requested)
+  let totalCount = 0
+  if (usePagination) {
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.users)
+      .where(eq(schema.users.role, 'CLIENT'))
+      .get()
+    totalCount = countResult?.count ?? 0
+
+    // Apply pagination
+    clientsQuery = clientsQuery
+      .limit(limit)
+      .offset(calculateOffset(page, limit)) as typeof clientsQuery
+  }
+
+  const clientsData = await clientsQuery.all()
 
   // Transform to match frontend expectations
   const clients = clientsData.map(client => ({
@@ -57,6 +91,14 @@ export default defineEventHandler(async (event) => {
       updated_at: client.profile.updatedAt instanceof Date ? client.profile.updatedAt.getTime() : client.profile.updatedAt
     } : null
   }))
+
+  // Return with pagination metadata if pagination was requested
+  if (usePagination) {
+    return {
+      clients,
+      pagination: buildPaginationMeta(page, limit, totalCount)
+    }
+  }
 
   return { clients }
 })

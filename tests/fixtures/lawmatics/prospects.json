@@ -1,0 +1,116 @@
+{
+  "data": [
+    {
+      "id": "lm-prospect-001",
+      "type": "prospect",
+      "attributes": {
+        "first_name": "John",
+        "last_name": "Smith",
+        "case_title": "Smith Estate Plan",
+        "case_number": "EP-2024-001",
+        "case_blurb": "Comprehensive estate planning including revocable trust and pour-over will.",
+        "status": "active",
+        "stage": "Documents",
+        "estimated_value_cents": 1500000,
+        "actual_value_cents": 1250000,
+        "custom_fields": [
+          { "name": "Practice Area", "formatted_value": "Estate Planning" },
+          { "name": "Referral Source", "formatted_value": "Website" }
+        ],
+        "created_at": "2024-01-15T10:00:00Z",
+        "updated_at": "2024-07-20T14:00:00Z"
+      },
+      "relationships": {
+        "contact": {
+          "data": { "id": "lm-contact-001", "type": "contact" }
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-prospect-002",
+      "type": "prospect",
+      "attributes": {
+        "first_name": "Maria",
+        "last_name": "Garcia",
+        "case_title": "Garcia Trust Amendment",
+        "case_number": "TA-2024-002",
+        "case_blurb": null,
+        "status": "active",
+        "stage": "Initial Consultation",
+        "estimated_value_cents": 500000,
+        "actual_value_cents": null,
+        "custom_fields": [
+          { "name": "Practice Area", "formatted_value": "Trust Administration" }
+        ],
+        "created_at": "2024-03-10T09:00:00Z",
+        "updated_at": "2024-06-25T11:30:00Z"
+      },
+      "relationships": {
+        "contact": {
+          "data": { "id": "lm-contact-002", "type": "contact" }
+        },
+        "user": {
+          "data": { "id": "lm-user-002", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-prospect-003",
+      "type": "prospect",
+      "attributes": {
+        "first_name": null,
+        "last_name": null,
+        "case_title": "Smith Family Trust Administration",
+        "case_number": "ADM-2024-003",
+        "case_blurb": "Annual trust administration and tax planning.",
+        "status": "closed",
+        "stage": "Complete",
+        "estimated_value_cents": 250000,
+        "actual_value_cents": 275000,
+        "custom_fields": [],
+        "created_at": "2023-06-01T08:00:00Z",
+        "updated_at": "2024-02-15T16:00:00Z"
+      },
+      "relationships": {
+        "contact": {
+          "data": null
+        },
+        "user": {
+          "data": { "id": "lm-user-001", "type": "user" }
+        }
+      }
+    },
+    {
+      "id": "lm-prospect-004",
+      "type": "prospect",
+      "attributes": {
+        "case_title": "Orphan Matter",
+        "case_number": "ORF-2024-004",
+        "status": "active",
+        "stage": "Intake",
+        "custom_fields": [],
+        "created_at": "2024-05-01T10:00:00Z",
+        "updated_at": "2024-05-01T10:00:00Z"
+      },
+      "relationships": {
+        "contact": {
+          "data": null
+        },
+        "user": {
+          "data": null
+        }
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 1,
+      "total_count": 4,
+      "per_page": 100
+    }
+  }
+}

@@ -40,12 +40,40 @@
               from {{ activity.country }}
             </span>
           </div>
+
+          <!-- Entity link badges (new structured format) -->
+          <div v-if="activity.target?.link || (activity.relatedEntities?.length)" class="flex flex-wrap gap-1.5 mt-2">
+            <!-- Primary target entity badge -->
+            <NuxtLink
+              v-if="activity.target?.link"
+              :to="activity.target.link"
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-burgundy-50 text-burgundy-700 hover:bg-burgundy-100 transition-colors"
+              :title="activity.target.snapshotName !== activity.target.currentName ? `Was: ${activity.target.snapshotName}` : ''"
+            >
+              <component :is="getEntityTypeIcon(activity.target.type)" class="w-3 h-3" />
+              {{ activity.target.currentName }}
+            </NuxtLink>
+
+            <!-- Related entity badges -->
+            <template v-if="activity.relatedEntities?.length">
+              <NuxtLink
+                v-for="entity in activity.relatedEntities"
+                :key="`${entity.type}:${entity.id}`"
+                :to="entity.link || '#'"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                :class="{ 'pointer-events-none': !entity.link }"
+              >
+                <component :is="getEntityTypeIcon(entity.type)" class="w-3 h-3" />
+                {{ entity.currentName }}
+              </NuxtLink>
+            </template>
+          </div>
         </div>
 
-        <!-- Link to target -->
+        <!-- Link to target (legacy or new) -->
         <NuxtLink
-          v-if="activity.targetId && getTargetLink(activity)"
-          :to="getTargetLink(activity)"
+          v-if="activity.target?.link || getTargetLink(activity)"
+          :to="activity.target?.link || getTargetLink(activity) || '#'"
           class="text-gray-400 hover:text-burgundy-500 transition-colors flex-shrink-0"
         >
           <ExternalLink class="w-4 h-4" />
@@ -66,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import {
   User,
   Users,
@@ -82,9 +110,22 @@ import {
   LogOut,
   UserPlus,
   Briefcase,
-  Route
+  Route,
+  StickyNote,
+  Calendar,
+  Handshake,
+  Package
 } from 'lucide-vue-next'
 import { formatTimeAgo } from '~/utils/format'
+
+// Entity reference with resolved names
+interface ResolvedEntityRef {
+  type: string
+  id: string
+  snapshotName: string
+  currentName: string
+  link: string | null
+}
 
 interface Activity {
   id: string
@@ -105,7 +146,10 @@ interface Activity {
     lastName: string | null
     email: string
   } | null
-  metadata: Record<string, any> | null
+  metadata?: Record<string, any> | null
+  // New structured entity references
+  target?: ResolvedEntityRef
+  relatedEntities?: ResolvedEntityRef[]
 }
 
 interface Props {
@@ -138,7 +182,8 @@ async function fetchActivities(append = false) {
 
     const params = new URLSearchParams({
       limit: props.limit.toString(),
-      offset: offset.value.toString()
+      offset: offset.value.toString(),
+      resolveNames: 'true' // Request resolved entity names
     })
 
     if (props.targetType) params.set('targetType', props.targetType)
@@ -180,17 +225,39 @@ function getActivityIcon(type: string) {
     DOCUMENT_VIEWED: Eye,
     DOCUMENT_SIGNED: PenTool,
     DOCUMENT_DOWNLOADED: Download,
+    DOCUMENT_DELETED: FileText,
     JOURNEY_STARTED: Play,
     JOURNEY_STEP_COMPLETED: CheckCircle,
     JOURNEY_COMPLETED: CheckCircle,
     TEMPLATE_CREATED: FileText,
     TEMPLATE_UPDATED: FileText,
+    TEMPLATE_DELETED: FileText,
     ADMIN_ACTION: Settings,
     SETTINGS_CHANGED: Settings,
     REFERRAL_PARTNER_CREATED: Users,
-    REFERRAL_PARTNER_UPDATED: Users
+    REFERRAL_PARTNER_UPDATED: Users,
+    NOTE_CREATED: StickyNote,
+    NOTE_UPDATED: StickyNote,
+    NOTE_DELETED: StickyNote
   }
   return icons[type] || Route
+}
+
+function getEntityTypeIcon(type: string) {
+  const icons: Record<string, any> = {
+    user: User,
+    client: Users,
+    matter: Briefcase,
+    document: FileText,
+    journey: Route,
+    template: FileText,
+    referral_partner: Handshake,
+    service: Package,
+    appointment: Calendar,
+    note: StickyNote,
+    setting: Settings
+  }
+  return icons[type] || FileText
 }
 
 function getActivityIconBg(type: string): string {
@@ -208,6 +275,12 @@ function getActivityIconBg(type: string): string {
   }
   if (type.includes('MATTER')) {
     return 'bg-indigo-100'
+  }
+  if (type.includes('NOTE')) {
+    return 'bg-yellow-100'
+  }
+  if (type.includes('TEMPLATE')) {
+    return 'bg-pink-100'
   }
   return 'bg-gray-100'
 }
@@ -227,6 +300,12 @@ function getActivityIconColor(type: string): string {
   }
   if (type.includes('MATTER')) {
     return 'text-indigo-600'
+  }
+  if (type.includes('NOTE')) {
+    return 'text-yellow-600'
+  }
+  if (type.includes('TEMPLATE')) {
+    return 'text-pink-600'
   }
   return 'text-gray-600'
 }

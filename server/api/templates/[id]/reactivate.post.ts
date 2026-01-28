@@ -53,17 +53,13 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.documentTemplates.id, id))
 
   // Log activity
-  const actorName = user.firstName || user.email
   await logActivity({
     type: 'TEMPLATE_UPDATED',
-    description: `${actorName} reactivated template "${template.name}"`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'template',
-    targetId: id,
+    target: { type: 'template', id: id, name: template.name },
     event,
-    metadata: {
-      templateName: template.name,
+    details: {
       templateCategory: template.category,
       action: 'reactivate'
     }

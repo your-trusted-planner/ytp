@@ -1,0 +1,14 @@
+PRAGMA foreign_keys = OFF;
+DROP TABLE IF EXISTS client_journeys;
+DROP TABLE IF EXISTS document_templates;
+DROP TABLE IF EXISTS document_uploads;
+DROP TABLE IF EXISTS journey_steps;
+DROP TABLE IF EXISTS journeys;
+DROP TABLE IF EXISTS matters_to_services;
+DROP TABLE IF EXISTS matters;
+DROP TABLE IF EXISTS questionnaire_responses;
+DROP TABLE IF EXISTS service_catalog;
+DROP TABLE IF EXISTS template_folders;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS __drizzle_migrations;
+PRAGMA foreign_keys = ON;

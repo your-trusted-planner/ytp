@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { isDatabaseAvailable } from '../../db'
-import { requireRole, generateId } from '../../utils/auth'
+import { generateId } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 import { mockDb } from '../../utils/mock-db'
 
 const createCatalogItemSchema = z.object({

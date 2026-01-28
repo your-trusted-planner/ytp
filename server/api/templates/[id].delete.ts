@@ -90,17 +90,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Log activity
-  const actorName = user.firstName || user.email
   await logActivity({
     type: 'TEMPLATE_DELETED',
-    description: `${actorName} ${deletionMethod === 'soft' ? 'soft deleted' : 'permanently deleted'} template "${template.name}"`,
     userId: user.id,
     userRole: user.role,
-    targetType: 'template',
-    targetId: id,
+    target: { type: 'template', id: id, name: template.name },
     event,
-    metadata: {
-      templateName: template.name,
+    details: {
       templateCategory: template.category,
       deletionMethod,
       referencingDocuments,

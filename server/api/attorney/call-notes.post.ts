@@ -1,6 +1,6 @@
 // Add/update attorney call notes for appointments
 import { z } from 'zod'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 
 const callNotesSchema = z.object({
   appointmentId: z.string(),

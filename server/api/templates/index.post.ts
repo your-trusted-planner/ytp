@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
-import { requireRole } from '../../utils/auth'
+import { requireRole } from '../../utils/rbac'
 
 const createTemplateSchema = z.object({
   name: z.string().min(1),
