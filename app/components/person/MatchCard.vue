@@ -99,6 +99,22 @@
         <p class="text-sm text-gray-500">No existing matches found</p>
         <p class="text-xs text-gray-400 mt-1">A new person record will be created</p>
       </div>
+
+      <!-- Create as Client option (only for client/spouse roles) -->
+      <div v-if="showClientOption" class="mt-3 pt-3 border-t border-gray-200">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            :checked="createAsClientValue"
+            @change="toggleCreateAsClient"
+            class="mt-0.5 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
+          />
+          <div>
+            <span class="font-medium text-gray-900">Create as Client</span>
+            <p class="text-sm text-gray-500">Creates user account + client record with portal access</p>
+          </div>
+        </label>
+      </div>
     </div>
   </div>
 </template>
@@ -130,19 +146,29 @@ interface ExtractedPerson {
 interface Props {
   person: ExtractedPerson
   modelValue?: string // 'create_new' or personId
+  createAsClient?: boolean // Whether to create a client record
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: 'create_new'
+  modelValue: 'create_new',
+  createAsClient: false
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  'update:createAsClient': [value: boolean]
 }>()
 
 const showAllMatches = ref(false)
 
 const selectedValue = computed(() => props.modelValue)
+const createAsClientValue = computed(() => props.createAsClient)
+
+// Show "Create as Client" option for grantors (client/spouse) and fiduciaries
+// The attorney-client relationship can come from either depending on who hires the firm
+const showClientOption = computed(() => {
+  return props.person.role === 'client' || props.person.role === 'spouse' || props.person.role === 'fiduciary'
+})
 
 const displayedMatches = computed(() => {
   if (showAllMatches.value) return props.person.matches
@@ -207,6 +233,10 @@ const roleBadgeClass = computed(() => {
 
 function selectMatch(value: string) {
   emit('update:modelValue', value)
+}
+
+function toggleCreateAsClient() {
+  emit('update:createAsClient', !props.createAsClient)
 }
 
 function formatMatchType(matchType: string): string {

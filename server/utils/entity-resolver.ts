@@ -369,6 +369,27 @@ export async function resolveEntityNames(
     )
   }
 
+  // Estate Plans
+  const estatePlanIds = byType.get('estate_plan') || []
+  if (estatePlanIds.length > 0) {
+    promises.push(
+      (async () => {
+        const plans = await db
+          .select({
+            id: schema.estatePlans.id,
+            planName: schema.estatePlans.planName
+          })
+          .from(schema.estatePlans)
+          .where(inArray(schema.estatePlans.id, estatePlanIds))
+          .all()
+
+        for (const plan of plans) {
+          results.set(`estate_plan:${plan.id}`, plan.planName || 'Estate Plan')
+        }
+      })()
+    )
+  }
+
   await Promise.all(promises)
   return results
 }
@@ -390,7 +411,8 @@ export function getEntityLink(type: EntityType, id: string): string | null {
     service: `/services/${id}`,
     appointment: `/appointments/${id}`,
     note: null, // Notes don't have their own page
-    setting: `/settings` // Settings link to the settings page
+    setting: `/settings`, // Settings link to the settings page
+    estate_plan: `/estate-plans/${id}`
   }
 
   return routes[type]
@@ -412,7 +434,8 @@ export function getEntityTypeLabel(type: EntityType): string {
     service: 'Service',
     appointment: 'Appointment',
     note: 'Note',
-    setting: 'Setting'
+    setting: 'Setting',
+    estate_plan: 'Estate Plan'
   }
 
   return labels[type]

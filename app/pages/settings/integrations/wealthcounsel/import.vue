@@ -331,6 +331,10 @@
             {{ extractedPeople.length }} ({{ peopleToCreate }} new, {{ peopleToLink }} linked)
           </span>
         </div>
+        <div v-if="clientsToCreate > 0" class="flex justify-between">
+          <span class="text-gray-600">Create as Clients</span>
+          <span class="font-medium text-burgundy-600">{{ clientsToCreate }}</span>
+        </div>
         <div class="flex justify-between">
           <span class="text-gray-600">Import Mode</span>
           <span class="font-medium text-gray-900">
@@ -351,6 +355,10 @@
           <li v-if="peopleToLink > 0" class="flex items-center gap-2">
             <CheckCircle class="w-4 h-4 text-blue-500" />
             {{ peopleToLink }} link{{ peopleToLink > 1 ? 's' : '' }} to existing person records
+          </li>
+          <li v-if="clientsToCreate > 0" class="flex items-center gap-2">
+            <CheckCircle class="w-4 h-4 text-burgundy-500" />
+            {{ clientsToCreate }} client record{{ clientsToCreate > 1 ? 's' : '' }} (with portal access)
           </li>
           <!-- Fallback if no decisions made yet -->
           <li v-if="peopleToCreate === 0 && peopleToLink === 0 && extractedPeople.length > 0" class="flex items-center gap-2">
@@ -406,6 +414,10 @@
             <div v-if="importResult.peopleLinked > 0" class="flex justify-between">
               <span class="text-gray-600">People Linked</span>
               <span class="font-medium text-gray-900">{{ importResult.peopleLinked }}</span>
+            </div>
+            <div v-if="importResult.clientsCreated > 0" class="flex justify-between">
+              <span class="text-gray-600">Clients Created</span>
+              <span class="font-medium text-burgundy-600">{{ importResult.clientsCreated }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">Roles Created</span>
@@ -506,6 +518,7 @@ interface PersonDecision {
   extractedName: string
   action: 'use_existing' | 'create_new'
   existingPersonId?: string
+  createAsClient?: boolean
 }
 
 interface MatchSuggestion {
@@ -549,6 +562,9 @@ const peopleToCreate = computed(() =>
 )
 const peopleToLink = computed(() =>
   personDecisions.value.filter(d => d.action === 'use_existing').length
+)
+const clientsToCreate = computed(() =>
+  personDecisions.value.filter(d => d.createAsClient === true).length
 )
 
 // Check for resume parameter on mount

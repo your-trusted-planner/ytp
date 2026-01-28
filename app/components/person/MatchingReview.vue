@@ -13,7 +13,7 @@
       </div>
 
       <!-- Quick actions -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <button
           v-if="matchCount > 0"
           @click="acceptAllHighConfidence"
@@ -21,6 +21,22 @@
         >
           Accept all high-confidence matches
         </button>
+        <span v-if="grantorCount > 0 || fiduciaryCount > 0" class="text-gray-300">|</span>
+        <button
+          v-if="grantorCount > 0"
+          @click="createGrantorsAsClients"
+          class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+        >
+          Grantors as clients
+        </button>
+        <button
+          v-if="fiduciaryCount > 0"
+          @click="createFiduciariesAsClients"
+          class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+        >
+          Fiduciaries as clients
+        </button>
+        <span class="text-gray-300">|</span>
         <button
           @click="createAllNew"
           class="text-sm text-gray-600 hover:text-gray-700"
@@ -65,7 +81,9 @@
           :key="person.extractedName"
           :person="person"
           :model-value="decisions[person.extractedName] || 'create_new'"
+          :create-as-client="createAsClientDecisions[person.extractedName] || false"
           @update:model-value="updateDecision(person.extractedName, $event)"
+          @update:create-as-client="updateCreateAsClient(person.extractedName, $event)"
         />
       </TransitionGroup>
 
@@ -85,6 +103,10 @@
         <div>
           <span class="text-gray-600">Create new:</span>
           <span class="font-medium text-gray-900 ml-2">{{ createCount }}</span>
+        </div>
+        <div v-if="clientCount > 0">
+          <span class="text-gray-600">Create as clients:</span>
+          <span class="font-medium text-burgundy-600 ml-2">{{ clientCount }}</span>
         </div>
       </div>
     </div>
@@ -118,6 +140,7 @@ interface PersonDecision {
   extractedName: string
   action: 'use_existing' | 'create_new'
   existingPersonId?: string
+  createAsClient?: boolean
 }
 
 interface Props {
@@ -136,17 +159,25 @@ const emit = defineEmits<{
 // Internal state for decisions (name -> 'create_new' or personId)
 const decisions = ref<Record<string, string>>({})
 
+// Internal state for createAsClient decisions (name -> boolean)
+const createAsClientDecisions = ref<Record<string, boolean>>({})
+
 // Initialize decisions from modelValue
 watch(() => props.modelValue, (newVal) => {
   const newDecisions: Record<string, string> = {}
+  const newClientDecisions: Record<string, boolean> = {}
   for (const decision of newVal) {
     if (decision.action === 'create_new') {
       newDecisions[decision.extractedName] = 'create_new'
     } else if (decision.existingPersonId) {
       newDecisions[decision.extractedName] = decision.existingPersonId
     }
+    if (decision.createAsClient !== undefined) {
+      newClientDecisions[decision.extractedName] = decision.createAsClient
+    }
   }
   decisions.value = newDecisions
+  createAsClientDecisions.value = newClientDecisions
 }, { immediate: true })
 
 // Initialize missing decisions to 'create_new'
@@ -212,9 +243,26 @@ const createCount = computed(() =>
   Object.values(decisions.value).filter(v => v === 'create_new').length
 )
 
+const clientCount = computed(() =>
+  Object.values(createAsClientDecisions.value).filter(v => v === true).length
+)
+
+const grantorCount = computed(() =>
+  props.extractedPeople.filter(p => p.role === 'client' || p.role === 'spouse').length
+)
+
+const fiduciaryCount = computed(() =>
+  props.extractedPeople.filter(p => p.role === 'fiduciary').length
+)
+
 // Actions
 function updateDecision(name: string, value: string) {
   decisions.value[name] = value
+  emitDecisions()
+}
+
+function updateCreateAsClient(name: string, value: boolean) {
+  createAsClientDecisions.value[name] = value
   emitDecisions()
 }
 
@@ -222,11 +270,16 @@ function emitDecisions() {
   const result: PersonDecision[] = []
 
   for (const [name, value] of Object.entries(decisions.value)) {
-    if (value === 'create_new') {
-      result.push({ extractedName: name, action: 'create_new' })
-    } else {
-      result.push({ extractedName: name, action: 'use_existing', existingPersonId: value })
+    const decision: PersonDecision = value === 'create_new'
+      ? { extractedName: name, action: 'create_new' }
+      : { extractedName: name, action: 'use_existing', existingPersonId: value }
+
+    // Include createAsClient if set
+    if (createAsClientDecisions.value[name] !== undefined) {
+      decision.createAsClient = createAsClientDecisions.value[name]
     }
+
+    result.push(decision)
   }
 
   emit('update:modelValue', result)
@@ -245,6 +298,32 @@ function acceptAllHighConfidence() {
 function createAllNew() {
   for (const person of props.extractedPeople) {
     decisions.value[person.extractedName] = 'create_new'
+  }
+  emitDecisions()
+}
+
+function createGrantorsAsClients() {
+  // Clear fiduciary selections and select grantors
+  // (attorney-client relationship comes from one group or the other, not both)
+  for (const person of props.extractedPeople) {
+    if (person.role === 'client' || person.role === 'spouse') {
+      createAsClientDecisions.value[person.extractedName] = true
+    } else if (person.role === 'fiduciary') {
+      createAsClientDecisions.value[person.extractedName] = false
+    }
+  }
+  emitDecisions()
+}
+
+function createFiduciariesAsClients() {
+  // Clear grantor selections and select fiduciaries
+  // (attorney-client relationship comes from one group or the other, not both)
+  for (const person of props.extractedPeople) {
+    if (person.role === 'fiduciary') {
+      createAsClientDecisions.value[person.extractedName] = true
+    } else if (person.role === 'client' || person.role === 'spouse') {
+      createAsClientDecisions.value[person.extractedName] = false
+    }
   }
   emitDecisions()
 }
