@@ -75,10 +75,10 @@
       <div class="space-y-6">
         <!-- Parse and display snapshot content -->
         <div v-for="(section, key) in snapshotContent" :key="key" class="space-y-2">
-          <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">{{ formatKey(key) }}</h4>
+          <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">{{ formatKey(String(key)) }}</h4>
           <div v-if="typeof section === 'object'" class="pl-4 space-y-2">
             <div v-for="(value, subKey) in section" :key="subKey" class="flex">
-              <span class="text-sm text-gray-600 w-40">{{ formatKey(subKey) }}:</span>
+              <span class="text-sm text-gray-600 w-40">{{ formatKey(String(subKey)) }}:</span>
               <span class="text-sm text-gray-900 font-medium">{{ formatValue(value) }}</span>
             </div>
           </div>
@@ -203,7 +203,7 @@ const isApproved = computed(() => {
 
 // Format status
 function formatStatus(status: string) {
-  const map = {
+  const map: Record<string, string> = {
     'DRAFT': 'Draft',
     'SENT': 'Sent to Client',
     'UNDER_REVISION': 'Under Revision',

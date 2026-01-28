@@ -11,7 +11,7 @@
           ? 'border-burgundy-500 bg-burgundy-50' 
           : 'border-gray-300 hover:border-gray-400'
       ]"
-      @click="$refs.fileInput.click()"
+      @click="fileInput?.click()"
     >
       <input
         ref="fileInput"
@@ -104,6 +104,27 @@
 <script setup lang="ts">
 import { Upload as IconUpload, AlertCircle as IconAlertCircle, Check as IconCheck } from 'lucide-vue-next'
 
+interface UploadedFile {
+  id: string
+  status: string
+  version: number
+  created_at: number
+  updated_at: number
+  client_journey_id: string | null
+  file_path: string
+  action_item_id: string | null
+  uploaded_by_user_id: string
+  original_file_name: string
+  file_size: number
+  mime_type: string
+  document_category: string | null
+  notes: string | null
+  replaces_upload_id: string | null | undefined
+}
+
+// Template ref for file input
+const fileInput = ref<HTMLInputElement | null>(null)
+
 const props = defineProps({
   clientJourneyId: {
     type: String,
@@ -143,7 +164,7 @@ const uploadProgress = ref(0)
 const uploadingFileName = ref('')
 const errorMessage = ref('')
 const selectedCategory = ref('')
-const uploadedFiles = ref([])
+const uploadedFiles = ref<UploadedFile[]>([])
 
 // Handle file drop
 function handleDrop(e: DragEvent) {
@@ -201,7 +222,7 @@ async function uploadFile(file: File) {
       uploadProgress.value = Math.min(uploadProgress.value + 10, 90)
     }, 200)
 
-    const { upload } = await $fetch('/api/document-uploads', {
+    const { upload } = await $fetch<{ upload: UploadedFile }>('/api/document-uploads', {
       method: 'POST',
       body: formData
     })
@@ -218,9 +239,9 @@ async function uploadFile(file: File) {
       uploadProgress.value = 0
       uploadingFileName.value = ''
     }, 1000)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Upload error:', error)
-    errorMessage.value = error.message || 'Failed to upload file'
+    errorMessage.value = error instanceof Error ? error.message : 'Failed to upload file'
     uploading.value = false
   }
 }

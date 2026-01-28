@@ -144,6 +144,23 @@
 <script setup lang="ts">
 import { Plus as IconPlus, Loader as IconLoader, FileText as IconFileText, Shield as IconShield } from 'lucide-vue-next'
 
+interface JourneyDocument {
+  id: string
+  title: string
+  description: string | null
+  category: string
+  status: string
+  requires_notary: boolean
+  notarization_status: string | null
+}
+
+interface Template {
+  id: string
+  name: string
+  description: string | null
+  category: string
+}
+
 const props = defineProps({
   clientJourneyId: {
     type: String,
@@ -161,8 +178,8 @@ const props = defineProps({
 
 const loading = ref(true)
 const adding = ref(false)
-const documents = ref([])
-const templates = ref([])
+const documents = ref<JourneyDocument[]>([])
+const templates = ref<Template[]>([])
 const showAddDocumentModal = ref(false)
 
 const newDocForm = ref({
@@ -188,8 +205,8 @@ async function fetchDocuments() {
 // Fetch templates
 async function fetchTemplates() {
   try {
-    const { templates: data } = await $fetch('/api/templates')
-    templates.value = data
+    const response = await $fetch<{ templates: Template[] }>('/api/templates')
+    templates.value = response.templates || []
   } catch (error) {
     console.error('Error fetching templates:', error)
   }
@@ -241,7 +258,7 @@ function viewDocument(docId: string) {
 // Request notarization
 async function requestNotarization(docId: string) {
   try {
-    const result = await $fetch(`/api/documents/${docId}/request-notarization`, {
+    const result = await $fetch<{ signingUrl: string }>(`/api/documents/${docId}/request-notarization`, {
       method: 'POST'
     })
     alert(`Notarization requested! Signing URL: ${result.signingUrl}`)
@@ -253,7 +270,7 @@ async function requestNotarization(docId: string) {
 
 // Format status
 function formatStatus(status: string) {
-  const map = {
+  const map: Record<string, string> = {
     'DRAFT': 'Draft',
     'SENT': 'Sent',
     'VIEWED': 'Viewed',
@@ -265,7 +282,7 @@ function formatStatus(status: string) {
 
 // Format notary status
 function formatNotaryStatus(status: string) {
-  const map = {
+  const map: Record<string, string> = {
     'NOT_REQUIRED': 'Not Required',
     'PENDING': 'Pending',
     'SCHEDULED': 'Scheduled',

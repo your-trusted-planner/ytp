@@ -144,7 +144,7 @@ interface Activity {
   user: {
     firstName: string | null
     lastName: string | null
-    email: string
+    email: string | null
   } | null
   metadata?: Record<string, any> | null
   // New structured entity references

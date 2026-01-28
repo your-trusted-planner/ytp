@@ -124,28 +124,28 @@
     </div>
 
     <!-- Will Info (for single-person plans) -->
-    <div v-else-if="plan.wills.length > 0" class="bg-white border border-gray-200 rounded-lg p-4">
+    <div v-else-if="plan.wills.length > 0 && plan.wills[0]" class="bg-white border border-gray-200 rounded-lg p-4">
       <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
         Will Information
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <p class="text-sm text-gray-500">Will Type</p>
-          <p class="font-medium text-gray-900">{{ formatWillType(plan.wills[0].willType) }}</p>
+          <p class="font-medium text-gray-900">{{ formatWillType(plan.wills[0]?.willType ?? null) }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-500">Execution Date</p>
           <p class="font-medium text-gray-900">
-            {{ plan.wills[0].executionDate ? formatDate(plan.wills[0].executionDate) : 'Not executed' }}
+            {{ plan.wills[0]?.executionDate ? formatDate(plan.wills[0].executionDate) : 'Not executed' }}
           </p>
         </div>
         <div>
           <p class="text-sm text-gray-500">Codicils</p>
-          <p class="font-medium text-gray-900">{{ plan.wills[0].codicilCount }}</p>
+          <p class="font-medium text-gray-900">{{ plan.wills[0]?.codicilCount ?? 0 }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-500">Jurisdiction</p>
-          <p class="font-medium text-gray-900">{{ plan.wills[0].jurisdiction || 'N/A' }}</p>
+          <p class="font-medium text-gray-900">{{ plan.wills[0]?.jurisdiction || 'N/A' }}</p>
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@
         <div v-if="currentTrustees.length > 0">
           <p class="text-sm text-gray-500 mb-2">Current Trustee(s)</p>
           <div v-for="role in currentTrustees" :key="role.id" class="text-sm">
-            <span class="font-medium text-gray-900">{{ role.person.fullName }}</span>
+            <span class="font-medium text-gray-900">{{ role.person?.fullName || 'Unknown' }}</span>
             <UiBadge v-if="role.isPrimary" size="sm" variant="info" class="ml-2">Primary</UiBadge>
           </div>
         </div>
@@ -189,7 +189,7 @@
         <div v-if="successorTrustees.length > 0">
           <p class="text-sm text-gray-500 mb-2">Successor Trustee(s)</p>
           <div v-for="role in successorTrustees" :key="role.id" class="text-sm">
-            <span class="font-medium text-gray-900">{{ role.person.fullName }}</span>
+            <span class="font-medium text-gray-900">{{ role.person?.fullName || 'Unknown' }}</span>
           </div>
         </div>
 
@@ -197,7 +197,7 @@
         <div v-if="primaryBeneficiaries.length > 0">
           <p class="text-sm text-gray-500 mb-2">Primary Beneficiaries</p>
           <div v-for="role in primaryBeneficiaries" :key="role.id" class="text-sm">
-            <span class="font-medium text-gray-900">{{ role.person.fullName }}</span>
+            <span class="font-medium text-gray-900">{{ role.person?.fullName || 'Unknown' }}</span>
             <span v-if="role.sharePercentage" class="text-gray-500 ml-1">({{ role.sharePercentage }}%)</span>
           </div>
         </div>
@@ -216,15 +216,15 @@
           <div class="space-y-2 text-sm">
             <div v-if="getPrimaryExecutor">
               <span class="text-gray-500">Executor:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryExecutor.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryExecutor.person?.fullName || 'Unknown' }}</span>
             </div>
             <div v-if="getPrimaryFinancialAgent">
               <span class="text-gray-500">Financial Agent:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryFinancialAgent.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryFinancialAgent.person?.fullName || 'Unknown' }}</span>
             </div>
             <div v-if="getPrimaryHealthcareAgent">
               <span class="text-gray-500">Healthcare Agent:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryHealthcareAgent.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getPrimaryHealthcareAgent.person?.fullName || 'Unknown' }}</span>
             </div>
           </div>
         </div>
@@ -235,15 +235,15 @@
           <div class="space-y-2 text-sm">
             <div v-if="getSecondaryExecutor">
               <span class="text-gray-500">Executor:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryExecutor.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryExecutor.person?.fullName || 'Unknown' }}</span>
             </div>
             <div v-if="getSecondaryFinancialAgent">
               <span class="text-gray-500">Financial Agent:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryFinancialAgent.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryFinancialAgent.person?.fullName || 'Unknown' }}</span>
             </div>
             <div v-if="getSecondaryHealthcareAgent">
               <span class="text-gray-500">Healthcare Agent:</span>
-              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryHealthcareAgent.person.fullName }}</span>
+              <span class="font-medium text-gray-900 ml-1">{{ getSecondaryHealthcareAgent.person?.fullName || 'Unknown' }}</span>
             </div>
           </div>
         </div>
@@ -258,15 +258,15 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div v-if="executor">
           <p class="text-sm text-gray-500 mb-2">Executor</p>
-          <p class="font-medium text-gray-900">{{ executor.person.fullName }}</p>
+          <p class="font-medium text-gray-900">{{ executor.person?.fullName || 'Unknown' }}</p>
         </div>
         <div v-if="financialAgent">
           <p class="text-sm text-gray-500 mb-2">Financial Agent</p>
-          <p class="font-medium text-gray-900">{{ financialAgent.person.fullName }}</p>
+          <p class="font-medium text-gray-900">{{ financialAgent.person?.fullName || 'Unknown' }}</p>
         </div>
         <div v-if="healthcareAgent">
           <p class="text-sm text-gray-500 mb-2">Healthcare Agent</p>
-          <p class="font-medium text-gray-900">{{ healthcareAgent.person.fullName }}</p>
+          <p class="font-medium text-gray-900">{{ healthcareAgent.person?.fullName || 'Unknown' }}</p>
         </div>
       </div>
     </div>
@@ -322,10 +322,12 @@ interface TrustData {
   jurisdiction: string | null
 }
 
+type EstatePlanStatus = 'ACTIVE' | 'CLOSED' | 'DRAFT' | 'AMENDED' | 'INCAPACITATED' | 'ADMINISTERED' | 'DISTRIBUTED'
+
 interface EstatePlanData {
   planName: string
   planType: 'TRUST_BASED' | 'WILL_BASED'
-  status: string
+  status: EstatePlanStatus
   currentVersion: number
   effectiveDate: string | null
   lastAmendedAt: string | null
@@ -335,7 +337,7 @@ interface EstatePlanData {
   wills: WillData[]
   ancillaryDocuments: AncillaryDocumentData[]
   roles: RoleData[]
-  events: any[]
+  events: unknown[]
 }
 
 interface Props {
@@ -480,7 +482,8 @@ function formatDate(dateStr: string): string {
   })
 }
 
-function formatTrustType(type: string): string {
+function formatTrustType(type: string | null): string {
+  if (!type) return 'Unknown'
   const labels: Record<string, string> = {
     REVOCABLE_LIVING: 'Revocable Living Trust',
     IRREVOCABLE_LIVING: 'Irrevocable Living Trust',
@@ -497,7 +500,8 @@ function formatTrustType(type: string): string {
   return labels[type] || type
 }
 
-function formatWillType(type: string): string {
+function formatWillType(type: string | null): string {
+  if (!type) return 'Unknown'
   const labels: Record<string, string> = {
     SIMPLE: 'Simple Will',
     POUR_OVER: 'Pour-Over Will',
