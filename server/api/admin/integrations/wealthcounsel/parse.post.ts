@@ -68,23 +68,25 @@ export default defineEventHandler(async (event) => {
   type WCPersonRole = 'client' | 'spouse' | 'child' | 'beneficiary' | 'fiduciary'
   const extractor = new PersonExtractor<WCPersonRole>()
 
-  // Extract client
+  // Extract client (first grantor)
   if (parsedData.client.fullName) {
     extractor.add(
       parsedData.client.fullName,
       'client',
-      ['Primary Client'],
+      ['Client'],
       parsedData.client.email,
       parsedData.client.dateOfBirth
     )
   }
 
-  // Extract spouse
+  // Extract spouse (second grantor for joint plans)
+  // For joint plans, both grantors are equal clients - no hierarchy
   if (parsedData.spouse?.fullName) {
+    const isJointPlan = parsedData.trust?.isJoint === true
     extractor.add(
       parsedData.spouse.fullName,
-      'spouse',
-      ['Spouse'],
+      isJointPlan ? 'client' : 'spouse',
+      isJointPlan ? ['Client'] : ['Spouse'],
       parsedData.spouse.email,
       parsedData.spouse.dateOfBirth
     )
@@ -250,7 +252,7 @@ export default defineEventHandler(async (event) => {
     for (const personId of matchedPersonIds) {
       const plans = await db.select()
         .from(schema.estatePlans)
-        .where(eq(schema.estatePlans.primaryPersonId, personId))
+        .where(eq(schema.estatePlans.grantorPersonId1, personId))
         .limit(5)
 
       for (const plan of plans) {

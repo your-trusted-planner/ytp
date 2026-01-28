@@ -19,24 +19,24 @@
 
     <!-- Key Info Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Primary Person -->
-      <div v-if="plan.primaryPerson" class="bg-white border border-gray-200 rounded-lg p-4">
+      <!-- Grantor 1 -->
+      <div v-if="plan.grantor1" class="bg-white border border-gray-200 rounded-lg p-4">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
           <User class="w-4 h-4" />
           <span>{{ plan.planType === 'TRUST_BASED' ? 'Grantor' : 'Testator' }}</span>
         </div>
-        <p class="text-lg font-semibold text-gray-900">{{ plan.primaryPerson.fullName }}</p>
-        <p v-if="plan.primaryPerson.email" class="text-sm text-gray-500">{{ plan.primaryPerson.email }}</p>
+        <p class="text-lg font-semibold text-gray-900">{{ plan.grantor1.fullName }}</p>
+        <p v-if="plan.grantor1.email" class="text-sm text-gray-500">{{ plan.grantor1.email }}</p>
       </div>
 
-      <!-- Co-Grantor / Spouse (if joint) -->
-      <div v-if="plan.secondaryPerson" class="bg-white border border-gray-200 rounded-lg p-4">
+      <!-- Grantor 2 (if joint) -->
+      <div v-if="plan.grantor2" class="bg-white border border-gray-200 rounded-lg p-4">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
           <Users class="w-4 h-4" />
-          <span>Co-Grantor</span>
+          <span>Grantor</span>
         </div>
-        <p class="text-lg font-semibold text-gray-900">{{ plan.secondaryPerson.fullName }}</p>
-        <p v-if="plan.secondaryPerson.email" class="text-sm text-gray-500">{{ plan.secondaryPerson.email }}</p>
+        <p class="text-lg font-semibold text-gray-900">{{ plan.grantor2.fullName }}</p>
+        <p v-if="plan.grantor2.email" class="text-sm text-gray-500">{{ plan.grantor2.email }}</p>
       </div>
 
       <!-- Effective Date -->
@@ -87,9 +87,9 @@
         Individual Documents
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Primary Person's Documents -->
+        <!-- Grantor 1's Documents -->
         <div class="border-l-4 border-blue-400 pl-4">
-          <h4 class="font-medium text-gray-900 mb-3">{{ plan.primaryPerson?.fullName }}</h4>
+          <h4 class="font-medium text-gray-900 mb-3">{{ plan.grantor1?.fullName }}</h4>
           <div class="space-y-2 text-sm">
             <div v-if="getPrimaryWill" class="flex items-center gap-2">
               <FileText class="w-4 h-4 text-gray-400" />
@@ -104,9 +104,9 @@
           </div>
         </div>
 
-        <!-- Secondary Person's Documents -->
+        <!-- Grantor 2's Documents -->
         <div class="border-l-4 border-purple-400 pl-4">
-          <h4 class="font-medium text-gray-900 mb-3">{{ plan.secondaryPerson?.fullName }}</h4>
+          <h4 class="font-medium text-gray-900 mb-3">{{ plan.grantor2?.fullName }}</h4>
           <div class="space-y-2 text-sm">
             <div v-if="getSecondaryWill" class="flex items-center gap-2">
               <FileText class="w-4 h-4 text-gray-400" />
@@ -181,7 +181,6 @@
           <p class="text-sm text-gray-500 mb-2">Current Trustee(s)</p>
           <div v-for="role in currentTrustees" :key="role.id" class="text-sm">
             <span class="font-medium text-gray-900">{{ role.person?.fullName || 'Unknown' }}</span>
-            <UiBadge v-if="role.isPrimary" size="sm" variant="info" class="ml-2">Primary</UiBadge>
           </div>
         </div>
 
@@ -210,9 +209,9 @@
         Individual Document Agents
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Primary Person's Agents -->
+        <!-- Grantor 1's Agents -->
         <div class="border-l-4 border-blue-400 pl-4">
-          <h4 class="font-medium text-gray-900 mb-3">{{ plan.primaryPerson?.fullName }}'s Agents</h4>
+          <h4 class="font-medium text-gray-900 mb-3">{{ plan.grantor1?.fullName }}'s Agents</h4>
           <div class="space-y-2 text-sm">
             <div v-if="getPrimaryExecutor">
               <span class="text-gray-500">Executor:</span>
@@ -229,9 +228,9 @@
           </div>
         </div>
 
-        <!-- Secondary Person's Agents -->
+        <!-- Grantor 2's Agents -->
         <div class="border-l-4 border-purple-400 pl-4">
-          <h4 class="font-medium text-gray-900 mb-3">{{ plan.secondaryPerson?.fullName }}'s Agents</h4>
+          <h4 class="font-medium text-gray-900 mb-3">{{ plan.grantor2?.fullName }}'s Agents</h4>
           <div class="space-y-2 text-sm">
             <div v-if="getSecondaryExecutor">
               <span class="text-gray-500">Executor:</span>
@@ -331,8 +330,8 @@ interface EstatePlanData {
   currentVersion: number
   effectiveDate: string | null
   lastAmendedAt: string | null
-  primaryPerson: PersonData | null
-  secondaryPerson: PersonData | null
+  grantor1: PersonData | null
+  grantor2: PersonData | null
   trust: TrustData | null
   wills: WillData[]
   ancillaryDocuments: AncillaryDocumentData[]
@@ -346,7 +345,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const isJointPlan = computed(() => !!props.plan.secondaryPerson)
+const isJointPlan = computed(() => !!props.plan.grantor2)
 
 const activeRoles = computed(() =>
   props.plan.roles.filter(r => r.status === 'ACTIVE')
@@ -394,82 +393,82 @@ const executor = computed(() =>
   activeRoles.value.find(r => ['EXECUTOR', 'CO_EXECUTOR'].includes(r.roleType) && !r.forPersonId)
 )
 
-// Primary person's documents and agents
+// Grantor 1's documents and agents
 const getPrimaryWill = computed(() =>
-  props.plan.primaryPerson
-    ? props.plan.wills.find(w => w.personId === props.plan.primaryPerson!.id)
+  props.plan.grantor1
+    ? props.plan.wills.find(w => w.personId === props.plan.grantor1!.id)
     : undefined
 )
 
 const getPrimaryAncillaryDocs = computed(() =>
-  props.plan.primaryPerson
-    ? props.plan.ancillaryDocuments.filter(d => d.personId === props.plan.primaryPerson!.id)
+  props.plan.grantor1
+    ? props.plan.ancillaryDocuments.filter(d => d.personId === props.plan.grantor1!.id)
     : []
 )
 
 const getPrimaryExecutor = computed(() =>
-  props.plan.primaryPerson
+  props.plan.grantor1
     ? activeRoles.value.find(r =>
         ['EXECUTOR', 'CO_EXECUTOR'].includes(r.roleType) &&
-        r.forPersonId === props.plan.primaryPerson!.id
+        r.forPersonId === props.plan.grantor1!.id
       )
     : undefined
 )
 
 const getPrimaryFinancialAgent = computed(() =>
-  props.plan.primaryPerson
+  props.plan.grantor1
     ? activeRoles.value.find(r =>
         r.roleType === 'FINANCIAL_AGENT' &&
-        r.forPersonId === props.plan.primaryPerson!.id
+        r.forPersonId === props.plan.grantor1!.id
       )
     : undefined
 )
 
 const getPrimaryHealthcareAgent = computed(() =>
-  props.plan.primaryPerson
+  props.plan.grantor1
     ? activeRoles.value.find(r =>
         r.roleType === 'HEALTHCARE_AGENT' &&
-        r.forPersonId === props.plan.primaryPerson!.id
+        r.forPersonId === props.plan.grantor1!.id
       )
     : undefined
 )
 
 // Secondary person's documents and agents
 const getSecondaryWill = computed(() =>
-  props.plan.secondaryPerson
-    ? props.plan.wills.find(w => w.personId === props.plan.secondaryPerson!.id)
+  props.plan.grantor2
+    ? props.plan.wills.find(w => w.personId === props.plan.grantor2!.id)
     : undefined
 )
 
 const getSecondaryAncillaryDocs = computed(() =>
-  props.plan.secondaryPerson
-    ? props.plan.ancillaryDocuments.filter(d => d.personId === props.plan.secondaryPerson!.id)
+  props.plan.grantor2
+    ? props.plan.ancillaryDocuments.filter(d => d.personId === props.plan.grantor2!.id)
     : []
 )
 
 const getSecondaryExecutor = computed(() =>
-  props.plan.secondaryPerson
+  props.plan.grantor2
     ? activeRoles.value.find(r =>
         ['EXECUTOR', 'CO_EXECUTOR'].includes(r.roleType) &&
-        r.forPersonId === props.plan.secondaryPerson!.id
+        r.forPersonId === props.plan.grantor2!.id
       )
     : undefined
 )
 
 const getSecondaryFinancialAgent = computed(() =>
-  props.plan.secondaryPerson
+  props.plan.grantor2
     ? activeRoles.value.find(r =>
         r.roleType === 'FINANCIAL_AGENT' &&
-        r.forPersonId === props.plan.secondaryPerson!.id
+        r.forPersonId === props.plan.grantor2!.id
       )
     : undefined
 )
 
 const getSecondaryHealthcareAgent = computed(() =>
-  props.plan.secondaryPerson
+  props.plan.grantor2
     ? activeRoles.value.find(r =>
         r.roleType === 'HEALTHCARE_AGENT' &&
-        r.forPersonId === props.plan.secondaryPerson!.id
+        r.forPersonId === props.plan.grantor2!.id
       )
     : undefined
 )

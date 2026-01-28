@@ -112,8 +112,8 @@
           </div>
           <EstatePlanRolesTable
             :roles="plan.roles"
-            :primary-person="plan.primaryPerson"
-            :secondary-person="plan.secondaryPerson"
+            :grantor1="plan.grantor1"
+            :grantor2="plan.grantor2"
             :show-actions="true"
             @edit="handleEditRole"
           />
@@ -183,8 +183,8 @@
             <optgroup label="Trigger Events">
               <option value="GRANTOR_INCAPACITATED">Grantor Incapacitated</option>
               <option value="GRANTOR_CAPACITY_RESTORED">Grantor Capacity Restored</option>
-              <option value="GRANTOR_DEATH">Grantor Death</option>
-              <option value="CO_GRANTOR_DEATH">Co-Grantor Death</option>
+              <option value="FIRST_GRANTOR_DEATH">First Grantor Death</option>
+              <option value="SECOND_GRANTOR_DEATH">Second Grantor Death</option>
             </optgroup>
             <optgroup label="Other">
               <option value="NOTE_ADDED">Note Added</option>
@@ -442,8 +442,8 @@ interface EstatePlanDetail {
   wealthCounselClientId: string | null
   createdAt: string
   updatedAt: string
-  primaryPerson: PersonData | null
-  secondaryPerson: PersonData | null
+  grantor1: PersonData | null
+  grantor2: PersonData | null
   trust: TrustData | null
   wills: WillData[]
   ancillaryDocuments: AncillaryDocumentData[]

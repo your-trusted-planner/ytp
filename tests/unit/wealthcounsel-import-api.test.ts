@@ -237,8 +237,8 @@ describe('WealthCounsel Import Flow', () => {
       // Plan structure
       expect(plan.planType).toBe('TRUST_BASED')
       expect(plan.planName).toBe('Christensen Legacy Family Trust')
-      expect(plan.primaryPersonId).toBe(clientPersonId)
-      expect(plan.secondaryPersonId).toBe(spousePersonId)
+      expect(plan.grantorPersonId1).toBe(clientPersonId)
+      expect(plan.grantorPersonId2).toBe(spousePersonId)
       expect(plan.status).toBe('ACTIVE')
       expect(plan.currentVersion).toBe(1)
 
@@ -268,8 +268,8 @@ describe('WealthCounsel Import Flow', () => {
 
       // Plan structure
       expect(plan.planType).toBe('WILL_BASED')
-      expect(plan.primaryPersonId).toBe(clientPersonId)
-      expect(plan.secondaryPersonId).toBeUndefined()
+      expect(plan.grantorPersonId1).toBe(clientPersonId)
+      expect(plan.grantorPersonId2).toBeUndefined()
 
       // No trust for will-based plan
       expect(trust).toBeUndefined()
@@ -406,8 +406,8 @@ describe('WealthCounsel Import Flow', () => {
         existingSpouseId
       )
 
-      expect(plan.primaryPersonId).toBe(existingClientId)
-      expect(plan.secondaryPersonId).toBe(existingSpouseId)
+      expect(plan.grantorPersonId1).toBe(existingClientId)
+      expect(plan.grantorPersonId2).toBe(existingSpouseId)
     })
   })
 
@@ -639,9 +639,9 @@ describe('WealthCounsel Import Flow', () => {
         ? personLookup.get(parsedData.spouse.fullName)
         : undefined
       const roles = transformRoles(parsedData, 'plan_123', personLookup, clientPersonId, spousePersonId)
-      const grantors = roles.filter(r => r.roleType === 'GRANTOR' || r.roleType === 'CO_GRANTOR')
+      const grantors = roles.filter(r => r.roleType === 'GRANTOR')
 
-      // Joint trust should have two grantors
+      // Joint trust should have two grantors (both use GRANTOR roleType)
       expect(grantors.length).toBe(2)
     })
 
@@ -730,8 +730,8 @@ describe('WealthCounsel Import Edge Cases', () => {
     const { plan, trust, will } = transformToEstatePlan(parsedData, clientPersonId)
 
     expect(plan.planType).toBe('WILL_BASED')
-    expect(plan.primaryPersonId).toBe(clientPersonId)
-    expect(plan.secondaryPersonId).toBeUndefined()
+    expect(plan.grantorPersonId1).toBe(clientPersonId)
+    expect(plan.grantorPersonId2).toBeUndefined()
     expect(trust).toBeUndefined()
   })
 
@@ -821,7 +821,7 @@ describe('WealthCounsel Parse Person Extraction', () => {
       addExtractedPerson(
         parsedData.client.fullName,
         'client',
-        ['Primary Client'],
+        ['Client'],
         parsedData.client.email,
         parsedData.client.dateOfBirth
       )
@@ -901,7 +901,7 @@ describe('WealthCounsel Parse Person Extraction', () => {
       expect(client).toBeDefined()
       expect(client?.extractedName).toBe(parsedData.client.fullName)
       expect(client?.extractedEmail).toBe(parsedData.client.email)
-      expect(client?.rolesInPlan).toContain('Primary Client')
+      expect(client?.rolesInPlan).toContain('Client')
     })
 
     it('extracts spouse with email and DOB', () => {
@@ -966,11 +966,112 @@ describe('WealthCounsel Parse Person Extraction', () => {
       const client = extracted.find(p => p.extractedName === parsedData.client.fullName)
       expect(client?.role).toBe('client')
 
-      // Spouse should be role 'spouse'
+      // Spouse should be role 'spouse' (in the helper function which doesn't check isJoint)
       if (parsedData.spouse?.fullName) {
         const spouse = extracted.find(p => p.extractedName === parsedData.spouse?.fullName)
         expect(spouse?.role).toBe('spouse')
       }
+    })
+  })
+
+  describe('joint plan spouse role assignment', () => {
+    // This simulates the actual parse.post.ts logic
+    function extractPeopleWithJointLogic(parsedData: ReturnType<typeof parseWealthCounselXml>): ExtractedPersonWithMatches[] {
+      const extractedPeople: ExtractedPersonWithMatches[] = []
+      const seenNames = new Set<string>()
+
+      function addExtractedPerson(
+        name: string,
+        role: ExtractedPersonWithMatches['role'],
+        rolesInPlan: string[],
+        email?: string,
+        dateOfBirth?: string
+      ) {
+        if (!name || seenNames.has(name)) return
+        seenNames.add(name)
+
+        extractedPeople.push({
+          extractedName: name,
+          extractedEmail: email,
+          extractedDateOfBirth: dateOfBirth,
+          role,
+          rolesInPlan,
+          matches: []
+        })
+      }
+
+      // Extract client
+      if (parsedData.client.fullName) {
+        addExtractedPerson(
+          parsedData.client.fullName,
+          'client',
+          ['Client'],
+          parsedData.client.email,
+          parsedData.client.dateOfBirth
+        )
+      }
+
+      // Extract spouse - FOR JOINT PLANS, treat as 'client' so they appear in Clients tab
+      if (parsedData.spouse?.fullName) {
+        const isJointPlan = parsedData.trust?.isJoint === true
+        addExtractedPerson(
+          parsedData.spouse.fullName,
+          isJointPlan ? 'client' : 'spouse',
+          isJointPlan ? ['Client'] : ['Spouse'],
+          parsedData.spouse.email,
+          parsedData.spouse.dateOfBirth
+        )
+      }
+
+      return extractedPeople
+    }
+
+    it('treats spouse as client role for joint plans', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+
+      // Verify this is a joint plan
+      expect(parsedData.trust?.isJoint).toBe(true)
+
+      const extracted = extractPeopleWithJointLogic(parsedData)
+
+      // Client should be role 'client'
+      const client = extracted.find(p => p.extractedName === parsedData.client.fullName)
+      expect(client?.role).toBe('client')
+      expect(client?.rolesInPlan).toContain('Client')
+
+      // Spouse should ALSO be role 'client' for joint plans
+      const spouse = extracted.find(p => p.extractedName === parsedData.spouse?.fullName)
+      expect(spouse?.role).toBe('client')
+      expect(spouse?.rolesInPlan).toContain('Client')
+    })
+
+    it('treats spouse as spouse role for non-joint plans', () => {
+      const parsedData = parseWealthCounselXml(singleClientWillXml)
+
+      // Verify this is NOT a joint plan
+      expect(parsedData.trust?.isJoint).toBeFalsy()
+
+      const extracted = extractPeopleWithJointLogic(parsedData)
+
+      // If there's a spouse in the data, they should have role 'spouse'
+      if (parsedData.spouse?.fullName) {
+        const spouse = extracted.find(p => p.extractedName === parsedData.spouse?.fullName)
+        expect(spouse?.role).toBe('spouse')
+        expect(spouse?.rolesInPlan).toContain('Spouse')
+      }
+    })
+
+    it('shows both grantors in Clients tab filter for joint plan', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const extracted = extractPeopleWithJointLogic(parsedData)
+
+      // Filter for 'client' role (like the UI Clients tab does)
+      const clientsInClientsTab = extracted.filter(p => p.role === 'client')
+
+      // For joint plans, both client and spouse should appear
+      expect(clientsInClientsTab).toHaveLength(2)
+      expect(clientsInClientsTab.map(p => p.extractedName)).toContain(parsedData.client.fullName)
+      expect(clientsInClientsTab.map(p => p.extractedName)).toContain(parsedData.spouse?.fullName)
     })
   })
 
@@ -1202,7 +1303,7 @@ describe('WealthCounsel Joint Plan Client Creation', () => {
       }
     })
 
-    it('marks primary client correctly in metadata', () => {
+    it('marks source position correctly in metadata', () => {
       const parsedData = parseWealthCounselXml(jointTrustXml)
       const people = extractPeople(parsedData)
       const personLookup = buildPersonLookup(people)
@@ -1222,8 +1323,8 @@ describe('WealthCounsel Joint Plan Client Creation', () => {
       const primaryMetadata = JSON.parse(primaryClient!.importMetadata)
       const spouseMetadata = JSON.parse(spouseClient!.importMetadata)
 
-      expect(primaryMetadata.isPrimary).toBe(true)
-      expect(spouseMetadata.isPrimary).toBe(false)
+      expect(primaryMetadata.sourcePosition).toBe('first')
+      expect(spouseMetadata.sourcePosition).toBe('second')
     })
 
     it('handles case where spouse is not provided (single client plan)', () => {

@@ -1142,12 +1142,13 @@ export const importDuplicates = sqliteTable('import_duplicates', {
 export const estatePlans = sqliteTable('estate_plans', {
   id: text('id').primaryKey(),
 
-  // Link to primary person (grantor/testator)
+  // Link to first grantor (grantor/testator)
   // Note: NOT clientId - plan belongs to PERSON, who may become client later
-  primaryPersonId: text('primary_person_id').notNull().references(() => people.id),
+  // For joint plans, both grantors are equal clients - no hierarchy implied
+  grantorPersonId1: text('grantor_person_id_1').notNull().references(() => people.id),
 
-  // For joint plans (married couples)
-  secondaryPersonId: text('secondary_person_id').references(() => people.id),
+  // For joint plans (married couples) - second grantor, equal to first
+  grantorPersonId2: text('grantor_person_id_2').references(() => people.id),
 
   // Plan identification
   planType: text('plan_type', { enum: ['TRUST_BASED', 'WILL_BASED'] }).notNull(),
@@ -1363,8 +1364,8 @@ export const planRoles = sqliteTable('plan_roles', {
 
   roleType: text('role_type', {
     enum: [
-      // Grantors/Settlors
-      'GRANTOR', 'CO_GRANTOR', 'TESTATOR',
+      // Grantors/Settlors (both grantors in joint plan use GRANTOR - no hierarchy)
+      'GRANTOR', 'TESTATOR',
 
       // Trustees
       'TRUSTEE', 'CO_TRUSTEE', 'SUCCESSOR_TRUSTEE', 'DISTRIBUTION_TRUSTEE',
@@ -1436,7 +1437,7 @@ export const planEvents = sqliteTable('plan_events', {
 
       // Trigger events
       'GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED',
-      'GRANTOR_DEATH', 'CO_GRANTOR_DEATH',
+      'FIRST_GRANTOR_DEATH', 'SECOND_GRANTOR_DEATH',
 
       // Administration events
       'ADMINISTRATION_STARTED', 'SUCCESSOR_TRUSTEE_APPOINTED',

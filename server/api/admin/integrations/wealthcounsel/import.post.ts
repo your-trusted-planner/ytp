@@ -40,6 +40,9 @@ const ImportRequestSchema = z.object({
     isAmendment: z.boolean().default(false),
     existingPlanId: z.string().optional(),
     linkToMatterId: z.string().optional(),
+    // Whether to create client records for grantors (primary + spouse)
+    // If false, only people records are created, not client records
+    createClientRecords: z.boolean().default(false),
     // Deprecated: use personDecisions instead
     createPeopleRecords: z.boolean().default(true)
   })
@@ -201,28 +204,31 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Step 2b: Create client records for primary client and spouse (if joint plan)
-    // Per the Belly Button Principle, every client needs both a person record AND a clients record
-    const clientsToCreate = extractClientsToCreate(parsedData, clientPersonId, spousePersonId)
+    // Step 2b: Optionally create client records for primary client and spouse (if joint plan)
+    // Per the Belly Button Principle, clients need both a person record AND a clients record
+    // But not all imported plans are for clients - some may be for reference/archival
+    if (decisions.createClientRecords) {
+      const clientsToCreate = extractClientsToCreate(parsedData, clientPersonId, spousePersonId)
 
-    for (const clientData of clientsToCreate) {
-      // Check if a client record already exists for this person
-      const [existingClient] = await db.select()
-        .from(schema.clients)
-        .where(eq(schema.clients.personId, clientData.personId))
+      for (const clientData of clientsToCreate) {
+        // Check if a client record already exists for this person
+        const [existingClient] = await db.select()
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, clientData.personId))
 
-      if (!existingClient) {
-        await db.insert(schema.clients).values({
-          id: clientData.id,
-          personId: clientData.personId,
-          status: clientData.status,
-          hasMinorChildren: clientData.hasMinorChildren,
-          childrenInfo: clientData.childrenInfo,
-          hasTrust: clientData.hasTrust,
-          hasWill: clientData.hasWill,
-          importMetadata: clientData.importMetadata
-        })
-        result.clientsCreated++
+        if (!existingClient) {
+          await db.insert(schema.clients).values({
+            id: clientData.id,
+            personId: clientData.personId,
+            status: clientData.status,
+            hasMinorChildren: clientData.hasMinorChildren,
+            childrenInfo: clientData.childrenInfo,
+            hasTrust: clientData.hasTrust,
+            hasWill: clientData.hasWill,
+            importMetadata: clientData.importMetadata
+          })
+          result.clientsCreated++
+        }
       }
     }
 
@@ -268,8 +274,8 @@ export default defineEventHandler(async (event) => {
       // Insert plan
       await db.insert(schema.estatePlans).values({
         id: plan.id,
-        primaryPersonId: plan.primaryPersonId,
-        secondaryPersonId: plan.secondaryPersonId,
+        grantorPersonId1: plan.grantorPersonId1,
+        grantorPersonId2: plan.grantorPersonId2,
         planType: plan.planType,
         planName: plan.planName,
         currentVersion: plan.currentVersion,

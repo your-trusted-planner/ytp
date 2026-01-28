@@ -27,7 +27,7 @@ const CreateEventSchema = z.object({
   eventType: z.enum([
     'PLAN_CREATED', 'PLAN_SIGNED', 'PLAN_AMENDED', 'PLAN_RESTATED',
     'GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED',
-    'GRANTOR_DEATH', 'CO_GRANTOR_DEATH',
+    'FIRST_GRANTOR_DEATH', 'SECOND_GRANTOR_DEATH',
     'ADMINISTRATION_STARTED', 'SUCCESSOR_TRUSTEE_APPOINTED',
     'TRUST_FUNDED', 'ASSETS_VALUED',
     'DISTRIBUTION_MADE', 'PARTIAL_DISTRIBUTION',
@@ -197,7 +197,7 @@ describe('Estate Plans API Validation', () => {
       const eventTypes = [
         'PLAN_CREATED', 'PLAN_SIGNED', 'PLAN_AMENDED', 'PLAN_RESTATED',
         'GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED',
-        'GRANTOR_DEATH', 'CO_GRANTOR_DEATH',
+        'FIRST_GRANTOR_DEATH', 'SECOND_GRANTOR_DEATH',
         'ADMINISTRATION_STARTED', 'SUCCESSOR_TRUSTEE_APPOINTED',
         'TRUST_FUNDED', 'ASSETS_VALUED',
         'DISTRIBUTION_MADE', 'PARTIAL_DISTRIBUTION',
@@ -274,14 +274,14 @@ describe('Estate Plans API Response Structures', () => {
       lastAmendedAt: z.string().nullable(),
       createdAt: z.string(),
       updatedAt: z.string(),
-      primaryPerson: z.object({
+      grantor1: z.object({
         id: z.string(),
         fullName: z.string().nullable(),
         firstName: z.string().nullable(),
         lastName: z.string().nullable(),
         email: z.string().nullable()
       }).nullable(),
-      secondaryPerson: z.object({
+      grantor2: z.object({
         id: z.string(),
         fullName: z.string().nullable(),
         firstName: z.string().nullable(),
@@ -314,14 +314,14 @@ describe('Estate Plans API Response Structures', () => {
             lastAmendedAt: '2024-06-01',
             createdAt: '2023-01-01',
             updatedAt: '2024-06-01',
-            primaryPerson: {
+            grantor1: {
               id: 'person_456',
               fullName: 'John Smith',
               firstName: 'John',
               lastName: 'Smith',
               email: 'john@example.com'
             },
-            secondaryPerson: {
+            grantor2: {
               id: 'person_789',
               fullName: 'Jane Smith',
               firstName: 'Jane',
@@ -360,14 +360,14 @@ describe('Estate Plans API Response Structures', () => {
             lastAmendedAt: null,
             createdAt: '2024-01-01',
             updatedAt: '2024-01-01',
-            primaryPerson: {
+            grantor1: {
               id: 'person_123',
               fullName: 'John Doe',
               firstName: 'John',
               lastName: 'Doe',
               email: null
             },
-            secondaryPerson: null,
+            grantor2: null,
             roleCounts: {}
           }
         ],
@@ -569,7 +569,6 @@ describe('Estate Plans Business Logic', () => {
   describe('Role Categories', () => {
     const roleTypeToCategory: Record<string, string> = {
       'GRANTOR': 'GRANTOR',
-      'CO_GRANTOR': 'GRANTOR',
       'TESTATOR': 'GRANTOR',
       'TRUSTEE': 'FIDUCIARY',
       'CO_TRUSTEE': 'FIDUCIARY',
@@ -586,9 +585,8 @@ describe('Estate Plans Business Logic', () => {
     }
 
     it('maps role types to correct categories', () => {
-      // Grantors
+      // Grantors (both joint grantors use GRANTOR type)
       expect(roleTypeToCategory['GRANTOR']).toBe('GRANTOR')
-      expect(roleTypeToCategory['CO_GRANTOR']).toBe('GRANTOR')
       expect(roleTypeToCategory['TESTATOR']).toBe('GRANTOR')
 
       // Fiduciaries
@@ -655,7 +653,7 @@ describe('Estate Plans Business Logic', () => {
 
   describe('Event Types', () => {
     const lifecycleEvents = ['PLAN_CREATED', 'PLAN_SIGNED', 'PLAN_AMENDED', 'PLAN_RESTATED']
-    const triggerEvents = ['GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED', 'GRANTOR_DEATH', 'CO_GRANTOR_DEATH']
+    const triggerEvents = ['GRANTOR_INCAPACITATED', 'GRANTOR_CAPACITY_RESTORED', 'FIRST_GRANTOR_DEATH', 'SECOND_GRANTOR_DEATH']
     const administrationEvents = ['ADMINISTRATION_STARTED', 'SUCCESSOR_TRUSTEE_APPOINTED', 'TRUST_FUNDED', 'ASSETS_VALUED', 'DISTRIBUTION_MADE', 'PARTIAL_DISTRIBUTION', 'TAX_RETURN_FILED', 'NOTICE_SENT']
     const closureEvents = ['FINAL_DISTRIBUTION', 'TRUST_TERMINATED', 'PLAN_CLOSED']
 

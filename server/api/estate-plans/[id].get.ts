@@ -30,18 +30,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Estate plan not found' })
   }
 
-  // Get primary person
-  const [primaryPerson] = await db.select()
+  // Get first grantor
+  const [grantor1] = await db.select()
     .from(schema.people)
-    .where(eq(schema.people.id, planRow.primaryPersonId))
+    .where(eq(schema.people.id, planRow.grantorPersonId1))
 
-  // Get secondary person if present
-  let secondaryPerson = null
-  if (planRow.secondaryPersonId) {
-    const [sp] = await db.select()
+  // Get second grantor if present (joint plan)
+  let grantor2 = null
+  if (planRow.grantorPersonId2) {
+    const [g2] = await db.select()
       .from(schema.people)
-      .where(eq(schema.people.id, planRow.secondaryPersonId))
-    secondaryPerson = sp || null
+      .where(eq(schema.people.id, planRow.grantorPersonId2))
+    grantor2 = g2 || null
   }
 
   // Get trust if present
@@ -135,15 +135,15 @@ export default defineEventHandler(async (event) => {
     createdAt: planRow.createdAt,
     updatedAt: planRow.updatedAt,
 
-    primaryPerson: formatPerson(primaryPerson),
+    grantor1: formatPerson(grantor1),
 
-    secondaryPerson: secondaryPerson ? {
-      id: secondaryPerson.id,
-      fullName: secondaryPerson.fullName,
-      firstName: secondaryPerson.firstName,
-      lastName: secondaryPerson.lastName,
-      email: secondaryPerson.email,
-      phone: secondaryPerson.phone
+    grantor2: grantor2 ? {
+      id: grantor2.id,
+      fullName: grantor2.fullName,
+      firstName: grantor2.firstName,
+      lastName: grantor2.lastName,
+      email: grantor2.email,
+      phone: grantor2.phone
     } : null,
 
     trust: trust ? {

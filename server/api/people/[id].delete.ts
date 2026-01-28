@@ -1,5 +1,6 @@
-import { eq, count } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
+import { safeDeletePerson } from '../../utils/person-delete'
 
 // Delete a person
 export default defineEventHandler(async (event) => {
@@ -25,38 +26,34 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if person is linked to any user (can't delete if they have portal access)
-  const linkedUser = await db.select().from(schema.users).where(eq(schema.users.personId, personId)).get()
+  // Use safe delete utility that handles all FK references
+  const result = await safeDeletePerson(personId)
 
-  if (linkedUser) {
+  if (!result.deleted) {
     throw createError({
-      statusCode: 400,
-      message: 'Cannot delete person: they have portal access. Remove user account first.'
+      statusCode: 500,
+      message: `Failed to delete person: ${result.error}`
     })
   }
 
-  // Check for relationships (warn but allow - CASCADE will handle cleanup)
-  const clientRelCountResult = await db
-    .select({ count: count() })
-    .from(schema.clientRelationships)
-    .where(eq(schema.clientRelationships.personId, personId))
-    .get()
-
-  const matterRelCountResult = await db
-    .select({ count: count() })
-    .from(schema.matterRelationships)
-    .where(eq(schema.matterRelationships.personId, personId))
-    .get()
-
-  const totalRelationships = (clientRelCountResult?.count || 0) + (matterRelCountResult?.count || 0)
-
-  // Delete the person (CASCADE will remove relationships)
-  await db.delete(schema.people).where(eq(schema.people.id, personId))
+  // Build summary of what was cleaned up
+  const cleanedUpItems: string[] = []
+  if (result.cleanedUp.clients > 0) cleanedUpItems.push(`${result.cleanedUp.clients} client record(s)`)
+  if (result.cleanedUp.users > 0) cleanedUpItems.push(`${result.cleanedUp.users} user link(s)`)
+  if (result.cleanedUp.planRoles > 0) cleanedUpItems.push(`${result.cleanedUp.planRoles} plan role(s)`)
+  if (result.cleanedUp.estatePlans > 0) cleanedUpItems.push(`${result.cleanedUp.estatePlans} estate plan link(s)`)
+  if (result.cleanedUp.wills > 0) cleanedUpItems.push(`${result.cleanedUp.wills} will(s)`)
+  if (result.cleanedUp.ancillaryDocuments > 0) cleanedUpItems.push(`${result.cleanedUp.ancillaryDocuments} ancillary document(s)`)
+  if (result.cleanedUp.relationships > 0) cleanedUpItems.push(`${result.cleanedUp.relationships} relationship(s)`)
+  if (result.cleanedUp.clientRelationships > 0) cleanedUpItems.push(`${result.cleanedUp.clientRelationships} client relationship(s)`)
+  if (result.cleanedUp.matterRelationships > 0) cleanedUpItems.push(`${result.cleanedUp.matterRelationships} matter relationship(s)`)
+  if (result.cleanedUp.importDuplicates > 0) cleanedUpItems.push(`${result.cleanedUp.importDuplicates} import duplicate(s)`)
 
   return {
     success: true,
-    message: totalRelationships > 0
-      ? `Person deleted along with ${totalRelationships} relationship(s)`
-      : 'Person deleted successfully'
+    message: cleanedUpItems.length > 0
+      ? `Person deleted along with ${cleanedUpItems.join(', ')}`
+      : 'Person deleted successfully',
+    cleanedUp: result.cleanedUp
   }
 })

@@ -11,9 +11,6 @@
         <p class="text-sm font-medium text-gray-900 truncate">
           {{ role.person.fullName }}
         </p>
-        <UiBadge v-if="role.isPrimary" size="sm" variant="info">
-          Primary
-        </UiBadge>
         <UiBadge v-if="role.status !== 'ACTIVE'" size="sm" :variant="statusVariant">
           {{ role.status }}
         </UiBadge>
@@ -80,10 +77,9 @@ interface RoleData {
   status: string
 }
 
-// Role type labels
+// Role type labels (CO_GRANTOR removed - both grantors in joint plan use GRANTOR)
 const roleTypeLabels: Record<string, string> = {
   GRANTOR: 'Grantor',
-  CO_GRANTOR: 'Co-Grantor',
   TESTATOR: 'Testator',
   TRUSTEE: 'Trustee',
   CO_TRUSTEE: 'Co-Trustee',

@@ -34,8 +34,8 @@ export interface WCTransformedPerson {
 
 export interface TransformedEstatePlan {
   id: string
-  primaryPersonId: string
-  secondaryPersonId?: string
+  grantorPersonId1: string
+  grantorPersonId2?: string
   planType: 'TRUST_BASED' | 'WILL_BASED'
   planName?: string
   currentVersion: number
@@ -263,8 +263,8 @@ export function transformToEstatePlan(
   // Create plan
   const plan: TransformedEstatePlan = {
     id: planId,
-    primaryPersonId: clientPersonId,
-    secondaryPersonId: spousePersonId,
+    grantorPersonId1: clientPersonId,
+    grantorPersonId2: spousePersonId,
     planType: data.planType,
     planName,
     currentVersion: 1,
@@ -369,12 +369,12 @@ export function transformRoles(
     })
   }
 
-  // Add grantors (client and spouse)
+  // Add grantors (client and spouse) - both use GRANTOR role, no hierarchy
   if (data.client.fullName) {
     addRole(data.client.fullName, 'GRANTOR', 'GRANTOR', true, 1)
   }
   if (data.spouse?.fullName) {
-    addRole(data.spouse.fullName, 'CO_GRANTOR', 'GRANTOR', false, 2)
+    addRole(data.spouse.fullName, 'GRANTOR', 'GRANTOR', false, 2)
   }
 
   // Add trustees (trust-level)
@@ -599,7 +599,7 @@ export function extractClientsToCreate(
     })))
     : undefined
 
-  // Primary client
+  // First client (no hierarchy implied - both grantors are equal clients)
   clients.push({
     id: generateId('client'),
     personId: clientPersonId,
@@ -610,13 +610,13 @@ export function extractClientsToCreate(
     hasWill,
     importMetadata: JSON.stringify({
       source: 'WEALTHCOUNSEL',
-      isPrimary: true,
+      sourcePosition: 'first',
       wealthCounselClientId: data.clientId,
       importedAt: new Date().toISOString()
     })
   })
 
-  // Spouse client (for joint plans)
+  // Second client (for joint plans - equal to first, no hierarchy)
   if (spousePersonId) {
     clients.push({
       id: generateId('client'),
@@ -628,9 +628,9 @@ export function extractClientsToCreate(
       hasWill,
       importMetadata: JSON.stringify({
         source: 'WEALTHCOUNSEL',
-        isPrimary: false,
+        sourcePosition: 'second',
         wealthCounselClientId: data.clientId,
-        linkedToSpouse: clientPersonId,
+        linkedToGrantor: clientPersonId,
         importedAt: new Date().toISOString()
       })
     })

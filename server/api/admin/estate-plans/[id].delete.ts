@@ -10,7 +10,7 @@
  * When deletePeople is false (default), people are unlinked but not deleted.
  * When deletePeople is true, all people who have roles in the plan are also deleted.
  *
- * Note: The primaryPersonId and secondaryPersonId on the plan are NOT deleted
+ * Note: The grantorPersonId1 and grantorPersonId2 on the plan are NOT deleted
  * unless they also appear in plan roles. This is intentional - the grantor may
  * exist in other contexts.
  */
@@ -18,6 +18,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 import { logActivity } from '../../../utils/activity-logger'
+import { safeDeletePeople } from '../../../utils/person-delete'
 
 export default defineEventHandler(async (event) => {
   // Admin level 2 is enforced by middleware for /api/admin/* paths
@@ -113,27 +114,15 @@ export default defineEventHandler(async (event) => {
 
     // If deletePeople is true, delete the people who were in roles
     if (deletePeople && personIdsInRoles.length > 0) {
-      // Delete people (this may fail if they have other relationships)
-      // We'll delete one by one and track failures
-      let deletedCount = 0
-      const deleteErrors: string[] = []
+      // Use safe delete utility that handles all FK references
+      const deleteResult = await safeDeletePeople(personIdsInRoles)
 
-      for (const personId of personIdsInRoles) {
-        try {
-          await db.delete(schema.people)
-            .where(eq(schema.people.id, personId))
-          deletedCount++
-        } catch (error: any) {
-          // Person may have other relationships (client record, other plans, etc.)
-          deleteErrors.push(`Could not delete person ${personId}: ${error.message}`)
-        }
-      }
+      deletionSummary.peopleDeleted = deleteResult.deleted
+      deletionSummary.peopleUnlinked = deleteResult.failed
 
-      deletionSummary.peopleDeleted = deletedCount
-      deletionSummary.peopleUnlinked = personIdsInRoles.length - deletedCount
-
-      if (deleteErrors.length > 0) {
-        console.warn('Some people could not be deleted:', deleteErrors)
+      if (deleteResult.failed > 0) {
+        const failedResults = deleteResult.results.filter(r => !r.deleted)
+        console.warn('Some people could not be deleted:', failedResults.map(r => `${r.personId}: ${r.error}`))
       }
     }
 

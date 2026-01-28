@@ -142,8 +142,8 @@ interface RoleData {
 interface Props {
   roles: RoleData[]
   showActions?: boolean
-  primaryPerson?: PersonData | null
-  secondaryPerson?: PersonData | null
+  grantor1?: PersonData | null
+  grantor2?: PersonData | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -187,7 +187,7 @@ const planLevelRoles = computed(() =>
 // Group person-specific roles by person
 const rolesByPerson = computed(() => {
   const personRoles = props.roles.filter(r => r.forPersonId)
-  const grouped = new Map<string, MockPlanRole[]>()
+  const grouped = new Map<string, RoleData[]>()
 
   for (const role of personRoles) {
     const key = role.forPersonId!

@@ -254,18 +254,18 @@ describe('transformToEstatePlan', () => {
       expect(result.plan.planName).toContain('Estate Plan')
     })
 
-    it('links to primary person', () => {
+    it('links to first grantor', () => {
       const parsed = parseWealthCounselXml(singleClientWillXml)
       const result = transformToEstatePlan(parsed, clientPersonId)
 
-      expect(result.plan.primaryPersonId).toBe(clientPersonId)
+      expect(result.plan.grantorPersonId1).toBe(clientPersonId)
     })
 
-    it('links to secondary person for joint plans', () => {
+    it('links to second grantor for joint plans', () => {
       const parsed = parseWealthCounselXml(jointTrustXml)
       const result = transformToEstatePlan(parsed, clientPersonId, spousePersonId)
 
-      expect(result.plan.secondaryPersonId).toBe(spousePersonId)
+      expect(result.plan.grantorPersonId2).toBe(spousePersonId)
     })
 
     it('sets initial version to 1', () => {
@@ -435,15 +435,17 @@ describe('transformRoles', () => {
       expect(grantorRole?.isPrimary).toBe(true)
     })
 
-    it('creates co-grantor role for spouse', () => {
+    it('creates grantor role for spouse (no CO_GRANTOR - both equal)', () => {
       const roles = transformRoles(parsed, planId, personLookup, clientPersonId, spousePersonId)
 
-      const coGrantorRole = roles.find(r =>
-        r.roleType === 'CO_GRANTOR' &&
+      // Both grantors use GRANTOR role type now - no hierarchy
+      const grantorRoles = roles.filter(r =>
+        r.roleType === 'GRANTOR' &&
         r.roleCategory === 'GRANTOR'
       )
-      expect(coGrantorRole).toBeDefined()
-      expect(coGrantorRole?.isPrimary).toBe(false)
+      expect(grantorRoles.length).toBe(2) // One for each grantor
+      expect(grantorRoles.some(r => r.isPrimary === true)).toBe(true)
+      expect(grantorRoles.some(r => r.isPrimary === false)).toBe(true)
     })
   })
 
@@ -542,7 +544,7 @@ describe('transformRoles', () => {
       const roles = transformRoles(parsed, planId, personLookup, clientPersonId, spousePersonId)
 
       const grantorRoles = roles.filter(r =>
-        ['GRANTOR', 'CO_GRANTOR'].includes(r.roleType)
+        r.roleType === 'GRANTOR' && r.roleCategory === 'GRANTOR'
       )
       expect(grantorRoles.length).toBeGreaterThan(0)
       for (const role of grantorRoles) {

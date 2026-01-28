@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   // Get total count
   const countResult = await db.select({ count: count() })
     .from(schema.estatePlans)
-    .leftJoin(schema.people, eq(schema.estatePlans.primaryPersonId, schema.people.id))
+    .leftJoin(schema.people, eq(schema.estatePlans.grantorPersonId1, schema.people.id))
     .where(whereClause)
 
   const total = countResult[0]?.count || 0
@@ -66,29 +66,29 @@ export default defineEventHandler(async (event) => {
 
   const plans = await db.select({
     plan: schema.estatePlans,
-    primaryPerson: schema.people
+    grantor1: schema.people
   })
     .from(schema.estatePlans)
-    .leftJoin(schema.people, eq(schema.estatePlans.primaryPersonId, schema.people.id))
+    .leftJoin(schema.people, eq(schema.estatePlans.grantorPersonId1, schema.people.id))
     .where(whereClause)
     .orderBy(orderFn(orderByColumn))
     .limit(limit)
     .offset((page - 1) * limit)
 
-  // Get secondary person data if present
+  // Get second grantor data if present
   const planIds = plans.map(p => p.plan.id)
-  const secondaryPersonIds = plans
-    .filter(p => p.plan.secondaryPersonId)
-    .map(p => p.plan.secondaryPersonId!)
+  const grantor2Ids = plans
+    .filter(p => p.plan.grantorPersonId2)
+    .map(p => p.plan.grantorPersonId2!)
 
-  let secondaryPersonMap = new Map<string, any>()
-  if (secondaryPersonIds.length > 0) {
-    const secondaryPeople = await db.select()
+  let grantor2Map = new Map<string, any>()
+  if (grantor2Ids.length > 0) {
+    const grantor2People = await db.select()
       .from(schema.people)
-      .where(or(...secondaryPersonIds.map(id => eq(schema.people.id, id))))
+      .where(or(...grantor2Ids.map(id => eq(schema.people.id, id))))
 
-    for (const person of secondaryPeople) {
-      secondaryPersonMap.set(person.id, person)
+    for (const person of grantor2People) {
+      grantor2Map.set(person.id, person)
     }
   }
 
@@ -119,7 +119,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Format response
-  const formattedPlans = plans.map(({ plan, primaryPerson }) => ({
+  const formattedPlans = plans.map(({ plan, grantor1 }) => ({
     id: plan.id,
     planType: plan.planType,
     planName: plan.planName,
@@ -129,21 +129,21 @@ export default defineEventHandler(async (event) => {
     lastAmendedAt: plan.lastAmendedAt,
     createdAt: plan.createdAt,
     updatedAt: plan.updatedAt,
-    primaryPerson: primaryPerson ? {
-      id: primaryPerson.id,
-      fullName: primaryPerson.fullName,
-      firstName: primaryPerson.firstName,
-      lastName: primaryPerson.lastName,
-      email: primaryPerson.email
+    grantor1: grantor1 ? {
+      id: grantor1.id,
+      fullName: grantor1.fullName,
+      firstName: grantor1.firstName,
+      lastName: grantor1.lastName,
+      email: grantor1.email
     } : null,
-    secondaryPerson: plan.secondaryPersonId ? (() => {
-      const sp = secondaryPersonMap.get(plan.secondaryPersonId)
-      return sp ? {
-        id: sp.id,
-        fullName: sp.fullName,
-        firstName: sp.firstName,
-        lastName: sp.lastName,
-        email: sp.email
+    grantor2: plan.grantorPersonId2 ? (() => {
+      const g2 = grantor2Map.get(plan.grantorPersonId2)
+      return g2 ? {
+        id: g2.id,
+        fullName: g2.fullName,
+        firstName: g2.firstName,
+        lastName: g2.lastName,
+        email: g2.email
       } : null
     })() : null,
     roleCounts: roleCountMap.get(plan.id) || {}

@@ -98,8 +98,8 @@ export interface MockAncillaryDocument {
 
 export interface MockEstatePlan {
   id: string
-  primaryPerson: MockPerson
-  secondaryPerson?: MockPerson
+  grantor1: MockPerson
+  grantor2?: MockPerson
   planType: 'TRUST_BASED' | 'WILL_BASED'
   planName: string
   currentVersion: number
@@ -190,8 +190,8 @@ export const mockPeople: MockPerson[] = [
 // Christensen Estate Plan (Trust-based, Joint)
 export const mockChristensenPlan: MockEstatePlan = {
   id: 'plan_christensen_2024',
-  primaryPerson: mockPeople[0],  // Matt
-  secondaryPerson: mockPeople[1],  // Desiree
+  grantor1: mockPeople[0],  // Matt
+  grantor2: mockPeople[1],  // Desiree
   planType: 'TRUST_BASED',
   planName: 'Christensen Legacy Family Trust',
   currentVersion: 1,
@@ -333,7 +333,7 @@ export const mockChristensenPlan: MockEstatePlan = {
       personId: 'person_desiree_christensen',
       person: mockPeople[1],
       roleCategory: 'GRANTOR',
-      roleType: 'CO_GRANTOR',
+      roleType: 'GRANTOR',  // Both grantors use GRANTOR - no hierarchy
       isPrimary: false,
       ordinal: 2,
       status: 'ACTIVE'
@@ -560,7 +560,7 @@ export const mockChristensenPlan: MockEstatePlan = {
 // Jenkins Estate Plan (Will-based, Single)
 export const mockJenkinsPlan: MockEstatePlan = {
   id: 'plan_jenkins_2024',
-  primaryPerson: mockPeople[4],
+  grantor1: mockPeople[4],
   planType: 'WILL_BASED',
   planName: 'Sandra Jenkins Estate Plan',
   currentVersion: 2,
@@ -722,14 +722,14 @@ export const mockJenkinsPlan: MockEstatePlan = {
 // Sample estate plan in administration
 export const mockSmithPlanInAdmin: MockEstatePlan = {
   id: 'plan_smith_2020',
-  primaryPerson: {
+  grantor1: {
     id: 'person_john_smith',
     firstName: 'John',
     lastName: 'Smith',
     fullName: 'John Smith (Deceased)',
     dateOfBirth: '1945-02-20'
   },
-  secondaryPerson: {
+  grantor2: {
     id: 'person_mary_smith',
     firstName: 'Mary',
     lastName: 'Smith',
@@ -869,7 +869,7 @@ export const mockSmithPlanInAdmin: MockEstatePlan = {
     {
       id: 'event_smith_death',
       planId: 'plan_smith_2020',
-      eventType: 'GRANTOR_DEATH',
+      eventType: 'FIRST_GRANTOR_DEATH',
       eventDate: '2025-01-05',
       description: 'John Smith passed away',
       personName: 'John Smith',
@@ -963,10 +963,9 @@ export const roleCategoryConfig: Record<string, { label: string; icon: string }>
   OTHER: { label: 'Other', icon: 'users' }
 }
 
-// Role type display names
+// Role type display names (CO_GRANTOR removed - both grantors use GRANTOR)
 export const roleTypeLabels: Record<string, string> = {
   GRANTOR: 'Grantor',
-  CO_GRANTOR: 'Co-Grantor',
   TESTATOR: 'Testator',
   TRUSTEE: 'Trustee',
   CO_TRUSTEE: 'Co-Trustee',
@@ -1002,8 +1001,8 @@ export const eventTypeConfig: Record<string, { label: string; icon: string; colo
   PLAN_RESTATED: { label: 'Plan Restated', icon: 'refresh-cw', color: 'purple' },
   GRANTOR_INCAPACITATED: { label: 'Grantor Incapacitated', icon: 'alert-circle', color: 'orange' },
   GRANTOR_CAPACITY_RESTORED: { label: 'Capacity Restored', icon: 'check-circle', color: 'green' },
-  GRANTOR_DEATH: { label: 'Grantor Passed Away', icon: 'heart', color: 'gray' },
-  CO_GRANTOR_DEATH: { label: 'Co-Grantor Passed Away', icon: 'heart', color: 'gray' },
+  FIRST_GRANTOR_DEATH: { label: 'First Grantor Passed Away', icon: 'heart', color: 'gray' },
+  SECOND_GRANTOR_DEATH: { label: 'Second Grantor Passed Away', icon: 'heart', color: 'gray' },
   ADMINISTRATION_STARTED: { label: 'Administration Started', icon: 'play', color: 'blue' },
   SUCCESSOR_TRUSTEE_APPOINTED: { label: 'Successor Trustee Appointed', icon: 'user-check', color: 'blue' },
   TRUST_FUNDED: { label: 'Trust Funded', icon: 'dollar-sign', color: 'green' },
