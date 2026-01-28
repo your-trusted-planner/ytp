@@ -154,6 +154,7 @@ export interface WealthCounselImportResult {
   planId?: string
   versionId?: string
   peopleCreated: number
+  clientsCreated: number
   rolesCreated: number
   errors?: string[]
 }

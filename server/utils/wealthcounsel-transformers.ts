@@ -552,3 +552,112 @@ export function buildPersonLookup(people: WCTransformedPerson[]): Map<string, st
 
   return lookup
 }
+
+/**
+ * Transformed client record for import
+ */
+export interface WCTransformedClient {
+  id: string
+  personId: string
+  status: 'LEAD' | 'PROSPECT' | 'ACTIVE' | 'INACTIVE'
+  hasMinorChildren: boolean
+  childrenInfo?: string
+  hasTrust: boolean
+  hasWill: boolean
+  importMetadata: string
+}
+
+/**
+ * Extract client records to create from WealthCounsel data.
+ *
+ * For joint plans, this returns TWO client records (one for primary client, one for spouse).
+ * For single client plans, this returns ONE client record.
+ *
+ * The Belly Button Principle requires that every client has both:
+ * - A person record (identity)
+ * - A clients record (client-specific data)
+ */
+export function extractClientsToCreate(
+  data: WealthCounselData,
+  clientPersonId: string,
+  spousePersonId?: string
+): WCTransformedClient[] {
+  const clients: WCTransformedClient[] = []
+
+  // Determine plan-related fields
+  const hasTrust = data.planType === 'TRUST_BASED'
+  const hasWill = data.planType === 'WILL_BASED' || !!data.will
+
+  // Check for minor children
+  const hasMinorChildren = checkForMinorChildren(data.children)
+
+  // Build children info JSON
+  const childrenInfo = data.children.length > 0
+    ? JSON.stringify(data.children.map(child => ({
+      name: child.fullName,
+      dateOfBirth: child.dateOfBirth
+    })))
+    : undefined
+
+  // Primary client
+  clients.push({
+    id: generateId('client'),
+    personId: clientPersonId,
+    status: 'ACTIVE',
+    hasMinorChildren,
+    childrenInfo,
+    hasTrust,
+    hasWill,
+    importMetadata: JSON.stringify({
+      source: 'WEALTHCOUNSEL',
+      isPrimary: true,
+      wealthCounselClientId: data.clientId,
+      importedAt: new Date().toISOString()
+    })
+  })
+
+  // Spouse client (for joint plans)
+  if (spousePersonId) {
+    clients.push({
+      id: generateId('client'),
+      personId: spousePersonId,
+      status: 'ACTIVE',
+      hasMinorChildren,
+      childrenInfo,
+      hasTrust,
+      hasWill,
+      importMetadata: JSON.stringify({
+        source: 'WEALTHCOUNSEL',
+        isPrimary: false,
+        wealthCounselClientId: data.clientId,
+        linkedToSpouse: clientPersonId,
+        importedAt: new Date().toISOString()
+      })
+    })
+  }
+
+  return clients
+}
+
+/**
+ * Check if any children are minors (under 18)
+ */
+function checkForMinorChildren(children: WealthCounselPerson[]): boolean {
+  if (children.length === 0) return false
+
+  const now = new Date()
+  const eighteenYearsAgo = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate())
+
+  for (const child of children) {
+    if (child.dateOfBirth) {
+      const dob = new Date(child.dateOfBirth)
+      if (dob > eighteenYearsAgo) {
+        return true
+      }
+    }
+  }
+
+  // If we have children but no DOB info, assume they may be minors
+  // (conservative approach - user can update later)
+  return children.some(c => !c.dateOfBirth)
+}

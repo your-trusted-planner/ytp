@@ -10,7 +10,8 @@ import {
   extractPeople,
   transformToEstatePlan,
   transformRoles,
-  buildPersonLookup
+  buildPersonLookup,
+  extractClientsToCreate
 } from '../../server/utils/wealthcounsel-transformers'
 import { parseWealthCounselXml } from '../../server/utils/wealthcounsel-parser'
 import { jointTrustXml, singleClientWillXml, minimalXml } from '../fixtures/wealthcounsel'
@@ -1101,6 +1102,244 @@ describe('WealthCounsel Parse Person Extraction', () => {
       expect(match?.matchType).toBe('NAME_ONLY')
       expect(match?.confidence).toBe(60)
       expect(match?.matchingFields).toContain('name')
+    })
+  })
+})
+
+// ===================================
+// CLIENT RECORD CREATION TESTS
+// ===================================
+
+describe('WealthCounsel Joint Plan Client Creation', () => {
+  describe('extractClientsToCreate', () => {
+    it('extracts one client record for single client plan', () => {
+      const parsedData = parseWealthCounselXml(singleClientWillXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        undefined
+      )
+
+      expect(clientsToCreate).toHaveLength(1)
+      expect(clientsToCreate[0].personId).toBe(clientPersonId)
+      expect(clientsToCreate[0].status).toBe('ACTIVE')
+    })
+
+    it('extracts two client records for joint plan', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      expect(clientsToCreate).toHaveLength(2)
+
+      // Primary client
+      const primaryClient = clientsToCreate.find(c => c.personId === clientPersonId)
+      expect(primaryClient).toBeDefined()
+      expect(primaryClient?.status).toBe('ACTIVE')
+
+      // Spouse client
+      const spouseClient = clientsToCreate.find(c => c.personId === spousePersonId)
+      expect(spouseClient).toBeDefined()
+      expect(spouseClient?.status).toBe('ACTIVE')
+    })
+
+    it('generates unique IDs for each client record', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      const ids = clientsToCreate.map(c => c.id)
+      const uniqueIds = [...new Set(ids)]
+      expect(ids.length).toBe(uniqueIds.length)
+
+      for (const id of ids) {
+        expect(id.startsWith('client_')).toBe(true)
+      }
+    })
+
+    it('includes import metadata in client records', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      for (const client of clientsToCreate) {
+        expect(client.importMetadata).toBeDefined()
+        const metadata = JSON.parse(client.importMetadata)
+        expect(metadata.source).toBe('WEALTHCOUNSEL')
+        expect(metadata.importedAt).toBeDefined()
+      }
+    })
+
+    it('marks primary client correctly in metadata', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      const primaryClient = clientsToCreate.find(c => c.personId === clientPersonId)
+      const spouseClient = clientsToCreate.find(c => c.personId === spousePersonId)
+
+      const primaryMetadata = JSON.parse(primaryClient!.importMetadata)
+      const spouseMetadata = JSON.parse(spouseClient!.importMetadata)
+
+      expect(primaryMetadata.isPrimary).toBe(true)
+      expect(spouseMetadata.isPrimary).toBe(false)
+    })
+
+    it('handles case where spouse is not provided (single client plan)', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+
+      // Pass undefined for spousePersonId even though data has spouse
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        undefined
+      )
+
+      expect(clientsToCreate).toHaveLength(1)
+      expect(clientsToCreate[0].personId).toBe(clientPersonId)
+    })
+
+    it('handles minimal data without trust or will fields', () => {
+      const parsedData = parseWealthCounselXml(minimalXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        undefined
+      )
+
+      expect(clientsToCreate).toHaveLength(1)
+      expect(clientsToCreate[0].personId).toBe(clientPersonId)
+      expect(clientsToCreate[0].status).toBe('ACTIVE')
+    })
+  })
+
+  describe('client record fields', () => {
+    it('sets hasTrust to true for trust-based plans', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      for (const client of clientsToCreate) {
+        expect(client.hasTrust).toBe(true)
+      }
+    })
+
+    it('sets hasWill to true for will-based plans', () => {
+      const parsedData = parseWealthCounselXml(singleClientWillXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        undefined
+      )
+
+      expect(clientsToCreate[0].hasWill).toBe(true)
+    })
+
+    it('sets hasMinorChildren based on parsed children data', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      // Joint trust has a child (Carter) with DOB 05/12/2010, who would be a minor
+      // The function should detect this
+      for (const client of clientsToCreate) {
+        expect(client.hasMinorChildren).toBe(true)
+      }
+    })
+
+    it('sets childrenInfo from parsed children', () => {
+      const parsedData = parseWealthCounselXml(jointTrustXml)
+      const people = extractPeople(parsedData)
+      const personLookup = buildPersonLookup(people)
+
+      const clientPersonId = personLookup.get(parsedData.client.fullName!)!
+      const spousePersonId = personLookup.get(parsedData.spouse?.fullName!)!
+
+      const clientsToCreate = extractClientsToCreate(
+        parsedData,
+        clientPersonId,
+        spousePersonId
+      )
+
+      for (const client of clientsToCreate) {
+        expect(client.childrenInfo).toBeDefined()
+        const childrenInfo = JSON.parse(client.childrenInfo)
+        expect(childrenInfo.length).toBeGreaterThan(0)
+        expect(childrenInfo[0].name).toBe('Carter Christensen')
+      }
     })
   })
 })

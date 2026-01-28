@@ -11,7 +11,8 @@ import {
   extractPeople,
   transformToEstatePlan,
   transformRoles,
-  buildPersonLookup
+  buildPersonLookup,
+  extractClientsToCreate
 } from '../../../../utils/wealthcounsel-transformers'
 import type { WealthCounselImportResult } from '../../../../utils/wealthcounsel-types'
 import {
@@ -82,6 +83,7 @@ export default defineEventHandler(async (event) => {
   const result: WealthCounselImportResult = {
     success: false,
     peopleCreated: 0,
+    clientsCreated: 0,
     rolesCreated: 0,
     errors: []
   }
@@ -196,6 +198,31 @@ export default defineEventHandler(async (event) => {
             return false
           }
         })?.id
+      }
+    }
+
+    // Step 2b: Create client records for primary client and spouse (if joint plan)
+    // Per the Belly Button Principle, every client needs both a person record AND a clients record
+    const clientsToCreate = extractClientsToCreate(parsedData, clientPersonId, spousePersonId)
+
+    for (const clientData of clientsToCreate) {
+      // Check if a client record already exists for this person
+      const [existingClient] = await db.select()
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, clientData.personId))
+
+      if (!existingClient) {
+        await db.insert(schema.clients).values({
+          id: clientData.id,
+          personId: clientData.personId,
+          status: clientData.status,
+          hasMinorChildren: clientData.hasMinorChildren,
+          childrenInfo: clientData.childrenInfo,
+          hasTrust: clientData.hasTrust,
+          hasWill: clientData.hasWill,
+          importMetadata: clientData.importMetadata
+        })
+        result.clientsCreated++
       }
     }
 
@@ -372,6 +399,7 @@ export default defineEventHandler(async (event) => {
         source: 'WealthCounsel',
         isAmendment: decisions.isAmendment,
         peopleCreated: result.peopleCreated,
+        clientsCreated: result.clientsCreated,
         peopleLinked,
         rolesCreated: result.rolesCreated,
         planType: parsedData.planType,
