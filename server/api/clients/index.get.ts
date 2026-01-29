@@ -1,4 +1,4 @@
-import { eq, sql, asc, desc } from 'drizzle-orm'
+import { eq, sql, asc, desc, and } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
 import { requireRole } from '../../utils/rbac'
 import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calculateOffset } from '../../utils/pagination'
@@ -11,31 +11,52 @@ export default defineEventHandler(async (event) => {
   const usePagination = isPaginationRequested(query)
   const { page, limit, sortBy, sortDirection } = parsePaginationParams(query)
 
-  // Build base query for clients
+  // Status filter
+  const statusFilter = typeof query.status === 'string' ? query.status.toUpperCase() : null
+  const validStatuses = ['ACTIVE', 'PROSPECT', 'LEAD', 'INACTIVE']
+  const status = statusFilter && validStatuses.includes(statusFilter) ? statusFilter : null
+
+  // Build base query for clients using the clients table (Belly Button Principle)
+  // Join with people table to get name/email data
   let clientsQuery = db
     .select({
-      id: schema.users.id,
-      email: schema.users.email,
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      phone: schema.users.phone,
-      status: schema.users.status,
-      createdAt: schema.users.createdAt,
-      updatedAt: schema.users.updatedAt,
-      profile: schema.clientProfiles
+      id: schema.clients.id,
+      personId: schema.clients.personId,
+      status: schema.clients.status,
+      hasMinorChildren: schema.clients.hasMinorChildren,
+      childrenInfo: schema.clients.childrenInfo,
+      hasTrust: schema.clients.hasTrust,
+      hasWill: schema.clients.hasWill,
+      createdAt: schema.clients.createdAt,
+      updatedAt: schema.clients.updatedAt,
+      // Person data
+      firstName: schema.people.firstName,
+      lastName: schema.people.lastName,
+      fullName: schema.people.fullName,
+      email: schema.people.email,
+      phone: schema.people.phone,
+      address: schema.people.address,
+      city: schema.people.city,
+      state: schema.people.state,
+      zipCode: schema.people.zipCode,
+      dateOfBirth: schema.people.dateOfBirth
     })
-    .from(schema.users)
-    .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
-    .where(eq(schema.users.role, 'CLIENT'))
+    .from(schema.clients)
+    .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
 
-  // Apply sorting
-  const sortColumn = sortBy === 'firstName' ? schema.users.firstName
-    : sortBy === 'lastName' ? schema.users.lastName
-    : sortBy === 'email' ? schema.users.email
-    : sortBy === 'status' ? schema.users.status
-    : sortBy === 'createdAt' ? schema.users.createdAt
-    : sortBy === 'updatedAt' ? schema.users.updatedAt
-    : schema.users.createdAt // default sort
+  // Apply status filter if provided
+  if (status) {
+    clientsQuery = clientsQuery.where(eq(schema.clients.status, status)) as typeof clientsQuery
+  }
+
+  // Apply sorting - use people table for name/email fields
+  const sortColumn = sortBy === 'firstName' ? schema.people.firstName
+    : sortBy === 'lastName' ? schema.people.lastName
+    : sortBy === 'email' ? schema.people.email
+    : sortBy === 'status' ? schema.clients.status
+    : sortBy === 'createdAt' ? schema.clients.createdAt
+    : sortBy === 'updatedAt' ? schema.clients.updatedAt
+    : schema.clients.createdAt // default sort
 
   clientsQuery = clientsQuery.orderBy(
     sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)
@@ -44,11 +65,16 @@ export default defineEventHandler(async (event) => {
   // Get total count for pagination (only if pagination requested)
   let totalCount = 0
   if (usePagination) {
-    const countResult = await db
+    let countQuery = db
       .select({ count: sql<number>`count(*)` })
-      .from(schema.users)
-      .where(eq(schema.users.role, 'CLIENT'))
-      .get()
+      .from(schema.clients)
+
+    // Apply same status filter to count query
+    if (status) {
+      countQuery = countQuery.where(eq(schema.clients.status, status)) as typeof countQuery
+    }
+
+    const countResult = await countQuery.get()
     totalCount = countResult?.count ?? 0
 
     // Apply pagination
@@ -62,34 +88,29 @@ export default defineEventHandler(async (event) => {
   // Transform to match frontend expectations
   const clients = clientsData.map(client => ({
     id: client.id,
+    personId: client.personId,
     email: client.email,
     first_name: client.firstName,
     last_name: client.lastName,
     firstName: client.firstName,
     lastName: client.lastName,
+    fullName: client.fullName,
     phone: client.phone,
     status: client.status,
     createdAt: client.createdAt instanceof Date ? client.createdAt.getTime() : client.createdAt,
     updatedAt: client.updatedAt instanceof Date ? client.updatedAt.getTime() : client.updatedAt,
-    profile: client.profile ? {
-      id: client.profile.id,
-      user_id: client.profile.userId,
-      date_of_birth: client.profile.dateOfBirth instanceof Date ? client.profile.dateOfBirth.getTime() : client.profile.dateOfBirth,
-      address: client.profile.address,
-      city: client.profile.city,
-      state: client.profile.state,
-      zip_code: client.profile.zipCode,
-      has_minor_children: client.profile.hasMinorChildren ? 1 : 0,
-      children_info: client.profile.childrenInfo,
-      business_name: client.profile.businessName,
-      business_type: client.profile.businessType,
-      has_will: client.profile.hasWill ? 1 : 0,
-      has_trust: client.profile.hasTrust ? 1 : 0,
-      last_updated: client.profile.lastUpdated instanceof Date ? client.profile.lastUpdated.getTime() : client.profile.lastUpdated,
-      assigned_lawyer_id: client.profile.assignedLawyerId,
-      created_at: client.profile.createdAt instanceof Date ? client.profile.createdAt.getTime() : client.profile.createdAt,
-      updated_at: client.profile.updatedAt instanceof Date ? client.profile.updatedAt.getTime() : client.profile.updatedAt
-    } : null
+    // Inline profile data from clients table (replaces separate clientProfiles join)
+    profile: {
+      address: client.address,
+      city: client.city,
+      state: client.state,
+      zip_code: client.zipCode,
+      date_of_birth: client.dateOfBirth instanceof Date ? client.dateOfBirth.getTime() : client.dateOfBirth,
+      has_minor_children: client.hasMinorChildren ? 1 : 0,
+      children_info: client.childrenInfo,
+      has_will: client.hasWill ? 1 : 0,
+      has_trust: client.hasTrust ? 1 : 0
+    }
   }))
 
   // Return with pagination metadata if pagination was requested

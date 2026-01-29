@@ -120,6 +120,23 @@
                   <span class="text-gray-600">Total Payments</span>
                   <span class="font-semibold">{{ formatCurrency(matterStore.totalPayments) }}</span>
                 </div>
+                <!-- Client Trust Balance -->
+                <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                  <span class="text-gray-600 flex items-center">
+                    <Wallet class="w-4 h-4 mr-1.5 text-green-600" />
+                    Client Trust Balance
+                  </span>
+                  <NuxtLink
+                    v-if="matter?.clientId"
+                    :to="`/billing/trust/${matter.clientId}`"
+                    class="font-semibold text-green-600 hover:text-green-700 hover:underline"
+                  >
+                    {{ formatCurrency(clientTrustBalance) }}
+                  </NuxtLink>
+                  <span v-else class="font-semibold text-green-600">
+                    {{ formatCurrency(clientTrustBalance) }}
+                  </span>
+                </div>
               </div>
             </UiCard>
 
@@ -190,16 +207,89 @@
         </div>
 
         <!-- Payments Tab -->
-        <div v-if="activeTab === 'payments'">
+        <div v-if="activeTab === 'payments'" class="space-y-6">
+          <!-- Billing Actions Card -->
           <UiCard>
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Payment History</h3>
-              <UiButton size="sm" disabled>
-                <Plus class="w-4 h-4 mr-1" />
-                Record Payment
-              </UiButton>
+              <h3 class="text-lg font-semibold text-gray-900">Billing Actions</h3>
+              <div class="flex items-center gap-2">
+                <UiButton size="sm" variant="outline" @click="showTrustDepositModal = true">
+                  <Wallet class="w-4 h-4 mr-1" />
+                  Deposit to Trust
+                </UiButton>
+                <UiButton size="sm" variant="outline" @click="showCreateInvoiceModal = true">
+                  <FileText class="w-4 h-4 mr-1" />
+                  Create Invoice
+                </UiButton>
+                <UiButton size="sm" @click="showPaymentModal = true">
+                  <DollarSign class="w-4 h-4 mr-1" />
+                  Record Payment
+                </UiButton>
+              </div>
             </div>
-            <p class="text-sm text-gray-500 mb-4">Payment management will be available in Phase 3</p>
+
+            <!-- Client Trust Balance Summary -->
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-green-50 rounded-lg p-4">
+                <div class="text-sm text-green-600 font-medium">Client Trust Balance</div>
+                <div class="text-2xl font-bold text-green-700">{{ formatCurrency(clientTrustBalance) }}</div>
+                <NuxtLink
+                  v-if="matter?.clientId"
+                  :to="`/billing/trust/${matter.clientId}`"
+                  class="text-xs text-green-600 hover:text-green-700 hover:underline"
+                >
+                  View Trust Ledger →
+                </NuxtLink>
+              </div>
+              <div class="bg-amber-50 rounded-lg p-4">
+                <div class="text-sm text-amber-600 font-medium">Outstanding Invoices</div>
+                <div class="text-2xl font-bold text-amber-700">{{ outstandingInvoices.length }}</div>
+                <div class="text-xs text-amber-600">
+                  {{ formatCurrency(outstandingInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0)) }} due
+                </div>
+              </div>
+              <div class="bg-blue-50 rounded-lg p-4">
+                <div class="text-sm text-blue-600 font-medium">Total Collected</div>
+                <div class="text-2xl font-bold text-blue-700">{{ formatCurrency(matterStore.totalPayments) }}</div>
+                <NuxtLink
+                  to="/billing"
+                  class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  View Billing Dashboard →
+                </NuxtLink>
+              </div>
+            </div>
+          </UiCard>
+
+          <!-- Outstanding Invoices -->
+          <UiCard v-if="outstandingInvoices.length > 0">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Outstanding Invoices</h3>
+            <div class="space-y-3">
+              <div
+                v-for="invoice in outstandingInvoices"
+                :key="invoice.id"
+                class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-burgundy-300 transition-colors cursor-pointer"
+                @click="$router.push(`/invoices/${invoice.id}`)"
+              >
+                <div>
+                  <div class="font-medium text-gray-900">{{ invoice.invoiceNumber }}</div>
+                  <div class="text-sm text-gray-500">
+                    Due {{ formatInvoiceDate(invoice.dueDate) }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-semibold text-gray-900">{{ formatCurrency(invoice.balanceDue) }}</div>
+                  <UiBadge :variant="getInvoiceStatusVariant(invoice.status)" size="sm">
+                    {{ invoice.status }}
+                  </UiBadge>
+                </div>
+              </div>
+            </div>
+          </UiCard>
+
+          <!-- Payment History -->
+          <UiCard>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment History</h3>
             <MatterPaymentsTable :payments="paymentsForTable" />
           </UiCard>
         </div>
@@ -326,11 +416,32 @@
       @cancel="showEditModal = false"
     />
 
+    <!-- Payment Record Modal -->
+    <BillingPaymentRecordModal
+      v-if="showPaymentModal"
+      @close="showPaymentModal = false"
+      @recorded="handlePaymentRecorded"
+    />
+
+    <!-- Create Invoice Modal -->
+    <BillingCreateInvoiceModal
+      v-if="showCreateInvoiceModal"
+      @close="showCreateInvoiceModal = false"
+      @created="handleInvoiceCreated"
+    />
+
+    <!-- Trust Deposit Modal -->
+    <BillingTrustDepositModal
+      v-if="showTrustDepositModal"
+      @close="showTrustDepositModal = false"
+      @deposited="handleTrustDepositRecorded"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX, DollarSign, FileText, Wallet } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 import { useMatterStore } from '~/stores/useMatterStore'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
@@ -370,6 +481,13 @@ const addingService = ref(false)
 const newServiceForm = ref({
   catalogId: ''
 })
+
+// Billing state
+const clientTrustBalance = ref(0)
+const outstandingInvoices = ref<any[]>([])
+const showPaymentModal = ref(false)
+const showCreateInvoiceModal = ref(false)
+const showTrustDepositModal = ref(false)
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -564,10 +682,89 @@ function setDocumentView(view: 'local' | 'drive') {
   preferencesStore.setDocumentsDefaultView(view)
 }
 
+// Fetch client trust balance
+async function fetchClientTrustBalance() {
+  if (!matter.value?.clientId) return
+  try {
+    const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${matter.value.clientId}/balance`)
+    clientTrustBalance.value = response.totalBalance || 0
+  } catch (error) {
+    console.error('Failed to fetch trust balance:', error)
+    clientTrustBalance.value = 0
+  }
+}
+
+// Fetch outstanding invoices for this matter
+async function fetchOutstandingInvoices() {
+  try {
+    const response = await $fetch<{ invoices: any[] }>('/api/invoices', {
+      query: {
+        matterId: matterId,
+        status: 'outstanding' // SENT, VIEWED, PARTIALLY_PAID, OVERDUE
+      }
+    })
+    outstandingInvoices.value = response.invoices || []
+  } catch (error) {
+    console.error('Failed to fetch outstanding invoices:', error)
+    outstandingInvoices.value = []
+  }
+}
+
+// Format invoice date
+function formatInvoiceDate(date: number | string | Date | null): string {
+  if (!date) return 'N/A'
+  const d = typeof date === 'number' ? new Date(date * 1000) : new Date(date)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// Get invoice status badge variant
+function getInvoiceStatusVariant(status: string): 'success' | 'info' | 'default' | 'danger' | 'warning' {
+  switch (status) {
+    case 'PAID': return 'success'
+    case 'SENT':
+    case 'VIEWED': return 'info'
+    case 'PARTIALLY_PAID': return 'warning'
+    case 'OVERDUE': return 'danger'
+    default: return 'default'
+  }
+}
+
+// Handle payment recorded
+async function handlePaymentRecorded() {
+  showPaymentModal.value = false
+  toast.success('Payment recorded successfully')
+  await Promise.all([
+    matterStore.refreshMatter(),
+    fetchClientTrustBalance(),
+    fetchOutstandingInvoices()
+  ])
+}
+
+// Handle invoice created
+async function handleInvoiceCreated(invoice: any) {
+  showCreateInvoiceModal.value = false
+  toast.success(`Invoice ${invoice.invoiceNumber} created`)
+  await fetchOutstandingInvoices()
+  // Navigate to invoice detail if desired
+  // router.push(`/invoices/${invoice.id}`)
+}
+
+// Handle trust deposit recorded
+async function handleTrustDepositRecorded() {
+  showTrustDepositModal.value = false
+  toast.success('Trust deposit recorded successfully')
+  await fetchClientTrustBalance()
+}
+
 // Watch for tab changes to load documents on demand
 watch(activeTab, (newTab) => {
   if (newTab === 'documents' && matterStore.documents.length === 0 && !matterStore.loadingDocuments) {
     matterStore.fetchDocuments()
+  }
+  // Load billing data when switching to payments tab
+  if (newTab === 'payments') {
+    fetchClientTrustBalance()
+    fetchOutstandingInvoices()
   }
 })
 
@@ -592,12 +789,14 @@ onMounted(async () => {
   // Fetch matter data via store
   await matterStore.fetchMatter(matterId)
 
-  // Fetch dropdown data for modals (these could also be in separate stores)
+  // Fetch dropdown data for modals and billing data
   await Promise.all([
     fetchCatalog(),
     fetchClients(),
     fetchLawyers(),
-    fetchEngagementJourneys()
+    fetchEngagementJourneys(),
+    fetchClientTrustBalance(),
+    fetchOutstandingInvoices()
   ])
 })
 </script>

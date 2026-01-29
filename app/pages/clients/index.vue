@@ -13,6 +13,34 @@
       </UiButton>
     </div>
 
+    <!-- Status Filter -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-600">Status:</span>
+        <div class="flex gap-1">
+          <button
+            @click="setStatusFilter(null)"
+            class="px-3 py-1 text-sm rounded-full transition-colors"
+            :class="!statusFilter ? 'bg-burgundy-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+          >
+            All
+          </button>
+          <button
+            v-for="status in availableStatuses"
+            :key="status"
+            @click="setStatusFilter(status)"
+            class="px-3 py-1 text-sm rounded-full transition-colors"
+            :class="statusFilter === status ? 'bg-burgundy-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+          >
+            {{ status }}
+          </button>
+        </div>
+      </div>
+      <div v-if="statusFilter" class="text-sm text-gray-500">
+        Showing {{ clients.length }} {{ statusFilter.toLowerCase() }} client{{ clients.length !== 1 ? 's' : '' }}
+      </div>
+    </div>
+
     <!-- Google Drive Status Alert -->
     <div
       v-if="driveStatus.show"
@@ -137,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
 import type { Column, PaginationMeta } from '~/components/ui/DataTable.vue'
 
@@ -147,6 +175,7 @@ definePageMeta({
 })
 
 const router = useRouter()
+const route = useRoute()
 const clients = ref<any[]>([])
 const loading = ref(true)
 const showAddModal = ref(false)
@@ -156,6 +185,35 @@ const currentPage = ref(1)
 const currentLimit = ref(25)
 const sortBy = ref<string>('createdAt')
 const sortDirection = ref<'asc' | 'desc'>('desc')
+
+// Status filter
+const availableStatuses = ['ACTIVE', 'PROSPECT', 'LEAD', 'INACTIVE']
+const statusFilter = ref<string | null>(null)
+
+// Initialize status filter from URL query param
+if (route.query.status && typeof route.query.status === 'string') {
+  const urlStatus = route.query.status.toUpperCase()
+  if (availableStatuses.includes(urlStatus)) {
+    statusFilter.value = urlStatus
+  }
+}
+
+// Update URL when filter changes
+const setStatusFilter = (status: string | null) => {
+  statusFilter.value = status
+  currentPage.value = 1 // Reset to first page
+
+  // Update URL query param
+  const query = { ...route.query }
+  if (status) {
+    query.status = status
+  } else {
+    delete query.status
+  }
+  router.replace({ query })
+
+  fetchClients()
+}
 
 const newClient = ref({
   firstName: '',
@@ -228,13 +286,17 @@ const driveStatus = ref<{
 const fetchClients = async () => {
   loading.value = true
   try {
+    const params: Record<string, any> = {
+      page: currentPage.value,
+      limit: currentLimit.value,
+      sortBy: sortBy.value,
+      sortDirection: sortDirection.value
+    }
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
     const response = await $fetch<{ clients: any[], pagination?: PaginationMeta }>('/api/clients', {
-      params: {
-        page: currentPage.value,
-        limit: currentLimit.value,
-        sortBy: sortBy.value,
-        sortDirection: sortDirection.value
-      }
+      params
     })
     clients.value = response.clients
     pagination.value = response.pagination || null

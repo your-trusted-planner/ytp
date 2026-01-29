@@ -116,7 +116,9 @@ import {
   Activity,
   PenTool,
   FolderOpen,
-  ScrollText
+  ScrollText,
+  DollarSign,
+  Landmark
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -162,6 +164,18 @@ const navigationConfig = ref([
     children: [
       { path: '/documents', label: 'All Documents', icon: File, roles: FIRM_ROLES },
       { path: '/signatures', label: 'E-Signatures', icon: PenTool, roles: FIRM_ROLES }
+    ]
+  },
+
+  // Billing section - staff only
+  {
+    label: 'Billing',
+    icon: DollarSign,
+    isOpen: false,
+    roles: FIRM_ROLES,
+    children: [
+      { path: '/billing', label: 'Invoices', icon: DollarSign, roles: FIRM_ROLES },
+      { path: '/billing/trust', label: 'Trust Accounts', icon: Landmark, roles: FIRM_ROLES }
     ]
   },
 

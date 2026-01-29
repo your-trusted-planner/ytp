@@ -1,10 +1,131 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-01-28
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Billing & Trust Accounting System - Phase 10: Matter/Client Integration (2026-01-28)
+- **Status**: Complete ✅
+- **What**: Enhanced matter and client detail pages with billing integration
+- **Matter Detail Page Enhancements** (`/matters/[id]`):
+  - Added client trust balance indicator in Quick Stats card
+  - Link to client's trust ledger
+  - Updated Payments tab with three action buttons: "Deposit to Trust", "Create Invoice", "Record Payment"
+  - Added billing summary cards (Trust Balance, Outstanding Invoices, Total Collected)
+  - Added Outstanding Invoices section showing due invoices with clickable links
+  - Integrated modals: TrustDepositModal, CreateInvoiceModal, PaymentRecordModal
+- **Client Detail Page Enhancements** (`/clients/[id]`):
+  - Added Trust Account card with balance display and "Deposit" button
+  - Link to full trust ledger page
+  - Added Outstanding Invoices card showing up to 3 invoices with total
+  - Integrated modals: TrustDepositModal, PaymentRecordModal
+- **API Enhancement**:
+  - Updated `/api/invoices` to support `status=outstanding` filter (SENT, VIEWED, PARTIALLY_PAID, OVERDUE)
+- **Unit Tests**:
+  - Created comprehensive test suite (117 tests) for billing utilities
+  - `tests/unit/invoice-number.test.ts` - Invoice number validation/parsing
+  - `tests/unit/trust-ledger.test.ts` - Trust ledger business logic
+  - `tests/unit/trust-reports.test.ts` - Aging and reconciliation reports
+  - `tests/unit/invoice-pdf-generator.test.ts` - PDF generation and calculations
+
+#### Billing & Trust Accounting System (MVP) (2026-01-28)
+- **Status**: Complete ✅
+- **What**: Full law firm billing system with IOLTA-compliant trust accounting
+- **Key Features**:
+  - **Trust (IOLTA) Accounting**: Per-client ledgers, running balances, three-way reconciliation
+  - **Full Invoicing**: Line items, PDF generation with pdf-lib, email delivery via Resend
+  - **Flexible Payment Flow**: Retainers to trust, direct payments, or mixed
+  - **Trust Disbursements**: Apply trust funds to pay invoices
+  - **Trust Reports**: Three-way reconciliation, aging reports, client ledger statements
+
+- **Database Schema** (added to `server/db/schema.ts`):
+  - `trustAccounts` - IOLTA/trust accounts (single or multiple)
+  - `clientTrustLedgers` - Per-client balances within trust accounts
+  - `trustTransactions` - All deposits, disbursements, refunds with running balances
+  - `invoices` - Full invoicing with status tracking, payment tracking
+  - `invoiceLineItems` - Line items with types, quantities, prices
+  - Modified `payments` - Added fundSource, trustTransactionId, invoiceId fields
+
+- **Server Utilities Created**:
+  - `server/utils/invoice-number.ts` - Sequential invoice number generation (INV-YYYY-NNNN)
+  - `server/utils/trust-ledger.ts` - Trust balance operations, validation, client balances
+  - `server/utils/trust-reports.ts` - Reconciliation, aging reports, client ledger statements
+  - `server/utils/invoice-pdf-generator.ts` - Professional PDF invoices using pdf-lib
+
+- **API Endpoints Created**:
+  - **Trust Account**: `GET/POST /api/trust/accounts`, `GET /api/trust/accounts/[id]`
+  - **Trust Operations**: `POST /api/trust/deposits`, `POST /api/trust/disbursements`, `POST /api/trust/refunds`
+  - **Trust Queries**: `GET /api/trust/transactions`, `GET /api/trust/clients/[clientId]/ledger`, `GET /api/trust/clients/[clientId]/balance`
+  - **Trust Reports**: `GET /api/trust/reconciliation`, `GET /api/trust/aging`
+  - **Invoice CRUD**: `GET/POST /api/invoices`, `GET/PUT/DELETE /api/invoices/[id]`
+  - **Invoice Actions**: `POST /api/invoices/[id]/send`, `POST /api/invoices/[id]/apply-trust`, `GET /api/invoices/[id]/pdf`
+  - **Invoice Line Items**: `POST /api/invoices/[id]/line-items`, `PUT/DELETE /api/invoices/[id]/line-items/[lineId]`
+  - **Payments**: `GET/POST /api/payments`
+  - **Billing Dashboard**: `GET /api/billing/summary`, `GET /api/billing/outstanding`, `GET /api/billing/overdue`
+
+- **UI Pages Created**:
+  - `/billing` - Main billing dashboard with summary cards, invoice tabs, filters
+  - `/billing/trust` - Trust account management with client balances, transactions, aging tabs
+  - `/billing/trust/[clientId]` - Client trust ledger with transaction history
+  - `/invoices/[id]` - Invoice detail with payment history, trust application, actions
+
+- **UI Components Created**:
+  - `BillingInvoiceTable.vue` - Invoice list with filtering and actions
+  - `BillingCreateInvoiceModal.vue` - Create invoice with line items
+  - `BillingTrustClientList.vue` - Clients with trust balances
+  - `BillingTrustTransactionList.vue` - Transaction history with pagination
+  - `BillingTrustAgingReport.vue` - Aging report with warnings
+  - `BillingCreateTrustAccountModal.vue` - Create IOLTA account
+  - `BillingTrustDepositModal.vue` - Record deposits to trust
+  - `BillingTrustDisbursementModal.vue` - Record disbursements/refunds
+  - `BillingReconciliationModal.vue` - Three-way reconciliation with bank balance entry
+  - `BillingApplyTrustModal.vue` - Apply trust funds to invoice
+  - `BillingPaymentRecordModal.vue` - Record direct payments
+
+- **Navigation**: Added "Billing" section to dashboard sidebar with "Invoices" and "Trust Accounts" items
+
+- **Activity Logging**: Added trust and invoice activity types for audit trail
+
+- **Migration Required**: Run `npx drizzle-kit generate` then apply migration
+
+#### Estate Plan Management API & UI Wiring (Phases 5-6) (2026-01-28)
+- **Status**: Complete ✅
+- **What**: Role CRUD, status transitions, client creation UI, and full UI-to-backend wiring
+- **Phase 5 - API & UI Features**:
+  - **Role CRUD Endpoints**:
+    - `POST /api/estate-plans/:id/roles` - Add role with full validation (28 role types, 5 categories)
+    - `PUT /api/estate-plans/:id/roles/:roleId` - Update role with partial updates
+    - `DELETE /api/estate-plans/:id/roles/:roleId` - Soft delete (status=REMOVED) by default, hard delete via `?hardDelete=true` (admin level 2)
+  - **Status Transitions Endpoint**: `PUT /api/estate-plans/:id/status`
+    - State machine validation (DRAFT → ACTIVE → AMENDED/INCAPACITATED/ADMINISTERED → DISTRIBUTED → CLOSED)
+    - Auto-creates plan events (PLAN_SIGNED, PLAN_AMENDED, etc.)
+    - Auto-updates timestamps (effectiveDate, lastAmendedAt, administrationStartedAt, closedAt)
+  - **Client Creation UI**: Enhanced WealthCounsel import to select which people become clients
+    - "Create as Client" checkbox for grantors and fiduciaries
+    - Quick actions: "Grantors as clients" vs "Fiduciaries as clients" (mutually exclusive)
+    - Per-person `createAsClient` flag passed to import API
+  - **Clients List Fix**: Updated `/api/clients` to query from `clients` table (Belly Button Principle) instead of legacy `users` table
+- **Phase 6 - UI Wiring**:
+  - All estate plan pages use real API calls (no mock data)
+  - Loading states with spinners
+  - Error handling (empty states, "not found" pages)
+  - Import flow fully functional end-to-end
+- **Files Created**:
+  - `server/api/estate-plans/[id]/status.put.ts`
+  - `server/api/estate-plans/[id]/roles/index.post.ts`
+  - `server/api/estate-plans/[id]/roles/[roleId].put.ts`
+  - `server/api/estate-plans/[id]/roles/[roleId].delete.ts`
+- **Files Modified**:
+  - `server/utils/entity-resolver.ts` - Added `estate_plan` entity type
+  - `server/api/clients/index.get.ts` - Query clients table instead of users
+  - `app/components/person/MatchCard.vue` - Added "Create as Client" checkbox
+  - `app/components/person/MatchingReview.vue` - Track createAsClient decisions
+  - `app/pages/settings/integrations/wealthcounsel/import.vue` - Pass createAsClient to API
+  - `server/api/admin/integrations/wealthcounsel/import.post.ts` - Handle per-person createAsClient
+- **Test Coverage**: 990 tests passing
+- **Activity Logging**: All role operations and status changes logged
 
 #### Estate Plan Delete with Activity Logging (2026-01-27)
 - **Status**: Complete ✅
@@ -898,7 +1019,33 @@ Document (N) ──→ Matter (1)
 - **Documentation**: See CLAUDE.md "Attribute Case Conventions" section for current rules
 - **DO NOT** attempt opportunistic cleanup - requires frontend + backend changes together
 
-### ~~7. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10)
+### 7. Estate Plan Administration Features (Phase 7)
+- **Status**: Documented, not implemented
+- **Context**: Phases 1-6 of estate plan management are complete (import, display, CRUD, status transitions). Phase 7 covers post-death administration workflows.
+- **Goal**: Enable attorneys to manage estate plan administration after grantor death/incapacity
+- **Features**:
+  - **Status Transition Workflows UI**: Modal/button in plan detail to change status (API exists, needs UI)
+  - **Enhanced Distribution Recording**: Add `distributionAmount`, `distributionDescription`, and beneficiary selection to Add Event modal
+  - **Add Role Modal**: Replace placeholder with full working modal for adding trustees, beneficiaries, agents, etc.
+  - **Create Administration Matter**: Button/flow to create a new matter linked to the plan for administration work (uses `planToMatters` table with `ADMINISTRATION` relationship type)
+  - **Auto-Notifications**: Create notices when status changes or key events occur (notices schema exists, needs integration)
+- **Backend Status**:
+  - ✅ `PUT /api/estate-plans/:id/status` - State machine API ready
+  - ✅ `POST /api/estate-plans/:id/events` - Events API with distribution fields in schema
+  - ✅ Role CRUD APIs ready
+  - ✅ `POST /api/matters` - Matter creation API ready
+  - ✅ `planToMatters` table with ADMINISTRATION relationship type
+  - ✅ `notices` / `noticeRecipients` tables exist
+  - ❌ No API to create notices programmatically
+- **Frontend Status**:
+  - ❌ No status transition UI (button/modal)
+  - ⚠️ Add Event modal lacks distribution amount/beneficiary fields
+  - ❌ Add Role modal is placeholder only
+  - ❌ No "Create Administration Matter" button
+  - ❌ No auto-notification integration
+- **Why Deferred**: This is more like an epoch than a sprint - significant UI work across multiple components
+
+### ~~8. Journey-Matter Workflow Fix~~ ✅ COMPLETED (2026-01-10) (was #7)
 - **Status**: Complete ✅
 - **Implementation**: Auto-start service journeys when engagement journey completes
 - When ENGAGEMENT journey completes, automatically creates client journeys for all engaged services
@@ -1032,8 +1179,7 @@ Document (N) ──→ Matter (1)
 
 ## 🐛 Known Issues
 
-1. **No Payment Management UI**: Database table exists but no UI to record/view payments
-   - Needs separate implementation plan
+1. ~~**No Payment Management UI**~~: ✅ RESOLVED - Full billing & trust accounting system implemented (2026-01-28)
 
 ---
 

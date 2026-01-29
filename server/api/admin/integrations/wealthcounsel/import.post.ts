@@ -27,7 +27,8 @@ import { logActivity } from '../../../../utils/activity-logger'
 const PersonDecisionSchema = z.object({
   extractedName: z.string(),
   action: z.enum(['use_existing', 'create_new']),
-  existingPersonId: z.string().optional()
+  existingPersonId: z.string().optional(),
+  createAsClient: z.boolean().optional()
 })
 
 const ImportRequestSchema = z.object({
@@ -204,31 +205,59 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Step 2b: Optionally create client records for primary client and spouse (if joint plan)
+    // Step 2b: Create client records based on per-person decisions
     // Per the Belly Button Principle, clients need both a person record AND a clients record
-    // But not all imported plans are for clients - some may be for reference/archival
-    if (decisions.createClientRecords) {
-      const clientsToCreate = extractClientsToCreate(parsedData, clientPersonId, spousePersonId)
+    // The UI allows selecting which people should become clients
+    const personIdsToMakeClients = new Set<string>()
 
-      for (const clientData of clientsToCreate) {
-        // Check if a client record already exists for this person
-        const [existingClient] = await db.select()
-          .from(schema.clients)
-          .where(eq(schema.clients.personId, clientData.personId))
+    // Build set of person IDs that should become clients from personDecisions
+    if (decisions.personDecisions) {
+      for (const decision of decisions.personDecisions) {
+        if (decision.createAsClient) {
+          // Get the person ID for this extracted name
+          const personId = personLookup.get(decision.extractedName) ||
+            peopleToCreate.find(p => p.fullName === decision.extractedName)?.id
 
-        if (!existingClient) {
-          await db.insert(schema.clients).values({
-            id: clientData.id,
-            personId: clientData.personId,
-            status: clientData.status,
-            hasMinorChildren: clientData.hasMinorChildren,
-            childrenInfo: clientData.childrenInfo,
-            hasTrust: clientData.hasTrust,
-            hasWill: clientData.hasWill,
-            importMetadata: clientData.importMetadata
-          })
-          result.clientsCreated++
+          if (personId) {
+            personIdsToMakeClients.add(personId)
+          }
         }
+      }
+    }
+
+    // Fallback to global createClientRecords flag for backward compatibility
+    if (decisions.createClientRecords && personIdsToMakeClients.size === 0) {
+      // Use the old behavior: create clients for primary client and spouse
+      const clientsToCreate = extractClientsToCreate(parsedData, clientPersonId, spousePersonId)
+      for (const clientData of clientsToCreate) {
+        personIdsToMakeClients.add(clientData.personId)
+      }
+    }
+
+    // Create client records for selected people
+    for (const personId of personIdsToMakeClients) {
+      // Check if a client record already exists for this person
+      const [existingClient] = await db.select()
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, personId))
+
+      if (!existingClient) {
+        const clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+
+        await db.insert(schema.clients).values({
+          id: clientId,
+          personId: personId,
+          status: 'ACTIVE',
+          hasTrust: parsedData.planType === 'TRUST_BASED',
+          hasWill: true,
+          hasMinorChildren: (parsedData.children?.length ?? 0) > 0,
+          childrenInfo: parsedData.children?.length ? JSON.stringify(parsedData.children) : null,
+          importMetadata: JSON.stringify({
+            source: 'WEALTHCOUNSEL',
+            importedAt: new Date().toISOString()
+          })
+        })
+        result.clientsCreated++
       }
     }
 
