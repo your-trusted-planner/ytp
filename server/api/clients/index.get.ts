@@ -1,4 +1,4 @@
-import { eq, sql, asc, desc } from 'drizzle-orm'
+import { eq, sql, asc, desc, and } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
 import { requireRole } from '../../utils/rbac'
 import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calculateOffset } from '../../utils/pagination'
@@ -10,6 +10,11 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const usePagination = isPaginationRequested(query)
   const { page, limit, sortBy, sortDirection } = parsePaginationParams(query)
+
+  // Status filter
+  const statusFilter = typeof query.status === 'string' ? query.status.toUpperCase() : null
+  const validStatuses = ['ACTIVE', 'PROSPECT', 'LEAD', 'INACTIVE']
+  const status = statusFilter && validStatuses.includes(statusFilter) ? statusFilter : null
 
   // Build base query for clients using the clients table (Belly Button Principle)
   // Join with people table to get name/email data
@@ -39,6 +44,11 @@ export default defineEventHandler(async (event) => {
     .from(schema.clients)
     .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
 
+  // Apply status filter if provided
+  if (status) {
+    clientsQuery = clientsQuery.where(eq(schema.clients.status, status)) as typeof clientsQuery
+  }
+
   // Apply sorting - use people table for name/email fields
   const sortColumn = sortBy === 'firstName' ? schema.people.firstName
     : sortBy === 'lastName' ? schema.people.lastName
@@ -55,10 +65,16 @@ export default defineEventHandler(async (event) => {
   // Get total count for pagination (only if pagination requested)
   let totalCount = 0
   if (usePagination) {
-    const countResult = await db
+    let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(schema.clients)
-      .get()
+
+    // Apply same status filter to count query
+    if (status) {
+      countQuery = countQuery.where(eq(schema.clients.status, status)) as typeof countQuery
+    }
+
+    const countResult = await countQuery.get()
     totalCount = countResult?.count ?? 0
 
     // Apply pagination

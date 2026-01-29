@@ -7,25 +7,40 @@
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <UiCard
-        v-for="stat in statCards"
-        :key="stat.title"
-        :padding="false"
-      >
-        <div class="p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600">{{ stat.title }}</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">
-                {{ stat.value }}
-              </p>
+      <template v-for="stat in statCards" :key="stat.title">
+        <NuxtLink v-if="stat.href" :to="stat.href" class="block">
+          <UiCard :padding="false" class="hover:shadow-md transition-shadow cursor-pointer">
+            <div class="p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-600">{{ stat.title }}</p>
+                  <p class="text-3xl font-bold text-gray-900 mt-2">
+                    {{ stat.value }}
+                  </p>
+                </div>
+                <div :class="`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
+                  <component :is="stat.icon" :class="`w-6 h-6 ${stat.color}`" />
+                </div>
+              </div>
             </div>
-            <div :class="`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
-              <component :is="stat.icon" :class="`w-6 h-6 ${stat.color}`" />
+          </UiCard>
+        </NuxtLink>
+        <UiCard v-else :padding="false">
+          <div class="p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">{{ stat.title }}</p>
+                <p class="text-3xl font-bold text-gray-900 mt-2">
+                  {{ stat.value }}
+                </p>
+              </div>
+              <div :class="`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
+                <component :is="stat.icon" :class="`w-6 h-6 ${stat.color}`" />
+              </div>
             </div>
           </div>
-        </div>
-      </UiCard>
+        </UiCard>
+      </template>
     </div>
 
     <!-- Quick Actions -->
@@ -95,28 +110,32 @@ const statCards = computed(() => [
     value: stats.value.totalClients,
     icon: Users,
     color: 'text-blue-600',
-    bgColor: 'bg-blue-100'
+    bgColor: 'bg-blue-100',
+    href: '/clients'
   },
   {
     title: 'Active Clients',
     value: stats.value.activeClients,
     icon: CheckCircle,
     color: 'text-green-600',
-    bgColor: 'bg-green-100'
+    bgColor: 'bg-green-100',
+    href: '/clients?status=ACTIVE'
   },
   {
     title: 'Pending Approvals',
     value: stats.value.pendingApprovals,
     icon: Users,
     color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100'
+    bgColor: 'bg-yellow-100',
+    href: '/settings/users?status=PENDING_APPROVAL'
   },
   {
     title: 'Upcoming Meetings',
     value: stats.value.upcomingAppointments,
     icon: Calendar,
     color: 'text-burgundy-600',
-    bgColor: 'bg-burgundy-100'
+    bgColor: 'bg-burgundy-100',
+    href: '/schedule'
   }
 ])
 
