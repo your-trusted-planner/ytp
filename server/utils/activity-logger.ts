@@ -77,6 +77,21 @@ export type ActivityType =
   | 'ESTATE_PLAN_AMENDED'
   | 'ESTATE_PLAN_IMPORTED'
   | 'ESTATE_PLAN_STATUS_CHANGED'
+  // Trust account events
+  | 'TRUST_ACCOUNT_CREATED'
+  | 'TRUST_DEPOSIT_RECEIVED'
+  | 'TRUST_DISBURSEMENT_MADE'
+  | 'TRUST_REFUND_ISSUED'
+  // Invoice events
+  | 'INVOICE_CREATED'
+  | 'INVOICE_UPDATED'
+  | 'INVOICE_SENT'
+  | 'INVOICE_PAID'
+  | 'INVOICE_CANCELLED'
+  | 'INVOICE_VOID'
+  // Payment events
+  | 'PAYMENT_RECEIVED'
+  | 'PAYMENT_APPLIED'
   // Admin events
   | 'ADMIN_ACTION'
   | 'SETTINGS_CHANGED'

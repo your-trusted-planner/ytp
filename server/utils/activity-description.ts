@@ -241,6 +241,69 @@ export function generateDescription(
         ? `${actorName} changed status for "${targetName}"`
         : `${actorName} changed estate plan status`
 
+    // Trust account events
+    case 'TRUST_ACCOUNT_CREATED':
+      return targetName
+        ? `${actorName} created trust account "${targetName}"`
+        : `${actorName} created a trust account`
+    case 'TRUST_DEPOSIT_RECEIVED':
+      const depositAmount = details?.amount as number | undefined
+      const depositFormatted = depositAmount ? `$${(depositAmount / 100).toFixed(2)}` : ''
+      return targetName
+        ? `${actorName} recorded ${depositFormatted} trust deposit for ${targetName}`
+        : `${actorName} recorded a trust deposit`
+    case 'TRUST_DISBURSEMENT_MADE':
+      const disbursementAmount = details?.amount as number | undefined
+      const disbursementFormatted = disbursementAmount ? `$${(disbursementAmount / 100).toFixed(2)}` : ''
+      return targetName
+        ? `${actorName} disbursed ${disbursementFormatted} from trust for ${targetName}`
+        : `${actorName} made a trust disbursement`
+    case 'TRUST_REFUND_ISSUED':
+      const refundAmount = details?.amount as number | undefined
+      const refundFormatted = refundAmount ? `$${(refundAmount / 100).toFixed(2)}` : ''
+      return targetName
+        ? `${actorName} issued ${refundFormatted} trust refund to ${targetName}`
+        : `${actorName} issued a trust refund`
+
+    // Invoice events
+    case 'INVOICE_CREATED':
+      const invoiceNumber = details?.invoiceNumber as string | undefined
+      return invoiceNumber
+        ? `${actorName} created invoice ${invoiceNumber}${targetName ? ` for ${targetName}` : ''}`
+        : `${actorName} created an invoice${targetName ? ` for ${targetName}` : ''}`
+    case 'INVOICE_UPDATED':
+      return targetName
+        ? `${actorName} updated invoice for ${targetName}`
+        : `${actorName} updated an invoice`
+    case 'INVOICE_SENT':
+      return targetName
+        ? `${actorName} sent invoice to ${targetName}`
+        : `${actorName} sent an invoice`
+    case 'INVOICE_PAID':
+      return targetName
+        ? `Invoice for ${targetName} was marked as paid`
+        : `An invoice was marked as paid`
+    case 'INVOICE_CANCELLED':
+      return targetName
+        ? `${actorName} cancelled invoice for ${targetName}`
+        : `${actorName} cancelled an invoice`
+    case 'INVOICE_VOID':
+      return targetName
+        ? `${actorName} voided invoice for ${targetName}`
+        : `${actorName} voided an invoice`
+
+    // Payment events
+    case 'PAYMENT_RECEIVED':
+      const paymentAmount = details?.amount as number | undefined
+      const paymentFormatted = paymentAmount ? `$${(paymentAmount / 100).toFixed(2)}` : ''
+      return targetName
+        ? `${actorName} recorded ${paymentFormatted} payment for ${targetName}`
+        : `${actorName} recorded a payment`
+    case 'PAYMENT_APPLIED':
+      return targetName
+        ? `${actorName} applied payment to invoice for ${targetName}`
+        : `${actorName} applied a payment`
+
     // Admin events
     case 'ADMIN_ACTION':
       const actionName = details?.action as string | undefined

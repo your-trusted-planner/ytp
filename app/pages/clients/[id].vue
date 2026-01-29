@@ -90,6 +90,81 @@
           </div>
         </div>
 
+        <!-- Trust Balance Card -->
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+              <Wallet class="w-5 h-5 mr-2 text-green-600" />
+              Trust Account
+            </h3>
+            <UiButton size="sm" variant="outline" @click="showTrustDepositModal = true">
+              <Plus class="w-4 h-4 mr-1" />
+              Deposit
+            </UiButton>
+          </div>
+
+          <div class="text-center py-4">
+            <div class="text-3xl font-bold text-green-600">
+              {{ formatCurrency(trustBalance) }}
+            </div>
+            <div class="text-sm text-gray-500 mt-1">Available Balance</div>
+          </div>
+
+          <NuxtLink
+            :to="`/billing/trust/${clientId}`"
+            class="block text-center text-sm text-burgundy-600 hover:text-burgundy-700 hover:underline mt-2"
+          >
+            View Full Trust Ledger →
+          </NuxtLink>
+        </div>
+
+        <!-- Outstanding Invoices Card -->
+        <div v-if="outstandingInvoices.length > 0" class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+              <FileText class="w-5 h-5 mr-2 text-amber-600" />
+              Outstanding Invoices
+            </h3>
+            <UiBadge variant="warning">{{ outstandingInvoices.length }}</UiBadge>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              v-for="invoice in outstandingInvoices.slice(0, 3)"
+              :key="invoice.id"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+              @click="$router.push(`/invoices/${invoice.id}`)"
+            >
+              <div>
+                <div class="font-medium text-gray-900 text-sm">{{ invoice.invoiceNumber }}</div>
+                <div class="text-xs text-gray-500">Due {{ formatInvoiceDate(invoice.dueDate) }}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold text-gray-900 text-sm">{{ formatCurrency(invoice.balanceDue) }}</div>
+                <UiBadge :variant="getInvoiceStatusVariant(invoice.status)" size="sm">
+                  {{ invoice.status }}
+                </UiBadge>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-gray-100">
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-600">Total Outstanding:</span>
+              <span class="font-semibold text-amber-600">
+                {{ formatCurrency(outstandingInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0)) }}
+              </span>
+            </div>
+          </div>
+
+          <NuxtLink
+            to="/billing"
+            class="block text-center text-sm text-burgundy-600 hover:text-burgundy-700 hover:underline mt-3"
+          >
+            View All Invoices →
+          </NuxtLink>
+        </div>
+
         <!-- Google Drive Status (only shown if Drive integration is configured) -->
         <DriveStatusSection
           v-if="clientProfile && isDriveConfigured"
@@ -363,6 +438,20 @@
       </form>
     </UiModal>
 
+    <!-- Trust Deposit Modal -->
+    <BillingTrustDepositModal
+      v-if="showTrustDepositModal"
+      @close="showTrustDepositModal = false"
+      @deposited="handleTrustDepositRecorded"
+    />
+
+    <!-- Payment Modal -->
+    <BillingPaymentRecordModal
+      v-if="showPaymentModal"
+      @close="showPaymentModal = false"
+      @recorded="handlePaymentRecorded"
+    />
+
     <!-- Add Relationship Modal -->
     <UiModal v-model="showAddRelationshipModal" title="Add Person & Relationship" size="lg">
       <form @submit.prevent="addRelationship" class="space-y-4">
@@ -488,7 +577,8 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Edit, X, FolderSync } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, DollarSign } from 'lucide-vue-next'
+import { formatCurrency } from '~/utils/format'
 
 definePageMeta({
   middleware: ['auth'],
@@ -516,6 +606,12 @@ const journeys = ref<any[]>([])
 const documents = ref<any[]>([])
 const relationships = ref<any[]>([])
 const availablePeople = ref<any[]>([])
+
+// Billing state
+const trustBalance = ref(0)
+const outstandingInvoices = ref<any[]>([])
+const showTrustDepositModal = ref(false)
+const showPaymentModal = ref(false)
 
 const relationshipForm = reactive({
   mode: 'existing',
@@ -555,13 +651,15 @@ const totalDocuments = computed(() => documents.value.length)
 async function fetchClient() {
   loading.value = true
   try {
-    const [clientData, mattersData, journeysData, docsData, relationshipsData, peopleData] = await Promise.all([
+    const [clientData, mattersData, journeysData, docsData, relationshipsData, peopleData, trustBalanceData, invoicesData] = await Promise.all([
       $fetch(`/api/clients/${clientId}`),
       $fetch(`/api/clients/${clientId}/matters`).catch(() => ({ matters: [] })),
       $fetch(`/api/client-journeys/client/${clientId}`).catch(() => ({ journeys: [] })),
       $fetch(`/api/clients/${clientId}/documents`).catch(() => ({ documents: [] })),
       $fetch(`/api/clients/${clientId}/relationships`).catch(() => ({ relationships: [] })),
-      $fetch('/api/people').catch(() => ({ people: [] }))
+      $fetch('/api/people').catch(() => ({ people: [] })),
+      $fetch(`/api/trust/clients/${clientId}/balance`).catch(() => ({ totalBalance: 0 })),
+      $fetch('/api/invoices', { query: { clientId, status: 'outstanding' } }).catch(() => ({ invoices: [] }))
     ])
 
     client.value = clientData.client
@@ -571,6 +669,8 @@ async function fetchClient() {
     documents.value = docsData.documents || []
     relationships.value = relationshipsData.relationships || []
     availablePeople.value = peopleData.people || []
+    trustBalance.value = trustBalanceData.totalBalance || 0
+    outstandingInvoices.value = invoicesData.invoices || []
   } catch (error) {
     console.error('Error fetching client:', error)
   } finally {
@@ -738,6 +838,68 @@ function formatDate(dateInput: number | string | Date) {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// Format invoice date
+function formatInvoiceDate(date: number | string | Date | null): string {
+  if (!date) return 'N/A'
+  const d = typeof date === 'number' ? new Date(date * 1000) : new Date(date)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// Get invoice status badge variant
+function getInvoiceStatusVariant(status: string): 'success' | 'info' | 'default' | 'danger' | 'warning' {
+  switch (status) {
+    case 'PAID': return 'success'
+    case 'SENT':
+    case 'VIEWED': return 'info'
+    case 'PARTIALLY_PAID': return 'warning'
+    case 'OVERDUE': return 'danger'
+    default: return 'default'
+  }
+}
+
+// Fetch trust balance
+async function fetchTrustBalance() {
+  try {
+    const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${clientId}/balance`)
+    trustBalance.value = response.totalBalance || 0
+  } catch (error) {
+    console.error('Failed to fetch trust balance:', error)
+    trustBalance.value = 0
+  }
+}
+
+// Fetch outstanding invoices
+async function fetchOutstandingInvoices() {
+  try {
+    const response = await $fetch<{ invoices: any[] }>('/api/invoices', {
+      query: {
+        clientId: clientId,
+        status: 'outstanding'
+      }
+    })
+    outstandingInvoices.value = response.invoices || []
+  } catch (error) {
+    console.error('Failed to fetch outstanding invoices:', error)
+    outstandingInvoices.value = []
+  }
+}
+
+// Handle trust deposit recorded
+async function handleTrustDepositRecorded() {
+  showTrustDepositModal.value = false
+  await fetchTrustBalance()
+}
+
+// Handle payment recorded
+async function handlePaymentRecorded() {
+  showPaymentModal.value = false
+  await Promise.all([
+    fetchClient(),
+    fetchTrustBalance(),
+    fetchOutstandingInvoices()
+  ])
 }
 
 // Handle Drive synced
