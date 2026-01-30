@@ -206,13 +206,17 @@
           </UiCard>
         </div>
 
-        <!-- Payments Tab -->
-        <div v-if="activeTab === 'payments'" class="space-y-6">
+        <!-- Billing Tab -->
+        <div v-if="activeTab === 'billing'" class="space-y-6">
           <!-- Billing Actions Card -->
           <UiCard>
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold text-gray-900">Billing Actions</h3>
               <div class="flex items-center gap-2">
+                <UiButton size="sm" variant="outline" @click="showTimeEntryModal = true">
+                  <Clock class="w-4 h-4 mr-1" />
+                  Log Time
+                </UiButton>
                 <UiButton size="sm" variant="outline" @click="showTrustDepositModal = true">
                   <Wallet class="w-4 h-4 mr-1" />
                   Deposit to Trust
@@ -259,6 +263,50 @@
                 </NuxtLink>
               </div>
             </div>
+          </UiCard>
+
+          <!-- Billing Rates Card -->
+          <BillingRatesCard
+            entity-type="matter"
+            :entity-id="matterId"
+            :entity-name="matter?.title || 'Matter'"
+          />
+
+          <!-- Time Entries Section -->
+          <UiCard>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Time Entries</h3>
+              <NuxtLink
+                to="/billing/time-entries"
+                class="text-sm text-burgundy-600 hover:text-burgundy-700"
+              >
+                View All Time Entries →
+              </NuxtLink>
+            </div>
+
+            <div v-if="loadingTimeEntries" class="flex justify-center py-8">
+              <Loader class="w-6 h-6 animate-spin text-burgundy-600" />
+            </div>
+
+            <div v-else-if="timeEntries.length === 0" class="text-center py-8">
+              <Clock class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p class="text-gray-500 mb-4">No time entries for this matter yet</p>
+              <UiButton size="sm" @click="showTimeEntryModal = true">
+                <Clock class="w-4 h-4 mr-1" />
+                Log Time
+              </UiButton>
+            </div>
+
+            <BillingTimeEntryTable
+              v-else
+              :time-entries="timeEntries"
+              :loading="loadingTimeEntries"
+              :show-matter-column="false"
+              @edit="handleEditTimeEntry"
+              @delete="handleDeleteTimeEntry"
+              @submit="handleSubmitTimeEntry"
+              @approve="handleApproveTimeEntry"
+            />
           </UiCard>
 
           <!-- Outstanding Invoices -->
@@ -437,11 +485,21 @@
       @deposited="handleTrustDepositRecorded"
     />
 
+    <!-- Time Entry Modal -->
+    <BillingTimeEntryModal
+      v-if="showTimeEntryModal"
+      :editing-entry="editingTimeEntry"
+      :default-matter-id="matterId"
+      @close="showTimeEntryModal = false; editingTimeEntry = null"
+      @created="handleTimeEntrySaved"
+      @updated="handleTimeEntrySaved"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX, DollarSign, FileText, Wallet } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX, DollarSign, FileText, Wallet, Clock } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 import { useMatterStore } from '~/stores/useMatterStore'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
@@ -489,11 +547,17 @@ const showPaymentModal = ref(false)
 const showCreateInvoiceModal = ref(false)
 const showTrustDepositModal = ref(false)
 
+// Time entries state
+const timeEntries = ref<any[]>([])
+const loadingTimeEntries = ref(false)
+const showTimeEntryModal = ref(false)
+const editingTimeEntry = ref<any>(null)
+
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'services', label: 'Services' },
   { id: 'journeys', label: 'Journeys' },
-  { id: 'payments', label: 'Payments' },
+  { id: 'billing', label: 'Billing' },
   { id: 'documents', label: 'Documents' },
   { id: 'notes', label: 'Notes' }
 ]
@@ -710,6 +774,71 @@ async function fetchOutstandingInvoices() {
   }
 }
 
+// Fetch time entries for this matter
+async function fetchMatterTimeEntries() {
+  loadingTimeEntries.value = true
+  try {
+    const response = await $fetch<{ timeEntries: any[] }>('/api/time-entries', {
+      query: { matterId: matterId }
+    })
+    timeEntries.value = response.timeEntries || []
+  } catch (error) {
+    console.error('Failed to fetch time entries:', error)
+    timeEntries.value = []
+  } finally {
+    loadingTimeEntries.value = false
+  }
+}
+
+// Handle time entry created/updated
+async function handleTimeEntrySaved() {
+  const wasEditing = !!editingTimeEntry.value
+  showTimeEntryModal.value = false
+  editingTimeEntry.value = null
+  toast.success(wasEditing ? 'Time entry updated' : 'Time entry created')
+  await fetchMatterTimeEntries()
+}
+
+// Handle edit time entry
+function handleEditTimeEntry(entry: any) {
+  editingTimeEntry.value = entry
+  showTimeEntryModal.value = true
+}
+
+// Handle delete time entry (receives full entry object from table)
+async function handleDeleteTimeEntry(entry: any) {
+  if (!confirm('Are you sure you want to delete this time entry?')) return
+  try {
+    await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
+    toast.success('Time entry deleted')
+    await fetchMatterTimeEntries()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to delete time entry')
+  }
+}
+
+// Handle submit time entry (receives full entry object from table)
+async function handleSubmitTimeEntry(entry: any) {
+  try {
+    await $fetch(`/api/time-entries/${entry.id}/submit`, { method: 'POST' })
+    toast.success('Time entry submitted for approval')
+    await fetchMatterTimeEntries()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to submit time entry')
+  }
+}
+
+// Handle approve time entry (receives full entry object from table)
+async function handleApproveTimeEntry(entry: any) {
+  try {
+    await $fetch(`/api/time-entries/${entry.id}/approve`, { method: 'POST' })
+    toast.success('Time entry approved')
+    await fetchMatterTimeEntries()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to approve time entry')
+  }
+}
+
 // Format invoice date
 function formatInvoiceDate(date: number | string | Date | null): string {
   if (!date) return 'N/A'
@@ -761,10 +890,11 @@ watch(activeTab, (newTab) => {
   if (newTab === 'documents' && matterStore.documents.length === 0 && !matterStore.loadingDocuments) {
     matterStore.fetchDocuments()
   }
-  // Load billing data when switching to payments tab
-  if (newTab === 'payments') {
+  // Load billing data when switching to billing tab
+  if (newTab === 'billing') {
     fetchClientTrustBalance()
     fetchOutstandingInvoices()
+    fetchMatterTimeEntries()
   }
 })
 
@@ -796,7 +926,8 @@ onMounted(async () => {
     fetchLawyers(),
     fetchEngagementJourneys(),
     fetchClientTrustBalance(),
-    fetchOutstandingInvoices()
+    fetchOutstandingInvoices(),
+    fetchMatterTimeEntries()
   ])
 })
 </script>

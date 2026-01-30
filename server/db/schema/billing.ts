@@ -94,15 +94,77 @@ export const invoiceLineItems = sqliteTable('invoice_line_items', {
   catalogId: text('catalog_id').references(() => serviceCatalog.id),
 
   description: text('description').notNull(),
-  quantity: integer('quantity').notNull().default(1),
+  quantity: text('quantity').notNull().default('1'), // Text for decimal hours (e.g., "1.25")
   unitPrice: integer('unit_price').notNull(), // Cents
-  amount: integer('amount').notNull(), // quantity * unitPrice (cents)
+  amount: integer('amount').notNull(), // parseFloat(quantity) * unitPrice (cents)
 
   itemType: text('item_type', {
-    enum: ['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'OTHER']
+    enum: ['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'HOURLY', 'OTHER']
   }).notNull().default('SERVICE'),
 
+  // Time entry reference (when itemType='HOURLY')
+  timeEntryId: text('time_entry_id'),
+
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Client Billing Rates - Per-client billing rate configuration
+export const clientBillingRates = sqliteTable('client_billing_rates', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => clients.id).unique(),
+  attorneyRate: integer('attorney_rate'), // Default attorney hourly rate for this client (cents)
+  staffRate: integer('staff_rate'), // Default staff hourly rate for this client (cents)
+  userRates: text('user_rates'), // JSON: {"userId": rateInCents} for user-specific rate overrides
+  notes: text('notes'),
+  effectiveDate: integer('effective_date', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Matter Billing Rates - Per-matter billing rate configuration
+export const matterBillingRates = sqliteTable('matter_billing_rates', {
+  id: text('id').primaryKey(),
+  matterId: text('matter_id').notNull().references(() => matters.id).unique(),
+  attorneyRate: integer('attorney_rate'), // Default attorney hourly rate for this matter (cents)
+  staffRate: integer('staff_rate'), // Default staff hourly rate for this matter (cents)
+  userRates: text('user_rates'), // JSON: {"userId": rateInCents} for user-specific rate overrides
+  notes: text('notes'),
+  effectiveDate: integer('effective_date', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Time Entries - Track billable and non-billable time
+export const timeEntries = sqliteTable('time_entries', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  matterId: text('matter_id').notNull().references(() => matters.id),
+
+  // Time details
+  hours: text('hours').notNull(), // Text for decimal precision ("1.25")
+  description: text('description').notNull(),
+  workDate: integer('work_date', { mode: 'timestamp' }).notNull(),
+
+  // Billing
+  isBillable: integer('is_billable', { mode: 'boolean' }).default(true),
+  hourlyRate: integer('hourly_rate'), // Rate at time of entry (resolved), cents
+  amount: integer('amount'), // parseFloat(hours) * hourlyRate (cents)
+
+  // Status workflow
+  status: text('status', {
+    enum: ['DRAFT', 'SUBMITTED', 'APPROVED', 'BILLED', 'WRITTEN_OFF']
+  }).notNull().default('DRAFT'),
+
+  // Invoice link (when billed)
+  invoiceId: text('invoice_id').references(() => invoices.id),
+  invoiceLineItemId: text('invoice_line_item_id'),
+
+  // Approval
+  approvedBy: text('approved_by').references(() => users.id),
+  approvedAt: integer('approved_at', { mode: 'timestamp' }),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
 
 // Trust Transactions - Every movement of funds in/out of trust

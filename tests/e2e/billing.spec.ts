@@ -318,6 +318,248 @@ test.describe('Billing Module', () => {
   })
 })
 
+test.describe('Time Entries Page', () => {
+  test.describe('Page Routing', () => {
+    test('time entries page loads with correct content', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+
+      // Should show time tracking header
+      await expect(page.getByRole('heading', { name: /time tracking/i })).toBeVisible()
+
+      // Should show Create Time Entry button
+      await expect(page.getByRole('button', { name: /create time entry/i })).toBeVisible()
+
+      // Should show summary cards
+      await expect(page.getByText(/this month/i)).toBeVisible()
+      await expect(page.getByText(/pending approval/i)).toBeVisible()
+      await expect(page.getByText(/ready to bill/i)).toBeVisible()
+    })
+
+    test('time entries page has status filter tabs', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+
+      // Should show filter tabs
+      await expect(page.getByRole('button', { name: /all entries/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /draft/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /submitted/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /approved/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /billed/i })).toBeVisible()
+    })
+
+    test('can navigate to time entries from billing sidebar', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing')
+      await page.waitForLoadState('networkidle')
+
+      // Click on Time Entries in the sidebar (under Billing menu)
+      await page.getByRole('link', { name: 'Time Entries' }).click()
+      await page.waitForURL(/\/billing\/time-entries/)
+
+      await expect(page.getByRole('heading', { name: /time tracking/i })).toBeVisible()
+    })
+  })
+
+  test.describe('Create Time Entry Modal', () => {
+    test('create time entry modal opens when button is clicked', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+      await page.waitForLoadState('networkidle')
+
+      // Click create time entry button
+      await page.getByRole('button', { name: /create time entry/i }).click()
+
+      // Modal should be visible
+      const modalTitle = page.locator('h3:has-text("Create Time Entry")')
+      await expect(modalTitle).toBeVisible({ timeout: 10000 })
+
+      // Form elements should be present
+      await expect(page.getByText('Matter *')).toBeVisible()
+      await expect(page.getByText('Work Date *')).toBeVisible()
+      await expect(page.getByText('Hours *')).toBeVisible()
+      await expect(page.getByText('Description *')).toBeVisible()
+      await expect(page.getByText('Billable', { exact: true })).toBeVisible()
+    })
+
+    test('create time entry modal closes when cancel is clicked', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+      await page.waitForLoadState('networkidle')
+
+      // Open modal
+      await page.getByRole('button', { name: /create time entry/i }).click()
+      const modalTitle = page.locator('h3:has-text("Create Time Entry")')
+      await expect(modalTitle).toBeVisible({ timeout: 10000 })
+
+      // Click cancel
+      await page.getByRole('button', { name: /cancel/i }).click()
+
+      // Modal should close
+      await expect(modalTitle).not.toBeVisible()
+    })
+
+    test('create time entry form has billable toggle enabled by default', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+      await page.waitForLoadState('networkidle')
+
+      // Open modal
+      await page.getByRole('button', { name: /create time entry/i }).click()
+      const modalTitle = page.locator('h3:has-text("Create Time Entry")')
+      await expect(modalTitle).toBeVisible({ timeout: 10000 })
+
+      // Billable toggle should be on by default (check for the toggle in "on" state)
+      const billableToggle = page.locator('button[role="switch"]')
+      await expect(billableToggle).toHaveAttribute('aria-checked', 'true')
+    })
+
+    test('create time entry form shows rate preview when matter is selected', async ({ page }) => {
+      await loginAsFirmMember(page)
+      await page.goto('/billing/time-entries')
+      await page.waitForLoadState('networkidle')
+
+      // Open modal
+      await page.getByRole('button', { name: /create time entry/i }).click()
+      const modalTitle = page.locator('h3:has-text("Create Time Entry")')
+      await expect(modalTitle).toBeVisible({ timeout: 10000 })
+
+      // Search for a matter in the autocomplete
+      const matterInput = page.getByPlaceholder(/search for a matter/i)
+      await matterInput.fill('Doe')
+
+      // Wait for autocomplete results and click first result
+      const matterOption = page.locator('[role="option"]').first()
+      if (await matterOption.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await matterOption.click()
+
+        // Rate preview section should appear
+        await expect(page.getByText(/hourly rate/i)).toBeVisible({ timeout: 5000 })
+        await expect(page.getByText(/rate source/i)).toBeVisible()
+      }
+    })
+  })
+})
+
+test.describe('Matter Billing Tab', () => {
+  // Helper to navigate to matter and click Billing tab
+  async function goToMatterBillingTab(page: any) {
+    await page.goto('/matters')
+    await page.waitForLoadState('networkidle')
+
+    // Click on first matter in the list
+    const matterRow = page.locator('tbody tr').first()
+    await matterRow.click()
+
+    // Should navigate to matter detail
+    await page.waitForURL(/\/matters\//)
+    await page.waitForLoadState('networkidle')
+
+    // Click Billing tab in the navigation bar (not the sidebar Billing menu)
+    // The tabs are in a nav element with -mb-px class, inside the main content area
+    const tabNav = page.locator('nav.-mb-px')
+    const billingTab = tabNav.getByRole('button', { name: 'Billing' })
+    await expect(billingTab).toBeVisible()
+    await billingTab.click()
+
+    // Wait for the Billing tab content to load - look for "Billing Actions" text
+    await expect(page.getByText('Billing Actions', { exact: true })).toBeVisible({ timeout: 10000 })
+  }
+
+  test('matter page has Billing tab', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await page.goto('/matters')
+    await page.waitForLoadState('networkidle')
+
+    // Click on first matter in the list
+    const matterRow = page.locator('tbody tr').first()
+    await matterRow.click()
+
+    // Should navigate to matter detail
+    await page.waitForURL(/\/matters\//)
+
+    // Should have Billing tab (renamed from Payments) - check within the tab navigation
+    const tabNav = page.locator('nav.-mb-px')
+    await expect(tabNav.getByRole('button', { name: 'Billing' })).toBeVisible()
+  })
+
+  test('matter Billing tab shows time entries section', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await goToMatterBillingTab(page)
+
+    // Should show Log Time button in Billing Actions
+    await expect(page.getByRole('button', { name: 'Log Time' }).first()).toBeVisible()
+
+    // Scroll down to Time Entries section
+    await page.evaluate(() => window.scrollTo(0, 400))
+    await page.waitForTimeout(500)
+
+    // Should show Time Entries heading
+    await expect(page.getByText('Time Entries', { exact: true })).toBeVisible({ timeout: 10000 })
+
+    // Should show link to all time entries
+    await expect(page.getByRole('link', { name: /view all time entries/i })).toBeVisible()
+  })
+
+  test('matter Billing tab shows billing rates card', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await goToMatterBillingTab(page)
+
+    // Scroll down to see billing rates card
+    await page.evaluate(() => window.scrollTo(0, 300))
+    await page.waitForTimeout(500)
+
+    // Should show Billing Rates text
+    await expect(page.getByText('Billing Rates', { exact: true })).toBeVisible({ timeout: 10000 })
+  })
+
+  test('Log Time button opens time entry modal from matter page', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await goToMatterBillingTab(page)
+
+    // Click Log Time button (the first one in Billing Actions)
+    const logTimeButton = page.getByRole('button', { name: 'Log Time' }).first()
+    await expect(logTimeButton).toBeVisible()
+    await logTimeButton.click()
+
+    // Modal should open
+    const modalTitle = page.locator('h3:has-text("Create Time Entry")')
+    await expect(modalTitle).toBeVisible({ timeout: 10000 })
+
+    // Modal should have form fields
+    await expect(page.getByText('Matter *')).toBeVisible()
+    await expect(page.getByText('Hours *')).toBeVisible()
+  })
+
+  test('matter Billing tab shows summary cards', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await goToMatterBillingTab(page)
+
+    // Should show summary cards (these are visible at the top of billing tab)
+    await expect(page.getByText(/client trust balance/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/outstanding invoices/i)).toBeVisible()
+    await expect(page.getByText(/total collected/i)).toBeVisible()
+  })
+
+  test('View All Time Entries link navigates to time entries page', async ({ page }) => {
+    await loginAsFirmMember(page)
+    await goToMatterBillingTab(page)
+
+    // Scroll down to Time Entries section
+    await page.evaluate(() => window.scrollTo(0, 400))
+    await page.waitForTimeout(500)
+
+    // Click View All Time Entries link
+    const viewAllLink = page.getByRole('link', { name: /view all time entries/i })
+    await expect(viewAllLink).toBeVisible({ timeout: 10000 })
+    await viewAllLink.click()
+
+    // Should navigate to time entries page
+    await page.waitForURL(/\/billing\/time-entries/)
+    await expect(page.getByRole('heading', { name: /time tracking/i })).toBeVisible()
+  })
+})
+
 test.describe('Billing Access Control', () => {
   test('unauthenticated users cannot access billing', async ({ page }) => {
     await page.goto('/billing')
@@ -328,6 +570,13 @@ test.describe('Billing Access Control', () => {
 
   test('unauthenticated users cannot access trust accounts', async ({ page }) => {
     await page.goto('/billing/trust')
+
+    // Should redirect to login
+    await expect(page).toHaveURL(/login/)
+  })
+
+  test('unauthenticated users cannot access time entries', async ({ page }) => {
+    await page.goto('/billing/time-entries')
 
     // Should redirect to login
     await expect(page).toHaveURL(/login/)

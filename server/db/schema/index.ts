@@ -48,7 +48,16 @@ export { marketingSources, referralPartners, marketingEvents, eventRegistrations
 export { signatureSessions } from './signatures'
 
 // Billing & Trust Accounting
-export { trustAccounts, clientTrustLedgers, invoices, invoiceLineItems, trustTransactions } from './billing'
+export {
+  trustAccounts,
+  clientTrustLedgers,
+  invoices,
+  invoiceLineItems,
+  clientBillingRates,
+  matterBillingRates,
+  timeEntries,
+  trustTransactions
+} from './billing'
 
 // Settings
 export { settings, googleDriveConfig } from './settings'
