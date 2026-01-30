@@ -15,7 +15,7 @@
       <div class="mb-6 p-4 bg-gray-50 rounded-lg">
         <div class="flex justify-between items-center mb-2">
           <h3 class="text-lg font-medium text-gray-900">Trust Balance Aging Report</h3>
-          <span class="text-sm text-gray-500">As of {{ formatDate(report.asOfDate) }}</span>
+          <span class="text-sm text-gray-500">As of {{ formatDate(report.asOf || report.asOfDate) }}</span>
         </div>
         <p class="text-sm text-gray-600">
           Shows how long client funds have been held in trust
@@ -50,43 +50,43 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
               v-for="client in report.clients"
-              :key="client.clientId"
+              :key="client.clientId || client.client_id"
               class="hover:bg-gray-50"
             >
               <td class="px-6 py-4 whitespace-nowrap">
                 <NuxtLink
-                  :to="`/billing/trust/${client.clientId}`"
+                  :to="`/billing/trust/${client.clientId || client.client_id}`"
                   class="text-sm font-medium text-burgundy-600 hover:text-burgundy-800"
                 >
-                  {{ client.clientName }}
+                  {{ client.clientName || client.client_name }}
                 </NuxtLink>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <span class="text-sm text-gray-900">
-                  {{ client.current > 0 ? formatCurrency(client.current) : '-' }}
+                  {{ getAgingValue(client, 'current') > 0 ? formatCurrency(getAgingValue(client, 'current')) : '-' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <span class="text-sm text-gray-900">
-                  {{ client.days30to60 > 0 ? formatCurrency(client.days30to60) : '-' }}
+                  {{ getAgingValue(client, 'days30to60') > 0 ? formatCurrency(getAgingValue(client, 'days30to60')) : '-' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <span class="text-sm text-gray-900">
-                  {{ client.days60to90 > 0 ? formatCurrency(client.days60to90) : '-' }}
+                  {{ getAgingValue(client, 'days60to90') > 0 ? formatCurrency(getAgingValue(client, 'days60to90')) : '-' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right bg-amber-50">
                 <span
                   class="text-sm font-medium"
-                  :class="client.days90plus > 0 ? 'text-amber-600' : 'text-gray-900'"
+                  :class="getAgingValue(client, 'over90') > 0 ? 'text-amber-600' : 'text-gray-900'"
                 >
-                  {{ client.days90plus > 0 ? formatCurrency(client.days90plus) : '-' }}
+                  {{ getAgingValue(client, 'over90') > 0 ? formatCurrency(getAgingValue(client, 'over90')) : '-' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <span class="text-sm font-bold text-gray-900">
-                  {{ formatCurrency(client.total) }}
+                  {{ formatCurrency(getClientTotal(client)) }}
                 </span>
               </td>
             </tr>
@@ -97,19 +97,19 @@
                 TOTALS
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
-                {{ formatCurrency(report.totals.current) }}
+                {{ formatCurrency(getTotalsValue('current')) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
-                {{ formatCurrency(report.totals.days30to60) }}
+                {{ formatCurrency(getTotalsValue('days30to60')) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
-                {{ formatCurrency(report.totals.days60to90) }}
+                {{ formatCurrency(getTotalsValue('days60to90')) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-amber-50" :class="report.totals.days90plus > 0 ? 'text-amber-600' : 'text-gray-900'">
-                {{ formatCurrency(report.totals.days90plus) }}
+              <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-amber-50" :class="getTotalsValue('over90') > 0 ? 'text-amber-600' : 'text-gray-900'">
+                {{ formatCurrency(getTotalsValue('over90')) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
-                {{ formatCurrency(report.totals.total) }}
+                {{ formatCurrency(getTotalsValue('total')) }}
               </td>
             </tr>
           </tfoot>
@@ -117,13 +117,13 @@
       </div>
 
       <!-- Aging Note -->
-      <div v-if="report.totals.days90plus > 0" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+      <div v-if="getTotalsValue('over90') > 0" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <div class="flex items-start gap-2">
           <AlertTriangle class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>
             <p class="text-amber-800 font-medium">Funds held over 90 days</p>
             <p class="text-amber-700 text-sm mt-1">
-              {{ formatCurrency(report.totals.days90plus) }} in trust funds have been held for more than 90 days.
+              {{ formatCurrency(getTotalsValue('over90')) }} in trust funds have been held for more than 90 days.
               Consider reviewing these balances and contacting clients about refunds or applying to outstanding invoices.
             </p>
           </div>
@@ -141,23 +141,36 @@ const props = defineProps<{
 }>()
 
 interface AgingClient {
-  clientId: string
-  clientName: string
-  current: number
-  days30to60: number
-  days60to90: number
-  days90plus: number
-  total: number
+  clientId?: string
+  client_id?: string
+  clientName?: string
+  client_name?: string
+  aging?: {
+    current: number
+    days30to60: number
+    days60to90: number
+    over90: number
+  }
+  // Legacy flat fields
+  current?: number
+  days30to60?: number
+  days60to90?: number
+  days90plus?: number
+  over90?: number
+  total?: number
 }
 
 interface AgingReport {
-  asOfDate: string
+  asOf?: string
+  asOfDate?: string
+  as_of?: string
   clients: AgingClient[]
   totals: {
     current: number
     days30to60: number
     days60to90: number
-    days90plus: number
+    over90?: number
+    days90plus?: number
     total: number
   }
 }
@@ -172,13 +185,61 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
-function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+function formatDate(date: string | Date | undefined | null): string {
+  if (!date) return '-'
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   })
+}
+
+// Helper to get aging value from client (handles nested aging object from API)
+function getAgingValue(client: any, key: string): number {
+  // API may return flat structure or nested under 'aging'
+  if (client.aging && typeof client.aging[key] === 'number') {
+    return client.aging[key]
+  }
+  // Handle legacy field names
+  if (key === 'over90' && typeof client.days90plus === 'number') {
+    return client.days90plus
+  }
+  if (typeof client[key] === 'number') {
+    return client[key]
+  }
+  return 0
+}
+
+// Helper to calculate client total from aging buckets
+function getClientTotal(client: any): number {
+  // If client has a total field, use it
+  if (typeof client.total === 'number') {
+    return client.total
+  }
+  // Otherwise sum the aging buckets
+  return getAgingValue(client, 'current') +
+    getAgingValue(client, 'days30to60') +
+    getAgingValue(client, 'days60to90') +
+    getAgingValue(client, 'over90')
+}
+
+// Helper to get totals value (handles different API field names)
+function getTotalsValue(key: string): number {
+  if (!report.value?.totals) return 0
+  const totals = report.value.totals as any
+  // Handle both camelCase and snake_case from API
+  if (key === 'over90') {
+    return totals.over90 ?? totals.over_90 ?? totals.days90plus ?? 0
+  }
+  if (key === 'days30to60') {
+    return totals.days30to60 ?? totals.days_30_to_60 ?? 0
+  }
+  if (key === 'days60to90') {
+    return totals.days60to90 ?? totals.days_60_to_90 ?? 0
+  }
+  return totals[key] ?? 0
 }
 
 async function fetchReport() {

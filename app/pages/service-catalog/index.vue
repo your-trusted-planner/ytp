@@ -24,7 +24,7 @@
               <h3 class="font-semibold text-gray-900 text-lg">{{ matter.name }}</h3>
               <p v-if="matter.category" class="text-sm text-gray-500">{{ matter.category }}</p>
             </div>
-            <UiBadge :variant="matter.type === 'RECURRING' ? 'info' : 'default'">
+            <UiBadge :variant="matter.type === 'RECURRING' ? 'info' : matter.type === 'HOURLY' ? 'warning' : 'default'">
               {{ matter.type }}
             </UiBadge>
           </div>
@@ -41,6 +41,14 @@
             <div v-if="matter.type === 'RECURRING' && matter.duration" class="flex justify-between text-sm">
               <span class="text-gray-600">Billing:</span>
               <span class="font-medium text-gray-700">{{ matter.duration }}</span>
+            </div>
+            <div v-if="matter.type === 'HOURLY' && matter.defaultAttorneyRate" class="flex justify-between text-sm">
+              <span class="text-gray-600">Attorney Rate:</span>
+              <span class="font-medium text-gray-700">{{ formatCurrency(matter.defaultAttorneyRate) }}/hr</span>
+            </div>
+            <div v-if="matter.type === 'HOURLY' && matter.defaultStaffRate" class="flex justify-between text-sm">
+              <span class="text-gray-600">Staff Rate:</span>
+              <span class="font-medium text-gray-700">{{ formatCurrency(matter.defaultStaffRate) }}/hr</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Status:</span>
@@ -104,6 +112,7 @@
           >
             <option value="SINGLE">Single Service</option>
             <option value="RECURRING">Recurring Service</option>
+            <option value="HOURLY">Hourly Service</option>
           </UiSelect>
         </div>
 
@@ -113,6 +122,7 @@
         
         <div class="grid grid-cols-2 gap-4">
           <UiInput
+            v-if="matterForm.type !== 'HOURLY'"
             v-model="matterForm.price"
             label="Price ($)"
             type="number"
@@ -120,7 +130,7 @@
             placeholder="18500.00"
             required
           />
-          
+
           <UiSelect
             v-if="matterForm.type === 'RECURRING'"
             v-model="matterForm.duration"
@@ -132,6 +142,29 @@
             <option value="ANNUALLY">Annually</option>
           </UiSelect>
         </div>
+
+        <!-- Hourly rate inputs for HOURLY type -->
+        <div v-if="matterForm.type === 'HOURLY'" class="grid grid-cols-2 gap-4">
+          <UiInput
+            v-model="matterForm.defaultAttorneyRate"
+            label="Attorney Hourly Rate ($)"
+            type="number"
+            step="0.01"
+            placeholder="350.00"
+          />
+
+          <UiInput
+            v-model="matterForm.defaultStaffRate"
+            label="Staff Hourly Rate ($)"
+            type="number"
+            step="0.01"
+            placeholder="150.00"
+          />
+        </div>
+
+        <p v-if="matterForm.type === 'HOURLY'" class="text-sm text-gray-500">
+          Optional. If not set, billing will use the user's default hourly rate.
+        </p>
       </form>
       
       <template #footer>
@@ -174,7 +207,9 @@ const matterForm = ref({
   category: '',
   type: 'SINGLE',
   price: '',
-  duration: ''
+  duration: '',
+  defaultAttorneyRate: '',
+  defaultStaffRate: ''
 })
 
 const fetchCategories = async () => {
@@ -203,7 +238,9 @@ const editMatter = (matter: any) => {
     category: matter.category || '',
     type: matter.type,
     price: (matter.price / 100).toString(),
-    duration: matter.duration || ''
+    duration: matter.duration || '',
+    defaultAttorneyRate: matter.defaultAttorneyRate ? (matter.defaultAttorneyRate / 100).toString() : '',
+    defaultStaffRate: matter.defaultStaffRate ? (matter.defaultStaffRate / 100).toString() : ''
   }
   showAddModal.value = true
 }
@@ -223,9 +260,21 @@ const toggleMatterStatus = async (matter: any) => {
 const handleSaveMatter = async () => {
   saving.value = true
   try {
-    const payload = {
-      ...matterForm.value,
-      price: parseFloat(matterForm.value.price)
+    const payload: Record<string, any> = {
+      ...matterForm.value
+    }
+
+    // Handle price based on type
+    if (matterForm.value.type === 'HOURLY') {
+      // HOURLY services use attorney/staff rates, price defaults to 0
+      payload.price = matterForm.value.price ? parseFloat(matterForm.value.price) : 0
+      payload.defaultAttorneyRate = parseFloat(matterForm.value.defaultAttorneyRate)
+      payload.defaultStaffRate = parseFloat(matterForm.value.defaultStaffRate)
+    } else {
+      // Non-HOURLY services require price, clear hourly rates
+      payload.price = parseFloat(matterForm.value.price)
+      delete payload.defaultAttorneyRate
+      delete payload.defaultStaffRate
     }
     
     if (editingMatter.value) {
@@ -258,7 +307,9 @@ const closeModal = () => {
     category: '',
     type: 'SINGLE',
     price: '',
-    duration: ''
+    duration: '',
+    defaultAttorneyRate: '',
+    defaultStaffRate: ''
   }
 }
 

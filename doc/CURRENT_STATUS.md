@@ -1181,6 +1181,13 @@ Document (N) ──→ Matter (1)
 
 1. ~~**No Payment Management UI**~~: ✅ RESOLVED - Full billing & trust accounting system implemented (2026-01-28)
 
+2. **Google Drive E2E Test Failures**: Several Google Drive-related E2E tests are failing due to configuration/mock issues:
+   - Tests in `tests/e2e/auth.spec.ts` that involve Google Drive sync status
+   - Tests expecting Drive folder creation during matter creation
+   - **Root Cause**: E2E tests don't have proper Google Drive API mocking or test credentials configured
+   - **Impact**: Low - Google Drive integration works in development/production with proper credentials
+   - **TODO**: Add proper E2E test fixtures for Google Drive integration or skip Drive-related assertions in E2E tests
+
 ---
 
 ## 🗂️ Archive Candidates

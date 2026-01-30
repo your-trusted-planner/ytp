@@ -5,18 +5,15 @@ export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
 
   const { useDrizzle, schema } = await import('../../db')
-  const { eq, or } = await import('drizzle-orm')
+  const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
+  // Only return users with role explicitly set to 'LAWYER'
+  // This excludes ADMIN users and users with null/undefined roles
   const lawyers = await db
     .select()
     .from(schema.users)
-    .where(
-      or(
-        eq(schema.users.role, 'LAWYER'),
-        eq(schema.users.role, 'ADMIN')
-      )
-    )
+    .where(eq(schema.users.role, 'LAWYER'))
     .all()
 
   // Return both snake_case and camelCase for compatibility

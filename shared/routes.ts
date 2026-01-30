@@ -120,6 +120,27 @@ export const FIRM_ROUTES: RouteConfig[] = [
     allowedRoles: 'FIRM',
     apiEndpoint: '/api/users'
   },
+  {
+    path: '/billing',
+    name: 'Billing Dashboard',
+    requiresAuth: true,
+    allowedRoles: 'FIRM',
+    apiEndpoint: '/api/billing/summary'
+  },
+  {
+    path: '/billing/trust',
+    name: 'Trust Accounts',
+    requiresAuth: true,
+    allowedRoles: 'FIRM',
+    apiEndpoint: '/api/trust/accounts'
+  },
+  {
+    path: '/signatures',
+    name: 'E-Signatures',
+    requiresAuth: true,
+    allowedRoles: 'FIRM',
+    apiEndpoint: '/api/signature-sessions'
+  },
 ]
 
 /**

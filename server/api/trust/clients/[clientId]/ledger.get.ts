@@ -29,15 +29,32 @@ export default defineEventHandler(async (event) => {
   const { useDrizzle, schema } = await import('../../../../db')
   const db = useDrizzle()
 
-  // Verify client exists
-  const [client] = await db
+  // Try to find client by ID in clients table first
+  let [client] = await db
     .select({ id: schema.clients.id })
     .from(schema.clients)
     .where(eq(schema.clients.id, clientId))
 
+  // If not found, check if clientId is actually a user ID and lookup via personId
+  if (!client) {
+    const [userWithClient] = await db
+      .select({ clientId: schema.clients.id })
+      .from(schema.users)
+      .innerJoin(schema.people, eq(schema.users.personId, schema.people.id))
+      .innerJoin(schema.clients, eq(schema.clients.personId, schema.people.id))
+      .where(eq(schema.users.id, clientId))
+
+    if (userWithClient) {
+      client = { id: userWithClient.clientId }
+    }
+  }
+
   if (!client) {
     throw createError({ statusCode: 404, message: 'Client not found' })
   }
+
+  // Use the resolved client ID for all subsequent operations
+  const resolvedClientId = client.id
 
   // Get the active trust account
   const trustAccount = await getActiveTrustAccount()
@@ -57,7 +74,7 @@ export default defineEventHandler(async (event) => {
   // Generate the ledger statement
   const statement = await generateClientLedgerStatement(
     trustAccount.id,
-    clientId,
+    resolvedClientId,
     periodStart,
     periodEnd,
     matterId

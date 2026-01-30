@@ -118,7 +118,8 @@ import {
   FolderOpen,
   ScrollText,
   DollarSign,
-  Landmark
+  Landmark,
+  Clock
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -175,6 +176,7 @@ const navigationConfig = ref([
     roles: FIRM_ROLES,
     children: [
       { path: '/billing', label: 'Invoices', icon: DollarSign, roles: FIRM_ROLES },
+      { path: '/billing/time-entries', label: 'Time Entries', icon: Clock, roles: FIRM_ROLES },
       { path: '/billing/trust', label: 'Trust Accounts', icon: Landmark, roles: FIRM_ROLES }
     ]
   },

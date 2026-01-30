@@ -158,9 +158,12 @@ function formatCurrency(cents: number | undefined): string {
   }).format(cents / 100)
 }
 
-function formatDate(date: number | Date | undefined): string {
+function formatDate(date: number | Date | string | undefined | null): string {
   if (!date) return '-'
-  const d = typeof date === 'number' ? new Date(date) : date
+  // Handle number (timestamp), string (ISO date), or Date object
+  const d = date instanceof Date ? date : new Date(date)
+  // Check for invalid date
+  if (isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

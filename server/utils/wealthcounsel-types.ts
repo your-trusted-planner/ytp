@@ -121,12 +121,9 @@ export interface WealthCounselData {
   rawFields: Map<string, any>
 }
 
-// Person matching decision for import
-export interface PersonMatchDecision {
-  extractedName: string  // Key to identify which extracted person this is for
-  action: 'use_existing' | 'create_new'
-  existingPersonId?: string  // Required if action is 'use_existing'
-}
+// Re-export PersonMatchDecision from person-matching to avoid duplication
+// (the canonical definition lives in person-matching.ts)
+export type { PersonMatchDecision } from './person-matching'
 
 // Import decisions from user
 export interface WealthCounselImportDecisions {

@@ -92,6 +92,17 @@ export type ActivityType =
   // Payment events
   | 'PAYMENT_RECEIVED'
   | 'PAYMENT_APPLIED'
+  // Time entry events
+  | 'TIME_ENTRY_CREATED'
+  | 'TIME_ENTRY_UPDATED'
+  | 'TIME_ENTRY_DELETED'
+  | 'TIME_ENTRY_SUBMITTED'
+  | 'TIME_ENTRY_APPROVED'
+  | 'TIME_ENTRIES_BILLED'
+  // Billing rate events
+  | 'USER_RATE_UPDATED'
+  | 'CLIENT_RATES_UPDATED'
+  | 'MATTER_RATES_UPDATED'
   // Admin events
   | 'ADMIN_ACTION'
   | 'SETTINGS_CHANGED'

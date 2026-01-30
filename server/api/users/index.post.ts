@@ -11,6 +11,7 @@ const createUserSchema = z.object({
   role: z.enum(['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADVISOR', 'LEAD', 'PROSPECT']).default('CLIENT'),
   status: z.enum(['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE']).default('ACTIVE'),
   adminLevel: z.number().int().min(0).max(10).optional(),
+  defaultHourlyRate: z.number().int().min(0).nullable().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -90,6 +91,19 @@ export default defineEventHandler(async (event) => {
     adminLevel = result.data.adminLevel
   }
 
+  // Handle defaultHourlyRate (only for LAWYER/STAFF roles)
+  let defaultHourlyRate = null
+  if (result.data.defaultHourlyRate !== undefined && result.data.defaultHourlyRate !== null) {
+    if (FIRM_ROLES.includes(result.data.role)) {
+      defaultHourlyRate = result.data.defaultHourlyRate
+    } else if (result.data.defaultHourlyRate > 0) {
+      throw createError({
+        statusCode: 400,
+        message: 'Default hourly rate can only be set for Lawyer and Staff roles'
+      })
+    }
+  }
+
   // Insert user
   await db.insert(schema.users).values({
     id: userId,
@@ -101,6 +115,7 @@ export default defineEventHandler(async (event) => {
     role: result.data.role,
     status: result.data.status,
     adminLevel,
+    defaultHourlyRate,
     createdAt: new Date(),
     updatedAt: new Date()
   })

@@ -1,12 +1,17 @@
 import { z } from 'zod'
 import { eq, sql } from 'drizzle-orm'
+import { parseQuantity } from '../../../../utils/billing-rates'
 
 const addLineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
-  quantity: z.number().int().positive().default(1),
+  quantity: z.union([
+    z.number().positive(),
+    z.string().regex(/^\d+(\.\d{1,2})?$/, 'Quantity must be a valid positive number')
+  ]).default(1),
   unitPrice: z.number().int().positive('Unit price must be positive (in cents)'),
-  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'OTHER']).default('SERVICE'),
-  catalogId: z.string().optional()
+  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'HOURLY', 'OTHER']).default('SERVICE'),
+  catalogId: z.string().optional(),
+  timeEntryId: z.string().optional()
 })
 
 /**
@@ -66,20 +71,22 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.invoiceLineItems.invoiceId, invoiceId))
 
   const nextLineNumber = (maxLine?.max ?? 0) + 1
-  const amount = parsed.data.quantity * parsed.data.unitPrice
+  const qty = parseQuantity(parsed.data.quantity)
+  const amount = Math.round(qty * parsed.data.unitPrice)
 
-  // Create line item
+  // Create line item (store quantity as string for decimal support)
   const lineItemId = crypto.randomUUID()
   await db.insert(schema.invoiceLineItems).values({
     id: lineItemId,
     invoiceId,
     lineNumber: nextLineNumber,
     description: parsed.data.description,
-    quantity: parsed.data.quantity,
+    quantity: String(parsed.data.quantity),
     unitPrice: parsed.data.unitPrice,
     amount,
     itemType: parsed.data.itemType,
-    catalogId: parsed.data.catalogId ?? null
+    catalogId: parsed.data.catalogId ?? null,
+    timeEntryId: parsed.data.timeEntryId ?? null
   })
 
   // Recalculate invoice totals
