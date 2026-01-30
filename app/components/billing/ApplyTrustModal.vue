@@ -1,5 +1,5 @@
 <template>
-  <UiModal title="Apply Trust Funds to Invoice" @close="$emit('close')">
+  <UiModal :modelValue="true" title="Apply Trust Funds to Invoice" @update:modelValue="$emit('close')">
     <div v-if="loading" class="flex items-center justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
     </div>

@@ -1,5 +1,5 @@
 <template>
-  <UiModal title="Record Trust Disbursement" size="lg" @close="$emit('close')">
+  <UiModal :modelValue="true" title="Record Trust Disbursement" size="lg" @update:modelValue="$emit('close')">
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <!-- Client Selection -->
       <div>

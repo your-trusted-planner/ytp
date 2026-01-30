@@ -1,5 +1,5 @@
 <template>
-  <UiModal title="Trust Account Reconciliation" size="lg" @close="$emit('close')">
+  <UiModal :modelValue="true" title="Trust Account Reconciliation" size="lg" @update:modelValue="$emit('close')">
     <div v-if="loading" class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
     </div>
@@ -209,8 +209,10 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
-function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+function formatDate(date: string | Date | undefined | null): string {
+  if (!date) return '-'
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',

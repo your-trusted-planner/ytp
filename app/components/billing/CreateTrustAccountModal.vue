@@ -1,5 +1,5 @@
 <template>
-  <UiModal title="Create Trust Account" @close="$emit('close')">
+  <UiModal :modelValue="true" title="Create Trust Account" @update:modelValue="$emit('close')">
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
