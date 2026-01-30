@@ -4,12 +4,18 @@ import { logActivity } from '../../utils/activity-logger'
 import { resolveEntityName } from '../../utils/entity-resolver'
 import { generateInvoiceNumber } from '../../utils/invoice-number'
 
+import { parseQuantity } from '../../utils/billing-rates'
+
 const lineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
-  quantity: z.number().int().positive().default(1),
+  quantity: z.union([
+    z.number().positive(),
+    z.string().regex(/^\d+(\.\d{1,2})?$/, 'Quantity must be a valid positive number')
+  ]).default(1),
   unitPrice: z.number().int().positive('Unit price must be positive (in cents)'),
-  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'OTHER']).default('SERVICE'),
-  catalogId: z.string().optional()
+  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'HOURLY', 'OTHER']).default('SERVICE'),
+  catalogId: z.string().optional(),
+  timeEntryId: z.string().optional()
 })
 
 const createInvoiceSchema = z.object({
@@ -69,10 +75,11 @@ export default defineEventHandler(async (event) => {
   // Generate invoice number
   const invoiceNumber = await generateInvoiceNumber()
 
-  // Calculate totals
+  // Calculate totals (handle decimal quantities for hourly billing)
   let subtotal = 0
   for (const item of parsed.data.lineItems) {
-    subtotal += item.quantity * item.unitPrice
+    const qty = parseQuantity(item.quantity)
+    subtotal += Math.round(qty * item.unitPrice)
   }
 
   const taxAmount = Math.round((subtotal * parsed.data.taxRate) / 10000)
@@ -111,19 +118,21 @@ export default defineEventHandler(async (event) => {
     createdBy: user.id
   })
 
-  // Create line items
+  // Create line items (store quantity as string for decimal support)
   for (let i = 0; i < parsed.data.lineItems.length; i++) {
     const item = parsed.data.lineItems[i]
+    const qty = parseQuantity(item.quantity)
     await db.insert(schema.invoiceLineItems).values({
       id: crypto.randomUUID(),
       invoiceId,
       lineNumber: i + 1,
       description: item.description,
-      quantity: item.quantity,
+      quantity: String(item.quantity),
       unitPrice: item.unitPrice,
-      amount: item.quantity * item.unitPrice,
+      amount: Math.round(qty * item.unitPrice),
       itemType: item.itemType,
-      catalogId: item.catalogId ?? null
+      catalogId: item.catalogId ?? null,
+      timeEntryId: item.timeEntryId ?? null
     })
   }
 

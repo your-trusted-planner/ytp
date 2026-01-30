@@ -1,11 +1,15 @@
 import { z } from 'zod'
 import { eq, and, sum, sql } from 'drizzle-orm'
+import { parseQuantity } from '../../../../utils/billing-rates'
 
 const updateLineItemSchema = z.object({
   description: z.string().min(1).optional(),
-  quantity: z.number().int().positive().optional(),
+  quantity: z.union([
+    z.number().positive(),
+    z.string().regex(/^\d+(\.\d{1,2})?$/, 'Quantity must be a valid positive number')
+  ]).optional(),
   unitPrice: z.number().int().positive().optional(),
-  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'OTHER']).optional()
+  itemType: z.enum(['SERVICE', 'CONSULTATION', 'FILING_FEE', 'EXPENSE', 'ADJUSTMENT', 'HOURLY', 'OTHER']).optional()
 })
 
 /**
@@ -83,13 +87,14 @@ export default defineEventHandler(async (event) => {
     updates.itemType = parsed.data.itemType
   }
 
-  // Handle quantity/price changes
-  const newQuantity = parsed.data.quantity ?? lineItem.quantity
+  // Handle quantity/price changes (support decimal quantities for hourly billing)
+  const newQuantityRaw = parsed.data.quantity ?? lineItem.quantity
+  const newQuantity = parseQuantity(newQuantityRaw)
   const newUnitPrice = parsed.data.unitPrice ?? lineItem.unitPrice
-  const newAmount = newQuantity * newUnitPrice
+  const newAmount = Math.round(newQuantity * newUnitPrice)
 
   if (parsed.data.quantity !== undefined) {
-    updates.quantity = newQuantity
+    updates.quantity = String(parsed.data.quantity)
   }
   if (parsed.data.unitPrice !== undefined) {
     updates.unitPrice = newUnitPrice

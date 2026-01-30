@@ -8,15 +8,17 @@ const updateCatalogItemSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   category: z.string().optional(),
-  type: z.enum(['SINGLE', 'RECURRING']).optional(),
+  type: z.enum(['SINGLE', 'RECURRING', 'HOURLY']).optional(),
   price: z.number().optional(),
   duration: z.string().optional(),
+  defaultAttorneyRate: z.number().optional(),
+  defaultStaffRate: z.number().optional(),
   isActive: z.boolean().optional()
 })
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const id = getRouterParam(event, 'id')
   if (!id) {
     throw createError({
@@ -24,44 +26,50 @@ export default defineEventHandler(async (event) => {
       message: 'Catalog Item ID required'
     })
   }
-  
+
   const body = await readBody(event)
   const result = updateCatalogItemSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
       message: 'Invalid input'
     })
   }
-  
-  const { price, ...rest } = result.data
-  
+
+  const { price, defaultAttorneyRate, defaultStaffRate, ...rest } = result.data
+
   const updateData: any = {
     ...rest,
     updatedAt: new Date()
   }
-  
+
   if (price !== undefined) {
     updateData.price = Math.round(price * 100)
   }
-  
+
+  if (defaultAttorneyRate !== undefined) {
+    updateData.defaultAttorneyRate = Math.round(defaultAttorneyRate * 100)
+  }
+
+  if (defaultStaffRate !== undefined) {
+    updateData.defaultStaffRate = Math.round(defaultStaffRate * 100)
+  }
+
   // Use mock database for local testing
   if (!isDatabaseAvailable()) {
     mockDb.matters.update(id, updateData)
     return { success: true }
   }
-  
+
   // Real database
   const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
-  
+
   await db
     .update(schema.serviceCatalog)
     .set(updateData)
     .where(eq(schema.serviceCatalog.id, id))
-  
+
   return { success: true }
 })
-
-

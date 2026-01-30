@@ -22,9 +22,11 @@ export const serviceCatalog = sqliteTable('service_catalog', {
   name: text('name').notNull(),
   description: text('description'),
   category: text('category'), // Trust, LLC Formation, Maintenance, etc.
-  type: text('type', { enum: ['SINGLE', 'RECURRING'] }).notNull().default('SINGLE'),
+  type: text('type', { enum: ['SINGLE', 'RECURRING', 'HOURLY'] }).notNull().default('SINGLE'),
   price: integer('price').notNull(), // Price in cents
   duration: text('duration'), // For recurring: 'MONTHLY', 'ANNUALLY', 'QUARTERLY'
+  defaultAttorneyRate: integer('default_attorney_rate'), // Cents, default attorney hourly rate for HOURLY type
+  defaultStaffRate: integer('default_staff_rate'), // Cents, default staff hourly rate for HOURLY type
   consultationFee: integer('consultation_fee').default(37500), // Configurable consultation fee in cents
   consultationFeeEnabled: integer('consultation_fee_enabled', { mode: 'boolean' }).notNull().default(true),
   engagementLetterId: text('engagement_letter_id').references(() => documentTemplates.id),

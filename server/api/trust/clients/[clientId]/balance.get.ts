@@ -26,8 +26,8 @@ export default defineEventHandler(async (event) => {
   const { useDrizzle, schema } = await import('../../../../db')
   const db = useDrizzle()
 
-  // Verify client exists and get name
-  const [client] = await db
+  // Try to find client by ID in clients table first
+  let [client] = await db
     .select({
       id: schema.clients.id,
       firstName: schema.people.firstName,
@@ -38,15 +38,42 @@ export default defineEventHandler(async (event) => {
     .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
     .where(eq(schema.clients.id, clientId))
 
+  // If not found, check if clientId is actually a user ID and lookup via personId
+  if (!client) {
+    const [userWithClient] = await db
+      .select({
+        clientId: schema.clients.id,
+        firstName: schema.people.firstName,
+        lastName: schema.people.lastName,
+        fullName: schema.people.fullName
+      })
+      .from(schema.users)
+      .innerJoin(schema.people, eq(schema.users.personId, schema.people.id))
+      .innerJoin(schema.clients, eq(schema.clients.personId, schema.people.id))
+      .where(eq(schema.users.id, clientId))
+
+    if (userWithClient) {
+      client = {
+        id: userWithClient.clientId,
+        firstName: userWithClient.firstName,
+        lastName: userWithClient.lastName,
+        fullName: userWithClient.fullName
+      }
+    }
+  }
+
   if (!client) {
     throw createError({ statusCode: 404, message: 'Client not found' })
   }
+
+  // Use the resolved client ID for all subsequent operations
+  const resolvedClientId = client.id
 
   const clientName = client.fullName || `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Unknown'
 
   // If specific matter requested, return that balance
   if (matterId) {
-    const balance = await getClientTrustBalance(clientId, matterId)
+    const balance = await getClientTrustBalance(resolvedClientId, matterId)
 
     // Get matter title
     const [matter] = await db
@@ -55,13 +82,13 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.matters.id, matterId))
 
     return {
-      clientId,
+      clientId: resolvedClientId,
       clientName,
       matterId,
       matterTitle: matter?.title || 'Unknown Matter',
       balance,
       // Snake case
-      client_id: clientId,
+      client_id: resolvedClientId,
       client_name: clientName,
       matter_id: matterId,
       matter_title: matter?.title || 'Unknown Matter'
@@ -69,7 +96,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Return all balances for the client
-  const balances = await getClientTrustBalances(clientId)
+  const balances = await getClientTrustBalances(resolvedClientId)
 
   // Get matter titles for balances with matters
   const matterIds = balances.filter(b => b.matterId).map(b => b.matterId!)
@@ -94,7 +121,7 @@ export default defineEventHandler(async (event) => {
   const totalBalance = balances.reduce((sum, b) => sum + b.balance, 0)
 
   return {
-    clientId,
+    clientId: resolvedClientId,
     clientName,
     totalBalance,
     balances: balances.map(b => ({
@@ -106,7 +133,7 @@ export default defineEventHandler(async (event) => {
       matter_title: b.matterId ? matterTitles[b.matterId] || 'Unknown Matter' : null
     })),
     // Snake case
-    client_id: clientId,
+    client_id: resolvedClientId,
     client_name: clientName,
     total_balance: totalBalance
   }

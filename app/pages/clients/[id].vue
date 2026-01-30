@@ -90,6 +90,13 @@
           </div>
         </div>
 
+        <!-- Billing Rates Card -->
+        <BillingRatesCard
+          entity-type="client"
+          :entity-id="clientId"
+          :entity-name="client ? `${client.first_name} ${client.last_name}` : 'Client'"
+        />
+
         <!-- Trust Balance Card -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="flex justify-between items-center mb-4">

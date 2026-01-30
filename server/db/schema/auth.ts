@@ -31,6 +31,9 @@ export const users = sqliteTable('users', {
   lastName: text('last_name'),
   phone: text('phone'),
   avatar: text('avatar'),
+  // Default hourly rate for this user (cents) - used as fallback when no overrides exist
+  // Only applicable for LAWYER and STAFF roles
+  defaultHourlyRate: integer('default_hourly_rate'),
   // Stored signature image (base64 data URL) for reuse across documents
   // Requires affirmative adoption each time it's used
   signatureImage: text('signature_image'),

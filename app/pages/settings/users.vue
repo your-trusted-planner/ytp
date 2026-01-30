@@ -176,6 +176,7 @@
                   </div>
                 </div>
               </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hourly Rate</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -204,6 +205,13 @@
                 <UiBadge :variant="getStatusBadgeVariant(user.status)">
                   {{ user.status }}
                 </UiBadge>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span v-if="['LAWYER', 'STAFF'].includes(user.role) && user.defaultHourlyRate" class="text-sm font-medium text-gray-900">
+                  {{ formatCurrency(user.defaultHourlyRate) }}/hr
+                </span>
+                <span v-else-if="['LAWYER', 'STAFF'].includes(user.role)" class="text-gray-400 text-sm">Not set</span>
+                <span v-else class="text-gray-400 text-sm">—</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                 <button
@@ -305,6 +313,28 @@
           </UiSelect>
           <p class="text-xs text-gray-500 mt-1">
             Admin level grants additional privileges independent of role.
+          </p>
+        </div>
+
+        <!-- Default Hourly Rate - only for LAWYER/STAFF roles -->
+        <div v-if="isFirmRole">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Default Hourly Rate
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-gray-500">$</span>
+            <input
+              v-model.number="editForm.defaultHourlyRateDollars"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              class="w-full pl-7 pr-16 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
+            />
+            <span class="absolute right-3 top-2 text-gray-500 text-sm">/hour</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">
+            Fallback rate when no client/matter/service rate is set.
           </p>
         </div>
 
@@ -485,7 +515,8 @@ const editForm = ref({
   phone: '',
   role: 'CLIENT',
   status: 'ACTIVE',
-  adminLevel: 0
+  adminLevel: 0,
+  defaultHourlyRateDollars: null as number | null
 })
 
 // Firm roles that can have admin levels (internal employees only, not external advisors)
@@ -521,13 +552,21 @@ async function fetchUsers() {
       ...user,
       firstName: user.first_name,
       lastName: user.last_name,
-      adminLevel: user.admin_level ?? 0
+      adminLevel: user.admin_level ?? 0,
+      defaultHourlyRate: user.default_hourly_rate ?? null
     }))
   } catch (error) {
     console.error('Failed to fetch users:', error)
   } finally {
     loading.value = false
   }
+}
+
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(cents / 100)
 }
 
 function openCreateModal() {
@@ -540,7 +579,8 @@ function openCreateModal() {
     phone: '',
     role: 'CLIENT',
     status: 'ACTIVE',
-    adminLevel: 0
+    adminLevel: 0,
+    defaultHourlyRateDollars: null
   }
   showEditModal.value = true
 }
@@ -555,7 +595,8 @@ function editUser(user: any) {
     phone: user.phone || '',
     role: user.role,
     status: user.status,
-    adminLevel: user.adminLevel ?? 0
+    adminLevel: user.adminLevel ?? 0,
+    defaultHourlyRateDollars: user.defaultHourlyRate ? user.defaultHourlyRate / 100 : null
   }
   showEditModal.value = true
 }
@@ -578,6 +619,13 @@ async function handleSaveUser() {
         updateBody.adminLevel = Number(editForm.value.adminLevel)
       }
 
+      // Include defaultHourlyRate for LAWYER/STAFF roles (convert dollars to cents)
+      if (isFirmRole.value) {
+        updateBody.defaultHourlyRate = editForm.value.defaultHourlyRateDollars !== null && editForm.value.defaultHourlyRateDollars >= 0
+          ? Math.round(editForm.value.defaultHourlyRateDollars * 100)
+          : null
+      }
+
       await $fetch(`/api/users/${editingUser.value.id}`, {
         method: 'PUT',
         body: updateBody
@@ -597,6 +645,11 @@ async function handleSaveUser() {
       // Only include adminLevel if user has permission to edit it
       if (canEditAdminLevel.value && Number(editForm.value.adminLevel) > 0) {
         createBody.adminLevel = Number(editForm.value.adminLevel)
+      }
+
+      // Include defaultHourlyRate for LAWYER/STAFF roles (convert dollars to cents)
+      if (isFirmRole.value && editForm.value.defaultHourlyRateDollars !== null && editForm.value.defaultHourlyRateDollars >= 0) {
+        createBody.defaultHourlyRate = Math.round(editForm.value.defaultHourlyRateDollars * 100)
       }
 
       await $fetch('/api/users', {

@@ -32,6 +32,7 @@ export default defineEventHandler(async (event) => {
     phone: user.phone,
     avatar: user.avatar,
     status: user.status,
+    default_hourly_rate: user.defaultHourlyRate ?? null,
     created_at: user.createdAt instanceof Date ? user.createdAt.getTime() : user.createdAt,
     updated_at: user.updatedAt instanceof Date ? user.updatedAt.getTime() : user.updatedAt
   }))

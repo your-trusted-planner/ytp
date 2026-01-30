@@ -8,6 +8,7 @@ const updateUserSchema = z.object({
   lastName: z.string().optional(),
   phone: z.string().optional(),
   adminLevel: z.number().int().min(0).max(10).optional(),
+  defaultHourlyRate: z.number().int().min(0).nullable().optional(),
 })
 
 // Firm roles that can have admin levels (internal employees only, not external advisors)
@@ -59,7 +60,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { adminLevel, role, ...otherData } = result.data
+  const { adminLevel, role, defaultHourlyRate, ...otherData } = result.data
 
   // Determine the effective role (new role if provided, otherwise current role)
   const effectiveRole = role ?? targetUser.role
@@ -117,6 +118,18 @@ export default defineEventHandler(async (event) => {
   // Include adminLevel if provided (and valid per checks above)
   if (adminLevel !== undefined) {
     updateData.adminLevel = adminLevel
+  }
+
+  // Include defaultHourlyRate if provided (only for LAWYER/STAFF roles)
+  if (defaultHourlyRate !== undefined) {
+    if (FIRM_ROLES.includes(effectiveRole)) {
+      updateData.defaultHourlyRate = defaultHourlyRate
+    } else if (defaultHourlyRate !== null && defaultHourlyRate > 0) {
+      throw createError({
+        statusCode: 400,
+        message: 'Default hourly rate can only be set for Lawyer and Staff roles'
+      })
+    }
   }
 
   await db
