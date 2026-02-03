@@ -4,7 +4,7 @@ import {
   buildPaginationMeta,
   isPaginationRequested,
   calculateOffset
-} from '../../server/utils/pagination'
+} from '../../../server/utils/pagination'
 
 describe('Pagination Utilities', () => {
   describe('parsePaginationParams', () => {

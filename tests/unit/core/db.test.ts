@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import * as schema from '../../server/db/schema'
+import * as schema from '../../../server/db/schema'
 
 describe('Database Schema', () => {
   describe('Users table', () => {

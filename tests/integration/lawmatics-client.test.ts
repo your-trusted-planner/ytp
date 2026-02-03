@@ -19,7 +19,7 @@ import {
   setMockFailure,
   setMockFailAfter,
   getRequestCount
-} from '../mocks/lawmatics-api'
+} from '../utils/lawmatics-api'
 import {
   usersFixture,
   contactsFixture,

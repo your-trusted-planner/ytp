@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { hashPassword, verifyPassword, generateId } from '../../server/utils/auth'
+import { hashPassword, verifyPassword, generateId } from '../../../server/utils/auth'
 
 describe('Auth Utilities', () => {
   describe('hashPassword', () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   isValidInvoiceNumber,
   parseInvoiceNumber
-} from '../../server/utils/invoice-number'
+} from '../../../server/utils/invoice-number'
 
 describe('Invoice Number Utilities', () => {
   describe('isValidInvoiceNumber', () => {

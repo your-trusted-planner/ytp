@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
-import { hashPassword, verifyPassword, generateId } from '../../server/utils/auth'
+import { hashPassword, verifyPassword, generateId } from '../../../server/utils/auth'
 
 // Replicate the validation schemas from the auth endpoints
 const loginSchema = z.object({

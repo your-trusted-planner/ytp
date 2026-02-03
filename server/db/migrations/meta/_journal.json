@@ -148,6 +148,13 @@
       "when": 1769749260620,
       "tag": "0020_cuddly_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1770152100754,
+      "tag": "0021_outstanding_celestials",
+      "breakpoints": true
     }
   ]
 }

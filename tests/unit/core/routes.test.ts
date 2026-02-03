@@ -21,7 +21,7 @@ import {
   getRestrictedRoutes,
   type UserRole,
   type RouteConfig
-} from '../../shared/routes'
+} from '../../../shared/routes'
 
 describe('Route Configuration', () => {
   describe('Route Collections', () => {

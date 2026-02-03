@@ -1066,6 +1066,63 @@ Document (N) ──→ Matter (1)
 - Fixed security issue where clients could see all matters
 - Card-based layout is optional polish for future
 
+### 9. Client/People Schema Cleanup - Derived vs Stored Booleans
+- **Status**: Planned (requires data model review)
+- **Problem**: Several boolean fields in the `clients` and `people` schemas store data that can become stale or could be derived from relationships
+- **Problematic Fields**:
+  - `has_minor_children` - Can be derived from `relationships` table where `relationshipType='CHILD'` and the child person's `dateOfBirth` indicates they're under 18
+  - `has_will` / `has_trust` - These are point-in-time snapshots that become stale. Could be derived from `documents` or `estate_plans` tables
+- **Why This Matters**:
+  - Boolean values stored at intake time become stale as circumstances change
+  - If a child turns 18, `has_minor_children` doesn't automatically update
+  - If we create a trust document for a client, `has_trust` isn't automatically updated
+  - Maintaining these manually is error-prone and creates data inconsistency
+- **Proposed Solutions**:
+  1. **Derive from relationships**: Query `relationships` + `people.dateOfBirth` to compute `hasMinorChildren` at read time
+  2. **Derive from documents/plans**: Query `estate_plans` or `documents` with type='TRUST' to compute `hasTrust`
+  3. **Remove booleans entirely**: Replace with computed properties in API responses
+  4. **Keep as "initial intake" fields**: Rename to `hadMinorChildrenAtIntake` to clarify they're historical snapshots
+- **Migration Considerations**:
+  - Need to ensure relationships are created when children are added during intake
+  - May need to backfill relationships from existing `childrenInfo` JSON field
+  - Frontend intake form should create relationship records, not just set booleans
+- **Related**: The `childrenInfo` JSON field should probably become proper `relationships` + `people` records
+- **Priority**: Medium - affects data integrity long-term but current implementation works for intake
+- **Design Tension - Intake Simplicity vs Data Integrity**:
+  - At intake, staff only need to know *whether* there are minor children, not the details
+  - Forcing full child entry (name, DOB, relationship record) at intake creates friction
+  - But storing only a boolean means the data becomes stale and disconnected from the relationship model
+  - **This tension will recur** for other "do you have X?" intake questions (existing trust, business ownership, etc.)
+  - **Possible pattern**: Two-phase data capture
+    1. **Intake phase**: Capture boolean flags as "signals" for what detailed data will be needed
+    2. **Matter/Journey phase**: Journey steps prompt for full details, creating proper relationship records
+    3. **Reconciliation**: Once detailed records exist, the boolean becomes redundant (or is computed)
+  - **Alternative pattern**: "Quick add" vs "Full add"
+    - Boolean flag enables a "quick note" that children exist
+    - Later, a dedicated UI collects full child records and clears/replaces the boolean
+  - **Key insight**: The boolean isn't wrong at intake - it's the right level of detail for that moment. The problem is treating it as the permanent source of truth rather than a temporary placeholder
+
+### 10. US Address Validation API
+- **Status**: Planned
+- **Problem**: Address fields are currently free-form text with no validation
+- **Goal**: Validate US addresses against USPS database for accuracy and deliverability
+- **Use Cases**:
+  - Client intake forms - ensure mailing addresses are valid
+  - Estate plan documents - proper legal addresses for trusts, property descriptions
+  - Notarization workflows - verify signer addresses
+  - Marketing/mail campaigns - reduce returned mail
+- **Implementation Options**:
+  - **USPS Web Tools API** (free, requires registration) - Address standardization and verification
+  - **SmartyStreets/Smarty** (paid) - Higher rate limits, better UX, autocomplete
+  - **Google Places API** (paid) - Autocomplete with validation
+  - **Lob Address Verification** (paid) - Simple API, good for verification-only
+- **Scope**:
+  - API endpoint to validate/standardize addresses
+  - Client-side composable for address input with validation
+  - Optional address autocomplete component
+  - Store both entered and standardized address versions
+- **Database Consideration**: May want to add `addressStandardized` field or expand address to structured format (street1, street2, city, state, zip, plus4)
+
 ---
 
 ## 📂 Key Documentation Files

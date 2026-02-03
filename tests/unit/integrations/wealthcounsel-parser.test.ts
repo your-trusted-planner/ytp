@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { parseWealthCounselXml, summarizeParsedData } from '../../server/utils/wealthcounsel-parser'
+import { parseWealthCounselXml, summarizeParsedData } from '../../../server/utils/wealthcounsel-parser'
 import {
   singleClientWillXml,
   jointTrustXml,
@@ -16,7 +16,7 @@ import {
   emptyXml,
   realJointTrustXml,
   realSingleWillXml
-} from '../fixtures/wealthcounsel'
+} from '../../fixtures/wealthcounsel'
 
 // ===================================
 // BASIC PARSING TESTS

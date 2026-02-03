@@ -8,9 +8,16 @@
         </div>
         <p class="text-gray-600 mt-1">Manage your client list</p>
       </div>
-      <UiButton @click="showAddModal = true">
-        Add Client
-      </UiButton>
+      <div class="flex gap-2">
+        <UiButton variant="outline" @click="showAddModal = true">
+          Quick Add
+        </UiButton>
+        <NuxtLink to="/clients/new">
+          <UiButton>
+            New Client Intake
+          </UiButton>
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Status Filter -->
