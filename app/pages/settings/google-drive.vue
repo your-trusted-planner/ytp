@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back link -->
+    <NuxtLink
+      to="/settings"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft class="w-4 h-4 mr-1" />
+      Back to Settings
+    </NuxtLink>
+
     <div class="flex justify-between items-center">
       <div class="flex items-start gap-4">
         <IconsGoogleDrive :size="40" class="mt-1" />
@@ -305,7 +314,7 @@
 </template>
 
 <script setup lang="ts">
-import { Check, AlertCircle, RefreshCw, FolderPlus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, AlertCircle, RefreshCw, FolderPlus, Trash2 } from 'lucide-vue-next'
 
 const appConfigStore = useAppConfigStore()
 

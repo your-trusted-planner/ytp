@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back link -->
+    <NuxtLink
+      to="/settings"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft class="w-4 h-4 mr-1" />
+      Back to Settings
+    </NuxtLink>
+
     <div class="flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
@@ -381,6 +390,8 @@
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next'
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
