@@ -2,6 +2,8 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { Plus, Search, Edit, Trash2, X, Building2, User, Minus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -274,7 +276,7 @@ async function addPerson() {
     await fetchPeople()
   } catch (error) {
     console.error('Error adding person:', error)
-    alert('Failed to add person')
+    toast.error('Failed to add person')
   } finally {
     savingPerson.value = false
   }
@@ -326,7 +328,7 @@ async function updatePerson() {
     await fetchPeople()
   } catch (error) {
     console.error('Error updating person:', error)
-    alert('Failed to update person')
+    toast.error('Failed to update person')
   } finally {
     savingPerson.value = false
   }
@@ -346,7 +348,7 @@ async function deletePerson(person: Person) {
     await fetchPeople()
   } catch (error: any) {
     console.error('Error deleting person:', error)
-    alert(error.data?.message || 'Failed to delete person')
+    toast.error(error.data?.message || 'Failed to delete person')
   }
 }
 

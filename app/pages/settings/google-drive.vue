@@ -316,6 +316,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Check, AlertCircle, RefreshCw, FolderPlus, Trash2 } from 'lucide-vue-next'
 
+const toast = useToast()
 const appConfigStore = useAppConfigStore()
 
 definePageMeta({
@@ -412,10 +413,10 @@ async function saveConfiguration() {
     await fetchConfig()
     await appConfigStore.fetchConfig()
 
-    alert('Configuration saved successfully')
+    toast.success('Configuration saved successfully')
   } catch (error: any) {
     console.error('Failed to save configuration:', error)
-    alert(error.data?.message || 'Failed to save configuration')
+    toast.error(error.data?.message || 'Failed to save configuration')
   } finally {
     saving.value = false
   }
@@ -455,11 +456,11 @@ async function createRootFolder() {
       method: 'POST'
     })
 
-    alert(response.message)
+    toast.success(response.message)
     await fetchConfig()
   } catch (error: any) {
     console.error('Failed to create root folder:', error)
-    alert(error.data?.message || 'Failed to create root folder')
+    toast.error(error.data?.message || 'Failed to create root folder')
   } finally {
     creatingFolder.value = false
   }

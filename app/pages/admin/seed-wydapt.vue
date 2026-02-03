@@ -176,6 +176,8 @@
 </template>
 
 <script setup lang="ts">
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -265,9 +267,10 @@ async function cleanupWydapt() {
     const response = await $fetch('/api/admin/cleanup-wydapt', {
       method: 'POST'
     })
-    alert(`Cleanup successful!\n\n${response.log}`)
+    toast.success('Cleanup successful! Check console for details.')
+    console.log('Cleanup log:', response.log)
   } catch (error: any) {
-    alert(`Cleanup failed: ${error.message || 'Unknown error'}`)
+    toast.error(`Cleanup failed: ${error.message || 'Unknown error'}`)
   } finally {
     cleaning.value = false
   }

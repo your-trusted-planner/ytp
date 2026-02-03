@@ -164,6 +164,8 @@
 <script setup lang="ts">
 import { ArrowLeft, Play } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -305,7 +307,7 @@ async function pauseMigration() {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/pause`, { method: 'POST' })
     await refreshCurrentRun()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to pause migration')
+    toast.error(error.data?.message || 'Failed to pause migration')
   }
 }
 
@@ -315,7 +317,7 @@ async function resumeMigration() {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/resume`, { method: 'POST' })
     await refreshCurrentRun()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to resume migration')
+    toast.error(error.data?.message || 'Failed to resume migration')
   }
 }
 
@@ -327,7 +329,7 @@ async function cancelMigration() {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/cancel`, { method: 'POST' })
     await loadRuns()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to cancel migration')
+    toast.error(error.data?.message || 'Failed to cancel migration')
   }
 }
 
@@ -336,7 +338,7 @@ async function resumeRun(run: MigrationRun) {
     await $fetch(`/api/admin/migrations/${run.id}/resume`, { method: 'POST' })
     await loadRuns()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to resume migration')
+    toast.error(error.data?.message || 'Failed to resume migration')
   }
 }
 

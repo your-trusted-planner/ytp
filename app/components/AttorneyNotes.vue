@@ -97,6 +97,8 @@
 </template>
 
 <script setup lang="ts">
+const toast = useToast()
+
 interface Props {
   appointmentId?: string
   responseId?: string
@@ -173,7 +175,7 @@ const saveNotes = async () => {
   } catch (error) {
     console.error('Failed to save notes:', error)
     savingStatus.value = null
-    alert('Failed to save notes. Please try again.')
+    toast.error('Failed to save notes. Please try again.')
   }
 }
 
