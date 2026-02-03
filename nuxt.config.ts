@@ -58,7 +58,9 @@ export default defineNuxtConfig({
     // Identity verification mode: 'attestation', 'kba', 'manual', 'persona'
     identityVerificationMode: process.env.IDENTITY_VERIFICATION_MODE || 'attestation',
     // Master encryption key for API credentials (local dev only - use Secrets Store in production)
-    ytpMasterKey: process.env.YTP_MASTER_KEY || ''
+    ytpMasterKey: process.env.YTP_MASTER_KEY || '',
+    // Radar address autocomplete
+    radarApiKey: process.env.RADAR_API_KEY || ''
   },
 
   // Nitro config

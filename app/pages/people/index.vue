@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { Plus, Search, Edit, Trash2, X, Building2, User, Minus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import type { AddressValue } from '~/components/ui/AddressInput.vue'
 
 const toast = useToast()
 
@@ -77,6 +78,22 @@ const personForm = reactive({
   // Common
   notes: ''
 })
+
+// Address value for UiAddressInput component
+const addressValue = ref<AddressValue>({
+  address: '',
+  city: '',
+  state: '',
+  zipCode: ''
+})
+
+// Sync addressValue with personForm
+watch(addressValue, (newVal) => {
+  personForm.address = newVal.address
+  personForm.city = newVal.city
+  personForm.state = newVal.state
+  personForm.zipCode = newVal.zipCode
+}, { deep: true })
 
 // Middle names management
 function enableMultipleMiddleNames() {
@@ -183,6 +200,13 @@ function resetForm() {
   personForm.entityType = ''
   personForm.entityEin = ''
   personForm.notes = ''
+  // Reset address component
+  addressValue.value = {
+    address: '',
+    city: '',
+    state: '',
+    zipCode: ''
+  }
 }
 
 // Open add modal
@@ -229,6 +253,14 @@ function openEditModal(person: Person) {
   personForm.state = person.state || ''
   personForm.zipCode = person.zipCode || ''
   personForm.notes = person.notes || ''
+
+  // Populate address component
+  addressValue.value = {
+    address: person.address || '',
+    city: person.city || '',
+    state: person.state || '',
+    zipCode: person.zipCode || ''
+  }
 
   showEditModal.value = true
 }
@@ -648,12 +680,10 @@ onMounted(() => {
             <UiInput v-model="personForm.email" label="Email" type="email" />
             <UiInput v-model="personForm.phone" label="Phone" type="tel" />
           </div>
-          <UiInput v-model="personForm.address" label="Address" />
-          <div class="grid grid-cols-3 gap-4">
-            <UiInput v-model="personForm.city" label="City" />
-            <UiInput v-model="personForm.state" label="State" maxlength="2" />
-            <UiInput v-model="personForm.zipCode" label="ZIP Code" />
-          </div>
+          <UiAddressInput
+            v-model="addressValue"
+            label="Address"
+          />
         </div>
 
         <!-- Notes -->
@@ -773,12 +803,10 @@ onMounted(() => {
             <UiInput v-model="personForm.email" label="Email" type="email" />
             <UiInput v-model="personForm.phone" label="Phone" type="tel" />
           </div>
-          <UiInput v-model="personForm.address" label="Address" />
-          <div class="grid grid-cols-3 gap-4">
-            <UiInput v-model="personForm.city" label="City" />
-            <UiInput v-model="personForm.state" label="State" maxlength="2" />
-            <UiInput v-model="personForm.zipCode" label="ZIP Code" />
-          </div>
+          <UiAddressInput
+            v-model="addressValue"
+            label="Address"
+          />
         </div>
 
         <!-- Notes -->
