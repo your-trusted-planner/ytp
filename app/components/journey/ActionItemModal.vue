@@ -323,6 +323,8 @@ import {
   Zap, Users, ClipboardList, DollarSign, FormInput as FormInputIcon, FilePenLine
 } from 'lucide-vue-next'
 
+const toast = useToast()
+
 interface Props {
   modelValue: boolean
   step: any
@@ -473,13 +475,13 @@ function getActionTypeLabel(type: string): string {
 
 async function handleSubmit() {
   if (!form.value.title || !form.value.actionType) {
-    alert('Please fill in all required fields')
+    toast.warning('Please fill in all required fields')
     return
   }
 
   // Validate ESIGN requires documentId
   if (form.value.actionType === 'ESIGN' && !form.value.config.documentId) {
-    alert('Please select a document for e-signature')
+    toast.warning('Please select a document for e-signature')
     return
   }
 
@@ -520,7 +522,7 @@ async function handleSubmit() {
     emit('save', props.step.id)
   } catch (error: any) {
     console.error('Error saving action item:', error)
-    alert(error.data?.message || 'Failed to save action item')
+    toast.error(error.data?.message || 'Failed to save action item')
   } finally {
     saving.value = false
   }

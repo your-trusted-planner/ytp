@@ -576,6 +576,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { Trash2, RotateCcw } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -717,7 +719,7 @@ function cancelEditingTemplate() {
 // Save template details
 async function saveTemplateDetails() {
   if (!viewingTemplate.value || !templateEditForm.value.name) {
-    alert('Template name is required')
+    toast.warning('Template name is required')
     return
   }
 
@@ -738,10 +740,10 @@ async function saveTemplateDetails() {
     await fetchTemplates()
 
     editingTemplateDetails.value = false
-    alert('Template updated successfully!')
+    toast.success('Template updated successfully!')
   } catch (error: any) {
     console.error('Failed to update template:', error)
-    alert(`Error updating template: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to update template')
   } finally {
     savingTemplateDetails.value = false
   }
@@ -781,7 +783,7 @@ function handleFileSelect(event: Event) {
 // Upload template
 async function handleUpload() {
   if (!selectedFile.value) {
-    alert('Please select a file')
+    toast.warning('Please select a file')
     return
   }
 
@@ -813,7 +815,7 @@ async function handleUpload() {
     await fetchTemplates()
   } catch (error: any) {
     console.error('Failed to upload template:', error)
-    alert(`Error uploading template: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to upload template')
   } finally {
     uploading.value = false
   }
@@ -881,14 +883,14 @@ async function saveExistingTemplateMappings() {
     viewingTemplate.value.variable_mappings = JSON.stringify(mappings)
     viewingTemplate.value.variableMappings = JSON.stringify(mappings)
 
-    alert('Variable mappings saved successfully!')
+    toast.success('Variable mappings saved successfully!')
     editingMappings.value = false
 
     // Refresh templates list
     await fetchTemplates()
   } catch (error: any) {
     console.error('Failed to save mappings:', error)
-    alert(`Error saving mappings: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to save mappings')
   } finally {
     savingMappings.value = false
   }
@@ -913,10 +915,10 @@ async function saveMappings() {
       body: { mappings }
     })
 
-    alert('Variable mappings saved successfully!')
+    toast.success('Variable mappings saved successfully!')
   } catch (error: any) {
     console.error('Failed to save mappings:', error)
-    alert(`Error saving mappings: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to save mappings')
   } finally {
     savingMappings.value = false
   }
@@ -944,7 +946,7 @@ function closeUploadModal() {
 // Generate document from template
 async function generateDocument() {
   if (!useTemplateForm.value.clientId) {
-    alert('Please select a client')
+    toast.warning('Please select a client')
     return
   }
 
@@ -966,7 +968,7 @@ async function generateDocument() {
     router.push(`/documents/${document.id}`)
   } catch (error: any) {
     console.error('Failed to generate document:', error)
-    alert(`Error generating document: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to generate document')
   } finally {
     generating.value = false
   }
@@ -985,14 +987,14 @@ async function handleDeleteTemplate() {
     })
 
     if (response.success) {
-      alert(response.message)
+      toast.success(response.message)
       showDeleteTemplateModal.value = false
       showViewTemplateModal.value = false
       await fetchTemplates()
     }
   } catch (error: any) {
     console.error('Failed to delete template:', error)
-    alert(`Error deleting template: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to delete template')
   } finally {
     deletingTemplate.value = false
     forceHardDelete.value = false
@@ -1010,14 +1012,14 @@ async function handleReactivateTemplate() {
     })
 
     if (response.success) {
-      alert(response.message)
+      toast.success(response.message)
       viewingTemplate.value.isActive = true
       showReactivateModal.value = false
       await fetchTemplates()
     }
   } catch (error: any) {
     console.error('Failed to reactivate template:', error)
-    alert(`Error reactivating template: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(error.data?.message || error.message || 'Failed to reactivate template')
   } finally {
     reactivatingTemplate.value = false
   }

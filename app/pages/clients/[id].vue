@@ -587,6 +587,8 @@
 import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, DollarSign } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -735,7 +737,7 @@ async function saveClientChanges() {
     await fetchClient()
   } catch (error) {
     console.error('Error updating client:', error)
-    alert(`Error: ${error.message || 'Failed to update client'}`)
+    toast.error(error.message || 'Failed to update client')
   } finally {
     savingClient.value = false
   }
@@ -785,7 +787,7 @@ async function addRelationship() {
     await fetchClient()
   } catch (error) {
     console.error('Error adding relationship:', error)
-    alert(`Error: ${error.message || 'Failed to add relationship'}`)
+    toast.error(error.message || 'Failed to add relationship')
   } finally {
     savingRelationship.value = false
   }
@@ -804,7 +806,7 @@ async function removeRelationship(relationshipId: string) {
     await fetchClient()
   } catch (error) {
     console.error('Error removing relationship:', error)
-    alert(`Error: ${error.message || 'Failed to remove relationship'}`)
+    toast.error(error.message || 'Failed to remove relationship')
   }
 }
 

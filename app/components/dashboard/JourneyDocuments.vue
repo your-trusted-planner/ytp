@@ -144,6 +144,8 @@
 <script setup lang="ts">
 import { Plus as IconPlus, Loader as IconLoader, FileText as IconFileText, Shield as IconShield } from 'lucide-vue-next'
 
+const toast = useToast()
+
 interface JourneyDocument {
   id: string
   title: string
@@ -261,7 +263,7 @@ async function requestNotarization(docId: string) {
     const result = await $fetch<{ signingUrl: string }>(`/api/documents/${docId}/request-notarization`, {
       method: 'POST'
     })
-    alert(`Notarization requested! Signing URL: ${result.signingUrl}`)
+    toast.success(`Notarization requested! Signing URL: ${result.signingUrl}`)
     await fetchDocuments()
   } catch (error) {
     console.error('Error requesting notarization:', error)

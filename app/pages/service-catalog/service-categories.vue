@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back link -->
+    <button
+      @click="router.back()"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft class="w-4 h-4 mr-1" />
+      Back
+    </button>
+
     <div class="flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Service Categories</h1>
@@ -133,13 +142,17 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Loader, FolderOpen, GripVertical } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, FolderOpen, GripVertical } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
+
+const toast = useToast()
 
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
 })
+
+const router = useRouter()
 
 interface Category {
   id: string
@@ -210,7 +223,7 @@ async function handleSave() {
     await fetchCategories()
   } catch (error: any) {
     console.error('Failed to save category:', error)
-    alert(error.data?.message || 'Failed to save category')
+    toast.error(error.data?.message || 'Failed to save category')
   } finally {
     saving.value = false
   }
@@ -233,7 +246,7 @@ async function handleDelete() {
     await fetchCategories()
   } catch (error: any) {
     console.error('Failed to delete category:', error)
-    alert(error.data?.message || 'Failed to delete category')
+    toast.error(error.data?.message || 'Failed to delete category')
   } finally {
     deleting.value = false
   }

@@ -135,6 +135,8 @@
 <script setup lang="ts">
 import { formatCurrency } from '~/utils/format'
 
+const toast = useToast()
+
 interface Matter {
   id: string
   title: string
@@ -225,7 +227,7 @@ watch(() => props.defaultClientId, (clientId) => {
 
 async function handleSubmit() {
   if (!form.value.title || !form.value.clientId || !form.value.status) {
-    alert('Please fill in all required fields')
+    toast.warning('Please fill in all required fields')
     return
   }
 
@@ -270,7 +272,7 @@ async function handleSubmit() {
     isOpen.value = false
   } catch (error: any) {
     console.error('Error saving matter:', error)
-    alert(error.data?.message || 'Failed to save matter')
+    toast.error(error.data?.message || 'Failed to save matter')
   } finally {
     saving.value = false
   }

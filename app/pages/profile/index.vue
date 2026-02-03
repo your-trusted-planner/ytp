@@ -319,6 +319,8 @@ import { Calendar, Construction } from 'lucide-vue-next'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
 import type { DocumentViewPreference } from '~/stores/usePreferencesStore'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -413,9 +415,9 @@ const handleSave = async () => {
       method: 'PUT',
       body: profile.value
     })
-    alert('Profile updated successfully')
+    toast.success('Profile updated successfully')
   } catch (error) {
-    alert('Failed to update profile')
+    toast.error('Failed to update profile')
   } finally {
     saving.value = false
   }
@@ -423,7 +425,7 @@ const handleSave = async () => {
 
 const handlePasswordChange = async () => {
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    alert('Passwords do not match')
+    toast.warning('Passwords do not match')
     return
   }
 
@@ -436,14 +438,14 @@ const handlePasswordChange = async () => {
         newPassword: passwordForm.value.newPassword
       }
     })
-    alert('Password updated successfully')
+    toast.success('Password updated successfully')
     passwordForm.value = {
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     }
   } catch (error) {
-    alert('Failed to update password')
+    toast.error('Failed to update password')
   } finally {
     changingPassword.value = false
   }
@@ -454,9 +456,9 @@ const savePreferences = async () => {
   try {
     // TODO: Implement preferences API
     await new Promise(resolve => setTimeout(resolve, 500))
-    alert('Preferences saved successfully')
+    toast.success('Preferences saved successfully')
   } catch (error) {
-    alert('Failed to save preferences')
+    toast.error('Failed to save preferences')
   } finally {
     savingPreferences.value = false
   }
@@ -490,7 +492,7 @@ const addCalendar = async () => {
     }
   } catch (error) {
     console.error('Failed to add calendar:', error)
-    alert('Failed to add calendar. Please try again.')
+    toast.error('Failed to add calendar. Please try again.')
   } finally {
     addingCalendar.value = false
   }
@@ -498,18 +500,18 @@ const addCalendar = async () => {
 
 const setPrimaryCalendar = async (calendarId: string) => {
   // TODO: Implement API call
-  alert('Set primary functionality coming soon')
+  toast.info('Set primary functionality coming soon')
 }
 
 const toggleCalendarActive = async (calendarId: string, isActive: boolean) => {
   // TODO: Implement API call
-  alert('Toggle active functionality coming soon')
+  toast.info('Toggle active functionality coming soon')
 }
 
 const deleteCalendar = async (calendarId: string) => {
   if (!confirm('Are you sure you want to delete this calendar?')) return
   // TODO: Implement API call
-  alert('Delete functionality coming soon')
+  toast.info('Delete functionality coming soon')
 }
 
 // Signature updated handler

@@ -603,6 +603,8 @@ import SignatureCanvas from './SignatureCanvas.vue'
 import IdentityVerification from './IdentityVerification.vue'
 import { useSanitizedHtml } from '~/composables/useSanitizedHtml'
 
+const toast = useToast()
+
 interface DocumentInfo {
   id: string
   title: string
@@ -785,13 +787,13 @@ const processSignatureFile = (file: File) => {
   // Validate file type
   const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml']
   if (!validTypes.includes(file.type)) {
-    alert('Please upload a PNG, JPG, or SVG image.')
+    toast.warning('Please upload a PNG, JPG, or SVG image.')
     return
   }
 
   // Validate file size (max 500KB)
   if (file.size > 500 * 1024) {
-    alert('Image must be smaller than 500KB.')
+    toast.warning('Image must be smaller than 500KB.')
     return
   }
 
@@ -803,7 +805,7 @@ const processSignatureFile = (file: File) => {
     signatureError.value = false
   }
   reader.onerror = () => {
-    alert('Failed to read image file.')
+    toast.error('Failed to read image file.')
   }
   reader.readAsDataURL(file)
 }
@@ -906,7 +908,7 @@ const submitSignature = async () => {
       currentStep.value = completeStep.value
     } else {
       emit('error', message)
-      alert(message)
+      toast.error(message)
     }
   } finally {
     isSubmitting.value = false
@@ -932,7 +934,7 @@ const downloadSignedPdf = async () => {
     window.URL.revokeObjectURL(url)
   } catch (error: any) {
     console.error('Download error:', error)
-    alert(`Failed to download: ${error.message || 'Unknown error'}`)
+    toast.error(`Failed to download: ${error.message || 'Unknown error'}`)
   } finally {
     isDownloading.value = false
   }

@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back link -->
+    <NuxtLink
+      to="/settings"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft class="w-4 h-4 mr-1" />
+      Back to Settings
+    </NuxtLink>
+
     <div class="flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
@@ -381,6 +390,10 @@
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next'
+
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -662,7 +675,7 @@ async function handleSaveUser() {
     await fetchUsers()
   } catch (error: any) {
     console.error('Failed to save user:', error)
-    alert(error.data?.message || 'Failed to save user')
+    toast.error(error.data?.message || 'Failed to save user')
   } finally {
     saving.value = false
   }
@@ -678,11 +691,11 @@ async function sendPasswordReset(user: any) {
     })
 
     if (response.success) {
-      alert(response.message)
+      toast.success(response.message)
     }
   } catch (error: any) {
     console.error('Failed to send password reset:', error)
-    alert(error.data?.message || 'Failed to send password reset email')
+    toast.error(error.data?.message || 'Failed to send password reset email')
   } finally {
     sendingResetFor.value = null
   }
@@ -706,7 +719,7 @@ async function handleDeleteUser() {
     await fetchUsers()
   } catch (error: any) {
     console.error('Failed to delete user:', error)
-    alert(error.data?.message || 'Failed to delete user')
+    toast.error(error.data?.message || 'Failed to delete user')
   } finally {
     deleting.value = false
   }

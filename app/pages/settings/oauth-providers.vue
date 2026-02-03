@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back link -->
+    <NuxtLink
+      to="/settings"
+      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft class="w-4 h-4 mr-1" />
+      Back to Settings
+    </NuxtLink>
+
     <div class="flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">OAuth Providers</h1>
@@ -279,8 +288,11 @@
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next'
 import { OAUTH_PROVIDER_PRESETS, WELL_KNOWN_PROVIDER_IDS, isWellKnownProvider } from '@@/shared/oauth-providers'
 import type { OAuthProviderPreset } from '@@/shared/oauth-providers'
+
+const toast = useToast()
 
 definePageMeta({
   middleware: 'auth',
@@ -389,7 +401,7 @@ async function toggleProvider(providerId: string, enabled: boolean) {
     await fetchProviders()
   } catch (error: any) {
     console.error('Failed to toggle provider:', error)
-    alert(error.data?.message || 'Failed to toggle provider')
+    toast.error(error.data?.message || 'Failed to toggle provider')
   } finally {
     togglingProvider.value = null
   }
@@ -443,7 +455,7 @@ function editProvider(provider: OAuthProvider) {
 async function handleSaveProvider() {
   // Prevent adding well-known providers through custom form
   if (!editingProvider.value && isWellKnownProvider(providerForm.value.providerId)) {
-    alert('This is a standard provider. Please use the toggle above instead.')
+    toast.warning('This is a standard provider. Please use the toggle above instead.')
     return
   }
 
@@ -467,7 +479,7 @@ async function handleSaveProvider() {
     await fetchProviders()
   } catch (error: any) {
     console.error('Failed to save provider:', error)
-    alert(error.data?.message || 'Failed to save provider')
+    toast.error(error.data?.message || 'Failed to save provider')
   } finally {
     saving.value = false
   }
@@ -491,7 +503,7 @@ async function handleDeleteProvider() {
     await fetchProviders()
   } catch (error: any) {
     console.error('Failed to delete provider:', error)
-    alert(error.data?.message || 'Failed to delete provider')
+    toast.error(error.data?.message || 'Failed to delete provider')
   } finally {
     deleting.value = false
   }

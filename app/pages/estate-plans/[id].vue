@@ -330,6 +330,8 @@ import {
   LayoutDashboard, Users, History, Calendar, File, Trash2, AlertTriangle
 } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -516,7 +518,7 @@ async function handleDeletePlan() {
     router.push('/estate-plans')
   } catch (err: any) {
     console.error('Failed to delete plan:', err)
-    alert(err.data?.message || 'Failed to delete estate plan')
+    toast.error(err.data?.message || 'Failed to delete estate plan')
   } finally {
     deleting.value = false
   }

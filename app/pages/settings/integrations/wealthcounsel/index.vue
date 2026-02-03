@@ -185,6 +185,8 @@
 import { ref, onMounted } from 'vue'
 import { ArrowLeft, FileCode, Upload, FileText, CheckCircle, AlertCircle, Clock, Pause } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -246,7 +248,7 @@ async function discardPending(parseId: string) {
     // Remove from list
     pendingImports.value = pendingImports.value.filter(p => p.parseId !== parseId)
   } catch (error: any) {
-    alert(`Failed to discard: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(`Failed to discard: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     discarding.value = null
   }

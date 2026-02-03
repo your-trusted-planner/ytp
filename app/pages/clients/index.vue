@@ -169,6 +169,8 @@ import { ref, onMounted, watch } from 'vue'
 import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
 import type { Column, PaginationMeta } from '~/components/ui/DataTable.vue'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -379,7 +381,7 @@ const handleAddClient = async () => {
       }
     }
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to add client')
+    toast.error(error.data?.message || 'Failed to add client')
   } finally {
     saving.value = false
   }

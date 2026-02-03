@@ -433,6 +433,8 @@ import {
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -574,7 +576,7 @@ async function saveStep() {
       // Check if there's already a final step when creating a new step
       const existingFinalStep = steps.value.find(s => s.is_final_step)
       if (existingFinalStep) {
-        alert(`Cannot add a new step after the final step "${existingFinalStep.name}". Please remove the "final step" designation first.`)
+        toast.warning(`Cannot add a new step after the final step "${existingFinalStep.name}". Please remove the "final step" designation first.`)
         savingStep.value = false
         return
       }
@@ -720,7 +722,7 @@ async function deleteActionItem(actionItemId: string, stepId: string) {
     await validateJourney()
   } catch (error) {
     console.error('Error deleting action item:', error)
-    alert('Failed to delete action item')
+    toast.error('Failed to delete action item')
   }
 }
 

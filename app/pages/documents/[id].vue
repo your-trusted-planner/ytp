@@ -480,6 +480,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckCircle, ChevronUp, ChevronDown, Download, Eye, ChevronDown as ChevronDownIcon, PenTool, Trash2 } from 'lucide-vue-next'
 import { formatDate, formatDateTime } from '~/utils/format'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -679,7 +681,7 @@ const updateStatus = async () => {
     }
   } catch (error) {
     console.error('Failed to update status:', error)
-    alert('Failed to update document status')
+    toast.error('Failed to update document status')
     // Revert the selection
     selectedStatus.value = document.value?.status || 'DRAFT'
   }
@@ -700,7 +702,7 @@ const handleFillVariables = async () => {
     console.log('[Client] Variables saved successfully')
   } catch (error) {
     console.error('[Client] Failed to save variables:', error)
-    alert('Failed to save variables')
+    toast.error('Failed to save variables')
   } finally {
     savingVariables.value = false
   }
@@ -762,9 +764,9 @@ const handleSign = async () => {
     })
 
     await fetchDocument()
-    alert('Document signed successfully!')
+    toast.success('Document signed successfully!')
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to sign document')
+    toast.error(error.data?.message || 'Failed to sign document')
   } finally {
     signing.value = false
   }
@@ -806,7 +808,7 @@ const downloadDocx = async () => {
     console.log('Download completed successfully')
   } catch (error) {
     console.error('Download error:', error)
-    alert(`Failed to download document: ${error.message || 'Unknown error'}`)
+    toast.error(`Failed to download document: ${error.message || 'Unknown error'}`)
   }
 }
 
@@ -836,7 +838,7 @@ const downloadSignedPdf = async () => {
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Download signed PDF error:', error)
-    alert(`Failed to download signed PDF: ${error.message || 'Unknown error'}`)
+    toast.error(`Failed to download signed PDF: ${error.message || 'Unknown error'}`)
   }
 }
 
@@ -939,9 +941,9 @@ const handleDeleteDocument = async () => {
     if (error.statusCode === 400 && error.data?.error === 'Confirmation required') {
       // Server requires confirmation
       requiresConfirmation.value = true
-      alert(`This document has status ${document.value.status}. Please check the confirmation box to proceed.`)
+      toast.warning(`This document has status ${document.value.status}. Please check the confirmation box to proceed.`)
     } else {
-      alert(`Failed to delete document: ${error.data?.message || error.message || 'Unknown error'}`)
+      toast.error(`Failed to delete document: ${error.data?.message || error.message || 'Unknown error'}`)
     }
   } finally {
     deleting.value = false

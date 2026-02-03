@@ -456,6 +456,8 @@ import {
 } from 'lucide-vue-next'
 import PersonMatchingReview from '~/components/person/MatchingReview.vue'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -615,7 +617,7 @@ async function resumePendingSession(resumeParseId: string) {
     currentStep.value = 1
   } catch (error: any) {
     console.error('Failed to resume session:', error)
-    alert(`Failed to resume session: ${error.data?.message || error.message || 'Session may have expired'}`)
+    toast.error(`Failed to resume session: ${error.data?.message || error.message || 'Session may have expired'}`)
   } finally {
     resuming.value = false
   }
@@ -696,7 +698,7 @@ async function parseFile() {
     currentStep.value = 1
   } catch (error: any) {
     console.error('Parse error:', error)
-    alert(`Failed to parse file: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(`Failed to parse file: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     parsing.value = false
   }
@@ -704,7 +706,7 @@ async function parseFile() {
 
 async function executeImport() {
   if (!parseId.value) {
-    alert('Parse session expired. Please upload the file again.')
+    toast.warning('Parse session expired. Please upload the file again.')
     currentStep.value = 0
     return
   }
@@ -749,7 +751,7 @@ async function executeImport() {
     }
   } catch (error: any) {
     console.error('Import error:', error)
-    alert(`Failed to import: ${error.data?.message || error.message || 'Unknown error'}`)
+    toast.error(`Failed to import: ${error.data?.message || error.message || 'Unknown error'}`)
   } finally {
     importing.value = false
   }

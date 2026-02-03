@@ -179,6 +179,8 @@ import {
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: ['auth'],
   layout: 'dashboard'
@@ -284,7 +286,7 @@ async function sendReminder(clientJourney: any) {
       method: 'POST'
     })
     // Show success message
-    alert('Reminder sent successfully')
+    toast.success('Reminder sent successfully')
   } catch (error) {
     console.error('Error sending reminder:', error)
   }

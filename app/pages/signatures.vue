@@ -254,6 +254,8 @@ import {
   AlertTriangle
 } from 'lucide-vue-next'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -362,7 +364,7 @@ const copySigningLink = async (session: SignatureSession) => {
   const link = `${baseUrl}/sign/${session.signingToken}`
   try {
     await navigator.clipboard.writeText(link)
-    alert('Signing link copied to clipboard')
+    toast.success('Signing link copied to clipboard')
   } catch (err) {
     // Fallback
     prompt('Copy this link:', link)
@@ -390,9 +392,9 @@ const sendReminder = async () => {
 
     showResendModal.value = false
     await fetchSessions(currentFilter.value)
-    alert('Reminder sent successfully')
+    toast.success('Reminder sent successfully')
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to send reminder')
+    toast.error(error.data?.message || 'Failed to send reminder')
   } finally {
     resending.value = false
   }
@@ -415,7 +417,7 @@ const revokeSession = async () => {
     showRevokeModal.value = false
     await fetchSessions(currentFilter.value)
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to revoke session')
+    toast.error(error.data?.message || 'Failed to revoke session')
   } finally {
     revoking.value = false
   }

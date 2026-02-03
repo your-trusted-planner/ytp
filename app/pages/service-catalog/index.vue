@@ -183,6 +183,8 @@
 import { ref, onMounted } from 'vue'
 import { formatCurrency } from '~/utils/format'
 
+const toast = useToast()
+
 definePageMeta({
   middleware: 'auth',
   layout: 'dashboard'
@@ -253,7 +255,7 @@ const toggleMatterStatus = async (matter: any) => {
     })
     await fetchMatters()
   } catch (error) {
-    alert('Failed to update service status')
+    toast.error('Failed to update service status')
   }
 }
 
@@ -292,7 +294,7 @@ const handleSaveMatter = async () => {
     closeModal()
     await fetchMatters()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to save service')
+    toast.error(error.data?.message || 'Failed to save service')
   } finally {
     saving.value = false
   }

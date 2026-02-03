@@ -294,6 +294,8 @@
 </template>
 
 <script setup lang="ts">
+const toast = useToast()
+
 definePageMeta({
   layout: false, // No auth required for public page
 })
@@ -426,7 +428,7 @@ const submitQuestionnaire = async () => {
     currentStep.value = 2
   } catch (error) {
     console.error('Booking creation failed:', error)
-    alert('An error occurred. Please try again.')
+    toast.error('An error occurred. Please try again.')
   } finally {
     loading.value = false
   }
@@ -441,7 +443,7 @@ const processPayment = async () => {
     currentStep.value = 3
   } catch (error) {
     console.error('Payment failed:', error)
-    alert('Payment processing failed. Please try again.')
+    toast.error('Payment processing failed. Please try again.')
   } finally {
     loading.value = false
   }
@@ -455,7 +457,7 @@ const confirmBooking = async () => {
     currentStep.value = 4
   } catch (error) {
     console.error('Booking confirmation failed:', error)
-    alert('An error occurred. Please try again.')
+    toast.error('An error occurred. Please try again.')
   } finally {
     loading.value = false
   }
