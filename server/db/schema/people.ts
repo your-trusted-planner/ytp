@@ -20,6 +20,7 @@ export const people = sqliteTable('people', {
   email: text('email'),
   phone: text('phone'),
   address: text('address'),
+  address2: text('address_2'), // Apt, Suite, Unit, Building, etc.
   city: text('city'),
   state: text('state'),
   zipCode: text('zip_code'),

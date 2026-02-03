@@ -79,10 +79,36 @@ export function resetTestDatabase(): void {
  * Creates all tables defined in the schema
  */
 function applySchema(db: Database.Database): void {
-  // Users table
+  // People table (Belly Button Principle - identity for all humans)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS people (
+      id TEXT PRIMARY KEY,
+      person_type TEXT NOT NULL DEFAULT 'individual',
+      first_name TEXT,
+      last_name TEXT,
+      full_name TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      city TEXT,
+      state TEXT,
+      zip_code TEXT,
+      county TEXT,
+      date_of_birth TEXT,
+      ssn_last4 TEXT,
+      entity_name TEXT,
+      entity_type TEXT,
+      entity_ein TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
+
+  // Users table (authentication - links to people via person_id)
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
+      person_id TEXT REFERENCES people(id),
       email TEXT UNIQUE,
       password TEXT,
       firebase_uid TEXT,
@@ -94,6 +120,29 @@ function applySchema(db: Database.Database): void {
       avatar TEXT,
       status TEXT NOT NULL DEFAULT 'ACTIVE',
       import_metadata TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
+
+  // Clients table (Belly Button Principle - client-specific data, links to people)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clients (
+      id TEXT PRIMARY KEY,
+      person_id TEXT NOT NULL REFERENCES people(id),
+      status TEXT DEFAULT 'PROSPECT',
+      has_minor_children INTEGER DEFAULT 0,
+      children_info TEXT,
+      has_will INTEGER DEFAULT 0,
+      has_trust INTEGER DEFAULT 0,
+      business_name TEXT,
+      business_type TEXT,
+      referral_type TEXT,
+      referred_by_person_id TEXT REFERENCES people(id),
+      referred_by_partner_id TEXT,
+      referral_notes TEXT,
+      assigned_lawyer_id TEXT,
+      google_drive_folder_id TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )

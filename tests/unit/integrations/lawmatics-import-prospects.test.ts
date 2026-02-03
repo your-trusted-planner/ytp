@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { prospectsFixture, contactsFixture } from '../fixtures/lawmatics'
+import { prospectsFixture, contactsFixture } from '../../fixtures/lawmatics'
 
 // Mock nanoid for deterministic IDs in tests
 vi.mock('nanoid', () => ({

@@ -19,6 +19,7 @@ const createClientSchema = z.object({
 
   // Address fields
   address: z.string().optional(),
+  address2: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
@@ -118,6 +119,7 @@ export default defineEventHandler(async (event) => {
     email: data.email,
     phone: data.phone || null,
     address: data.address || null,
+    address2: data.address2 || null,
     city: data.city || null,
     state: data.state || null,
     zipCode: data.zipCode || null,

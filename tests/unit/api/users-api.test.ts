@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
-import type { AuthenticatedUser } from '../../server/utils/rbac'
+import type { AuthenticatedUser } from '../../../server/utils/rbac'
 
 // Replicate the validation schemas from the user endpoints
 const createUserSchema = z.object({

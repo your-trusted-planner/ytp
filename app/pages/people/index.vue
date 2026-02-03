@@ -19,6 +19,7 @@ interface Person {
   email?: string
   phone?: string
   address?: string
+  address2?: string
   city?: string
   state?: string
   zipCode?: string
@@ -66,6 +67,7 @@ const personForm = reactive({
   email: '',
   phone: '',
   address: '',
+  address2: '',
   city: '',
   state: '',
   zipCode: '',
@@ -82,6 +84,7 @@ const personForm = reactive({
 // Address value for UiAddressInput component
 const addressValue = ref<AddressValue>({
   address: '',
+  address2: '',
   city: '',
   state: '',
   zipCode: ''
@@ -90,6 +93,7 @@ const addressValue = ref<AddressValue>({
 // Sync addressValue with personForm
 watch(addressValue, (newVal) => {
   personForm.address = newVal.address
+  personForm.address2 = newVal.address2 || ''
   personForm.city = newVal.city
   personForm.state = newVal.state
   personForm.zipCode = newVal.zipCode
@@ -191,6 +195,7 @@ function resetForm() {
   personForm.email = ''
   personForm.phone = ''
   personForm.address = ''
+  personForm.address2 = ''
   personForm.city = ''
   personForm.state = ''
   personForm.zipCode = ''
@@ -203,6 +208,7 @@ function resetForm() {
   // Reset address component
   addressValue.value = {
     address: '',
+    address2: '',
     city: '',
     state: '',
     zipCode: ''
@@ -249,6 +255,7 @@ function openEditModal(person: Person) {
   personForm.email = person.email || ''
   personForm.phone = person.phone || ''
   personForm.address = person.address || ''
+  personForm.address2 = person.address2 || ''
   personForm.city = person.city || ''
   personForm.state = person.state || ''
   personForm.zipCode = person.zipCode || ''
@@ -257,6 +264,7 @@ function openEditModal(person: Person) {
   // Populate address component
   addressValue.value = {
     address: person.address || '',
+    address2: person.address2 || '',
     city: person.city || '',
     state: person.state || '',
     zipCode: person.zipCode || ''
@@ -273,6 +281,7 @@ async function addPerson() {
       email: personForm.email || undefined,
       phone: personForm.phone || undefined,
       address: personForm.address || undefined,
+      address2: personForm.address2 || undefined,
       city: personForm.city || undefined,
       state: personForm.state || undefined,
       zipCode: personForm.zipCode || undefined,
@@ -324,6 +333,7 @@ async function updatePerson() {
       email: personForm.email || undefined,
       phone: personForm.phone || undefined,
       address: personForm.address || undefined,
+      address2: personForm.address2 || undefined,
       city: personForm.city || undefined,
       state: personForm.state || undefined,
       zipCode: personForm.zipCode || undefined,

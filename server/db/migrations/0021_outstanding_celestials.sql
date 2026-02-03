@@ -1,0 +1,1 @@
+ALTER TABLE `people` ADD `address_2` text;

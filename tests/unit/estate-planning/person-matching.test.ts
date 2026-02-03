@@ -20,7 +20,7 @@ import {
   DEFAULT_CONFIDENCE_SCORES,
   type PersonMatch,
   type PersonMatchDecision
-} from '../../server/utils/person-matching'
+} from '../../../server/utils/person-matching'
 
 // ===================================
 // CONFIDENCE CALCULATION TESTS

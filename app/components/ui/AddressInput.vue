@@ -63,6 +63,25 @@
       </Transition>
     </div>
 
+    <!-- Apt/Suite/Unit field -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Apt, Suite, Unit, Building <span class="text-gray-400 font-normal">(optional)</span>
+      </label>
+      <input
+        v-model="localAddress2"
+        type="text"
+        placeholder="Apt 4B, Suite 100, Unit 12, etc."
+        :disabled="disabled"
+        :class="[
+          'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+          disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+          'border-gray-300'
+        ]"
+        @input="emitUpdate"
+      />
+    </div>
+
     <!-- City, State, ZIP row -->
     <div class="grid grid-cols-6 gap-3">
       <div class="col-span-3">
@@ -138,6 +157,7 @@ import { US_STATES } from '~/utils/us-states'
 
 export interface AddressValue {
   address: string
+  address2?: string
   city: string
   state: string
   zipCode: string
@@ -181,6 +201,7 @@ const inputRef = ref<HTMLInputElement>()
 
 // Local state
 const streetQuery = ref(props.modelValue.address || '')
+const localAddress2 = ref(props.modelValue.address2 || '')
 const localCity = ref(props.modelValue.city || '')
 const localState = ref(props.modelValue.state || '')
 const localZipCode = ref(props.modelValue.zipCode || '')
@@ -197,6 +218,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
     streetQuery.value = newVal.address || ''
+    localAddress2.value = newVal.address2 || ''
     localCity.value = newVal.city || ''
     localState.value = newVal.state || ''
     localZipCode.value = newVal.zipCode || ''
@@ -305,6 +327,7 @@ function handleManualEntryChange() {
 function emitUpdate() {
   emit('update:modelValue', {
     address: streetQuery.value,
+    address2: localAddress2.value,
     city: localCity.value,
     state: localState.value,
     zipCode: localZipCode.value

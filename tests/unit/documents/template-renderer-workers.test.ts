@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { useTemplateRenderer } from '../../server/utils/template-renderer'
+import { useTemplateRenderer } from '../../../server/utils/template-renderer'
 
 describe('Template Renderer - Workers Compatibility', () => {
   let originalFunction: typeof Function

@@ -15,7 +15,7 @@ import {
   canAccessClient,
   requireClientAccess,
   type AuthenticatedUser
-} from '../../server/utils/rbac'
+} from '../../../server/utils/rbac'
 
 // Helper to create mock H3 events
 function createMockEvent(user?: AuthenticatedUser): H3Event {

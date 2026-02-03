@@ -12,10 +12,10 @@ import {
   transformRoles,
   buildPersonLookup,
   extractClientsToCreate
-} from '../../server/utils/wealthcounsel-transformers'
-import { parseWealthCounselXml } from '../../server/utils/wealthcounsel-parser'
-import { jointTrustXml, singleClientWillXml, minimalXml } from '../fixtures/wealthcounsel'
-import type { ExtractedPersonWithMatches, WealthCounselMatchSuggestion } from '../../server/utils/wealthcounsel-types'
+} from '../../../server/utils/wealthcounsel-transformers'
+import { parseWealthCounselXml } from '../../../server/utils/wealthcounsel-parser'
+import { jointTrustXml, singleClientWillXml, minimalXml } from '../../fixtures/wealthcounsel'
+import type { ExtractedPersonWithMatches, WealthCounselMatchSuggestion } from '../../../server/utils/wealthcounsel-types'
 
 // Replicate the validation schemas from import.post.ts
 const PersonDecisionSchema = z.object({

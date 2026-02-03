@@ -20,7 +20,7 @@ import {
   CURRENT_TERMS_VERSION,
   type CertificateInput,
   type SignatureCertificate
-} from '../../server/utils/signature-certificate'
+} from '../../../server/utils/signature-certificate'
 
 describe('Signature Certificate Utilities', () => {
   describe('generateSigningToken', () => {

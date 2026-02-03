@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { TemplateRenderer, useTemplateRenderer } from '../../server/utils/template-renderer'
+import { TemplateRenderer, useTemplateRenderer } from '../../../server/utils/template-renderer'
 
 describe('TemplateRenderer', () => {
   let renderer: TemplateRenderer

@@ -20,7 +20,7 @@ import {
   type KbaRequest,
   type ManualRequest,
   type VerificationMode
-} from '../../server/utils/identity-verification'
+} from '../../../server/utils/identity-verification'
 
 describe('Identity Verification Utilities', () => {
   describe('verifyByAttestation', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { generateInvoicePdf, type InvoicePdfOptions, type InvoiceLineItem } from '../../server/utils/invoice-pdf-generator'
+import { generateInvoicePdf, type InvoicePdfOptions, type InvoiceLineItem } from '../../../server/utils/invoice-pdf-generator'
 
 /**
  * Invoice PDF Generator Tests

@@ -24,21 +24,21 @@ import {
   createEntityLookup,
   type ImportMetadata,
   type ImportFlag
-} from '../../server/utils/lawmatics-transformers'
+} from '../../../server/utils/lawmatics-transformers'
 import type {
   LawmaticsUser,
   LawmaticsContact,
   LawmaticsProspect,
   LawmaticsNote,
   LawmaticsActivity
-} from '../../server/utils/lawmatics-client'
+} from '../../../server/utils/lawmatics-client'
 import {
   usersFixture,
   contactsFixture,
   prospectsFixture,
   notesFixture,
   activitiesFixture
-} from '../fixtures/lawmatics'
+} from '../../fixtures/lawmatics'
 
 // ===================================
 // UTILITY FUNCTION TESTS

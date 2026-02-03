@@ -366,6 +366,7 @@ const form = ref({
 // Address as a separate reactive object for the component
 const addressValue = ref<AddressValue>({
   address: '',
+  address2: '',
   city: '',
   state: '',
   zipCode: ''
@@ -486,6 +487,7 @@ async function submitForm(status: 'LEAD' | 'PROSPECT') {
     const payload = {
       ...form.value,
       address: addressValue.value.address,
+      address2: addressValue.value.address2,
       city: addressValue.value.city,
       state: addressValue.value.state,
       zipCode: addressValue.value.zipCode,

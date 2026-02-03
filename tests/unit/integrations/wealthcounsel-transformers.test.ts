@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { parseWealthCounselXml } from '../../server/utils/wealthcounsel-parser'
+import { parseWealthCounselXml } from '../../../server/utils/wealthcounsel-parser'
 import {
   extractPeople,
   transformToEstatePlan,
@@ -14,12 +14,12 @@ import {
   type WCTransformedPerson,
   type TransformedEstatePlan,
   type TransformedPlanRole
-} from '../../server/utils/wealthcounsel-transformers'
+} from '../../../server/utils/wealthcounsel-transformers'
 import {
   singleClientWillXml,
   jointTrustXml,
   minimalXml
-} from '../fixtures/wealthcounsel'
+} from '../../fixtures/wealthcounsel'
 
 // ===================================
 // PERSON EXTRACTION TESTS
