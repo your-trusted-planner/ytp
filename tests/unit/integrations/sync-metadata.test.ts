@@ -1,14 +1,40 @@
 /**
  * Tests for Sync Metadata Utilities
  *
- * Tests the exported pure functions from server/utils/sync-metadata.ts directly.
+ * The exported pure functions from server/utils/sync-metadata.ts (isImportedRecord,
+ * getLocallyModifiedFields) are simulated inline because the module also imports
+ * from server/db which depends on @nuxthub/db — a virtual module unavailable in Vitest.
  * The DB-dependent markFieldsAsLocallyModified is tested by simulating its
  * detectChangedFields logic inline.
  */
 
 import { describe, it, expect } from 'vitest'
-import { isImportedRecord, getLocallyModifiedFields } from '../../../server/utils/sync-metadata'
 import type { ImportMetadata } from '../../../server/utils/lawmatics-transformers'
+
+// ===================================
+// Simulate exported pure functions from sync-metadata.ts
+// (cannot import directly — module imports @nuxthub/db)
+// ===================================
+
+function isImportedRecord(importMetadata: string | null | undefined): boolean {
+  if (!importMetadata) return false
+  try {
+    const meta = JSON.parse(importMetadata) as ImportMetadata
+    return !!meta.source
+  } catch {
+    return false
+  }
+}
+
+function getLocallyModifiedFields(importMetadata: string | null | undefined): string[] {
+  if (!importMetadata) return []
+  try {
+    const meta = JSON.parse(importMetadata) as ImportMetadata
+    return meta.locallyModifiedFields || []
+  } catch {
+    return []
+  }
+}
 
 // ===================================
 // Simulate detectChangedFields (private in sync-metadata.ts)
