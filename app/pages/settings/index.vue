@@ -90,6 +90,23 @@
           </div>
         </UiCard>
       </NuxtLink>
+
+      <!-- Integrations -->
+      <NuxtLink to="/settings/integrations" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-orange-50 rounded-lg">
+              <Plug class="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Integrations</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Manage external service integrations and data imports
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
     </div>
 
     <!-- Admin Info -->
@@ -109,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Calendar, FolderOpen, Info } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Calendar, FolderOpen, Plug, Info } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
