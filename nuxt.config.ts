@@ -4,6 +4,17 @@ export default defineNuxtConfig({
   // Use app/ directory for Nuxt 4 structure
   // srcDir: 'app',
 
+  // App configuration
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/ytp-logo.svg' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
+      ]
+    }
+  },
+
   // https://nuxt.com/modules
   modules: [
     '@nuxthub/core',

@@ -121,6 +121,81 @@ The `people` table stores ALL humans in the system:
 - `'client'` - Client-level relationship
 - `'matter'` - Matter-specific relationship (e.g., beneficiary for a specific trust)
 
+### Estate Plans & Fiduciary Roles
+
+The **plan** is the durable artifact in estate planning. It outlives any individual matter — a matter is transactional (scope, deliverables, billing), but the plan persists. It may be amended on a new matter, administered after death.
+
+**Core tables:** `estatePlans`, `planRoles`, `trusts`, `wills`, `ancillaryDocuments`, `planVersions`, `planEvents`, `planToMatters`
+
+**Plan-to-Matter relationship:** A plan connects to matters via `planToMatters` with relationship types: `CREATION`, `AMENDMENT`, `ADMINISTRATION`, `REVIEW`, `OTHER`.
+
+#### Fiduciary Configuration via `planRoles`
+
+The `planRoles` table stores all role assignments for a plan. Each row is one person in one role. Fiduciary configurations (who serves, in what order, how they act) are assembled from the set of `planRoles` rows sharing a `roleType`.
+
+**Current fields for succession:**
+- `isPrimary`: whether this is a primary (not successor) role holder
+- `ordinal`: position in succession chain (1 = primary, 2 = first successor, etc.)
+- `roleType`: includes both primary and alternate types (e.g., `TRUSTEE`, `CO_TRUSTEE`, `SUCCESSOR_TRUSTEE`)
+
+**Planned schema additions — fiduciary acting model and minimum count:**
+
+The current schema implies acting model through role types (`TRUSTEE` vs `CO_TRUSTEE`) but does not capture it explicitly. Two new fields are needed on `planRoles` (or on a new `fiduciaryConfigs` junction table — TBD):
+
+```
+actingModel: text('acting_model', {
+  enum: ['SOLE', 'JOINTLY', 'INDEPENDENTLY', 'MAJORITY']
+})
+
+minimumCount: integer('minimum_count')
+```
+
+**`actingModel`** — How co-fiduciaries exercise their authority:
+- `SOLE`: Single fiduciary acting alone (default when only one person in the position)
+- `JOINTLY`: All co-fiduciaries must agree and act together
+- `INDEPENDENTLY`: Any co-fiduciary may act alone without the others' consent
+- `MAJORITY`: Majority of co-fiduciaries must agree
+
+**`minimumCount`** — Minimum number of fiduciaries that must be serving at all times. When set:
+- Successors **fill individual vacancies** rather than replacing the entire group
+- Example: Husband and Wife are co-trustees (min 2). Husband dies → first successor fills the vacancy and serves alongside Wife
+- When NOT set (or = 1): successors **replace the predecessor entirely** (simple succession model)
+
+**Succession models these fields enable:**
+
+| Model | actingModel | minimumCount | Behavior |
+|-------|-------------|--------------|----------|
+| Single + sequential successors | SOLE | null | Alice → Bob → Carol (replacement) |
+| Co-fiduciaries, jointly | JOINTLY | null | Alice + Bob act together. If both unable → Carol |
+| Co-fiduciaries, independently | INDEPENDENTLY | null | Alice or Bob can act alone. If both unable → Carol |
+| Vacancy filling | INDEPENDENTLY | 2 | Alice + Bob. If Alice dies → Carol joins Bob. Always 2 serving. |
+
+**Data source for document generation:** The YADT template authoring system (separate project) defines prose patterns for fiduciary designations. At generation time, the template engine receives a `FiduciaryConfig` object assembled from `planRoles`:
+
+```typescript
+interface FiduciaryConfig {
+  roleType: string             // 'agent', 'trustee', 'executor', etc.
+  roleLabel: string            // 'Agent', 'Trustee' (from the template, not the plan)
+  actingModel: 'sole' | 'jointly' | 'independently' | 'majority'
+  minimumCount?: number
+  primary: FiduciaryPerson[]   // 1+ people at the primary position
+  successors: FiduciaryPerson[] // flat ordered list (bench of replacements)
+}
+
+interface FiduciaryPerson {
+  id: string
+  fullName: string
+  firstName: string
+  lastName: string
+  address?: string
+  cityStateZip?: string
+  phone?: string
+  email?: string
+}
+```
+
+**Design reference:** See `FIDUCIARY_DESIGNATION_DESIGN.md` in the YADT project (orange-book-parser) for the template-side design of fiduciary designation blocks.
+
 ---
 
 ## Database & ORM
