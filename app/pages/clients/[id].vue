@@ -23,6 +23,10 @@
           :folder-url="clientProfile.google_drive_folder_url"
           :show-label="true"
         />
+        <UiSyncStatusBadge
+          v-if="client?.importMetadata"
+          :import-metadata="client.importMetadata"
+        />
         <UiButton variant="outline" size="sm" @click="openEditModal">
           <Edit class="w-4 h-4 mr-1" />
           Edit Client

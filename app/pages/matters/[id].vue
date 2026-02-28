@@ -21,6 +21,10 @@
               :folder-url="matter.googleDriveFolderUrl"
               :show-label="true"
             />
+            <UiSyncStatusBadge
+              v-if="matter.importMetadata"
+              :import-metadata="matter.importMetadata"
+            />
           </div>
         </div>
       </div>

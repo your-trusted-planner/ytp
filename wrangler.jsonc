@@ -101,6 +101,11 @@
     ]
   },
 
+  // Cron triggers for automated sync (every 4 hours)
+  "triggers": {
+    "crons": ["0 */4 * * *"]
+  },
+
   "observability": {
     "logs": {
       "enabled": true,
@@ -197,6 +202,9 @@
             "dead_letter_queue": "ytp-lawmatics-import-dlq-preview"
           }
         ]
+      },
+      "triggers": {
+        "crons": ["0 */4 * * *"]
       },
       "observability": {
         "head_sampling_rate": 1,

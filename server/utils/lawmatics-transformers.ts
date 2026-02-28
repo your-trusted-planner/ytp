@@ -34,6 +34,12 @@ export interface ImportMetadata {
   importRunId?: string
   flags?: ImportFlag[]
   sourceData?: Record<string, any>
+  /** Explicit override for which system owns this record's data */
+  sourceOfTruth?: 'LAWMATICS' | 'YTP'
+  /** Fields that have been locally modified in YTP and should not be overwritten by sync */
+  locallyModifiedFields?: string[]
+  /** Snapshot of Lawmatics values at last sync (for conflict review) */
+  lastSyncSnapshot?: Record<string, any>
 }
 
 /**

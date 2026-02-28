@@ -67,6 +67,7 @@ export default defineEventHandler(async (event) => {
       // User info if they have portal access
       userId: user?.id,
       role: user?.role,
+      importMetadata: person.importMetadata || null,
       created_at: clientRecord.createdAt instanceof Date ? clientRecord.createdAt.getTime() : clientRecord.createdAt,
       updated_at: clientRecord.updatedAt instanceof Date ? clientRecord.updatedAt.getTime() : clientRecord.updatedAt
     },

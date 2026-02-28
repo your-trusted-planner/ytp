@@ -25,6 +25,9 @@ export interface Matter {
   googleDriveLastSyncAt: number | null
   googleDriveSubfolderIds: string | null // JSON string
 
+  // Import/sync metadata (JSON string)
+  importMetadata: string | null
+
   // Timestamps (Unix seconds)
   createdAt: number
   updatedAt: number
@@ -116,6 +119,7 @@ export function transformMatter(apiResponse: Record<string, any>): Matter {
     googleDriveSyncError: apiResponse.google_drive_sync_error,
     googleDriveLastSyncAt: apiResponse.google_drive_last_sync_at,
     googleDriveSubfolderIds: apiResponse.google_drive_subfolder_ids,
+    importMetadata: apiResponse.import_metadata || null,
     createdAt: apiResponse.created_at,
     updatedAt: apiResponse.updated_at,
     // Joined fields

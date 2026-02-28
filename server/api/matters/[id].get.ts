@@ -113,6 +113,8 @@ export default defineEventHandler(async (event) => {
         ? Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000)
         : matter.googleDriveLastSyncAt,
       google_drive_subfolder_ids: matter.googleDriveSubfolderIds,
+      // Import/sync metadata
+      import_metadata: matter.importMetadata || null,
       // Timestamps
       created_at: matter.createdAt instanceof Date ? matter.createdAt.getTime() : matter.createdAt,
       updated_at: matter.updatedAt instanceof Date ? matter.updatedAt.getTime() : matter.updatedAt,

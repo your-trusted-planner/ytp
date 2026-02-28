@@ -1,5 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
+import { markFieldsAsLocallyModified } from '../../utils/sync-metadata'
+
+// Fields that can be tracked for sync conflict protection
+const TRACKABLE_PERSON_FIELDS = [
+  'firstName', 'lastName', 'email', 'phone',
+  'address', 'address2', 'city', 'state', 'zipCode',
+  'dateOfBirth', 'ssnLast4', 'notes'
+]
 
 // Update a person
 export default defineEventHandler(async (event) => {
@@ -72,6 +80,20 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.update(schema.people).set(updateData).where(eq(schema.people.id, personId))
+
+  // Track locally modified fields for sync protection (non-blocking)
+  try {
+    await markFieldsAsLocallyModified(
+      'people',
+      personId,
+      existing as Record<string, any>,
+      updateData,
+      TRACKABLE_PERSON_FIELDS
+    )
+  } catch (err) {
+    // Don't fail the update if metadata tracking fails
+    console.error('[People PUT] Failed to track locally modified fields:', err)
+  }
 
   return {
     success: true,

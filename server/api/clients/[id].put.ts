@@ -1,4 +1,11 @@
 // Update a client by ID
+import { markFieldsAsLocallyModified } from '../../utils/sync-metadata'
+
+const TRACKABLE_CLIENT_FIELDS = [
+  'firstName', 'lastName', 'email', 'phone',
+  'address', 'city', 'state', 'zipCode'
+]
+
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
@@ -25,8 +32,8 @@ export default defineEventHandler(async (event) => {
   const { eq, and } = await import('drizzle-orm')
   const db = useDrizzle()
 
-  // Check if client exists
-  const existingClient = await db.select({ id: schema.users.id })
+  // Check if client exists — fetch full record for change detection
+  const existingClient = await db.select()
     .from(schema.users)
     .where(and(
       eq(schema.users.id, clientId),
@@ -43,17 +50,34 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
 
+  const userUpdateData = {
+    firstName: first_name,
+    lastName: last_name,
+    email,
+    phone: phone || null,
+    status: status || 'ACTIVE'
+  }
+
   // Update user table
   await db.update(schema.users)
     .set({
-      firstName: first_name,
-      lastName: last_name,
-      email,
-      phone: phone || null,
-      status: status || 'ACTIVE',
+      ...userUpdateData,
       updatedAt: now
     })
     .where(eq(schema.users.id, clientId))
+
+  // Track locally modified fields for sync protection (non-blocking)
+  try {
+    await markFieldsAsLocallyModified(
+      'users',
+      clientId,
+      existingClient as Record<string, any>,
+      userUpdateData,
+      TRACKABLE_CLIENT_FIELDS
+    )
+  } catch (err) {
+    console.error('[Clients PUT] Failed to track locally modified fields:', err)
+  }
 
   // Check if profile exists
   const existingProfile = await db.select({ userId: schema.clientProfiles.userId })

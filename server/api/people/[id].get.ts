@@ -40,6 +40,7 @@ export default defineEventHandler(async (event) => {
     dateOfBirth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
     ssnLast4: person.ssnLast4,
     notes: person.notes,
+    importMetadata: person.importMetadata || null,
     createdAt: person.createdAt ? person.createdAt.getTime() : Date.now(),
     updatedAt: person.updatedAt ? person.updatedAt.getTime() : Date.now(),
     // snake_case versions for API compatibility
