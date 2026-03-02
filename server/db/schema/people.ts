@@ -29,6 +29,10 @@ export const people = sqliteTable('people', {
   ssnLast4: text('ssn_last_4'),
   // Notes
   notes: text('notes'),
+  // Marketing consent
+  globalUnsubscribe: integer('global_unsubscribe').notNull().default(0),
+  globalUnsubscribeAt: integer('global_unsubscribe_at', { mode: 'timestamp' }),
+  globalUnsubscribeSource: text('global_unsubscribe_source'),
   // Import tracking
   importMetadata: text('import_metadata'),
   // Timestamps

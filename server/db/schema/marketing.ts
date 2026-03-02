@@ -1,7 +1,8 @@
 // Marketing and Referral tables
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
+import { people } from './people'
 
 // Marketing Sources - Track where clients come from
 export const marketingSources = sqliteTable('marketing_sources', {
@@ -41,6 +42,48 @@ export const marketingEvents = sqliteTable('marketing_events', {
   description: text('description'),
   metadata: text('metadata'), // JSON for flexible event details
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Marketing Channels - Configurable communication channels for consent management
+export const marketingChannels = sqliteTable('marketing_channels', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  channelType: text('channel_type', { enum: ['EMAIL', 'SMS'] }).notNull(),
+  slug: text('slug').unique().notNull(),
+  isActive: integer('is_active').notNull().default(1),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})
+
+// Marketing Consent - Per-person, per-channel consent status
+export const marketingConsent = sqliteTable('marketing_consent', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  channelId: text('channel_id').notNull().references(() => marketingChannels.id, { onDelete: 'cascade' }),
+  status: text('status', { enum: ['OPTED_IN', 'OPTED_OUT'] }).notNull(),
+  consentSource: text('consent_source', { enum: ['SELF_SERVICE', 'STAFF', 'IMPORT', 'FORM'] }).notNull(),
+  consentNote: text('consent_note'),
+  consentIp: text('consent_ip'),
+  consentAt: integer('consent_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, (table) => [
+  unique('uq_person_channel').on(table.personId, table.channelId)
+])
+
+// Marketing Consent History - Audit trail for consent changes
+export const marketingConsentHistory = sqliteTable('marketing_consent_history', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  channelId: text('channel_id').notNull().references(() => marketingChannels.id, { onDelete: 'cascade' }),
+  previousStatus: text('previous_status'),
+  newStatus: text('new_status').notNull(),
+  changedByUserId: text('changed_by_user_id'),
+  changedAt: integer('changed_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  consentSource: text('consent_source').notNull(),
+  consentIp: text('consent_ip'),
+  note: text('note')
 })
 
 // Event Registrations - Track event→client conversion funnel

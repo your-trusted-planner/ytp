@@ -635,6 +635,18 @@ async function processRecords(
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
 
+          // 4. Handle Lawmatics opt_out / globalUnsubscribe
+          // Lawmatics can set globalUnsubscribe to true but cannot clear it (YTP-owned)
+          if (record.attributes.opt_out === true || record.attributes.opt_out === 'true') {
+            try {
+              const { setGlobalUnsubscribe } = await import('../utils/marketing-consent')
+              await setGlobalUnsubscribe(upsertResult.id, 'LAWMATICS')
+            } catch (e) {
+              // Don't fail import if consent system isn't ready
+              console.warn('[Lawmatics Import] Failed to set global unsubscribe:', e)
+            }
+          }
+
           // Update people cache
           if (peopleLookupCache) {
             peopleLookupCache.set(record.id, upsertResult.id)

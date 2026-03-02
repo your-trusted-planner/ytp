@@ -91,6 +91,23 @@
         </UiCard>
       </NuxtLink>
 
+      <!-- Marketing Channels -->
+      <NuxtLink to="/settings/marketing/channels" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-pink-50 rounded-lg">
+              <Mail class="w-6 h-6 text-pink-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Marketing Channels</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Manage marketing consent channels and communication preferences
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
       <!-- Integrations -->
       <NuxtLink to="/settings/integrations" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -126,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Calendar, FolderOpen, Plug, Info } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Calendar, FolderOpen, Plug, Info, Mail } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',

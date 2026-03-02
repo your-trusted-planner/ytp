@@ -42,7 +42,7 @@ export { appointments, attorneyCalendars, publicBookings } from './appointments'
 export { notes, activities } from './activities'
 
 // Marketing
-export { marketingSources, referralPartners, marketingEvents, eventRegistrations } from './marketing'
+export { marketingSources, referralPartners, marketingEvents, eventRegistrations, marketingChannels, marketingConsent, marketingConsentHistory } from './marketing'
 
 // E-Signatures
 export { signatureSessions } from './signatures'
