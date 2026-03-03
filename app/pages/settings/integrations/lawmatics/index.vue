@@ -254,16 +254,28 @@
               <p class="text-xs text-gray-500">~Every 4 hours</p>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-gray-200">
-            <UiButton
-              variant="outline"
-              size="sm"
-              @click="triggerSync"
-              :is-loading="triggeringSync"
-            >
-              <RefreshCw class="w-4 h-4 mr-2" />
-              Sync Now
-            </UiButton>
+          <div class="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <div class="flex items-end gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">
+                  Override incremental start date (leave empty for default)
+                </label>
+                <input
+                  v-model="syncOverrideDate"
+                  type="date"
+                  class="block w-48 rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
+                />
+              </div>
+              <UiButton
+                variant="outline"
+                size="sm"
+                @click="triggerSync"
+                :is-loading="triggeringSync"
+              >
+                <RefreshCw class="w-4 h-4 mr-2" />
+                Sync Now
+              </UiButton>
+            </div>
           </div>
         </div>
       </div>
@@ -355,6 +367,7 @@ const testResult = ref<{ success: boolean; error?: string } | null>(null)
 
 // Trigger sync state
 const triggeringSync = ref(false)
+const syncOverrideDate = ref('')
 
 // Cleanup state
 const cleanupPreviewing = ref(false)
@@ -662,8 +675,14 @@ async function cleanupImports() {
 async function triggerSync() {
   triggeringSync.value = true
   try {
-    await $fetch('/api/admin/sync/trigger', { method: 'POST' })
-    toast.success('Sync triggered — check back shortly for results')
+    const body: Record<string, string> = {}
+    if (syncOverrideDate.value) {
+      // Convert date input (YYYY-MM-DD) to ISO string for the API
+      body.updatedSince = new Date(syncOverrideDate.value).toISOString()
+    }
+    await $fetch('/api/admin/sync/trigger', { method: 'POST', body })
+    const dateNote = syncOverrideDate.value ? ` from ${syncOverrideDate.value}` : ''
+    toast.success(`Sync triggered${dateNote} — check back shortly for results`)
     await loadSyncSummary()
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to trigger sync')

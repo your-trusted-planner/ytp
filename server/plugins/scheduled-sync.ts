@@ -27,7 +27,7 @@ export default defineNitroPlugin((nitroApp) => {
   console.log('[Scheduled Sync] Cloudflare scheduled handler registered')
 })
 
-export async function handleScheduledSync(env: any): Promise<void> {
+export async function handleScheduledSync(env: any, options?: { updatedSince?: string }): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
   const { eq, and } = await import('drizzle-orm')
   const db = useDrizzle()
@@ -48,7 +48,7 @@ export async function handleScheduledSync(env: any): Promise<void> {
 
   for (const integration of integrations) {
     try {
-      await processIntegrationSync(db, schema, integration, env)
+      await processIntegrationSync(db, schema, integration, env, options)
     } catch (error) {
       console.error(`[Scheduled Sync] Error processing integration ${integration.id}:`, error)
     }
@@ -59,7 +59,8 @@ async function processIntegrationSync(
   db: any,
   schema: any,
   integration: any,
-  env: any
+  env: any,
+  options?: { updatedSince?: string }
 ): Promise<void> {
   const { eq } = await import('drizzle-orm')
 
@@ -119,9 +120,13 @@ async function processIntegrationSync(
     ? settings.syncEntityTypes
     : ['users', 'contacts', 'prospects', 'notes', 'activities']
 
-  // Get filter for incremental sync
+  // Get filter for incremental sync.
+  // A custom updatedSince override (from manual trigger) takes priority
+  // over the DB-derived lastSyncTimestamps.
   let filter: { updatedSince?: string } | undefined
-  if (integration.lastSyncTimestamps) {
+  if (options?.updatedSince) {
+    filter = { updatedSince: options.updatedSince }
+  } else if (integration.lastSyncTimestamps) {
     try {
       const timestamps = JSON.parse(integration.lastSyncTimestamps)
       const firstPhase = entityTypes[0]

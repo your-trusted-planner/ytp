@@ -33,6 +33,9 @@ export interface PhaseCompleteMessage {
   type: 'PHASE_COMPLETE'
   runId: string
   phase: ImportPhase
+  filter?: {
+    updatedSince?: string
+  }
 }
 
 export type LawmaticsImportMessage = ImportPageMessage | PhaseCompleteMessage
@@ -94,7 +97,7 @@ export default {
 
           // For IMPORT_PAGE messages, skip to phase complete so the run can continue
           if (body.type === 'IMPORT_PAGE') {
-            await queuePhaseComplete(env, { runId: body.runId, phase: body.phase })
+            await queuePhaseComplete(env, { runId: body.runId, phase: body.phase, filter: body.filter })
           }
           message.ack()
         } else {
@@ -264,7 +267,7 @@ async function handleImportPage(
       filter
     })
   } else {
-    await queuePhaseComplete(env, { runId, phase })
+    await queuePhaseComplete(env, { runId, phase, filter })
   }
 
   message.ack()
@@ -305,17 +308,20 @@ async function handlePhaseComplete(
     const nextPhase = nextPhases[0]
     console.log(`[Lawmatics Import] Starting next phase: ${nextPhase}`)
 
-    // Get filter from integration settings
-    const integration = await db.select()
-      .from(schema.integrations)
-      .where(eq(schema.integrations.id, run.integrationId))
-      .get()
+    // Prefer the filter carried through from the original trigger (custom date override).
+    // Fall back to DB-derived lastSyncTimestamps for normal incremental syncs.
+    let filter: { updatedSince?: string } | undefined = msg.filter
+    if (!filter && run.runType === 'INCREMENTAL') {
+      const integration = await db.select()
+        .from(schema.integrations)
+        .where(eq(schema.integrations.id, run.integrationId))
+        .get()
 
-    let filter: { updatedSince?: string } | undefined
-    if (run.runType === 'INCREMENTAL' && integration?.lastSyncTimestamps) {
-      const timestamps = JSON.parse(integration.lastSyncTimestamps)
-      if (timestamps[nextPhase]) {
-        filter = { updatedSince: timestamps[nextPhase] }
+      if (integration?.lastSyncTimestamps) {
+        const timestamps = JSON.parse(integration.lastSyncTimestamps)
+        if (timestamps[nextPhase]) {
+          filter = { updatedSince: timestamps[nextPhase] }
+        }
       }
     }
 
@@ -907,7 +913,7 @@ async function queueNextPage(
 
 async function queuePhaseComplete(
   env: any,
-  params: { runId: string; phase: ImportPhase }
+  params: { runId: string; phase: ImportPhase; filter?: { updatedSince?: string } }
 ): Promise<void> {
   const queue = env.LAWMATICS_IMPORT_QUEUE
 
@@ -919,7 +925,8 @@ async function queuePhaseComplete(
   const message: PhaseCompleteMessage = {
     type: 'PHASE_COMPLETE',
     runId: params.runId,
-    phase: params.phase
+    phase: params.phase,
+    filter: params.filter
   }
 
   await queue.send(message)
