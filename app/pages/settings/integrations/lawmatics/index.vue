@@ -263,7 +263,7 @@
                 <input
                   v-model="syncOverrideDate"
                   type="date"
-                  class="block w-48 rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
+                  class="block w-56 rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
                 />
               </div>
               <UiButton
