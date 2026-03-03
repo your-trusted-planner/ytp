@@ -288,11 +288,14 @@ export class LawmaticsClient {
       per_page: perPage
     }
 
-    // Add filter for incremental sync
+    // Incremental sync: filter by updated_at >= timestamp
+    // Lawmatics uses filter_with (not filter_op) for the comparison operator
     if (updatedSince) {
-      params.filter_by = 'updated_at'
-      params.filter_op = 'gt'
-      params.filter_on = updatedSince
+      params['filter_by'] = 'updated_at'
+      params['filter_with'] = '>='
+      params['filter_on'] = updatedSince
+      params['sort_by'] = 'updated_at'
+      params['sort_order'] = 'asc'
     }
 
     const response = await this.request<T>(endpoint, params)
@@ -478,9 +481,8 @@ export class LawmaticsClient {
 
     // Add updated_since filter if provided
     if (options.updatedSince) {
-      // Note: May need to combine filters differently depending on API support
       params['filter_by_2'] = 'updated_at'
-      params['filter_op_2'] = 'gt'
+      params['filter_with_2'] = '>='
       params['filter_on_2'] = options.updatedSince
     }
 
@@ -557,7 +559,7 @@ export class LawmaticsClient {
 
     if (options.updatedSince) {
       params['filter_by_2'] = 'updated_at'
-      params['filter_op_2'] = 'gt'
+      params['filter_with_2'] = '>='
       params['filter_on_2'] = options.updatedSince
     }
 

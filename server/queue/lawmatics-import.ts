@@ -331,8 +331,8 @@ async function handlePhaseComplete(
     console.log(`[Lawmatics Import] All phases complete for run ${runId}`)
     await updateRunStatus(runId, 'COMPLETED')
 
-    // Update last sync timestamps on integration
-    await updateIntegrationSyncTimestamps(run.integrationId)
+    // Update last sync timestamps only for phases that were actually synced
+    await updateIntegrationSyncTimestamps(run.integrationId, configuredPhases)
   }
 
   message.ack()
@@ -1017,24 +1017,34 @@ async function logMigrationError(
 }
 
 async function updateIntegrationSyncTimestamps(
-  integrationId: string
+  integrationId: string,
+  syncedPhases: ImportPhase[]
 ): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
+  // Only update timestamps for phases that were actually synced
+  const integration = await db.select()
+    .from(schema.integrations)
+    .where(eq(schema.integrations.id, integrationId))
+    .get()
+
+  let existing: Record<string, string> = {}
+  if (integration?.lastSyncTimestamps) {
+    try {
+      existing = JSON.parse(integration.lastSyncTimestamps)
+    } catch { /* start fresh */ }
+  }
+
   const now = new Date().toISOString()
-  const timestamps: Record<ImportPhase, string> = {
-    users: now,
-    contacts: now,
-    prospects: now,
-    notes: now,
-    activities: now
+  for (const phase of syncedPhases) {
+    existing[phase] = now
   }
 
   await db.update(schema.integrations)
     .set({
-      lastSyncTimestamps: JSON.stringify(timestamps),
+      lastSyncTimestamps: JSON.stringify(existing),
       updatedAt: new Date()
     })
     .where(eq(schema.integrations.id, integrationId))
