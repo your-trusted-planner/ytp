@@ -1,10 +1,53 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-01-28
+**Last Updated**: 2026-02-27
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Lawmatics Parallel Operation — Sync Protection & Tests (2026-02-27)
+- **Status**: Complete ✅
+- **What**: Implemented all 5 phases of the Lawmatics Parallel Operation plan — ownership guards, field-level edit tracking, sync metadata management, scheduled sync infrastructure, and admin sync UI. Added comprehensive test coverage for the sync protection business logic.
+
+**Sync Protection Logic** (in `server/utils/lawmatics-upsert.ts`):
+  - `parseExistingMetadata` — safely parse importMetadata JSON
+  - `canSyncUpdateRecord` — ownership guard: skip YTP-native records, source mismatches, and YTP-owned overrides
+  - `filterLocallyModifiedFields` — field-level protection: skip fields edited locally in YTP
+  - `buildSyncedMetadata` — refresh sync timestamp and snapshot while preserving all existing metadata
+
+**Sync Metadata Tracking** (new `server/utils/sync-metadata.ts`):
+  - `isImportedRecord()` — check if a record came from an external system
+  - `getLocallyModifiedFields()` — retrieve list of locally edited fields
+  - `detectChangedFields()` — compare existing vs incoming values with null/empty normalization
+  - `markFieldsAsLocallyModified()` — DB function to track field edits on imported records
+
+**ImportMetadata Schema Extensions** (in `server/utils/lawmatics-transformers.ts`):
+  - Added `sourceOfTruth?: 'LAWMATICS' | 'YTP'` — explicit ownership override
+  - Added `locallyModifiedFields?: string[]` — fields edited in YTP that sync should skip
+  - Added `lastSyncSnapshot?: Record<string, any>` — Lawmatics values at last sync for conflict review
+
+**API & UI Changes**:
+  - `server/api/clients/[id].put.ts` — calls `markFieldsAsLocallyModified` on save
+  - `server/api/people/[id].put.ts` — calls `markFieldsAsLocallyModified` on save
+  - `server/api/clients/[id].get.ts` — returns `importMetadata` for sync status display
+  - `server/api/people/[id].get.ts` — returns `importMetadata`
+  - `server/api/matters/[id].get.ts` — returns `importMetadata`
+  - `app/pages/clients/[id].vue` — sync status badge integration
+  - `app/pages/matters/[id].vue` — sync status badge integration
+  - `app/components/ui/SyncStatusBadge.vue` — new component showing sync source, last sync time, locally modified fields
+
+**Admin Sync Infrastructure**:
+  - `server/api/admin/sync/` — admin endpoints for sync management
+  - `server/api/admin/integrations/index.get.ts` — updated for sync status
+  - `server/plugins/scheduled-sync.ts` — scheduled sync plugin
+  - `app/pages/settings/integrations/lawmatics/index.vue` — expanded Lawmatics settings with sync controls
+  - `wrangler.jsonc` — updated with sync-related bindings
+
+**Test Coverage** (69 new tests across 3 files):
+  - `tests/unit/integrations/sync-protection.test.ts` (25 tests) — ownership guards, field filtering, metadata building
+  - `tests/unit/integrations/sync-metadata.test.ts` (32 tests) — imported record detection, locally modified fields, change detection, field tracking integration
+  - `tests/unit/integrations/sync-ownership.test.ts` (12 tests) — end-to-end sync decision flow: YTP-native skip, source mismatch, YTP override, full update, partial update with protected fields, all-fields-protected with metadata refresh
 
 #### Billing & Trust Accounting System - Phase 10: Matter/Client Integration (2026-01-28)
 - **Status**: Complete ✅
@@ -1284,6 +1327,44 @@ The following files can be moved to `/doc/archive/` as they represent historical
 ---
 
 ## 💬 Notes from Last Session
+
+**Session 2026-02-27**:
+- **Focus**: Lawmatics Parallel Operation — all 5 phases implemented + test coverage
+- **Achievements**:
+  - ✅ Sync ownership guards in `lawmatics-upsert.ts` (skip YTP-native, source mismatch, YTP-owned records)
+  - ✅ Field-level edit protection (locally modified fields preserved during sync)
+  - ✅ Sync metadata management (timestamps, snapshots, field tracking)
+  - ✅ New `server/utils/sync-metadata.ts` with pure utility functions + DB tracking function
+  - ✅ Extended `ImportMetadata` type with `sourceOfTruth`, `locallyModifiedFields`, `lastSyncSnapshot`
+  - ✅ PUT endpoints for clients and people now call `markFieldsAsLocallyModified`
+  - ✅ GET endpoints return `importMetadata` for sync status display
+  - ✅ New `SyncStatusBadge.vue` component
+  - ✅ Admin sync infrastructure (endpoints, scheduled plugin, settings UI)
+  - ✅ 69 unit tests for sync protection business logic (3 test files)
+- **Technical Notes**:
+  - Tests simulate private helper function logic inline (no DB mocking needed)
+  - `isImportedRecord` and `getLocallyModifiedFields` imported and tested directly
+  - `detectChangedFields` normalizes null/undefined/empty string as equivalent
+  - Tests committed separately from implementation — CI failed because `sync-metadata.ts` and `ImportMetadata` changes were not yet committed
+- **Files Created**:
+  - `server/utils/sync-metadata.ts`
+  - `app/components/ui/SyncStatusBadge.vue`
+  - `server/api/admin/sync/` (directory with endpoints)
+  - `server/plugins/scheduled-sync.ts`
+  - `tests/unit/integrations/sync-protection.test.ts`
+  - `tests/unit/integrations/sync-metadata.test.ts`
+  - `tests/unit/integrations/sync-ownership.test.ts`
+- **Files Modified**:
+  - `server/utils/lawmatics-upsert.ts` — added 4 sync protection helpers, integrated into all upsert functions
+  - `server/utils/lawmatics-transformers.ts` — extended ImportMetadata type
+  - `server/api/clients/[id].put.ts` — field tracking on save
+  - `server/api/people/[id].put.ts` — field tracking on save
+  - `server/api/clients/[id].get.ts`, `server/api/people/[id].get.ts`, `server/api/matters/[id].get.ts` — return importMetadata
+  - `app/pages/clients/[id].vue`, `app/pages/matters/[id].vue` — sync badge integration
+  - `app/pages/settings/integrations/lawmatics/index.vue` — sync controls
+  - `app/types/matter.ts` — importMetadata field
+  - `server/api/admin/integrations/index.get.ts` — sync status
+  - `wrangler.jsonc` — sync bindings
 
 **Session 2026-01-27**:
 - **Focus**: Estate plan delete functionality and activity logging integration
