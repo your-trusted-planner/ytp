@@ -11,6 +11,7 @@ import { kv } from '@nuxthub/kv'
 import { useDrizzle, schema } from '../../../../db'
 import { decrypt } from '../../../../utils/encryption'
 import { LawmaticsClient, LawmaticsApiError, RateLimitError } from '../../../../utils/lawmatics-client'
+import { ApolloClient, ApolloApiError, ApolloRateLimitError } from '../../../../utils/apollo-client'
 
 export default defineEventHandler(async (event) => {
 
@@ -114,6 +115,9 @@ export default defineEventHandler(async (event) => {
     case 'LAWMATICS':
       testResult = await testLawmaticsConnection(decryptedToken)
       break
+    case 'APOLLO':
+      testResult = await testApolloConnection(decryptedToken)
+      break
     case 'RESEND':
       testResult = await testResendConnection(decryptedToken)
       break
@@ -192,6 +196,57 @@ async function testResendConnection(
       }
     }
   } catch (error) {
+    return {
+      success: false,
+      error: `Connection failed: ${error instanceof Error ? error.message : String(error)}`
+    }
+  }
+}
+
+/**
+ * Test Apollo API connection
+ */
+async function testApolloConnection(
+  apiKey: string
+): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+  try {
+    const client = new ApolloClient(apiKey)
+    const result = await client.testConnection()
+
+    if (result.success) {
+      return {
+        success: true,
+        details: {
+          message: 'Successfully connected to Apollo API'
+        }
+      }
+    } else {
+      return {
+        success: false,
+        error: result.error || 'Connection test failed'
+      }
+    }
+  } catch (error) {
+    if (error instanceof ApolloRateLimitError) {
+      return {
+        success: false,
+        error: 'Rate limited by Apollo API. Please try again later.'
+      }
+    }
+
+    if (error instanceof ApolloApiError) {
+      if (error.statusCode === 401) {
+        return {
+          success: false,
+          error: 'Invalid API key. Please check your Apollo API key.'
+        }
+      }
+      return {
+        success: false,
+        error: `API error (${error.statusCode}): ${error.message}`
+      }
+    }
+
     return {
       success: false,
       error: `Connection failed: ${error instanceof Error ? error.message : String(error)}`

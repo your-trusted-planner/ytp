@@ -1,0 +1,1 @@
+ALTER TABLE `people` ADD `apollo_contact_id` text;

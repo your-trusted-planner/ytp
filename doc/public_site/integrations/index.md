@@ -4,6 +4,10 @@ Your Trusted Planner integrates with various third-party services to enhance you
 
 ## Available Integrations
 
+### Marketing & Outreach
+
+- **[Apollo](./apollo)** - Sync contacts and marketing preference URLs with Apollo.io
+
 ### File Storage & Sync
 
 - **[Google Drive](./google-drive)** - Automatically sync client files to Google Shared Drives

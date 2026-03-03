@@ -60,6 +60,7 @@ export default withMermaid(
             collapsed: false,
             items: [
               { text: 'Overview', link: '/integrations/' },
+              { text: 'Apollo', link: '/integrations/apollo' },
               { text: 'Google Drive', link: '/integrations/google-drive' }
             ]
           }

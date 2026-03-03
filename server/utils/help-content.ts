@@ -939,6 +939,77 @@ Services are linked to journey templates (many-to-many). When a service is engag
 
 ---
 
+## Apollo Integration
+
+Sync contacts and marketing preference URLs with Apollo.io for outbound email campaigns.
+
+### What It Does
+
+- **Pushes contacts to Apollo**: Creates or updates contacts in Apollo with name, email, and a preference URL custom field
+- **Syncs opt-outs**: Checks Apollo for unsubscribed contacts and applies the global unsubscribe in YTP
+- **Preference URLs**: Each contact gets a permanent, unique link to manage their marketing preferences
+
+### Setup
+
+1. Go to **Settings** → **Integrations** → **Apollo**
+2. Enter your **Apollo API key** (found in Apollo under Settings → Integrations → API Access)
+3. Click **Save Credentials**
+4. Click **Test Connection** to verify the key works
+
+### Syncing Contacts
+
+1. Go to **Settings** → **Integrations** → **Apollo**
+2. Optionally check **Only sync clients** to limit the sync to client records
+3. Click **Sync Contacts to Apollo**
+4. The system will:
+   - Create a preference_url custom field in Apollo (if it doesn't exist)
+   - For each person with an email, create or update their Apollo contact
+   - Set the preference_url field to a permanent self-service preferences page URL
+
+### Checking Opt-Outs
+
+1. Click **Check Opt-Outs** on the Apollo settings page
+2. The system checks each synced contact in Apollo
+3. If a contact is marked as unsubscribed in Apollo, YTP applies a global unsubscribe
+4. This is one-way: Apollo unsubscribes flow into YTP, but YTP unsubscribes do not push back to Apollo
+
+---
+
+## Marketing Consent & Preferences
+
+Manage per-channel marketing consent for all people in the system.
+
+### How It Works
+
+- Each person can be opted in or out of individual marketing channels (e.g., email newsletters, SMS)
+- A **global unsubscribe** opts a person out of all channels at once
+- All consent changes are recorded in an audit trail with timestamps and source
+
+### Self-Service Preference Pages
+
+Each person can have a unique preference URL that allows them to manage their own marketing consent:
+- **Opt in or out** of individual channels
+- **Global unsubscribe** from all marketing
+- No login required — the URL is authenticated via a signed token
+
+### Preference Tokens
+
+Two types of tokens are available:
+
+| Type | Lifetime | Use Case |
+|------|----------|----------|
+| **Standard** | 30 days | On-demand links in emails or admin UI |
+| **Permanent** | Never expires | Synced to Apollo or other external systems |
+
+Permanent tokens are **deterministic** — the same person always gets the same token, so the URL can be synced once and works forever.
+
+### Generating Preference URLs
+
+- **Single person**: View a person's profile or use the admin API endpoint
+- **Bulk**: Use the Apollo sync (pushes URLs as a custom field) or the bulk admin API endpoint
+
+---
+
 ## WYDAPT Document Seeding
 
 For administrators setting up the Wyoming Asset Protection Trust service:
@@ -974,6 +1045,8 @@ For administrators setting up the Wyoming Asset Protection Trust service:
 
 ### Integrations
 ✓ Test Google Drive connection before creating matters
+✓ Test Apollo connection before running contact syncs
+✓ Run Apollo opt-out checks periodically to stay in sync
 ✓ Monitor notification bell for sync errors
 ✓ Keep OAuth provider credentials secure
 `

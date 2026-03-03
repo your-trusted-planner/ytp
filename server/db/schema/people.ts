@@ -33,6 +33,8 @@ export const people = sqliteTable('people', {
   globalUnsubscribe: integer('global_unsubscribe').notNull().default(0),
   globalUnsubscribeAt: integer('global_unsubscribe_at', { mode: 'timestamp' }),
   globalUnsubscribeSource: text('global_unsubscribe_source'),
+  // External system IDs
+  apolloContactId: text('apollo_contact_id'),
   // Import tracking
   importMetadata: text('import_metadata'),
   // Timestamps

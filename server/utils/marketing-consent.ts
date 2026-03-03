@@ -32,7 +32,7 @@ export interface PersonConsent {
 }
 
 export type ConsentSource = 'SELF_SERVICE' | 'STAFF' | 'IMPORT' | 'FORM'
-export type GlobalUnsubscribeSource = 'LAWMATICS' | 'SELF_SERVICE' | 'STAFF'
+export type GlobalUnsubscribeSource = 'LAWMATICS' | 'APOLLO' | 'SELF_SERVICE' | 'STAFF'
 
 interface SetConsentOptions {
   note?: string
@@ -273,8 +273,28 @@ export async function generatePreferenceToken(personId: string): Promise<string>
 }
 
 /**
+ * Generate a permanent (non-expiring) preference token for a person.
+ * Deterministic: same personId + same secret always produces the same token.
+ * Used for syncing preference URLs to external systems like Apollo.
+ */
+export async function generatePermanentPreferenceToken(personId: string): Promise<string> {
+  const config = useRuntimeConfig()
+  const secret = config.session?.password || config.nuxtAuthPassword
+  if (!secret) {
+    throw new Error('NUXT_SESSION_PASSWORD not configured')
+  }
+
+  const payload = JSON.stringify({ personId, permanent: true })
+  const payloadB64 = base64urlEncode(payload)
+
+  const signature = await hmacSign(payloadB64, secret as string)
+
+  return `${payloadB64}.${signature}`
+}
+
+/**
  * Verify a preference token. Returns the personId if valid and not expired,
- * or null if invalid/expired.
+ * or null if invalid/expired. Supports both time-limited and permanent tokens.
  */
 export async function verifyPreferenceToken(token: string): Promise<string | null> {
   const config = useRuntimeConfig()
@@ -293,7 +313,15 @@ export async function verifyPreferenceToken(token: string): Promise<string | nul
   // Decode and check expiry
   try {
     const payload = JSON.parse(base64urlDecode(payloadB64))
-    if (!payload.personId || !payload.exp) return null
+    if (!payload.personId) return null
+
+    // Permanent tokens have no exp field
+    if (payload.permanent === true) {
+      return payload.personId
+    }
+
+    // Time-limited tokens must have exp
+    if (!payload.exp) return null
     if (Math.floor(Date.now() / 1000) > payload.exp) return null
     return payload.personId
   } catch {

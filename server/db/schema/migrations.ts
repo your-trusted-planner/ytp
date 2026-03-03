@@ -6,7 +6,7 @@ import { people } from './people'
 // Integrations - Stores external system configurations (API keys, settings)
 export const integrations = sqliteTable('integrations', {
   id: text('id').primaryKey(),
-  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', 'RESEND'] }).notNull(),
+  type: text('type', { enum: ['LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', 'RESEND', 'APOLLO'] }).notNull(),
   name: text('name').notNull(), // Display name
 
   // Encrypted credentials (stored in KV for security, reference here)

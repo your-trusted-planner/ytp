@@ -51,6 +51,13 @@ async function generatePreferenceToken(personId: string, secret: string, ttlSeco
   return `${payloadB64}.${signature}`
 }
 
+async function generatePermanentPreferenceToken(personId: string, secret: string): Promise<string> {
+  const payload = JSON.stringify({ personId, permanent: true })
+  const payloadB64 = base64urlEncode(payload)
+  const signature = await hmacSign(payloadB64, secret)
+  return `${payloadB64}.${signature}`
+}
+
 async function verifyPreferenceToken(token: string, secret: string): Promise<string | null> {
   const parts = token.split('.')
   if (parts.length !== 2) return null
@@ -61,7 +68,15 @@ async function verifyPreferenceToken(token: string, secret: string): Promise<str
 
   try {
     const payload = JSON.parse(base64urlDecode(payloadB64))
-    if (!payload.personId || !payload.exp) return null
+    if (!payload.personId) return null
+
+    // Permanent tokens have no exp field
+    if (payload.permanent === true) {
+      return payload.personId
+    }
+
+    // Time-limited tokens must have exp
+    if (!payload.exp) return null
     if (Math.floor(Date.now() / 1000) > payload.exp) return null
     return payload.personId
   } catch {
@@ -363,6 +378,82 @@ describe('Marketing Consent', () => {
       const result = await verifyPreferenceToken(token, TEST_SECRET)
 
       expect(result).toBe(personId)
+    })
+  })
+
+  describe('Permanent Preference Tokens', () => {
+    it('should generate and verify a permanent token', async () => {
+      const token = await generatePermanentPreferenceToken('person-perm-1', TEST_SECRET)
+      const personId = await verifyPreferenceToken(token, TEST_SECRET)
+
+      expect(personId).toBe('person-perm-1')
+    })
+
+    it('should be deterministic (same personId produces same token)', async () => {
+      const token1 = await generatePermanentPreferenceToken('person-det-1', TEST_SECRET)
+      const token2 = await generatePermanentPreferenceToken('person-det-1', TEST_SECRET)
+
+      expect(token1).toBe(token2)
+    })
+
+    it('should not expire', async () => {
+      const token = await generatePermanentPreferenceToken('person-noexp-1', TEST_SECRET)
+
+      // Decode payload and verify no exp field
+      const [payloadB64] = token.split('.')
+      const payload = JSON.parse(base64urlDecode(payloadB64))
+
+      expect(payload.permanent).toBe(true)
+      expect(payload.exp).toBeUndefined()
+
+      // Verify it still works
+      const personId = await verifyPreferenceToken(token, TEST_SECRET)
+      expect(personId).toBe('person-noexp-1')
+    })
+
+    it('should reject a tampered permanent token', async () => {
+      const token = await generatePermanentPreferenceToken('person-orig', TEST_SECRET)
+      const [, signature] = token.split('.')
+
+      // Create tampered payload
+      const tamperedPayload = base64urlEncode(JSON.stringify({
+        personId: 'person-attacker',
+        permanent: true
+      }))
+
+      const tamperedToken = `${tamperedPayload}.${signature}`
+      const personId = await verifyPreferenceToken(tamperedToken, TEST_SECRET)
+
+      expect(personId).toBeNull()
+    })
+
+    it('should coexist with time-limited tokens', async () => {
+      // Both token types should work with the same verifier
+      const permanentToken = await generatePermanentPreferenceToken('person-both', TEST_SECRET)
+      const timedToken = await generatePreferenceToken('person-both', TEST_SECRET)
+
+      const perm = await verifyPreferenceToken(permanentToken, TEST_SECRET)
+      const timed = await verifyPreferenceToken(timedToken, TEST_SECRET)
+
+      expect(perm).toBe('person-both')
+      expect(timed).toBe('person-both')
+
+      // They should be different tokens
+      expect(permanentToken).not.toBe(timedToken)
+    })
+
+    it('existing 30-day tokens still verify correctly', async () => {
+      const token = await generatePreferenceToken('person-legacy', TEST_SECRET)
+      const personId = await verifyPreferenceToken(token, TEST_SECRET)
+
+      expect(personId).toBe('person-legacy')
+    })
+
+    it('expired 30-day tokens still reject correctly', async () => {
+      const token = await generatePreferenceToken('person-exp', TEST_SECRET, -1)
+      const personId = await verifyPreferenceToken(token, TEST_SECRET)
+
+      expect(personId).toBeNull()
     })
   })
 })
