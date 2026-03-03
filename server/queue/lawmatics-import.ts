@@ -87,8 +87,20 @@ export default {
           stack: error instanceof Error ? error.stack : undefined
         })
 
-        // Retry the message (up to max_retries)
-        message.retry()
+        // Check if this is a non-retryable API error (404, 401, 403)
+        const { LawmaticsApiError } = await import('../utils/lawmatics-client')
+        if (error instanceof LawmaticsApiError && [404, 401, 403].includes(error.statusCode)) {
+          console.warn(`[Lawmatics Import] Non-retryable API error (${error.statusCode}) for ${body.type} — skipping phase`)
+
+          // For IMPORT_PAGE messages, skip to phase complete so the run can continue
+          if (body.type === 'IMPORT_PAGE') {
+            await queuePhaseComplete(env, { runId: body.runId, phase: body.phase })
+          }
+          message.ack()
+        } else {
+          // Retry the message (up to max_retries)
+          message.retry()
+        }
       }
     }
   }

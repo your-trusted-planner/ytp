@@ -530,7 +530,7 @@ export class LawmaticsClient {
    * This endpoint can return very large datasets (100k+ records)
    */
   async fetchActivities(options: PaginationOptions = {}): Promise<PageResult<LawmaticsActivity>> {
-    return this.fetchPage<LawmaticsActivity>('/timeline', {
+    return this.fetchPage<LawmaticsActivity>('/activities', {
       ...options,
       // Activities use smaller page size due to volume
       perPage: options.perPage ?? ACTIVITIES_PAGE_SIZE
@@ -561,7 +561,7 @@ export class LawmaticsClient {
       params['filter_on_2'] = options.updatedSince
     }
 
-    const response = await this.request<LawmaticsActivity>('/timeline', params)
+    const response = await this.request<LawmaticsActivity>('/activities', params)
 
     const pagination = response.meta?.pagination ?? {
       current_page: options.page ?? 1,

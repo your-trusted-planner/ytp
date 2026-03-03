@@ -89,8 +89,29 @@ async function processIntegrationSync(
   )
 
   if (activeRun) {
-    console.log(`[Scheduled Sync] Skipping integration ${integration.id} — active run ${activeRun.id} (${activeRun.status})`)
-    return
+    // Check if the run is stale (no progress for over 2 hours)
+    const STALE_THRESHOLD_MS = 2 * 60 * 60 * 1000 // 2 hours
+    const lastUpdate = activeRun.updatedAt ? new Date(activeRun.updatedAt).getTime() : 0
+    const now = Date.now()
+
+    if (now - lastUpdate > STALE_THRESHOLD_MS) {
+      console.warn(`[Scheduled Sync] Run ${activeRun.id} is stale (last update: ${activeRun.updatedAt}) — marking as FAILED`)
+      await db.update(schema.migrationRuns)
+        .set({
+          status: 'FAILED',
+          updatedAt: new Date(),
+          checkpoint: JSON.stringify({
+            error: 'Marked as failed by scheduled sync — no progress for over 2 hours',
+            lastPhase: activeRun.checkpoint ? JSON.parse(activeRun.checkpoint).phase : 'unknown',
+            staleSince: activeRun.updatedAt
+          })
+        })
+        .where(eq(schema.migrationRuns.id, activeRun.id))
+      // Fall through to start a new run
+    } else {
+      console.log(`[Scheduled Sync] Skipping integration ${integration.id} — active run ${activeRun.id} (${activeRun.status})`)
+      return
+    }
   }
 
   // Determine entity types to sync
