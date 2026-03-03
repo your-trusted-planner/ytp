@@ -249,10 +249,21 @@
                 {{ syncSettings.lastAutoSyncAt ? formatDate(syncSettings.lastAutoSyncAt) : 'Never' }}
               </p>
             </div>
-            <div>
+            <div class="text-right">
               <p class="text-sm font-medium text-gray-700">Next sync</p>
               <p class="text-xs text-gray-500">~Every 4 hours</p>
             </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <UiButton
+              variant="outline"
+              size="sm"
+              @click="triggerSync"
+              :is-loading="triggeringSync"
+            >
+              <RefreshCw class="w-4 h-4 mr-2" />
+              Sync Now
+            </UiButton>
           </div>
         </div>
       </div>
@@ -309,7 +320,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, Upload } from 'lucide-vue-next'
+import { ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, Upload, RefreshCw } from 'lucide-vue-next'
 
 const toast = useToast()
 
@@ -341,6 +352,9 @@ const saving = ref(false)
 const testing = ref(false)
 const deleting = ref(false)
 const testResult = ref<{ success: boolean; error?: string } | null>(null)
+
+// Trigger sync state
+const triggeringSync = ref(false)
 
 // Cleanup state
 const cleanupPreviewing = ref(false)
@@ -642,6 +656,19 @@ async function cleanupImports() {
     toast.error(error.data?.message || 'Failed to clean up imports')
   } finally {
     cleanupRunning.value = false
+  }
+}
+
+async function triggerSync() {
+  triggeringSync.value = true
+  try {
+    await $fetch('/api/admin/sync/trigger', { method: 'POST' })
+    toast.success('Sync triggered — check back shortly for results')
+    await loadSyncSummary()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to trigger sync')
+  } finally {
+    triggeringSync.value = false
   }
 }
 

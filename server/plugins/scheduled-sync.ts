@@ -27,7 +27,7 @@ export default defineNitroPlugin((nitroApp) => {
   console.log('[Scheduled Sync] Cloudflare scheduled handler registered')
 })
 
-async function handleScheduledSync(env: any): Promise<void> {
+export async function handleScheduledSync(env: any): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
   const { eq, and } = await import('drizzle-orm')
   const db = useDrizzle()
