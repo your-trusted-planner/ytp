@@ -73,7 +73,7 @@
           <NuxtLink to="/settings/integrations/lawmatics/migrate">
             <UiButton>
               <Upload class="w-4 h-4 mr-2" />
-              Start Migration
+              Manage Migrations
             </UiButton>
           </NuxtLink>
         </div>
@@ -256,16 +256,12 @@
           </div>
           <div class="mt-3 pt-3 border-t border-gray-200 space-y-2">
             <div class="flex items-end gap-3">
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">
-                  Override incremental start date (leave empty for default)
-                </label>
-                <input
-                  v-model="syncOverrideDate"
-                  type="date"
-                  class="block w-56 rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
-                />
-              </div>
+              <UiInput
+                v-model="syncOverrideDate"
+                type="date"
+                label="Override incremental start date"
+                hint="Leave empty for default"
+              />
               <UiButton
                 variant="outline"
                 size="sm"
