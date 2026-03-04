@@ -565,9 +565,11 @@ export async function upsertPerson(
       email: transformed.email,
       phone: transformed.phone,
       address: transformed.address,
+      address2: transformed.address2,
       city: transformed.city,
       state: transformed.state,
       zipCode: transformed.zipCode,
+      country: transformed.country,
       dateOfBirth: transformed.dateOfBirth
     }
 
@@ -600,9 +602,11 @@ export async function upsertPerson(
     email: transformed.email,
     phone: transformed.phone,
     address: transformed.address,
+    address2: transformed.address2,
     city: transformed.city,
     state: transformed.state,
     zipCode: transformed.zipCode,
+    country: transformed.country,
     dateOfBirth: transformed.dateOfBirth,
     notes: transformed.notes,
     importMetadata: transformed.importMetadata,

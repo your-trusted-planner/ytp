@@ -11,6 +11,7 @@
  */
 
 import { nanoid } from 'nanoid'
+import { normalizePhone } from './record-matcher/normalizers'
 import type {
   LawmaticsUser,
   LawmaticsContact,
@@ -111,9 +112,11 @@ export interface TransformedPerson {
   email: string | null
   phone: string | null
   address: string | null
+  address2: string | null
   city: string | null
   state: string | null
   zipCode: string | null
+  country: string | null
   dateOfBirth: Date | null
   notes: string | null
   importMetadata: string
@@ -481,11 +484,91 @@ const STATE_ABBREVIATIONS: Record<string, string> = {
 }
 
 /**
- * Normalize state to two-letter abbreviation (uppercase).
- * Accepts full names ("Colorado" → "CO") or abbreviations ("co" → "CO").
+ * Map of common country names/variations to ISO 3166-1 alpha-2 codes.
  */
-function normalizeState(state: string): string {
+const COUNTRY_CODES: Record<string, string> = {
+  'united states': 'US', 'united states of america': 'US', 'usa': 'US', 'us': 'US', 'u.s.': 'US', 'u.s.a.': 'US',
+  'canada': 'CA', 'ca': 'CA',
+  'united kingdom': 'GB', 'great britain': 'GB', 'england': 'GB', 'scotland': 'GB', 'wales': 'GB', 'uk': 'GB',
+  'switzerland': 'CH', 'schweiz': 'CH', 'suisse': 'CH',
+  'germany': 'DE', 'deutschland': 'DE',
+  'france': 'FR',
+  'australia': 'AU',
+  'mexico': 'MX', 'méxico': 'MX',
+  'italy': 'IT', 'italia': 'IT',
+  'spain': 'ES', 'españa': 'ES',
+  'brazil': 'BR', 'brasil': 'BR',
+  'japan': 'JP',
+  'china': 'CN',
+  'india': 'IN',
+  'south korea': 'KR', 'korea': 'KR',
+  'netherlands': 'NL', 'holland': 'NL',
+  'belgium': 'BE',
+  'austria': 'AT', 'österreich': 'AT',
+  'sweden': 'SE',
+  'norway': 'NO',
+  'denmark': 'DK',
+  'finland': 'FI',
+  'ireland': 'IE',
+  'portugal': 'PT',
+  'poland': 'PL',
+  'czech republic': 'CZ', 'czechia': 'CZ',
+  'greece': 'GR',
+  'turkey': 'TR', 'türkiye': 'TR',
+  'russia': 'RU',
+  'ukraine': 'UA',
+  'israel': 'IL',
+  'south africa': 'ZA',
+  'argentina': 'AR',
+  'colombia': 'CO',
+  'chile': 'CL',
+  'peru': 'PE',
+  'new zealand': 'NZ',
+  'singapore': 'SG',
+  'hong kong': 'HK',
+  'taiwan': 'TW',
+  'thailand': 'TH',
+  'philippines': 'PH',
+  'indonesia': 'ID',
+  'malaysia': 'MY',
+  'vietnam': 'VN',
+  'united arab emirates': 'AE', 'uae': 'AE',
+  'saudi arabia': 'SA',
+  'egypt': 'EG',
+  'nigeria': 'NG',
+  'costa rica': 'CR',
+  'panama': 'PA',
+  'puerto rico': 'PR',
+  'luxembourg': 'LU',
+  'iceland': 'IS',
+  'romania': 'RO',
+  'hungary': 'HU',
+  'croatia': 'HR',
+}
+
+/**
+ * Normalize a country value to ISO 3166-1 alpha-2.
+ * If already 2 letters, uppercase and return. If a known name, map it. Otherwise store as-is.
+ */
+function normalizeCountry(country: string): string {
+  const trimmed = country.trim()
+  if (!trimmed) return trimmed
+  // Already a 2-letter code
+  if (/^[a-zA-Z]{2}$/.test(trimmed)) return trimmed.toUpperCase()
+  // Lookup by name
+  const code = COUNTRY_CODES[trimmed.toLowerCase()]
+  return code || trimmed
+}
+
+/**
+ * Normalize state to two-letter abbreviation (uppercase).
+ * Only applies US abbreviation logic when country is US or unspecified.
+ * For non-US countries, returns the state value as-is (trimmed).
+ */
+function normalizeState(state: string, country?: string | null): string {
   const trimmed = state.trim()
+  // For non-US countries, don't apply US state normalization
+  if (country && country !== 'US') return trimmed
   // Already a 2-letter code
   if (trimmed.length === 2) return trimmed.toUpperCase()
   // Full name lookup
@@ -495,20 +578,25 @@ function normalizeState(state: string): string {
 
 export function parseAddress(
   contact: LawmaticsContact,
-  addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
+  addressData?: { street?: string; street2?: string; city?: string; state?: string; zipcode?: string; country?: string; [key: string]: any } | null
 ): {
   address: string | null
+  address2: string | null
   city: string | null
   state: string | null
   zipCode: string | null
+  country: string | null
 } {
   // 1. Use pre-fetched structured address data if available
   if (addressData) {
+    const country = addressData.country ? normalizeCountry(addressData.country) : null
     return {
       address: addressData.street ? normalizeStreet(addressData.street) : null,
+      address2: addressData.street2 || null,
       city: addressData.city ? normalizeCity(addressData.city) : null,
-      state: addressData.state ? normalizeState(addressData.state) : null,
-      zipCode: addressData.zipcode || null
+      state: addressData.state ? normalizeState(addressData.state, country) : null,
+      zipCode: addressData.zipcode || null,
+      country
     }
   }
 
@@ -517,18 +605,22 @@ export function parseAddress(
   const structuredState = contact.attributes.state || null
   const structuredZip = contact.attributes.zipcode || contact.attributes.zip_code || null
   const structuredStreet = contact.attributes.street || null
+  const structuredStreet2 = contact.attributes.street2 || null
+  const structuredCountry = contact.attributes.country ? normalizeCountry(contact.attributes.country) : null
 
   if (structuredStreet || structuredCity || structuredState || structuredZip) {
     return {
       address: structuredStreet ? normalizeStreet(structuredStreet) : null,
+      address2: structuredStreet2,
       city: structuredCity ? normalizeCity(structuredCity) : null,
-      state: structuredState ? normalizeState(structuredState) : null,
-      zipCode: structuredZip
+      state: structuredState ? normalizeState(structuredState, structuredCountry) : null,
+      zipCode: structuredZip,
+      country: structuredCountry
     }
   }
 
   // 3. No structured data available
-  return { address: null, city: null, state: null, zipCode: null }
+  return { address: null, address2: null, city: null, state: null, zipCode: null, country: null }
 }
 
 /**
@@ -757,17 +849,23 @@ export function transformContactToPerson(
   const lastName = contact.attributes.last_name || null
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || null
 
+  // Normalize phone to E.164, fall back to raw value if normalization fails
+  const rawPhone = contact.attributes.phone || contact.attributes.phone_number || null
+  const normalizedPhone = rawPhone ? (normalizePhone(rawPhone) || rawPhone) : null
+
   return {
     id: nanoid(),
     firstName,
     lastName,
     fullName,
     email: contact.attributes.email || contact.attributes.email_address || null,
-    phone: contact.attributes.phone || contact.attributes.phone_number || null,
+    phone: normalizedPhone,
     address: addressData.address,
+    address2: addressData.address2,
     city: addressData.city,
     state: addressData.state,
     zipCode: addressData.zipCode,
+    country: addressData.country,
     dateOfBirth,
     notes: null,
     importMetadata: serializeImportMetadata(metadata),

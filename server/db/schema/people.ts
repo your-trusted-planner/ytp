@@ -24,6 +24,7 @@ export const people = sqliteTable('people', {
   city: text('city'),
   state: text('state'),
   zipCode: text('zip_code'),
+  country: text('country'), // ISO 3166-1 alpha-2 (e.g., "US", "CH") or null
   // Additional Details
   dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
   ssnLast4: text('ssn_last_4'),
