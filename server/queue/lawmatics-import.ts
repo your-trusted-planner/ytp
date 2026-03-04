@@ -228,7 +228,8 @@ async function handleImportPage(
   const { processedCount, createdCount, updatedCount, skippedCount, errors } = await processRecords(
     phase,
     pageResult.data,
-    runId
+    runId,
+    client
   )
 
   console.log(`[Lawmatics Import] ${phase} page ${page}: processed=${processedCount}, created=${createdCount}, updated=${updatedCount}, skipped=${skippedCount}, errors=${errors.length}`)
@@ -554,7 +555,8 @@ async function ensurePersonIsClient(
 async function processRecords(
   phase: ImportPhase,
   records: any[],
-  runId: string
+  runId: string,
+  client?: { fetchAddress: (id: string) => Promise<any> }
 ): Promise<ProcessResult> {
   const transformers = await import('../utils/lawmatics-transformers')
   const upsert = await import('../utils/lawmatics-upsert')
@@ -674,26 +676,22 @@ async function processRecords(
           const addressRelation = record.relationships?.addresses?.data
           const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
 
-          // Debug: log first contact's address resolution
-          if (result.processedCount + result.skippedCount < 3) {
-            console.log(`[Lawmatics Import] Contact ${record.id} relationships keys:`, record.relationships ? Object.keys(record.relationships) : 'NO RELATIONSHIPS')
-            console.log(`[Lawmatics Import] Contact ${record.id} relationships empty?:`, JSON.stringify(record.relationships) === '{}')
-            console.log(`[Lawmatics Import] Contact ${record.id} addressId:`, addressId)
-            console.log(`[Lawmatics Import] Contact ${record.id} attributes.address:`, record.attributes.address)
-          }
-
-          if (addressId) {
+          if (addressId && client) {
             try {
               const addressObj = await client.fetchAddress(addressId)
               addressData = addressObj.attributes
-              if (result.processedCount + result.skippedCount < 3) {
-                console.log(`[Lawmatics Import] Contact ${record.id} fetched address:`, JSON.stringify(addressData))
-              }
             } catch (addrError) {
-              console.warn(`[Lawmatics Import] Failed to fetch address ${addressId} for contact ${record.id}:`, addrError)
+              const errMsg = addrError instanceof Error ? addrError.message : String(addrError)
+              const errType = addrError instanceof Error ? addrError.constructor.name : typeof addrError
+              // Distinguish API errors (expected, warn) from code bugs (unexpected, error)
+              if (errType === 'RateLimitError' || errType === 'LawmaticsApiError') {
+                console.warn(`[Lawmatics Import] Address fetch failed for contact ${record.id} (address ${addressId}): ${errMsg}`)
+              } else {
+                console.error(`[Lawmatics Import] Unexpected error fetching address ${addressId} for contact ${record.id} [${errType}]: ${errMsg}`)
+              }
             }
-          } else if (result.processedCount + result.skippedCount < 3) {
-            console.log(`[Lawmatics Import] Contact ${record.id} — no addressId found, skipping address fetch`)
+          } else if (addressId && !client) {
+            console.error(`[Lawmatics Import] Cannot fetch address for contact ${record.id} — client not provided to processRecords`)
           }
 
           // 3. Non-person check (existing logic)
