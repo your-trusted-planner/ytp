@@ -30,7 +30,10 @@ export default defineEventHandler(async (event) => {
     clients: 0,
     users: 0,
     people: 0,
-    notes: 0
+    notes: 0,
+    importDuplicates: 0,
+    personExternalIds: 0,
+    marketingConsent: 0
   }
 
   // Count records that would be affected
@@ -69,11 +72,35 @@ export default defineEventHandler(async (event) => {
     .where(sql`entity_type = 'person' AND entity_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
     .get()
 
+  // Count import duplicates referencing imported people
+  const importDuplicatesCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.importDuplicates)
+    .where(sql`existing_person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+    .get()
+
+  // Count person external IDs for imported people
+  const externalIdsCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.personExternalIds)
+    .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+    .get()
+
+  // Count marketing consent for imported people
+  const marketingConsentCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.marketingConsent)
+    .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+    .get()
+
   results.relationships = relationshipsCount?.count ?? 0
   results.clients = clientsCount?.count ?? 0
   results.users = usersCount?.count ?? 0
   results.people = peopleCount?.count ?? 0
   results.notes = notesCount?.count ?? 0
+  results.importDuplicates = importDuplicatesCount?.count ?? 0
+  results.personExternalIds = externalIdsCount?.count ?? 0
+  results.marketingConsent = marketingConsentCount?.count ?? 0
 
   if (dryRun) {
     return {
@@ -85,28 +112,44 @@ export default defineEventHandler(async (event) => {
 
   // Perform deletions in correct order to respect foreign key constraints
 
-  // 1. Delete notes attached to imported people
+  // 1. Delete import duplicates referencing imported people
+  await db.delete(schema.importDuplicates)
+    .where(sql`existing_person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+
+  // 2. Delete person external IDs for imported people
+  await db.delete(schema.personExternalIds)
+    .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+
+  // 3. Delete marketing consent for imported people
+  await db.delete(schema.marketingConsent)
+    .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+
+  // 4. Delete marketing consent history for imported people
+  await db.delete(schema.marketingConsentHistory)
+    .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
+
+  // 5. Delete notes attached to imported people
   await db.delete(schema.notes)
     .where(sql`entity_type = 'person' AND entity_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
 
-  // 2. Delete relationships involving imported people
+  // 6. Delete relationships involving imported people
   await db.delete(schema.relationships)
     .where(sql`from_person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter}) OR to_person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
 
-  // 3. Clear referral references in clients (don't delete the client, just the reference)
+  // 7. Clear referral references in clients (don't delete the client, just the reference)
   await db.update(schema.clients)
     .set({ referredByPersonId: null })
     .where(sql`referred_by_person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
 
-  // 4. Delete clients linked to imported people
+  // 8. Delete clients linked to imported people
   await db.delete(schema.clients)
     .where(sql`person_id IN (SELECT id FROM people WHERE ${lawmaticsFilter})`)
 
-  // 5. Delete users linked to imported people
+  // 9. Delete users linked to imported people
   await db.delete(schema.users)
     .where(lawmaticsFilter)
 
-  // 6. Finally delete the people
+  // 10. Finally delete the people
   await db.delete(schema.people)
     .where(lawmaticsFilter)
 

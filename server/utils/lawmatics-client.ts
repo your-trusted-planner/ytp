@@ -121,6 +121,22 @@ export interface LawmaticsNote extends LawmaticsEntity {
 }
 
 /**
+ * Lawmatics Address (fetched via GET /addresses/:id)
+ */
+export interface LawmaticsAddress extends LawmaticsEntity {
+  type: 'address'
+  attributes: {
+    street?: string
+    city?: string
+    state?: string
+    zipcode?: string
+    full_address?: string
+    country?: string
+    [key: string]: any
+  }
+}
+
+/**
  * Lawmatics Timeline Activity
  */
 export interface LawmaticsActivity extends LawmaticsEntity {
@@ -266,6 +282,50 @@ export class LawmaticsClient {
     })
 
     return data
+  }
+
+  /**
+   * Make an authenticated request for a single resource (e.g. GET /addresses/:id)
+   * Returns the single object, not an array.
+   */
+  private async requestSingle<T>(
+    endpoint: string,
+    params: Record<string, string | number | undefined> = {}
+  ): Promise<T> {
+    const url = this.buildUrl(endpoint, params)
+
+    this.log(`Fetching single: ${url}`)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After')
+      throw new RateLimitError(
+        'Rate limit exceeded',
+        retryAfter ? parseInt(retryAfter, 10) : undefined
+      )
+    }
+
+    if (!response.ok) {
+      const body = await response.text()
+      throw new LawmaticsApiError(
+        `Lawmatics API error: ${response.status} ${response.statusText}`,
+        response.status,
+        body
+      )
+    }
+
+    const result = await response.json() as { data: T }
+
+    this.log(`Received single resource`, { id: (result.data as any)?.id })
+
+    return result.data
   }
 
   /**
@@ -439,6 +499,13 @@ export class LawmaticsClient {
     options: Omit<PaginationOptions, 'page'> & { onProgress?: (page: number, total: number) => void } = {}
   ): Promise<LawmaticsContact[]> {
     return this.fetchAll<LawmaticsContact>('/contacts', options)
+  }
+
+  /**
+   * Fetch a single address by ID
+   */
+  async fetchAddress(addressId: string): Promise<LawmaticsAddress> {
+    return this.requestSingle<LawmaticsAddress>(`/addresses/${addressId}`)
   }
 
   /**

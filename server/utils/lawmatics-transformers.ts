@@ -423,25 +423,53 @@ export function parseDate(dateStr: string | undefined | null): Date | null {
 }
 
 /**
- * Parse address components from Lawmatics
- * Lawmatics may have structured or unstructured address data
+ * Parse address components from Lawmatics.
+ *
+ * The contact's `address` attribute contains a full_address string
+ * (e.g. "1631 Redberry Ct, Fort Collins, CO 80525, United States").
+ * The structured address fields (street, city, state, zipcode) come from
+ * a separate address object fetched via GET /addresses/:id.
+ *
+ * @param contact - The Lawmatics contact
+ * @param addressData - Pre-fetched address object with structured fields (optional)
  */
-export function parseAddress(contact: LawmaticsContact): {
+export function parseAddress(
+  contact: LawmaticsContact,
+  addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
+): {
   address: string | null
   city: string | null
   state: string | null
   zipCode: string | null
 } {
-  // Try to get structured address from relationships if available
-  // For now, use the address attribute directly
-  const address = contact.attributes.address || null
+  // 1. Use pre-fetched structured address data if available
+  if (addressData) {
+    return {
+      address: addressData.street || null,
+      city: addressData.city || null,
+      state: addressData.state || null,
+      zipCode: addressData.zipcode || null
+    }
+  }
 
-  // Lawmatics may have separate fields in some accounts
-  const city = contact.attributes.city || null
-  const state = contact.attributes.state || null
-  const zipCode = contact.attributes.zipcode || contact.attributes.zip_code || null
+  // 2. Fallback: check for structured fields on the contact attributes
+  const structuredCity = contact.attributes.city || null
+  const structuredState = contact.attributes.state || null
+  const structuredZip = contact.attributes.zipcode || contact.attributes.zip_code || null
+  const structuredStreet = contact.attributes.street || null
 
-  return { address, city, state, zipCode }
+  if (structuredStreet || structuredCity || structuredState || structuredZip) {
+    return {
+      address: structuredStreet,
+      city: structuredCity,
+      state: structuredState,
+      zipCode: structuredZip
+    }
+  }
+
+  // 3. No structured data — store nothing (the full_address string
+  //    in contact.attributes.address is not useful for structured fields)
+  return { address: null, city: null, state: null, zipCode: null }
 }
 
 /**
@@ -525,6 +553,7 @@ export function transformContact(
   options: {
     importRunId?: string
     existingEmails?: Set<string> // For duplicate detection
+    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
   } = {}
 ): TransformedClient {
   const flags: ImportFlag[] = []
@@ -575,8 +604,8 @@ export function transformContact(
   const createdAt = parseDate(contact.attributes.created_at) || new Date()
   const updatedAt = parseDate(contact.attributes.updated_at) || new Date()
 
-  // Parse address
-  const addressData = parseAddress(contact)
+  // Parse address (use pre-fetched structured data if available)
+  const addressData = parseAddress(contact, options.addressData)
 
   // Parse birthdate
   const dateOfBirth = parseDate(contact.attributes.birthdate)
@@ -622,6 +651,7 @@ export function transformContactToPerson(
   contact: LawmaticsContact,
   options: {
     importRunId?: string
+    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
   } = {}
 ): TransformedPerson | null {
   // Skip non-person records (businesses, trusts, etc.)
@@ -657,8 +687,8 @@ export function transformContactToPerson(
   const createdAt = parseDate(contact.attributes.created_at) || new Date()
   const updatedAt = parseDate(contact.attributes.updated_at) || new Date()
 
-  // Parse address
-  const addressData = parseAddress(contact)
+  // Parse address (use pre-fetched structured data if available)
+  const addressData = parseAddress(contact, options.addressData)
 
   // Parse birthdate
   const dateOfBirth = parseDate(contact.attributes.birthdate)

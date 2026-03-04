@@ -669,9 +669,23 @@ async function processRecords(
             continue
           }
 
-          // 2. Non-person check (existing logic)
+          // 2. Fetch structured address data from Lawmatics if available
+          let addressData: { street?: string; city?: string; state?: string; zipcode?: string } | null = null
+          const addressRelation = record.relationships?.addresses?.data
+          const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
+          if (addressId) {
+            try {
+              const addressObj = await client.fetchAddress(addressId)
+              addressData = addressObj.attributes
+            } catch (addrError) {
+              console.warn(`[Lawmatics Import] Failed to fetch address ${addressId}:`, addrError)
+            }
+          }
+
+          // 3. Non-person check (existing logic)
           const transformed = transformers.transformContactToPerson(record, {
-            importRunId: runId
+            importRunId: runId,
+            addressData
           })
 
           // Skip non-person records (entities, businesses, trusts, etc.)
@@ -680,14 +694,14 @@ async function processRecords(
             continue
           }
 
-          // 3. Normal upsert flow (includes personExternalIds linking)
+          // 4. Normal upsert flow (includes personExternalIds linking)
           const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
 
-          // 4. Handle Lawmatics opt_out / globalUnsubscribe
+          // 5. Handle Lawmatics opt_out / globalUnsubscribe
           if (record.attributes.opt_out === true || record.attributes.opt_out === 'true') {
             try {
               const { setGlobalUnsubscribe } = await import('../utils/marketing-consent')
