@@ -109,3 +109,16 @@ export const importDuplicates = sqliteTable('import_duplicates', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
+
+// Person External IDs - Maps one person to multiple external IDs from the same or different sources
+// Solves the "dead external ID" problem when duplicates are merged in external CRMs
+export const personExternalIds = sqliteTable('person_external_ids', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+  source: text('source').notNull(),       // 'LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', etc.
+  externalId: text('external_id').notNull(),
+  isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(true),
+  metadata: text('metadata'),             // JSON: source-specific data (e.g., merge history)
+  linkedAt: integer('linked_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+})

@@ -6,18 +6,19 @@
  * so it can be added to the lookup cache, preventing cascade failures.
  *
  * Detection strategy:
- * 1. Email exact match (confidence: 100) - Primary check
- * 2. Normalized email match (confidence: 95) - lowercase, trim whitespace
- * 3. Future: Name + phone matching for contacts without email
+ * 1. Probabilistic matching via record-matcher engine (name, email, phone, DOB, address)
+ * 2. Anti-signal detection for shared-email spouses
+ * 3. Falls back to email-only matching for backward compatibility
  */
 
 import type { LawmaticsContact } from './lawmatics-client'
+import type { MatchIndex, MatchCandidate, PersonRecord } from './record-matcher/types'
 
 // ===================================
 // TYPES
 // ===================================
 
-export type DuplicateType = 'EMAIL' | 'NAME' | 'PHONE'
+export type DuplicateType = 'EMAIL' | 'NAME' | 'PHONE' | 'PROBABILISTIC'
 
 export interface DuplicateMatch {
   type: DuplicateType
@@ -25,6 +26,14 @@ export interface DuplicateMatch {
   matchingField: string
   matchingValue: string
   confidenceScore: number
+  /** Rich match metadata from the record-matcher engine */
+  matchDetails?: {
+    rawScore: number
+    adjustedScore: number
+    confidence: 'high' | 'medium' | 'low'
+    fieldScores: Array<{ field: string; score: number; method: string; details?: string }>
+    antiSignals: Array<{ type: string; penalty: number; description: string }>
+  }
 }
 
 export interface DuplicateCheckResult {
@@ -38,7 +47,7 @@ export interface EmailIndexEntry {
 }
 
 // ===================================
-// EMAIL INDEX
+// EMAIL INDEX (legacy, still used for fast within-batch dedup)
 // ===================================
 
 /**
@@ -79,72 +88,119 @@ export async function buildEmailIndex(): Promise<Map<string, EmailIndexEntry>> {
 
 /**
  * Normalize an email address for comparison.
- * - Lowercase
- * - Trim whitespace
- * - Handle common variations
  */
 function normalizeEmail(email: string): string | null {
   if (!email) return null
 
-  let normalized = email.toLowerCase().trim()
+  const normalized = email.toLowerCase().trim()
 
   // Skip placeholder emails (generated during previous imports)
   if (normalized.includes('@imported.local') || normalized.includes('@placeholder.local')) {
     return null
   }
 
-  // Remove common "plus addressing" patterns (e.g., john+tag@gmail.com -> john@gmail.com)
-  // This helps detect duplicates even when plus addresses are used
-  // Disabled for now - keeping strict matching
-  // const plusIndex = normalized.indexOf('+')
-  // if (plusIndex > 0) {
-  //   const atIndex = normalized.indexOf('@')
-  //   if (atIndex > plusIndex) {
-  //     normalized = normalized.substring(0, plusIndex) + normalized.substring(atIndex)
-  //   }
-  // }
-
   return normalized
 }
 
 // ===================================
-// DUPLICATE DETECTION
+// RECORD-MATCHER BASED DETECTION
 // ===================================
 
 /**
- * Check if a Lawmatics contact is a duplicate of an existing person.
- *
- * CRITICAL: This function is called BEFORE transforming the contact.
- * If a duplicate is found, we skip creating a new record but still
- * add the existing person ID to the lookup cache.
- *
- * @param contact The Lawmatics contact to check
- * @param emailIndex Pre-built index of existing emails
- * @returns DuplicateCheckResult with match info if duplicate found
+ * Extract a PersonRecord from a Lawmatics contact for matching.
+ */
+function contactToPersonRecord(contact: LawmaticsContact): PersonRecord {
+  const attrs = contact.attributes
+  return {
+    firstName: attrs.first_name || undefined,
+    lastName: attrs.last_name || undefined,
+    email: attrs.email || attrs.email_address || undefined,
+    phone: attrs.phone || attrs.phone_number || undefined,
+    dateOfBirth: attrs.birthdate || undefined,
+    address: attrs.address || undefined
+  }
+}
+
+/**
+ * Check for duplicates using the probabilistic record-matcher engine.
+ * Returns a DuplicateCheckResult with rich match metadata.
+ */
+export function checkForDuplicatesWithMatcher(
+  contact: LawmaticsContact,
+  matchIndex: MatchIndex
+): DuplicateCheckResult {
+  const record = contactToPersonRecord(contact)
+  const matches = matchIndex.findMatches(record)
+
+  if (matches.length === 0) {
+    return { isDuplicate: false }
+  }
+
+  // Use the best match (highest adjusted score)
+  const best = matches[0]!
+
+  // Determine the primary matching field for logging
+  const sortedFieldScores = [...best.fieldScores]
+    .filter(s => s.method !== 'missing')
+    .sort((a, b) => b.score - a.score)
+  const bestFieldScore = sortedFieldScores.length > 0 ? sortedFieldScores[0] : undefined
+
+  const matchingField = bestFieldScore?.field || 'composite'
+  const matchingValue = getFieldValue(record, matchingField)
+
+  // Map confidence to duplicate type
+  const type: DuplicateType = bestFieldScore && bestFieldScore.field === 'email' && bestFieldScore.score === 1.0
+    ? 'EMAIL'
+    : 'PROBABILISTIC'
+
+  return {
+    isDuplicate: true,
+    bestMatch: {
+      type,
+      existingPersonId: best.personId,
+      matchingField,
+      matchingValue: matchingValue || '',
+      confidenceScore: Math.round(best.adjustedScore * 100),
+      matchDetails: {
+        rawScore: best.rawScore,
+        adjustedScore: best.adjustedScore,
+        confidence: best.confidence,
+        fieldScores: best.fieldScores.map(s => ({
+          field: s.field,
+          score: s.score,
+          method: s.method,
+          details: s.details
+        })),
+        antiSignals: best.antiSignals.map(s => ({
+          type: s.type,
+          penalty: s.penalty,
+          description: s.description
+        }))
+      }
+    }
+  }
+}
+
+/**
+ * Legacy email-only duplicate check.
+ * Kept for backward compatibility and for fast within-batch dedup.
  */
 export function checkForDuplicates(
   contact: LawmaticsContact,
   emailIndex: Map<string, EmailIndexEntry>
 ): DuplicateCheckResult {
-  // Get email from contact
   const contactEmail = contact.attributes.email || contact.attributes.email_address
 
   if (!contactEmail) {
-    // No email to check - not a duplicate by email
-    // Future: Could check name + phone here
     return { isDuplicate: false }
   }
 
   const normalizedEmail = normalizeEmail(contactEmail)
-
   if (!normalizedEmail) {
-    // Email is a placeholder, skip duplicate check
     return { isDuplicate: false }
   }
 
-  // Check email index for match
   const match = emailIndex.get(normalizedEmail)
-
   if (match) {
     return {
       isDuplicate: true,
@@ -153,7 +209,7 @@ export function checkForDuplicates(
         existingPersonId: match.personId,
         matchingField: 'email',
         matchingValue: contactEmail,
-        confidenceScore: 100 // Exact email match
+        confidenceScore: 100
       }
     }
   }
@@ -175,10 +231,9 @@ export async function emailExistsInPeople(email: string): Promise<{ exists: bool
     return { exists: false }
   }
 
-  // Note: SQLite LIKE is case-insensitive by default
   const existing = await db.select({ id: schema.people.id })
     .from(schema.people)
-    .where(eq(schema.people.email, email)) // Case-sensitive first
+    .where(eq(schema.people.email, email))
     .limit(1)
     .get()
 
@@ -186,8 +241,6 @@ export async function emailExistsInPeople(email: string): Promise<{ exists: bool
     return { exists: true, personId: existing.id }
   }
 
-  // Try case-insensitive if exact match failed
-  // This uses SQLite's LIKE which is case-insensitive
   const { like } = await import('drizzle-orm')
   const caseInsensitive = await db.select({ id: schema.people.id })
     .from(schema.people)
@@ -200,4 +253,20 @@ export async function emailExistsInPeople(email: string): Promise<{ exists: bool
   }
 
   return { exists: false }
+}
+
+// ===================================
+// HELPERS
+// ===================================
+
+function getFieldValue(record: PersonRecord, field: string): string | undefined {
+  switch (field) {
+    case 'email': return record.email
+    case 'firstName': return record.firstName
+    case 'lastName': return record.lastName
+    case 'phone': return record.phone
+    case 'dateOfBirth': return record.dateOfBirth
+    case 'address': return record.address
+    default: return undefined
+  }
 }

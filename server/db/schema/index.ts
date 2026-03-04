@@ -66,7 +66,7 @@ export { settings, googleDriveConfig } from './settings'
 export { notices, noticeRecipients } from './notifications'
 
 // Data Migration
-export { integrations, migrationRuns, migrationErrors, importDuplicates } from './migrations'
+export { integrations, migrationRuns, migrationErrors, importDuplicates, personExternalIds } from './migrations'
 
 // Estate Plans
 export {

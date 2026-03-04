@@ -42,7 +42,8 @@ export interface BatchUpsertResult {
 // ===================================
 
 /**
- * Find an existing record by its import source and external ID
+ * Find an existing record by its import source and external ID.
+ * For people, also checks the personExternalIds table (supports merged/dead external IDs).
  */
 async function findByExternalId(
   tableName: 'users' | 'matters' | 'notes' | 'activities' | 'people',
@@ -51,8 +52,23 @@ async function findByExternalId(
 ): Promise<{ id: string } | null> {
   const db = useDrizzle()
 
-  // Use json_extract to query the importMetadata JSON column
-  // SQLite syntax: json_extract(column, '$.key')
+  // For people, check personExternalIds first (handles merged external IDs)
+  if (tableName === 'people') {
+    const extIdResult = await db.select({ personId: schema.personExternalIds.personId })
+      .from(schema.personExternalIds)
+      .where(and(
+        eq(schema.personExternalIds.source, source),
+        eq(schema.personExternalIds.externalId, externalId)
+      ))
+      .limit(1)
+      .get()
+
+    if (extIdResult) {
+      return { id: extIdResult.personId }
+    }
+  }
+
+  // Fallback: check importMetadata JSON column
   const result = await db.all(sql`
     SELECT id FROM ${sql.identifier(tableName)}
     WHERE json_extract(import_metadata, '$.source') = ${source}
@@ -61,6 +77,44 @@ async function findByExternalId(
   `)
 
   return result.length > 0 ? { id: (result[0] as any).id } : null
+}
+
+/**
+ * Ensure a person has an entry in personExternalIds.
+ * Creates one if it doesn't already exist.
+ */
+export async function ensurePersonExternalId(
+  personId: string,
+  source: string,
+  externalId: string,
+  isPrimary: boolean = true,
+  metadata?: Record<string, any>
+): Promise<void> {
+  const db = useDrizzle()
+
+  // Check if this exact mapping already exists
+  const existing = await db.select({ id: schema.personExternalIds.id })
+    .from(schema.personExternalIds)
+    .where(and(
+      eq(schema.personExternalIds.source, source),
+      eq(schema.personExternalIds.externalId, externalId)
+    ))
+    .limit(1)
+    .get()
+
+  if (existing) return
+
+  const { nanoid } = await import('nanoid')
+  await db.insert(schema.personExternalIds).values({
+    id: nanoid(),
+    personId,
+    source,
+    externalId,
+    isPrimary,
+    metadata: metadata ? JSON.stringify(metadata) : null,
+    linkedAt: new Date(),
+    createdAt: new Date()
+  })
 }
 
 /**
@@ -498,6 +552,8 @@ export async function upsertPerson(
           .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
           .where(eq(schema.people.id, existing.id))
       }
+      // Ensure external ID is linked even for skipped records
+      await ensurePersonExternalId(existing.id, source, externalId)
       return { action: 'skipped', id: existing.id, externalId }
     }
 
@@ -529,6 +585,9 @@ export async function upsertPerson(
       })
       .where(eq(schema.people.id, existing.id))
 
+    // Ensure external ID is linked
+    await ensurePersonExternalId(existing.id, source, externalId)
+
     return { action: 'updated', id: existing.id, externalId }
   }
 
@@ -550,6 +609,9 @@ export async function upsertPerson(
     createdAt: transformed.createdAt,
     updatedAt: transformed.updatedAt
   })
+
+  // Link external ID in personExternalIds table
+  await ensurePersonExternalId(transformed.id, source, externalId)
 
   return { action: 'created', id: transformed.id, externalId }
 }

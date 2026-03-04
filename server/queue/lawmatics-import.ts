@@ -363,6 +363,7 @@ let peopleLookupCache: Map<string, string> | null = null
 let matterLookupCache: Map<string, string> | null = null
 let existingEmailsCache: Set<string> | null = null
 let emailIndexCache: Map<string, { personId: string; originalEmail: string }> | null = null
+let matchIndexCache: import('../utils/record-matcher/types').MatchIndex | null = null
 
 async function getOrBuildUserLookup(): Promise<Map<string, string>> {
   if (!userLookupCache) {
@@ -416,6 +417,14 @@ async function getOrBuildEmailIndex(): Promise<Map<string, { personId: string; o
   return emailIndexCache
 }
 
+async function getOrBuildMatchIndex(): Promise<import('../utils/record-matcher/types').MatchIndex> {
+  if (!matchIndexCache) {
+    const { buildMatchIndex } = await import('../utils/record-matcher')
+    matchIndexCache = await buildMatchIndex()
+  }
+  return matchIndexCache
+}
+
 // Clear caches when starting a new run
 export function clearLookupCaches(): void {
   userLookupCache = null
@@ -424,6 +433,7 @@ export function clearLookupCaches(): void {
   matterLookupCache = null
   existingEmailsCache = null
   emailIndexCache = null
+  matchIndexCache = null
 }
 
 /**
@@ -586,24 +596,51 @@ async function processRecords(
     case 'contacts': {
       // Contacts are imported as people (not clients)
       // Non-person records (businesses, trusts, etc.) are skipped
-      // Duplicates are detected and linked to existing records
+      // Duplicates are detected via probabilistic matching and linked to existing records
 
-      // Get the email index for duplicate detection
+      // Get match index for probabilistic duplicate detection
+      const matchIndex = await getOrBuildMatchIndex()
+      // Also keep email index for fast within-batch dedup
       const emailIndex = await getOrBuildEmailIndex()
-      const { checkForDuplicates } = await import('../utils/duplicate-detector')
+      const { checkForDuplicatesWithMatcher, checkForDuplicates } = await import('../utils/duplicate-detector')
+      const { ensurePersonExternalId } = await import('../utils/lawmatics-upsert')
       const { useDrizzle, schema } = await import('../db')
       const db = useDrizzle()
 
       for (const record of records) {
         try {
-          // 1. Check for duplicate BEFORE transform
-          const duplicateCheck = checkForDuplicates(record, emailIndex)
+          // 1. Check for duplicate BEFORE transform using probabilistic matcher
+          const duplicateCheck = checkForDuplicatesWithMatcher(record, matchIndex)
 
-          if (duplicateCheck.isDuplicate && duplicateCheck.bestMatch) {
+          // Fallback: also check email index for within-batch duplicates
+          // (the match index doesn't include records created earlier in this batch)
+          let finalCheck = duplicateCheck
+          if (!duplicateCheck.isDuplicate) {
+            finalCheck = checkForDuplicates(record, emailIndex)
+          }
+
+          if (finalCheck.isDuplicate && finalCheck.bestMatch) {
             // CRITICAL: Add to lookup cache even though not creating new record
             // This prevents cascade failures for prospects and notes
             if (peopleLookupCache) {
-              peopleLookupCache.set(record.id, duplicateCheck.bestMatch.existingPersonId)
+              peopleLookupCache.set(record.id, finalCheck.bestMatch.existingPersonId)
+            }
+
+            // Link the external ID to the existing person
+            try {
+              await ensurePersonExternalId(
+                finalCheck.bestMatch.existingPersonId,
+                'LAWMATICS',
+                record.id,
+                false, // Not primary — the existing person's original ID is primary
+                finalCheck.bestMatch.matchDetails ? {
+                  matchConfidence: finalCheck.bestMatch.confidenceScore,
+                  matchMethod: finalCheck.bestMatch.type,
+                  linkedDuringRun: runId
+                } : undefined
+              )
+            } catch (linkError) {
+              console.warn('[Lawmatics Import] Failed to link external ID:', linkError)
             }
 
             // Log for review in import_duplicates table
@@ -615,18 +652,17 @@ async function processRecords(
                 externalId: record.id,
                 entityType: 'contact',
                 sourceData: JSON.stringify(record),
-                duplicateType: duplicateCheck.bestMatch.type,
-                matchingField: duplicateCheck.bestMatch.matchingField,
-                matchingValue: duplicateCheck.bestMatch.matchingValue,
-                confidenceScore: duplicateCheck.bestMatch.confidenceScore,
-                existingPersonId: duplicateCheck.bestMatch.existingPersonId,
+                duplicateType: finalCheck.bestMatch.type,
+                matchingField: finalCheck.bestMatch.matchingField,
+                matchingValue: finalCheck.bestMatch.matchingValue,
+                confidenceScore: finalCheck.bestMatch.confidenceScore,
+                existingPersonId: finalCheck.bestMatch.existingPersonId,
                 resolution: 'LINKED',
-                resolvedPersonId: duplicateCheck.bestMatch.existingPersonId,
+                resolvedPersonId: finalCheck.bestMatch.existingPersonId,
                 createdAt: new Date()
               })
             } catch (logError) {
               console.error('[Lawmatics Import] Failed to log duplicate:', logError)
-              // Don't fail the import if logging fails
             }
 
             result.skippedCount++
@@ -639,14 +675,12 @@ async function processRecords(
           })
 
           // Skip non-person records (entities, businesses, trusts, etc.)
-          // Note: These legitimately don't get a lookup entry - prospects
-          // referencing them should fail (data issue in Lawmatics)
           if (!transformed) {
             result.skippedCount++
             continue
           }
 
-          // 3. Normal upsert flow (existing logic)
+          // 3. Normal upsert flow (includes personExternalIds linking)
           const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
@@ -654,13 +688,11 @@ async function processRecords(
           else if (upsertResult.action === 'updated') result.updatedCount++
 
           // 4. Handle Lawmatics opt_out / globalUnsubscribe
-          // Lawmatics can set globalUnsubscribe to true but cannot clear it (YTP-owned)
           if (record.attributes.opt_out === true || record.attributes.opt_out === 'true') {
             try {
               const { setGlobalUnsubscribe } = await import('../utils/marketing-consent')
               await setGlobalUnsubscribe(upsertResult.id, 'LAWMATICS')
             } catch (e) {
-              // Don't fail import if consent system isn't ready
               console.warn('[Lawmatics Import] Failed to set global unsubscribe:', e)
             }
           }
