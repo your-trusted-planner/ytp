@@ -433,6 +433,66 @@ export function parseDate(dateStr: string | undefined | null): Date | null {
  * @param contact - The Lawmatics contact
  * @param addressData - Pre-fetched address object with structured fields (optional)
  */
+/**
+ * Normalize a street address to title case.
+ * Preserves directional abbreviations (NW, SE, etc.) and common suffixes.
+ */
+function normalizeStreet(street: string): string {
+  // If it's not all-caps or all-lower, assume it's already formatted
+  if (street !== street.toUpperCase() && street !== street.toLowerCase()) {
+    return street
+  }
+  return street
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+    // Fix common abbreviations back to uppercase
+    .replace(/\b(Nw|Ne|Sw|Se|Po|Apt|Ste)\b/g, m => m.toUpperCase())
+}
+
+/**
+ * Normalize a city name to title case.
+ */
+function normalizeCity(city: string): string {
+  if (city !== city.toUpperCase() && city !== city.toLowerCase()) {
+    return city
+  }
+  return city
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+/**
+ * Map of full state names to two-letter abbreviations.
+ */
+const STATE_ABBREVIATIONS: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+  'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
+}
+
+/**
+ * Normalize state to two-letter abbreviation (uppercase).
+ * Accepts full names ("Colorado" → "CO") or abbreviations ("co" → "CO").
+ */
+function normalizeState(state: string): string {
+  const trimmed = state.trim()
+  // Already a 2-letter code
+  if (trimmed.length === 2) return trimmed.toUpperCase()
+  // Full name lookup
+  const abbr = STATE_ABBREVIATIONS[trimmed.toLowerCase()]
+  return abbr || trimmed
+}
+
 export function parseAddress(
   contact: LawmaticsContact,
   addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
@@ -445,9 +505,9 @@ export function parseAddress(
   // 1. Use pre-fetched structured address data if available
   if (addressData) {
     return {
-      address: addressData.street || null,
-      city: addressData.city || null,
-      state: addressData.state || null,
+      address: addressData.street ? normalizeStreet(addressData.street) : null,
+      city: addressData.city ? normalizeCity(addressData.city) : null,
+      state: addressData.state ? normalizeState(addressData.state) : null,
       zipCode: addressData.zipcode || null
     }
   }
@@ -460,9 +520,9 @@ export function parseAddress(
 
   if (structuredStreet || structuredCity || structuredState || structuredZip) {
     return {
-      address: structuredStreet,
-      city: structuredCity,
-      state: structuredState,
+      address: structuredStreet ? normalizeStreet(structuredStreet) : null,
+      city: structuredCity ? normalizeCity(structuredCity) : null,
+      state: structuredState ? normalizeState(structuredState) : null,
       zipCode: structuredZip
     }
   }
