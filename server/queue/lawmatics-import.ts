@@ -674,20 +674,26 @@ async function processRecords(
           const addressRelation = record.relationships?.addresses?.data
           const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
 
-          // Debug: log first contact's relationships shape
-          if (result.processedCount === 0 && result.skippedCount === 0) {
-            console.log(`[Lawmatics Import] First contact relationships keys:`, record.relationships ? Object.keys(record.relationships) : 'NO RELATIONSHIPS')
-            console.log(`[Lawmatics Import] First contact addresses relationship:`, JSON.stringify(record.relationships?.addresses))
-            console.log(`[Lawmatics Import] First contact attributes.address:`, record.attributes.address)
+          // Debug: log first contact's address resolution
+          if (result.processedCount + result.skippedCount < 3) {
+            console.log(`[Lawmatics Import] Contact ${record.id} relationships keys:`, record.relationships ? Object.keys(record.relationships) : 'NO RELATIONSHIPS')
+            console.log(`[Lawmatics Import] Contact ${record.id} relationships empty?:`, JSON.stringify(record.relationships) === '{}')
+            console.log(`[Lawmatics Import] Contact ${record.id} addressId:`, addressId)
+            console.log(`[Lawmatics Import] Contact ${record.id} attributes.address:`, record.attributes.address)
           }
 
           if (addressId) {
             try {
               const addressObj = await client.fetchAddress(addressId)
               addressData = addressObj.attributes
+              if (result.processedCount + result.skippedCount < 3) {
+                console.log(`[Lawmatics Import] Contact ${record.id} fetched address:`, JSON.stringify(addressData))
+              }
             } catch (addrError) {
-              console.warn(`[Lawmatics Import] Failed to fetch address ${addressId}:`, addrError)
+              console.warn(`[Lawmatics Import] Failed to fetch address ${addressId} for contact ${record.id}:`, addrError)
             }
+          } else if (result.processedCount + result.skippedCount < 3) {
+            console.log(`[Lawmatics Import] Contact ${record.id} — no addressId found, skipping address fetch`)
           }
 
           // 3. Non-person check (existing logic)
