@@ -39,6 +39,9 @@ export const users = sqliteTable('users', {
   signatureImage: text('signature_image'),
   signatureImageUpdatedAt: integer('signature_image_updated_at', { mode: 'timestamp' }),
   status: text('status', { enum: ['PROSPECT', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+  // API token authentication - SHA-256 hash of the token for direct DB lookup
+  apiTokenHash: text('api_token_hash').unique(),
+  apiTokenCreatedAt: integer('api_token_created_at', { mode: 'timestamp' }),
   // Import tracking - JSON with source, externalId, flags, sourceData
   importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

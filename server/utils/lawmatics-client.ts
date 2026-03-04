@@ -502,6 +502,13 @@ export class LawmaticsClient {
   }
 
   /**
+   * Fetch a single contact by ID (includes relationships)
+   */
+  async fetchSingleContact(contactId: string): Promise<LawmaticsContact> {
+    return this.requestSingle<LawmaticsContact>(`/contacts/${contactId}`)
+  }
+
+  /**
    * Fetch a single address by ID
    */
   async fetchAddress(addressId: string): Promise<LawmaticsAddress> {

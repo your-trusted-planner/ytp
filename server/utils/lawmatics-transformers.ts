@@ -425,10 +425,10 @@ export function parseDate(dateStr: string | undefined | null): Date | null {
 /**
  * Parse address components from Lawmatics.
  *
- * The contact's `address` attribute contains a full_address string
- * (e.g. "1631 Redberry Ct, Fort Collins, CO 80525, United States").
- * The structured address fields (street, city, state, zipcode) come from
- * a separate address object fetched via GET /addresses/:id.
+ * Priority order:
+ * 1. Pre-fetched structured address data from GET /addresses/:id
+ * 2. Structured fields on contact attributes (if present)
+ * 3. Parse the full_address string from contact.attributes.address
  *
  * @param contact - The Lawmatics contact
  * @param addressData - Pre-fetched address object with structured fields (optional)
@@ -467,8 +467,7 @@ export function parseAddress(
     }
   }
 
-  // 3. No structured data — store nothing (the full_address string
-  //    in contact.attributes.address is not useful for structured fields)
+  // 3. No structured data available
   return { address: null, city: null, state: null, zipCode: null }
 }
 

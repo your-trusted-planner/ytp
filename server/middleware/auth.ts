@@ -32,7 +32,60 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // Require authenticated session for all other API routes
+  // Helper to attach user context from a DB user record
+  const attachUserContext = (dbUser: any) => {
+    const user = {
+      id: dbUser.id,
+      personId: dbUser.personId || null,
+      email: dbUser.email,
+      role: dbUser.role,
+      adminLevel: dbUser.adminLevel ?? 0,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName
+    }
+    event.context.user = user
+    event.context.userId = user.id
+    event.context.personId = user.personId
+    event.context.userRole = user.role
+    event.context.adminLevel = user.adminLevel
+
+    // Require admin level 2+ for /api/admin/* routes
+    if (path.startsWith('/api/admin/') && user.adminLevel < 2) {
+      throw createError({
+        statusCode: 403,
+        message: 'Insufficient admin privileges'
+      })
+    }
+  }
+
+  // Check for API token auth (Bearer header) before session auth
+  const authHeader = getHeader(event, 'authorization')
+  if (authHeader?.startsWith('Bearer ytp_')) {
+    const token = authHeader.slice(7) // Remove "Bearer " prefix
+    const { sha256 } = await import('../utils/auth')
+    const { useDrizzle, schema } = await import('../db')
+    const { eq } = await import('drizzle-orm')
+    const db = useDrizzle()
+
+    const hash = await sha256(token)
+    const dbUser = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.apiTokenHash, hash))
+      .get()
+
+    if (!dbUser || dbUser.status === 'INACTIVE') {
+      throw createError({
+        statusCode: 401,
+        message: 'Invalid API token'
+      })
+    }
+
+    attachUserContext(dbUser)
+    return
+  }
+
+  // Fall through to session-based auth
   try {
     const { user: sessionUser } = await requireUserSession(event)
 
@@ -48,7 +101,6 @@ export default defineEventHandler(async (event) => {
       .get()
 
     if (!dbUser) {
-      // User no longer exists in database - clear session
       await clearUserSession(event)
       throw createError({
         statusCode: 401,
@@ -58,7 +110,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (dbUser.status === 'INACTIVE') {
-      // User account is disabled - clear session
       await clearUserSession(event)
       throw createError({
         statusCode: 403,
@@ -67,32 +118,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Update session user with current data from database
-    // Include personId for Belly Button Principle support
-    const user = {
-      id: dbUser.id,
-      personId: dbUser.personId || null, // Link to person identity
-      email: dbUser.email,
-      role: dbUser.role,
-      adminLevel: dbUser.adminLevel ?? 0,
-      firstName: dbUser.firstName,
-      lastName: dbUser.lastName
-    }
-
-    // Attach user to event context for use in route handlers
-    event.context.user = user
-    event.context.userId = user.id
-    event.context.personId = user.personId // Also expose personId directly
-    event.context.userRole = user.role
-    event.context.adminLevel = user.adminLevel
-
-    // Require admin level 2+ for /api/admin/* routes
-    if (path.startsWith('/api/admin/') && user.adminLevel < 2) {
-      throw createError({
-        statusCode: 403,
-        message: 'Insufficient admin privileges'
-      })
-    }
+    attachUserContext(dbUser)
   } catch (error: any) {
     // Re-throw if already an H3 error (like our 403 above)
     if (error.statusCode) {

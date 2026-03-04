@@ -673,6 +673,14 @@ async function processRecords(
           let addressData: { street?: string; city?: string; state?: string; zipcode?: string } | null = null
           const addressRelation = record.relationships?.addresses?.data
           const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
+
+          // Debug: log first contact's relationships shape
+          if (result.processedCount === 0 && result.skippedCount === 0) {
+            console.log(`[Lawmatics Import] First contact relationships keys:`, record.relationships ? Object.keys(record.relationships) : 'NO RELATIONSHIPS')
+            console.log(`[Lawmatics Import] First contact addresses relationship:`, JSON.stringify(record.relationships?.addresses))
+            console.log(`[Lawmatics Import] First contact attributes.address:`, record.attributes.address)
+          }
+
           if (addressId) {
             try {
               const addressObj = await client.fetchAddress(addressId)
