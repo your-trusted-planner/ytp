@@ -369,7 +369,8 @@ const addressValue = ref<AddressValue>({
   address2: '',
   city: '',
   state: '',
-  zipCode: ''
+  zipCode: '',
+  country: ''
 })
 
 // Section visibility state
@@ -491,6 +492,7 @@ async function submitForm(status: 'LEAD' | 'PROSPECT') {
       city: addressValue.value.city,
       state: addressValue.value.state,
       zipCode: addressValue.value.zipCode,
+      country: addressValue.value.country,
       status,
       referredByPersonId: form.value.referredByPersonId || undefined,
       referredByPartnerId: form.value.referredByPartnerId || undefined,

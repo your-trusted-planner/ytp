@@ -66,6 +66,9 @@
                 <div v-if="clientProfile.city || clientProfile.state">
                   {{ clientProfile.city }}, {{ clientProfile.state }} {{ clientProfile.zip_code }}
                 </div>
+                <div v-if="clientProfile.country && clientProfile.country !== 'US'">
+                  {{ clientProfile.country }}
+                </div>
               </div>
             </div>
           </div>

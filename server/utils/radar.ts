@@ -55,10 +55,13 @@ export async function autocompleteAddress(
 
   const params = new URLSearchParams({
     query,
-    country: options.countryCode || 'US',
     layers: (options.layers || ['address']).join(','),
     limit: String(options.limit || 5)
   })
+
+  if (options.countryCode) {
+    params.set('country', options.countryCode)
+  }
 
   try {
     const response = await fetch(`${RADAR_API_BASE}/search/autocomplete?${params}`, {
