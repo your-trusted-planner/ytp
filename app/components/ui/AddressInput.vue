@@ -92,10 +92,10 @@
         <input
           v-model="localCity"
           type="text"
-          :disabled="disabled || (!manualEntry && !localCity)"
+          :disabled="disabled || (!allowDirectInput && !localCity)"
           :class="[
             'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localCity) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localCity) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @input="emitUpdate"
@@ -107,10 +107,10 @@
         <select
           v-if="isUSAddress"
           v-model="localState"
-          :disabled="disabled || (!manualEntry && !localState)"
+          :disabled="disabled || (!allowDirectInput && !localState)"
           :class="[
             'w-full px-2 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @change="emitUpdate"
@@ -126,10 +126,10 @@
           v-model="localState"
           type="text"
           :placeholder="'e.g. ON'"
-          :disabled="disabled || (!manualEntry && !localState)"
+          :disabled="disabled || (!allowDirectInput && !localState)"
           :class="[
             'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @input="emitUpdate"
@@ -141,10 +141,10 @@
           v-model="localZipCode"
           type="text"
           maxlength="10"
-          :disabled="disabled || (!manualEntry && !localZipCode)"
+          :disabled="disabled || (!allowDirectInput && !localZipCode)"
           :class="[
             'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localZipCode) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localZipCode) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @input="emitUpdate"
@@ -287,6 +287,9 @@ const isUSAddress = computed(() => {
 
 const stateLabel = computed(() => isUSAddress.value ? 'State' : 'Province')
 const zipLabel = computed(() => isUSAddress.value ? 'ZIP Code' : 'Postal Code')
+
+// For non-US addresses, allow manual entry of city/state/zip since autocomplete coverage varies
+const allowDirectInput = computed(() => manualEntry.value || !isUSAddress.value)
 
 // Debounce timer
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
