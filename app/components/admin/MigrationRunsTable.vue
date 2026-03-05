@@ -64,10 +64,15 @@
                   <span class="text-green-600">+{{ run.createdRecords }}</span>
                   <span class="text-blue-600">~{{ run.updatedRecords }}</span>
                   <span v-if="run.skippedRecords > 0" class="text-gray-400">-{{ run.skippedRecords }}</span>
-                  <span v-if="run.errorCount > 0" class="text-red-600">
-                    <AlertCircle class="w-4 h-4 inline" />
+                  <button
+                    v-if="run.errorCount > 0"
+                    class="text-red-600 hover:text-red-800 inline-flex items-center gap-0.5"
+                    title="View errors"
+                    @click.stop="$emit('view-errors', run)"
+                  >
+                    <AlertCircle class="w-4 h-4" />
                     {{ run.errorCount }}
-                  </span>
+                  </button>
                 </div>
               </td>
               <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">

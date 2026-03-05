@@ -41,7 +41,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const { useDrizzle, schema } = await import('../../db')
+  const { resolveClientIds } = await import('../../utils/client-ids')
   const db = useDrizzle()
+
+  // matters.clientId references users.id, but request may send clients.id
+  const resolved = await resolveClientIds(result.data.clientId)
+  const legacyClientId = resolved?.userIds[0] || result.data.clientId
 
   // Auto-generate matter number: YYYY-NNN format
   const currentYear = new Date().getFullYear()
@@ -61,7 +66,7 @@ export default defineEventHandler(async (event) => {
   const newMatter = {
     id: generateId(),
     title: result.data.title,
-    clientId: result.data.clientId,
+    clientId: legacyClientId,
     description: result.data.description,
     status: result.data.status,
     matterNumber,
@@ -79,7 +84,7 @@ export default defineEventHandler(async (event) => {
 
     await db.insert(schema.clientJourneys).values({
       id: clientJourneyId,
-      clientId: result.data.clientId,
+      clientId: legacyClientId,
       matterId: newMatter.id,
       catalogId: null, // Engagement journeys are not tied to a specific service
       journeyId: result.data.engagementJourneyTemplateId,
@@ -122,14 +127,14 @@ export default defineEventHandler(async (event) => {
       const clientUser = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, result.data.clientId))
+        .where(eq(schema.users.id, legacyClientId))
         .get()
 
       // Get client profile to check for existing Drive folder
       const clientProfile = await db
         .select()
         .from(schema.clientProfiles)
-        .where(eq(schema.clientProfiles.userId, result.data.clientId))
+        .where(eq(schema.clientProfiles.userId, legacyClientId))
         .get()
 
       console.log('[Matter Create] Client profile found:', !!clientProfile)
@@ -160,7 +165,7 @@ export default defineEventHandler(async (event) => {
           try {
             const clientName = `${clientUser.lastName || ''}, ${clientUser.firstName || ''}`.trim() || 'Unknown Client'
             console.log('[Matter Create] Creating client folder for:', clientName)
-            const clientFolder = await createClientFolder(result.data.clientId, clientName)
+            const clientFolder = await createClientFolder(legacyClientId, clientName)
             clientFolderId = clientFolder.id
             googleDrive.clientHasFolder = true
             console.log('[Matter Create] Client folder created:', clientFolderId)

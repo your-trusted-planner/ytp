@@ -14,18 +14,7 @@ export default defineEventHandler(async (event) => {
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
-  // Find the client profile for this user
-  const clientProfile = await db.select()
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, user.id))
-    .get()
-
-  if (!clientProfile) {
-    // User is not a client, return empty array
-    return { matters: [] }
-  }
-
-  // Get matters for this client
+  // matters.clientId references users.id, so query with user.id directly
   const matters = await db.select({
     id: schema.matters.id,
     title: schema.matters.title,
@@ -37,7 +26,7 @@ export default defineEventHandler(async (event) => {
     updatedAt: schema.matters.updatedAt
   })
     .from(schema.matters)
-    .where(eq(schema.matters.clientId, clientProfile.id))
+    .where(eq(schema.matters.clientId, user.id))
     .all()
 
   // Convert to snake_case for frontend compatibility

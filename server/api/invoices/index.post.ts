@@ -72,6 +72,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Matter not found' })
   }
 
+  // invoices.clientId references clients.id, but matters.clientId stores users.id
+  // Resolve to get the correct clients table ID
+  const { resolveClientIds } = await import('../../utils/client-ids')
+  const resolved = await resolveClientIds(matter.clientId)
+  const invoiceClientId = resolved?.clientTableId || matter.clientId
+
   // Generate invoice number
   const invoiceNumber = await generateInvoiceNumber()
 
@@ -99,7 +105,7 @@ export default defineEventHandler(async (event) => {
   await db.insert(schema.invoices).values({
     id: invoiceId,
     matterId: parsed.data.matterId,
-    clientId: matter.clientId,
+    clientId: invoiceClientId,
     invoiceNumber,
     status: 'DRAFT',
     subtotal,
@@ -137,14 +143,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get client name for logging
-  const clientName = await resolveEntityName('client', matter.clientId)
+  const clientName = await resolveEntityName('client', invoiceClientId)
 
   // Log activity
   await logActivity({
     type: 'INVOICE_CREATED',
     userId: user.id,
     userRole: user.role,
-    target: { type: 'client', id: matter.clientId, name: clientName || 'Unknown Client' },
+    target: { type: 'client', id: invoiceClientId, name: clientName || 'Unknown Client' },
     relatedEntities: [
       { type: 'matter', id: matter.id, name: matter.title }
     ],

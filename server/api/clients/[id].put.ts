@@ -30,18 +30,13 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle, schema } = await import('../../db')
   const { eq, and } = await import('drizzle-orm')
+  const { resolveClientIds } = await import('../../utils/client-ids')
   const db = useDrizzle()
 
-  // Check if client exists — fetch full record for change detection
-  const existingClient = await db.select()
-    .from(schema.users)
-    .where(and(
-      eq(schema.users.id, clientId),
-      eq(schema.users.role, 'CLIENT')
-    ))
-    .get()
+  // URL param is clients.id — resolve to get person and user IDs
+  const resolved = await resolveClientIds(clientId)
 
-  if (!existingClient) {
+  if (!resolved) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
@@ -50,80 +45,112 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
 
-  const userUpdateData = {
-    firstName: first_name,
-    lastName: last_name,
-    email,
-    phone: phone || null,
-    status: status || 'ACTIVE'
-  }
-
-  // Update user table
-  await db.update(schema.users)
+  // Update person record (source of truth for identity data)
+  await db.update(schema.people)
     .set({
-      ...userUpdateData,
+      firstName: first_name,
+      lastName: last_name,
+      fullName: `${first_name} ${last_name}`,
+      email,
+      phone: phone || null,
       updatedAt: now
     })
-    .where(eq(schema.users.id, clientId))
+    .where(eq(schema.people.id, resolved.personId))
 
-  // Track locally modified fields for sync protection (non-blocking)
-  try {
-    await markFieldsAsLocallyModified(
-      'users',
-      clientId,
-      existingClient as Record<string, any>,
-      userUpdateData,
-      TRACKABLE_CLIENT_FIELDS
-    )
-  } catch (err) {
-    console.error('[Clients PUT] Failed to track locally modified fields:', err)
-  }
+  // Update user record if one exists (keeps auth data in sync)
+  const legacyUserId = resolved.userIds[0]
+  if (legacyUserId) {
+    const existingUser = await db.select()
+      .from(schema.users)
+      .where(eq(schema.users.id, legacyUserId))
+      .get()
 
-  // Check if profile exists
-  const existingProfile = await db.select({ userId: schema.clientProfiles.userId })
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, clientId))
-    .get()
+    const userUpdateData = {
+      firstName: first_name,
+      lastName: last_name,
+      email,
+      phone: phone || null,
+      status: status || 'ACTIVE'
+    }
 
-  if (existingProfile) {
-    // Update existing profile
-    await db.update(schema.clientProfiles)
+    await db.update(schema.users)
       .set({
+        ...userUpdateData,
+        updatedAt: now
+      })
+      .where(eq(schema.users.id, legacyUserId))
+
+    // Track locally modified fields for sync protection (non-blocking)
+    if (existingUser) {
+      try {
+        await markFieldsAsLocallyModified(
+          'users',
+          legacyUserId,
+          existingUser as Record<string, any>,
+          userUpdateData,
+          TRACKABLE_CLIENT_FIELDS
+        )
+      } catch (err) {
+        console.error('[Clients PUT] Failed to track locally modified fields:', err)
+      }
+    }
+
+    // Update client profile (address data)
+    const existingProfile = await db.select({ userId: schema.clientProfiles.userId })
+      .from(schema.clientProfiles)
+      .where(eq(schema.clientProfiles.userId, legacyUserId))
+      .get()
+
+    if (existingProfile) {
+      await db.update(schema.clientProfiles)
+        .set({
+          address: address || null,
+          city: city || null,
+          state: state || null,
+          zipCode: zip_code || null,
+          updatedAt: now
+        })
+        .where(eq(schema.clientProfiles.userId, legacyUserId))
+    } else {
+      await db.insert(schema.clientProfiles).values({
+        id: crypto.randomUUID(),
+        userId: legacyUserId,
         address: address || null,
         city: city || null,
         state: state || null,
         zipCode: zip_code || null,
+        createdAt: now,
         updatedAt: now
       })
-      .where(eq(schema.clientProfiles.userId, clientId))
-  } else {
-    // Create new profile if it doesn't exist
-    await db.insert(schema.clientProfiles).values({
-      id: crypto.randomUUID(),
-      userId: clientId,
-      address: address || null,
-      city: city || null,
-      state: state || null,
-      zipCode: zip_code || null,
-      createdAt: now,
-      updatedAt: now
-    })
+    }
   }
 
-  // Get updated client data
-  const updatedClient = await db.select()
-    .from(schema.users)
-    .where(eq(schema.users.id, clientId))
+  // Update client status if provided
+  if (status) {
+    await db.update(schema.clients)
+      .set({
+        status,
+        updatedAt: now
+      })
+      .where(eq(schema.clients.id, clientId))
+  }
+
+  // Return updated data from people table (source of truth)
+  const updatedPerson = await db.select()
+    .from(schema.people)
+    .where(eq(schema.people.id, resolved.personId))
     .get()
 
-  const updatedProfile = await db.select()
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, clientId))
-    .get()
+  const updatedProfile = legacyUserId
+    ? await db.select()
+        .from(schema.clientProfiles)
+        .where(eq(schema.clientProfiles.userId, legacyUserId))
+        .get()
+    : null
 
   return {
     success: true,
-    client: updatedClient,
+    client: updatedPerson,
     profile: updatedProfile || null
   }
 })
