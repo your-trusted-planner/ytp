@@ -91,6 +91,20 @@ export function normalizePhone(phone: string, defaultCountry: 'US' | string = 'U
 
   // Fallback: extract digits and try to form a number
   const digits = phone.replace(/\D/g, '')
+
+  // Try prepending '+' to see if the digits form a valid international number
+  // (handles numbers like "41787619350" that are missing the '+' prefix)
+  if (digits.length >= 7) {
+    try {
+      const withPlus = parsePhoneNumberFromString('+' + digits)
+      if (withPlus && withPlus.isValid()) {
+        return withPlus.format('E.164')
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
   if (digits.length >= 10) {
     // Try parsing the last 10 digits as a US number
     const last10 = digits.slice(-10)
