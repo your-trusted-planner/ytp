@@ -1054,5 +1054,22 @@ export async function buildPeopleLookupMap(
     }
   }
 
+  // Also include duplicate-linked contacts: these were matched to existing people
+  // during import but never got import_metadata on the person record
+  const duplicates = await db.all(sql`
+    SELECT external_id, existing_person_id
+    FROM import_duplicates
+    WHERE source = ${source}
+      AND entity_type = 'contact'
+      AND resolution = 'LINKED'
+      AND existing_person_id IS NOT NULL
+  `)
+  for (const dup of duplicates) {
+    const d = dup as { external_id: string; existing_person_id: string }
+    if (d.external_id && !map.has(d.external_id)) {
+      map.set(d.external_id, d.existing_person_id)
+    }
+  }
+
   return map
 }
