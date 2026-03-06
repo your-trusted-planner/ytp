@@ -277,7 +277,7 @@ interface Integration {
   type: string
   status: 'CONFIGURED' | 'CONNECTED' | 'ERROR'
   lastTestedAt: string | null
-  lastSyncTimestamps: string | null
+  lastSyncTimestamps: Record<string, string> | null
 }
 
 // Lawmatics state
@@ -315,8 +315,8 @@ async function loadIntegrations() {
       lawmaticsStatus.value = lawmatics.status === 'CONNECTED' ? 'connected' :
                               lawmatics.status === 'ERROR' ? 'error' : 'not_configured'
       if (lawmatics.lastSyncTimestamps) {
-        const timestamps = JSON.parse(lawmatics.lastSyncTimestamps)
-        const latest = Object.values(timestamps).sort().pop() as string | undefined
+        // Server already parses lastSyncTimestamps from JSON
+        const latest = Object.values(lawmatics.lastSyncTimestamps).sort().pop() as string | undefined
         lawmaticsLastSync.value = latest || null
       }
     }
@@ -327,8 +327,8 @@ async function loadIntegrations() {
       apolloStatus.value = apollo.status === 'CONNECTED' ? 'connected' :
                             apollo.status === 'ERROR' ? 'error' : 'not_configured'
       if (apollo.lastSyncTimestamps) {
-        const timestamps = JSON.parse(apollo.lastSyncTimestamps)
-        const latest = Object.values(timestamps).sort().pop() as string | undefined
+        // Server already parses lastSyncTimestamps from JSON
+        const latest = Object.values(apollo.lastSyncTimestamps).sort().pop() as string | undefined
         apolloLastSync.value = latest || null
       }
     }
