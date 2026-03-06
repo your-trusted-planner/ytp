@@ -83,8 +83,8 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
           >
             <option value="">All Clients</option>
-            <option v-for="client in clients" :key="client.id" :value="client.id">
-              {{ client.firstName }} {{ client.lastName }}
+            <option v-for="name in uniqueClientNames" :key="name" :value="name">
+              {{ name }}
             </option>
           </select>
         </div>
@@ -133,7 +133,7 @@
                 <div class="text-xs text-gray-500">{{ matter.matter_number || 'No # assigned' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ getClientName(matter.client_id) }}</div>
+                <div class="text-sm text-gray-900">{{ matter.client_name || matter.clientName || 'Unknown Client' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getStatusVariant(matter.status)">
@@ -274,6 +274,16 @@ const driveStatus = ref<{
   folderUrl?: string
 }>({ show: false, success: false, message: '' })
 
+// Computed: Unique client names from matters data for filter dropdown
+const uniqueClientNames = computed(() => {
+  const names = new Set<string>()
+  for (const m of matters.value) {
+    const name = m.client_name || m.clientName
+    if (name) names.add(name)
+  }
+  return [...names].sort()
+})
+
 // Computed: Check if any filters are active
 const hasActiveFilters = computed(() => {
   return searchQuery.value || statusFilter.value || clientFilter.value
@@ -288,16 +298,16 @@ const filteredMatters = computed(() => {
     result = result.filter(m => m.status === statusFilter.value)
   }
 
-  // Filter by client
+  // Filter by client name
   if (clientFilter.value) {
-    result = result.filter(m => m.client_id === clientFilter.value)
+    result = result.filter(m => (m.client_name || m.clientName) === clientFilter.value)
   }
 
   // Filter by search query
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(m => {
-      const clientName = getClientName(m.client_id).toLowerCase()
+      const clientName = (m.client_name || m.clientName || '').toLowerCase()
       const title = (m.title || '').toLowerCase()
       const matterNumber = (m.matter_number || '').toLowerCase()
       return title.includes(query) || matterNumber.includes(query) || clientName.includes(query)
@@ -387,11 +397,6 @@ const fetchCatalog = async () => {
 // Navigate to matter detail page
 const viewMatter = (matterId: string) => {
   router.push(`/matters/${matterId}`)
-}
-
-const getClientName = (clientId: string) => {
-    const client = clients.value.find(c => c.id === clientId)
-    return client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
 }
 
 const getStatusVariant = (status: string) => {
