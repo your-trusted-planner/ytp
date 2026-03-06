@@ -41,10 +41,18 @@ users (authentication/authorization ONLY)
 
 clients (client-specific data)
 ├── personId → people.id (the person who is the client)
-├── status: 'LEAD' | 'PROSPECT' | 'ACTIVE' | 'INACTIVE'
+├── status: 'PROSPECTIVE' | 'ACTIVE' | 'FORMER' (stored on table, but derived via view)
 ├── estate planning fields (hasMinorChildren, hasWill, etc.)
 ├── referral tracking, attribution
 └── Google Drive sync, assignedLawyerId
+
+clients_with_status (SQL VIEW — use for reads)
+├── All columns from clients
+├── status: derived from matter activity
+│   ├── ACTIVE = has at least one OPEN matter (Rules 1.6-1.8)
+│   ├── FORMER = has matters, all CLOSED (Rule 1.9)
+│   └── PROSPECTIVE = no matters or no OPEN matters (Rule 1.18)
+└── Join path: clients.person_id → users.person_id → users.id → matters.client_id
 
 relationships (unified)
 ├── fromPersonId → people.id
@@ -67,12 +75,17 @@ relationships (unified)
 
 ### Querying Clients
 
+**Read View + Write Table pattern**: Use `schema.clientsWithStatus` for reads (derived status), `schema.clients` for writes.
+
 ```typescript
-// NEW: Query clients via clients → people tables
+// READ: Use the view for queries (status is derived from matters)
 const [client] = await db.select()
-  .from(schema.clients)
-  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
-  .where(eq(schema.clients.id, clientId))
+  .from(schema.clientsWithStatus)
+  .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
+  .where(eq(schema.clientsWithStatus.id, clientId))
+
+// WRITE: Use the physical table for inserts/updates
+await db.insert(schema.clients).values({ id: clientId, personId, status: 'PROSPECTIVE' })
 
 // LEGACY (still works during transition): Query by user role
 const [client] = await db.select()
@@ -90,8 +103,10 @@ The `users` table has a `role` column with these values:
 - `LAWYER` - Primary legal practitioner role
 - `STAFF` - Office staff with limited access
 - `CLIENT` - Customers/clients with portal access
-- `LEAD`, `PROSPECT` - Pre-client stages
+- `LEAD`, `PROSPECT` - Pre-client stages (legacy, being phased out)
 - `INACTIVE` - Deactivated users (cannot login)
+
+**Note**: User roles (`LEAD`, `PROSPECT`) are distinct from **client status** (`PROSPECTIVE`, `ACTIVE`, `FORMER`). Client status is derived from matter activity via the `clients_with_status` SQL view.
 
 ### Key Entity Tables
 
@@ -720,6 +735,7 @@ app/
 ### ❌ Don't Do This:
 
 **Data Model Mistakes (Belly Button Principle):**
+- Create forms that add people/clients without duplicate detection — use `POST /api/people/check-duplicates`
 - Create users without linked person records - every user needs a person
 - Query clients from `users` table directly - use `clients` → `people` join
 - Use deprecated `clientRelationships` or `matterRelationships` - use unified `relationships` table
@@ -755,6 +771,15 @@ app/
 - Tell developer to run `npx drizzle-kit generate`
 - Use Drizzle ORM for database operations
 - Keep migrations and schema.ts in sync
+
+**Duplicate Prevention (Required for all person/client forms):**
+- Any form that creates people or clients MUST include duplicate detection
+- Use `POST /api/people/check-duplicates` with the record-matcher engine
+- Debounced check (500ms) on blur of name, email, phone fields
+- Show warning banner with matched person name, confidence, and link to existing record
+- High-confidence matches require explicit acknowledgment before creation
+- Confidence capping by field count: 1 field = suppress, 2 fields = max medium, 3+ = full
+- Reference implementation: `app/pages/clients/new.vue`
 
 **Activity Logging:**
 - Use structured `target` and `relatedEntities` in `logActivity()`
@@ -853,7 +878,7 @@ If unsure about:
 - **Authentication flow** → Check existing patterns in `server/middleware/auth.ts`
 - **Vue component structure** → Look at similar existing components
 - **Entity name resolution** → Use `resolveEntityName()` from `server/utils/entity-resolver.ts`
-- **Where clients are stored** → The `users` table with `role = 'CLIENT'`
+- **Where clients are stored** → The `clients` table (linked to `people` via `personId`); use `clientsWithStatus` view for reads
 - **Activity logging** → Check existing endpoints for `logActivity()` patterns
 
 Ask the developer rather than making assumptions that could break existing functionality.
@@ -863,24 +888,24 @@ Ask the developer rather than making assumptions that could break existing funct
 ### Entity Queries Cheat Sheet
 
 ```typescript
-// Get a client by ID (NEW: Belly Button Principle)
+// READ: Get a client by ID (use view for derived status)
 const [client] = await db.select({
-  clientId: schema.clients.id,
-  personId: schema.clients.personId,
-  status: schema.clients.status,
+  clientId: schema.clientsWithStatus.id,
+  personId: schema.clientsWithStatus.personId,
+  status: schema.clientsWithStatus.status,
   firstName: schema.people.firstName,
   lastName: schema.people.lastName,
   email: schema.people.email
 })
-  .from(schema.clients)
-  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
-  .where(eq(schema.clients.id, clientId))
+  .from(schema.clientsWithStatus)
+  .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
+  .where(eq(schema.clientsWithStatus.id, clientId))
 
-// Get all active clients
+// Get all active clients (use view for reads — status is derived)
 const clients = await db.select()
-  .from(schema.clients)
-  .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
-  .where(eq(schema.clients.status, 'ACTIVE'))
+  .from(schema.clientsWithStatus)
+  .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
+  .where(eq(schema.clientsWithStatus.status, 'ACTIVE'))
 
 // Get a person by ID
 const [person] = await db.select()
@@ -904,7 +929,7 @@ await db.insert(schema.users).values({
 const personId = crypto.randomUUID()
 const clientId = crypto.randomUUID()
 await db.insert(schema.people).values({ id: personId, firstName, lastName, email })
-await db.insert(schema.clients).values({ id: clientId, personId, status: 'PROSPECT' })
+await db.insert(schema.clients).values({ id: clientId, personId, status: 'PROSPECTIVE' })
 // Optionally create user account if client needs portal access:
 // await db.insert(schema.users).values({ id: userId, personId, email, role: 'CLIENT' })
 

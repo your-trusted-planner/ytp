@@ -23,10 +23,12 @@ Visual diagrams at Context, Container, and Component levels showing:
 
 ### [Entity Relationship Diagram](./entity-relationships)
 Complete database schema documentation showing:
-- 25+ database tables
+- 30+ database tables and views
+- Belly Button Principle architecture (people, users, clients separation)
+- Derived client status via SQL view (`clients_with_status`)
 - Relationships and foreign keys
 - Field types and constraints
-- Logical groupings (Users, Matters, Documents, Journeys, etc.)
+- Logical groupings (Identity, Auth, Matters, Documents, Journeys, etc.)
 
 ### [DOCX Processing Architecture](./docx-processing)
 Technical deep-dive into document processing:

@@ -26,12 +26,14 @@
               label="First Name"
               required
               :error="errors.firstName"
+              @blur="checkForDuplicates"
             />
             <UiInput
               v-model="form.lastName"
               label="Last Name"
               required
               :error="errors.lastName"
+              @blur="checkForDuplicates"
             />
           </div>
           <UiInput
@@ -40,11 +42,13 @@
             type="email"
             required
             :error="errors.email"
+            @blur="checkForDuplicates"
           />
           <UiInput
             v-model="form.phone"
             label="Phone"
             type="tel"
+            @blur="checkForDuplicates"
           />
           <div class="relative">
             <UiInput
@@ -66,6 +70,58 @@
           </div>
         </div>
       </UiCard>
+
+      <!-- Duplicate Warning -->
+      <div v-if="duplicateMatches.length > 0" class="rounded-lg border border-amber-300 bg-amber-50 p-4">
+        <div class="flex items-start gap-3">
+          <AlertTriangle class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div class="flex-1">
+            <h3 class="text-sm font-semibold text-amber-800">
+              Possible {{ duplicateMatches.length === 1 ? 'duplicate' : 'duplicates' }} found
+            </h3>
+            <p class="text-sm text-amber-700 mt-1">
+              The information you entered matches existing records. Please review before creating a new client.
+            </p>
+            <button
+              v-if="duplicateMatches.some(m => m.confidence === 'high') && !duplicateAcknowledged"
+              type="button"
+              class="mt-2 text-xs font-medium text-amber-800 underline hover:text-amber-900"
+              @click="duplicateAcknowledged = true"
+            >
+              I've reviewed these &mdash; create new client anyway
+            </button>
+            <div class="mt-3 space-y-2">
+              <div
+                v-for="match in duplicateMatches"
+                :key="match.personId"
+                class="flex items-center justify-between bg-white rounded-md border border-amber-200 px-3 py-2"
+              >
+                <div>
+                  <span class="font-medium text-gray-900">{{ match.personName }}</span>
+                  <span
+                    class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    :class="match.confidence === 'high'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-700'"
+                  >
+                    {{ match.adjustedScore }}% {{ match.confidence }} confidence
+                  </span>
+                  <span class="ml-2 text-xs text-gray-500">
+                    Matched on: {{ match.topFields.map((f: any) => f.field).join(', ') }}
+                  </span>
+                </div>
+                <NuxtLink
+                  :to="`/people/${match.personId}`"
+                  target="_blank"
+                  class="text-sm text-burgundy-600 hover:text-burgundy-800 whitespace-nowrap ml-3"
+                >
+                  View record &rarr;
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Section 2: Address (Collapsible) -->
       <UiCard>
@@ -331,7 +387,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, ChevronDown, Eye, EyeOff } from 'lucide-vue-next'
+import { ArrowLeft, AlertTriangle, ChevronDown, Eye, EyeOff } from 'lucide-vue-next'
 import type { AddressValue } from '~/components/ui/AddressInput.vue'
 
 definePageMeta({
@@ -394,6 +450,55 @@ const referralPartners = ref<any[]>([])
 const loadingPartners = ref(false)
 const existingClients = ref<any[]>([])
 const loadingClients = ref(false)
+
+// Duplicate detection
+interface DuplicateMatch {
+  personId: string
+  personName: string
+  confidence: 'high' | 'medium'
+  adjustedScore: number
+  topFields: Array<{ field: string; score: number; method: string; details?: string }>
+}
+
+const duplicateMatches = ref<DuplicateMatch[]>([])
+let dupCheckTimer: ReturnType<typeof setTimeout> | null = null
+const dupCheckInFlight = ref(false)
+
+async function checkForDuplicates() {
+  // Reset acknowledgment when fields change
+  duplicateAcknowledged.value = false
+
+  const { firstName, lastName, email, phone } = form.value
+  // Need at least a name or email to check
+  if ((!firstName && !lastName) && !email) {
+    duplicateMatches.value = []
+    return
+  }
+
+  if (dupCheckTimer) clearTimeout(dupCheckTimer)
+
+  dupCheckTimer = setTimeout(async () => {
+    dupCheckInFlight.value = true
+    try {
+      const response = await $fetch<{ matches: DuplicateMatch[] }>('/api/people/check-duplicates', {
+        method: 'POST',
+        body: {
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          email: email || undefined,
+          phone: phone || undefined,
+          dateOfBirth: form.value.dateOfBirth || undefined
+        }
+      })
+      duplicateMatches.value = response.matches
+    } catch (err) {
+      console.warn('[Duplicate Check] Failed:', err)
+      duplicateMatches.value = []
+    } finally {
+      dupCheckInFlight.value = false
+    }
+  }, 500)
+}
 
 // Fetch referral partners on mount
 onMounted(async () => {
@@ -477,9 +582,19 @@ async function handleSaveAsLead() {
   await submitForm('PROSPECTIVE')
 }
 
+const duplicateAcknowledged = ref(false)
+
 async function submitForm(status: 'PROSPECTIVE') {
   if (!validate()) {
     toast.error('Please fix the errors in the form')
+    return
+  }
+
+  // Require acknowledgment if high-confidence duplicates exist
+  const highConfidence = duplicateMatches.value.filter(m => m.confidence === 'high')
+  if (highConfidence.length > 0 && !duplicateAcknowledged.value) {
+    duplicateAcknowledged.value = true
+    toast.warning('Possible duplicate detected. Click again to confirm creation.')
     return
   }
 

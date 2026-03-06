@@ -1,10 +1,35 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-03-06
 
 ## 📍 Where We Are Now
 
 ### Recently Completed ✅
+
+#### Derived Client Status via SQL View (2026-03-06)
+- **Status**: Complete ✅
+- **What**: Client status is now derived from matter activity at the data level using a `clients_with_status` SQL view, replacing the static `status` column that was hardcoded during import. Uses legal-ethics-compliant labels:
+  - **PROSPECTIVE** (Rule 1.18) — no open matters; consulting about possible representation
+  - **ACTIVE** (Rules 1.6–1.8) — at least one open matter; currently represented
+  - **FORMER** (Rule 1.9) — all matters closed; representation ended
+
+- **Architecture**: Read View + Write Table pattern
+  - SQL view `clients_with_status` computes status live from `matters` table via join path: `clients.person_id → users.person_id → users.id → matters.client_id`
+  - API read endpoints (`index.get.ts`, `[id].get.ts`) use the view; write endpoints keep using the physical `clients` table
+  - No app-level recalculation hooks needed — the view computes status on every query
+
+- **Changes**:
+  - `server/db/schema/clients.ts` — added `clientsWithStatus` view definition with table-qualified column references to avoid SQLite ambiguity in correlated subqueries
+  - `server/api/clients/index.get.ts` — reads from view, status filter updated to `['PROSPECTIVE', 'ACTIVE', 'FORMER']`
+  - `server/api/clients/[id].get.ts` — reads from view
+  - `server/api/clients/[id].put.ts` — removed manual status editing (status is derived)
+  - `server/api/clients/index.post.ts` — Zod enum updated to `['PROSPECTIVE', 'ACTIVE', 'FORMER']`, default `'PROSPECTIVE'`
+  - `server/queue/lawmatics-import.ts` — import default changed from `'ACTIVE'` to `'PROSPECTIVE'`
+  - `app/pages/clients/index.vue` — status filters and badge variants updated
+  - `app/pages/clients/[id].vue` — status badge updated, status removed from edit form
+  - `app/pages/clients/new.vue` — both save buttons use `'PROSPECTIVE'`
+  - `server/db/seed/clients.ts` — seed data updated to use new enum values
+  - Test suite updated across 4 files (mock types, factories, API tests, architecture tests)
 
 #### Lawmatics Parallel Operation — Sync Protection & Tests (2026-02-27)
 - **Status**: Complete ✅
