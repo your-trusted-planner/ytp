@@ -52,6 +52,27 @@
           </div>
         </div>
 
+        <!-- Incremental Date Override (only for incremental runs) -->
+        <div v-if="runType === 'INCREMENTAL'" class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div class="flex items-end gap-3">
+            <UiInput
+              v-model="syncOverrideDate"
+              type="date"
+              label="Override incremental start date"
+              hint="Leave empty to use last sync timestamp"
+              class="w-64"
+            />
+            <button
+              v-if="syncOverrideDate"
+              type="button"
+              @click="syncOverrideDate = ''"
+              class="mb-1 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
         <!-- Entity Selection -->
         <div>
           <div class="flex items-center justify-between mb-3">
@@ -194,6 +215,7 @@ interface MigrationRun {
 
 const runType = ref<'FULL' | 'INCREMENTAL'>('FULL')
 const selectedEntities = ref<string[]>([])
+const syncOverrideDate = ref('')
 const starting = ref(false)
 const startError = ref<string | null>(null)
 
@@ -283,13 +305,17 @@ async function startMigration() {
   startError.value = null
 
   try {
+    const body: Record<string, any> = {
+      integrationId: integrationId.value,
+      runType: runType.value,
+      entityTypes: selectedEntities.value
+    }
+    if (runType.value === 'INCREMENTAL' && syncOverrideDate.value) {
+      body.updatedSince = new Date(syncOverrideDate.value).toISOString()
+    }
     const result = await $fetch<{ runId: string }>('/api/admin/migrations', {
       method: 'POST',
-      body: {
-        integrationId: integrationId.value,
-        runType: runType.value,
-        entityTypes: selectedEntities.value
-      }
+      body
     })
 
     // Reload to get the new run

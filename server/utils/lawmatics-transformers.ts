@@ -11,6 +11,7 @@
  */
 
 import { nanoid } from 'nanoid'
+import { normalizePhone } from './record-matcher/normalizers'
 import type {
   LawmaticsUser,
   LawmaticsContact,
@@ -34,6 +35,12 @@ export interface ImportMetadata {
   importRunId?: string
   flags?: ImportFlag[]
   sourceData?: Record<string, any>
+  /** Explicit override for which system owns this record's data */
+  sourceOfTruth?: 'LAWMATICS' | 'YTP'
+  /** Fields that have been locally modified in YTP and should not be overwritten by sync */
+  locallyModifiedFields?: string[]
+  /** Snapshot of Lawmatics values at last sync (for conflict review) */
+  lastSyncSnapshot?: Record<string, any>
 }
 
 /**
@@ -105,9 +112,11 @@ export interface TransformedPerson {
   email: string | null
   phone: string | null
   address: string | null
+  address2: string | null
   city: string | null
   state: string | null
   zipCode: string | null
+  country: string | null
   dateOfBirth: Date | null
   notes: string | null
   importMetadata: string
@@ -417,25 +426,201 @@ export function parseDate(dateStr: string | undefined | null): Date | null {
 }
 
 /**
- * Parse address components from Lawmatics
- * Lawmatics may have structured or unstructured address data
+ * Parse address components from Lawmatics.
+ *
+ * Priority order:
+ * 1. Pre-fetched structured address data from GET /addresses/:id
+ * 2. Structured fields on contact attributes (if present)
+ * 3. Parse the full_address string from contact.attributes.address
+ *
+ * @param contact - The Lawmatics contact
+ * @param addressData - Pre-fetched address object with structured fields (optional)
  */
-export function parseAddress(contact: LawmaticsContact): {
+/**
+ * Normalize a street address to title case.
+ * Preserves directional abbreviations (NW, SE, etc.) and common suffixes.
+ */
+function normalizeStreet(street: string): string {
+  // If it's not all-caps or all-lower, assume it's already formatted
+  if (street !== street.toUpperCase() && street !== street.toLowerCase()) {
+    return street
+  }
+  return street
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+    // Fix common abbreviations back to uppercase
+    .replace(/\b(Nw|Ne|Sw|Se|Po|Apt|Ste)\b/g, m => m.toUpperCase())
+}
+
+/**
+ * Normalize a city name to title case.
+ */
+function normalizeCity(city: string): string {
+  if (city !== city.toUpperCase() && city !== city.toLowerCase()) {
+    return city
+  }
+  return city
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+/**
+ * Map of full state names to two-letter abbreviations.
+ */
+const STATE_ABBREVIATIONS: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+  'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
+}
+
+/**
+ * Map of common country names/variations to ISO 3166-1 alpha-2 codes.
+ */
+const COUNTRY_CODES: Record<string, string> = {
+  'united states': 'US', 'united states of america': 'US', 'usa': 'US', 'us': 'US', 'u.s.': 'US', 'u.s.a.': 'US',
+  'canada': 'CA', 'ca': 'CA',
+  'united kingdom': 'GB', 'great britain': 'GB', 'england': 'GB', 'scotland': 'GB', 'wales': 'GB', 'uk': 'GB',
+  'switzerland': 'CH', 'schweiz': 'CH', 'suisse': 'CH',
+  'germany': 'DE', 'deutschland': 'DE',
+  'france': 'FR',
+  'australia': 'AU',
+  'mexico': 'MX', 'méxico': 'MX',
+  'italy': 'IT', 'italia': 'IT',
+  'spain': 'ES', 'españa': 'ES',
+  'brazil': 'BR', 'brasil': 'BR',
+  'japan': 'JP',
+  'china': 'CN',
+  'india': 'IN',
+  'south korea': 'KR', 'korea': 'KR',
+  'netherlands': 'NL', 'holland': 'NL',
+  'belgium': 'BE',
+  'austria': 'AT', 'österreich': 'AT',
+  'sweden': 'SE',
+  'norway': 'NO',
+  'denmark': 'DK',
+  'finland': 'FI',
+  'ireland': 'IE',
+  'portugal': 'PT',
+  'poland': 'PL',
+  'czech republic': 'CZ', 'czechia': 'CZ',
+  'greece': 'GR',
+  'turkey': 'TR', 'türkiye': 'TR',
+  'russia': 'RU',
+  'ukraine': 'UA',
+  'israel': 'IL',
+  'south africa': 'ZA',
+  'argentina': 'AR',
+  'colombia': 'CO',
+  'chile': 'CL',
+  'peru': 'PE',
+  'new zealand': 'NZ',
+  'singapore': 'SG',
+  'hong kong': 'HK',
+  'taiwan': 'TW',
+  'thailand': 'TH',
+  'philippines': 'PH',
+  'indonesia': 'ID',
+  'malaysia': 'MY',
+  'vietnam': 'VN',
+  'united arab emirates': 'AE', 'uae': 'AE',
+  'saudi arabia': 'SA',
+  'egypt': 'EG',
+  'nigeria': 'NG',
+  'costa rica': 'CR',
+  'panama': 'PA',
+  'puerto rico': 'PR',
+  'luxembourg': 'LU',
+  'iceland': 'IS',
+  'romania': 'RO',
+  'hungary': 'HU',
+  'croatia': 'HR',
+}
+
+/**
+ * Normalize a country value to ISO 3166-1 alpha-2.
+ * If already 2 letters, uppercase and return. If a known name, map it. Otherwise store as-is.
+ */
+function normalizeCountry(country: string): string {
+  const trimmed = country.trim()
+  if (!trimmed) return trimmed
+  // Already a 2-letter code
+  if (/^[a-zA-Z]{2}$/.test(trimmed)) return trimmed.toUpperCase()
+  // Lookup by name
+  const code = COUNTRY_CODES[trimmed.toLowerCase()]
+  return code || trimmed
+}
+
+/**
+ * Normalize state to two-letter abbreviation (uppercase).
+ * Only applies US abbreviation logic when country is US or unspecified.
+ * For non-US countries, returns the state value as-is (trimmed).
+ */
+function normalizeState(state: string, country?: string | null): string {
+  const trimmed = state.trim()
+  // For non-US countries, don't apply US state normalization
+  if (country && country !== 'US') return trimmed
+  // Already a 2-letter code
+  if (trimmed.length === 2) return trimmed.toUpperCase()
+  // Full name lookup
+  const abbr = STATE_ABBREVIATIONS[trimmed.toLowerCase()]
+  return abbr || trimmed
+}
+
+export function parseAddress(
+  contact: LawmaticsContact,
+  addressData?: { street?: string; street2?: string; city?: string; state?: string; zipcode?: string; country?: string; [key: string]: any } | null
+): {
   address: string | null
+  address2: string | null
   city: string | null
   state: string | null
   zipCode: string | null
+  country: string | null
 } {
-  // Try to get structured address from relationships if available
-  // For now, use the address attribute directly
-  const address = contact.attributes.address || null
+  // 1. Use pre-fetched structured address data if available
+  if (addressData) {
+    const country = addressData.country ? normalizeCountry(addressData.country) : null
+    return {
+      address: addressData.street ? normalizeStreet(addressData.street) : null,
+      address2: addressData.street2 || null,
+      city: addressData.city ? normalizeCity(addressData.city) : null,
+      state: addressData.state ? normalizeState(addressData.state, country) : null,
+      zipCode: addressData.zipcode || null,
+      country
+    }
+  }
 
-  // Lawmatics may have separate fields in some accounts
-  const city = contact.attributes.city || null
-  const state = contact.attributes.state || null
-  const zipCode = contact.attributes.zipcode || contact.attributes.zip_code || null
+  // 2. Fallback: check for structured fields on the contact attributes
+  const structuredCity = contact.attributes.city || null
+  const structuredState = contact.attributes.state || null
+  const structuredZip = contact.attributes.zipcode || contact.attributes.zip_code || null
+  const structuredStreet = contact.attributes.street || null
+  const structuredStreet2 = contact.attributes.street2 || null
+  const structuredCountry = contact.attributes.country ? normalizeCountry(contact.attributes.country) : null
 
-  return { address, city, state, zipCode }
+  if (structuredStreet || structuredCity || structuredState || structuredZip) {
+    return {
+      address: structuredStreet ? normalizeStreet(structuredStreet) : null,
+      address2: structuredStreet2,
+      city: structuredCity ? normalizeCity(structuredCity) : null,
+      state: structuredState ? normalizeState(structuredState, structuredCountry) : null,
+      zipCode: structuredZip,
+      country: structuredCountry
+    }
+  }
+
+  // 3. No structured data available
+  return { address: null, address2: null, city: null, state: null, zipCode: null, country: null }
 }
 
 /**
@@ -519,6 +704,7 @@ export function transformContact(
   options: {
     importRunId?: string
     existingEmails?: Set<string> // For duplicate detection
+    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
   } = {}
 ): TransformedClient {
   const flags: ImportFlag[] = []
@@ -569,8 +755,8 @@ export function transformContact(
   const createdAt = parseDate(contact.attributes.created_at) || new Date()
   const updatedAt = parseDate(contact.attributes.updated_at) || new Date()
 
-  // Parse address
-  const addressData = parseAddress(contact)
+  // Parse address (use pre-fetched structured data if available)
+  const addressData = parseAddress(contact, options.addressData)
 
   // Parse birthdate
   const dateOfBirth = parseDate(contact.attributes.birthdate)
@@ -616,6 +802,7 @@ export function transformContactToPerson(
   contact: LawmaticsContact,
   options: {
     importRunId?: string
+    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
   } = {}
 ): TransformedPerson | null {
   // Skip non-person records (businesses, trusts, etc.)
@@ -651,8 +838,8 @@ export function transformContactToPerson(
   const createdAt = parseDate(contact.attributes.created_at) || new Date()
   const updatedAt = parseDate(contact.attributes.updated_at) || new Date()
 
-  // Parse address
-  const addressData = parseAddress(contact)
+  // Parse address (use pre-fetched structured data if available)
+  const addressData = parseAddress(contact, options.addressData)
 
   // Parse birthdate
   const dateOfBirth = parseDate(contact.attributes.birthdate)
@@ -662,17 +849,23 @@ export function transformContactToPerson(
   const lastName = contact.attributes.last_name || null
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || null
 
+  // Normalize phone to E.164, fall back to raw value if normalization fails
+  const rawPhone = contact.attributes.phone || contact.attributes.phone_number || null
+  const normalizedPhone = rawPhone ? (normalizePhone(rawPhone) || rawPhone) : null
+
   return {
     id: nanoid(),
     firstName,
     lastName,
     fullName,
     email: contact.attributes.email || contact.attributes.email_address || null,
-    phone: contact.attributes.phone || contact.attributes.phone_number || null,
+    phone: normalizedPhone,
     address: addressData.address,
+    address2: addressData.address2,
     city: addressData.city,
     state: addressData.state,
     zipCode: addressData.zipCode,
+    country: addressData.country,
     dateOfBirth,
     notes: null,
     importMetadata: serializeImportMetadata(metadata),

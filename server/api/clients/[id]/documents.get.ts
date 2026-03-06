@@ -12,13 +12,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const { useDrizzle, schema } = await import('../../../db')
-  const { eq, desc } = await import('drizzle-orm')
+  const { eq, or, desc } = await import('drizzle-orm')
+  const { getLegacyClientIds } = await import('../../../utils/client-ids')
   const db = useDrizzle()
+
+  // documents.clientId references users.id, but URL param is clients.id
+  const allIds = await getLegacyClientIds(clientId)
 
   // Get all documents for this client
   const documents = await db.select()
     .from(schema.documents)
-    .where(eq(schema.documents.clientId, clientId))
+    .where(or(...allIds.map(id => eq(schema.documents.clientId, id))))
     .orderBy(desc(schema.documents.createdAt))
     .all()
 

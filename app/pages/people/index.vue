@@ -23,6 +23,7 @@ interface Person {
   city?: string
   state?: string
   zipCode?: string
+  country?: string
   dateOfBirth?: number
   ssnLast4?: string
   entityName?: string
@@ -71,6 +72,7 @@ const personForm = reactive({
   city: '',
   state: '',
   zipCode: '',
+  country: '',
   dateOfBirth: '',
   ssnLast4: '',
   // Entity fields
@@ -87,7 +89,8 @@ const addressValue = ref<AddressValue>({
   address2: '',
   city: '',
   state: '',
-  zipCode: ''
+  zipCode: '',
+  country: ''
 })
 
 // Sync addressValue with personForm
@@ -97,6 +100,7 @@ watch(addressValue, (newVal) => {
   personForm.city = newVal.city
   personForm.state = newVal.state
   personForm.zipCode = newVal.zipCode
+  personForm.country = newVal.country || ''
 }, { deep: true })
 
 // Middle names management
@@ -199,6 +203,7 @@ function resetForm() {
   personForm.city = ''
   personForm.state = ''
   personForm.zipCode = ''
+  personForm.country = ''
   personForm.dateOfBirth = ''
   personForm.ssnLast4 = ''
   personForm.entityName = ''
@@ -211,7 +216,8 @@ function resetForm() {
     address2: '',
     city: '',
     state: '',
-    zipCode: ''
+    zipCode: '',
+    country: ''
   }
 }
 
@@ -259,6 +265,7 @@ function openEditModal(person: Person) {
   personForm.city = person.city || ''
   personForm.state = person.state || ''
   personForm.zipCode = person.zipCode || ''
+  personForm.country = person.country || ''
   personForm.notes = person.notes || ''
 
   // Populate address component
@@ -267,7 +274,8 @@ function openEditModal(person: Person) {
     address2: person.address2 || '',
     city: person.city || '',
     state: person.state || '',
-    zipCode: person.zipCode || ''
+    zipCode: person.zipCode || '',
+    country: person.country || ''
   }
 
   showEditModal.value = true
@@ -285,6 +293,7 @@ async function addPerson() {
       city: personForm.city || undefined,
       state: personForm.state || undefined,
       zipCode: personForm.zipCode || undefined,
+      country: personForm.country || undefined,
       notes: personForm.notes || undefined
     }
 
@@ -472,7 +481,12 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr v-for="person in people" :key="person.id" class="hover:bg-gray-50">
+          <tr
+            v-for="person in people"
+            :key="person.id"
+            class="hover:bg-gray-50 cursor-pointer"
+            @click="$router.push(`/people/${person.id}`)"
+          >
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <Building2 v-if="person.entityName" class="w-5 h-5 text-gray-400 mr-2" />
@@ -497,7 +511,7 @@ onMounted(() => {
             </td>
             <td class="px-6 py-4">
               <div v-if="person.city || person.state" class="text-sm text-gray-900">
-                {{ person.city }}{{ person.city && person.state ? ', ' : '' }}{{ person.state }}
+                {{ person.city }}{{ person.city && person.state ? ', ' : '' }}{{ person.state }}{{ person.country && person.country !== 'US' ? ` ${person.country}` : '' }}
               </div>
               <div v-else class="text-sm text-gray-500">-</div>
             </td>
@@ -506,13 +520,13 @@ onMounted(() => {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button
-                @click="openEditModal(person)"
+                @click.stop="openEditModal(person)"
                 class="text-burgundy-600 hover:text-burgundy-900 mr-3"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
-                @click="deletePerson(person)"
+                @click.stop="deletePerson(person)"
                 class="text-red-600 hover:text-red-900"
               >
                 <Trash2 class="w-4 h-4" />

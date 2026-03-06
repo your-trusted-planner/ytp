@@ -14,6 +14,54 @@
       </div>
     </div>
 
+    <!-- Sync Health Summary -->
+    <UiCard v-if="integration?.status === 'CONNECTED' && syncSummary">
+      <template #header>
+        <h3 class="text-lg font-semibold text-gray-900">Sync Health</h3>
+      </template>
+
+      <div class="space-y-4">
+        <!-- Status Row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-3 bg-gray-50 rounded-lg text-center">
+            <p class="text-2xl font-bold" :class="syncSummary.lastSync?.status === 'COMPLETED' ? 'text-green-600' : syncSummary.lastSync?.status === 'FAILED' ? 'text-red-600' : 'text-gray-600'">
+              {{ syncSummary.lastSync?.status || 'Never' }}
+            </p>
+            <p class="text-xs text-gray-500">Last Sync Status</p>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ syncSummary.totalImportedRecords }}</p>
+            <p class="text-xs text-gray-500">Total Imported</p>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg text-center">
+            <p class="text-2xl font-bold" :class="syncSummary.totalLocalEdits > 0 ? 'text-amber-600' : 'text-gray-600'">
+              {{ syncSummary.totalLocalEdits }}
+            </p>
+            <p class="text-xs text-gray-500">Local Edits</p>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg text-center">
+            <p class="text-2xl font-bold" :class="syncSummary.lastRunErrors > 0 ? 'text-red-600' : 'text-gray-600'">
+              {{ syncSummary.lastRunErrors }}
+            </p>
+            <p class="text-xs text-gray-500">Last Run Errors</p>
+          </div>
+        </div>
+
+        <!-- Last Sync Time -->
+        <div v-if="syncSummary.lastSync" class="flex items-center justify-between text-sm text-gray-600 px-1">
+          <span>
+            Last sync: {{ syncSummary.lastSync.completedAt ? formatDate(syncSummary.lastSync.completedAt) : 'In progress' }}
+            ({{ syncSummary.lastSync.runType }})
+          </span>
+          <span v-if="syncSummary.lastSync">
+            {{ syncSummary.lastSync.processedEntities }} processed,
+            {{ syncSummary.lastSync.createdRecords }} created,
+            {{ syncSummary.lastSync.updatedRecords }} updated
+          </span>
+        </div>
+      </div>
+    </UiCard>
+
     <!-- Data Migration Card -->
     <UiCard v-if="integration?.status === 'CONNECTED'">
       <template #header>
@@ -25,7 +73,7 @@
           <NuxtLink to="/settings/integrations/lawmatics/migrate">
             <UiButton>
               <Upload class="w-4 h-4 mr-2" />
-              Start Migration
+              Manage Migrations
             </UiButton>
           </NuxtLink>
         </div>
@@ -130,6 +178,105 @@
       </div>
     </UiCard>
 
+    <!-- Automatic Sync Card -->
+    <UiCard v-if="integration?.status === 'CONNECTED'">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Automatic Sync</h3>
+            <p class="text-sm text-gray-600 mt-1">Keep data fresh with periodic sync from Lawmatics</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-6">
+        <!-- Enable/Disable Toggle -->
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-700">Enable automatic sync</p>
+            <p class="text-xs text-gray-500">Runs an incremental sync every 4 hours</p>
+          </div>
+          <button
+            type="button"
+            @click="toggleAutoSync"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2',
+              syncSettings.syncEnabled ? 'bg-accent-600' : 'bg-gray-200'
+            ]"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                syncSettings.syncEnabled ? 'translate-x-5' : 'translate-x-0'
+              ]"
+            />
+          </button>
+        </div>
+
+        <!-- Entity Type Checkboxes -->
+        <div v-if="syncSettings.syncEnabled">
+          <p class="text-sm font-medium text-gray-700 mb-2">Data types to sync</p>
+          <div class="space-y-2">
+            <label v-for="entity in syncEntityOptions" :key="entity.value" class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                :checked="syncSettings.syncEntityTypes.includes(entity.value)"
+                @change="toggleSyncEntity(entity.value)"
+                class="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+              />
+              <span class="text-sm text-gray-700">{{ entity.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div v-if="syncSettings.syncEnabled">
+          <UiButton
+            @click="saveSyncSettings"
+            :is-loading="savingSyncSettings"
+            size="sm"
+          >
+            Save Sync Settings
+          </UiButton>
+        </div>
+
+        <!-- Sync Status -->
+        <div v-if="syncSettings.syncEnabled" class="p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-700">Last automatic sync</p>
+              <p class="text-xs text-gray-500">
+                {{ syncSettings.lastAutoSyncAt ? formatDate(syncSettings.lastAutoSyncAt) : 'Never' }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-medium text-gray-700">Next sync</p>
+              <p class="text-xs text-gray-500">~Every 4 hours</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <div class="flex items-end gap-3">
+              <UiInput
+                v-model="syncOverrideDate"
+                type="date"
+                label="Override incremental start date"
+                hint="Leave empty for default"
+              />
+              <UiButton
+                variant="outline"
+                size="sm"
+                @click="triggerSync"
+                :is-loading="triggeringSync"
+              >
+                <RefreshCw class="w-4 h-4 mr-2" />
+                Sync Now
+              </UiButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </UiCard>
+
     <!-- Danger Zone -->
     <UiCard v-if="integration?.id" class="border-red-200">
       <template #header>
@@ -181,7 +328,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, Upload } from 'lucide-vue-next'
+import { ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, Upload, RefreshCw } from 'lucide-vue-next'
 
 const toast = useToast()
 
@@ -197,6 +344,13 @@ interface Integration {
   status: 'CONFIGURED' | 'CONNECTED' | 'ERROR'
   lastTestedAt: string | null
   lastSyncTimestamps: Record<string, string> | null
+  settings?: Record<string, any> | null
+}
+
+interface SyncSettings {
+  syncEnabled: boolean
+  syncEntityTypes: string[]
+  lastAutoSyncAt: string | null
 }
 
 const integration = ref<Integration | null>(null)
@@ -207,10 +361,50 @@ const testing = ref(false)
 const deleting = ref(false)
 const testResult = ref<{ success: boolean; error?: string } | null>(null)
 
+// Trigger sync state
+const triggeringSync = ref(false)
+const syncOverrideDate = ref('')
+
 // Cleanup state
 const cleanupPreviewing = ref(false)
 const cleanupRunning = ref(false)
 const cleanupPreview = ref<Record<string, number> | null>(null)
+
+// Sync health summary
+const syncSummary = ref<{
+  connected: boolean
+  lastSync: {
+    id: string
+    status: string
+    runType: string
+    startedAt: string | null
+    completedAt: string | null
+    processedEntities: number
+    createdRecords: number
+    updatedRecords: number
+    skippedRecords: number
+    errorCount: number
+  } | null
+  totalImportedRecords: number
+  totalLocalEdits: number
+  lastRunErrors: number
+} | null>(null)
+
+// Auto-sync state
+const savingSyncSettings = ref(false)
+const syncSettings = ref<SyncSettings>({
+  syncEnabled: false,
+  syncEntityTypes: ['users', 'contacts', 'prospects', 'notes', 'activities'],
+  lastAutoSyncAt: null
+})
+
+const syncEntityOptions = [
+  { value: 'users', label: 'Users (staff/attorneys)' },
+  { value: 'contacts', label: 'Contacts (people)' },
+  { value: 'prospects', label: 'Prospects (matters)' },
+  { value: 'notes', label: 'Notes' },
+  { value: 'activities', label: 'Activities' }
+]
 
 const entityStats = ref([
   { type: 'users', label: 'Users', count: 0 },
@@ -234,7 +428,11 @@ const statusText = computed(() => {
 // Fetch existing integration
 onMounted(async () => {
   await loadIntegration()
-  await loadImportStats()
+  loadSyncSettings()
+  await Promise.all([
+    loadImportStats(),
+    loadSyncSummary()
+  ])
 })
 
 async function loadIntegration() {
@@ -247,6 +445,8 @@ async function loadIntegration() {
     if (integration.value?.id) {
       apiKey.value = '••••••••••••••••'
     }
+
+    loadSyncSettings()
   } catch {
     // Integration not found or no access
   }
@@ -273,6 +473,69 @@ async function loadImportStats() {
     ]
   } catch {
     // Stats not available
+  }
+}
+
+async function loadSyncSummary() {
+  try {
+    const data = await $fetch<any>('/api/admin/sync/summary')
+    syncSummary.value = data
+  } catch {
+    // Summary not available
+  }
+}
+
+function loadSyncSettings() {
+  const settings = integration.value?.settings
+  if (settings) {
+    syncSettings.value = {
+      syncEnabled: !!settings.syncEnabled,
+      syncEntityTypes: settings.syncEntityTypes?.length
+        ? settings.syncEntityTypes
+        : ['users', 'contacts', 'prospects', 'notes', 'activities'],
+      lastAutoSyncAt: settings.lastAutoSyncAt || null
+    }
+  }
+}
+
+async function toggleAutoSync() {
+  syncSettings.value.syncEnabled = !syncSettings.value.syncEnabled
+  await saveSyncSettings()
+}
+
+function toggleSyncEntity(entityType: string) {
+  const idx = syncSettings.value.syncEntityTypes.indexOf(entityType)
+  if (idx >= 0) {
+    syncSettings.value.syncEntityTypes.splice(idx, 1)
+  } else {
+    syncSettings.value.syncEntityTypes.push(entityType)
+  }
+}
+
+async function saveSyncSettings() {
+  if (!integration.value?.id) return
+
+  savingSyncSettings.value = true
+  try {
+    // Merge with existing settings to avoid losing other settings
+    const existingSettings = integration.value.settings || {}
+    const mergedSettings = {
+      ...existingSettings,
+      syncEnabled: syncSettings.value.syncEnabled,
+      syncEntityTypes: syncSettings.value.syncEntityTypes,
+      // Preserve lastAutoSyncAt from server
+    }
+
+    await $fetch(`/api/admin/integrations/${integration.value.id}`, {
+      method: 'PUT',
+      body: { settings: mergedSettings }
+    })
+    await loadIntegration()
+    toast.success('Sync settings saved')
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to save sync settings')
+  } finally {
+    savingSyncSettings.value = false
   }
 }
 
@@ -402,6 +665,25 @@ async function cleanupImports() {
     toast.error(error.data?.message || 'Failed to clean up imports')
   } finally {
     cleanupRunning.value = false
+  }
+}
+
+async function triggerSync() {
+  triggeringSync.value = true
+  try {
+    const body: Record<string, string> = {}
+    if (syncOverrideDate.value) {
+      // Convert date input (YYYY-MM-DD) to ISO string for the API
+      body.updatedSince = new Date(syncOverrideDate.value).toISOString()
+    }
+    await $fetch('/api/admin/sync/trigger', { method: 'POST', body })
+    const dateNote = syncOverrideDate.value ? ` from ${syncOverrideDate.value}` : ''
+    toast.success(`Sync triggered${dateNote} — check back shortly for results`)
+    await loadSyncSummary()
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to trigger sync')
+  } finally {
+    triggeringSync.value = false
   }
 }
 

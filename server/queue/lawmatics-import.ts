@@ -33,6 +33,9 @@ export interface PhaseCompleteMessage {
   type: 'PHASE_COMPLETE'
   runId: string
   phase: ImportPhase
+  filter?: {
+    updatedSince?: string
+  }
 }
 
 export type LawmaticsImportMessage = ImportPageMessage | PhaseCompleteMessage
@@ -87,8 +90,20 @@ export default {
           stack: error instanceof Error ? error.stack : undefined
         })
 
-        // Retry the message (up to max_retries)
-        message.retry()
+        // Check if this is a non-retryable API error (404, 401, 403)
+        const { LawmaticsApiError } = await import('../utils/lawmatics-client')
+        if (error instanceof LawmaticsApiError && [404, 401, 403].includes(error.statusCode)) {
+          console.warn(`[Lawmatics Import] Non-retryable API error (${error.statusCode}) for ${body.type} — skipping phase`)
+
+          // For IMPORT_PAGE messages, skip to phase complete so the run can continue
+          if (body.type === 'IMPORT_PAGE') {
+            await queuePhaseComplete(env, { runId: body.runId, phase: body.phase, filter: body.filter })
+          }
+          message.ack()
+        } else {
+          // Retry the message (up to max_retries)
+          message.retry()
+        }
       }
     }
   }
@@ -213,7 +228,8 @@ async function handleImportPage(
   const { processedCount, createdCount, updatedCount, skippedCount, errors } = await processRecords(
     phase,
     pageResult.data,
-    runId
+    runId,
+    client
   )
 
   console.log(`[Lawmatics Import] ${phase} page ${page}: processed=${processedCount}, created=${createdCount}, updated=${updatedCount}, skipped=${skippedCount}, errors=${errors.length}`)
@@ -252,7 +268,7 @@ async function handleImportPage(
       filter
     })
   } else {
-    await queuePhaseComplete(env, { runId, phase })
+    await queuePhaseComplete(env, { runId, phase, filter })
   }
 
   message.ack()
@@ -293,17 +309,20 @@ async function handlePhaseComplete(
     const nextPhase = nextPhases[0]
     console.log(`[Lawmatics Import] Starting next phase: ${nextPhase}`)
 
-    // Get filter from integration settings
-    const integration = await db.select()
-      .from(schema.integrations)
-      .where(eq(schema.integrations.id, run.integrationId))
-      .get()
+    // Prefer the filter carried through from the original trigger (custom date override).
+    // Fall back to DB-derived lastSyncTimestamps for normal incremental syncs.
+    let filter: { updatedSince?: string } | undefined = msg.filter
+    if (!filter && run.runType === 'INCREMENTAL') {
+      const integration = await db.select()
+        .from(schema.integrations)
+        .where(eq(schema.integrations.id, run.integrationId))
+        .get()
 
-    let filter: { updatedSince?: string } | undefined
-    if (run.runType === 'INCREMENTAL' && integration?.lastSyncTimestamps) {
-      const timestamps = JSON.parse(integration.lastSyncTimestamps)
-      if (timestamps[nextPhase]) {
-        filter = { updatedSince: timestamps[nextPhase] }
+      if (integration?.lastSyncTimestamps) {
+        const timestamps = JSON.parse(integration.lastSyncTimestamps)
+        if (timestamps[nextPhase]) {
+          filter = { updatedSince: timestamps[nextPhase] }
+        }
       }
     }
 
@@ -319,8 +338,8 @@ async function handlePhaseComplete(
     console.log(`[Lawmatics Import] All phases complete for run ${runId}`)
     await updateRunStatus(runId, 'COMPLETED')
 
-    // Update last sync timestamps on integration
-    await updateIntegrationSyncTimestamps(run.integrationId)
+    // Update last sync timestamps only for phases that were actually synced
+    await updateIntegrationSyncTimestamps(run.integrationId, configuredPhases)
   }
 
   message.ack()
@@ -345,6 +364,7 @@ let peopleLookupCache: Map<string, string> | null = null
 let matterLookupCache: Map<string, string> | null = null
 let existingEmailsCache: Set<string> | null = null
 let emailIndexCache: Map<string, { personId: string; originalEmail: string }> | null = null
+let matchIndexCache: import('../utils/record-matcher/types').MatchIndex | null = null
 
 async function getOrBuildUserLookup(): Promise<Map<string, string>> {
   if (!userLookupCache) {
@@ -398,6 +418,14 @@ async function getOrBuildEmailIndex(): Promise<Map<string, { personId: string; o
   return emailIndexCache
 }
 
+async function getOrBuildMatchIndex(): Promise<import('../utils/record-matcher/types').MatchIndex> {
+  if (!matchIndexCache) {
+    const { buildMatchIndex } = await import('../utils/record-matcher')
+    matchIndexCache = await buildMatchIndex()
+  }
+  return matchIndexCache
+}
+
 // Clear caches when starting a new run
 export function clearLookupCaches(): void {
   userLookupCache = null
@@ -406,6 +434,7 @@ export function clearLookupCaches(): void {
   matterLookupCache = null
   existingEmailsCache = null
   emailIndexCache = null
+  matchIndexCache = null
 }
 
 /**
@@ -507,7 +536,7 @@ async function ensurePersonIsClient(
     await db.insert(schema.clients).values({
       id: clientId,
       personId: personId,
-      status: 'ACTIVE',
+      status: 'PROSPECTIVE',
       importMetadata: JSON.stringify({
         source: 'LAWMATICS',
         externalId: contactExternalId,
@@ -526,7 +555,8 @@ async function ensurePersonIsClient(
 async function processRecords(
   phase: ImportPhase,
   records: any[],
-  runId: string
+  runId: string,
+  client?: { fetchAddress: (id: string) => Promise<any> }
 ): Promise<ProcessResult> {
   const transformers = await import('../utils/lawmatics-transformers')
   const upsert = await import('../utils/lawmatics-upsert')
@@ -568,24 +598,51 @@ async function processRecords(
     case 'contacts': {
       // Contacts are imported as people (not clients)
       // Non-person records (businesses, trusts, etc.) are skipped
-      // Duplicates are detected and linked to existing records
+      // Duplicates are detected via probabilistic matching and linked to existing records
 
-      // Get the email index for duplicate detection
+      // Get match index for probabilistic duplicate detection
+      const matchIndex = await getOrBuildMatchIndex()
+      // Also keep email index for fast within-batch dedup
       const emailIndex = await getOrBuildEmailIndex()
-      const { checkForDuplicates } = await import('../utils/duplicate-detector')
+      const { checkForDuplicatesWithMatcher, checkForDuplicates } = await import('../utils/duplicate-detector')
+      const { ensurePersonExternalId } = await import('../utils/lawmatics-upsert')
       const { useDrizzle, schema } = await import('../db')
       const db = useDrizzle()
 
       for (const record of records) {
         try {
-          // 1. Check for duplicate BEFORE transform
-          const duplicateCheck = checkForDuplicates(record, emailIndex)
+          // 1. Check for duplicate BEFORE transform using probabilistic matcher
+          const duplicateCheck = checkForDuplicatesWithMatcher(record, matchIndex)
 
-          if (duplicateCheck.isDuplicate && duplicateCheck.bestMatch) {
+          // Fallback: also check email index for within-batch duplicates
+          // (the match index doesn't include records created earlier in this batch)
+          let finalCheck = duplicateCheck
+          if (!duplicateCheck.isDuplicate) {
+            finalCheck = checkForDuplicates(record, emailIndex)
+          }
+
+          if (finalCheck.isDuplicate && finalCheck.bestMatch) {
             // CRITICAL: Add to lookup cache even though not creating new record
             // This prevents cascade failures for prospects and notes
             if (peopleLookupCache) {
-              peopleLookupCache.set(record.id, duplicateCheck.bestMatch.existingPersonId)
+              peopleLookupCache.set(record.id, finalCheck.bestMatch.existingPersonId)
+            }
+
+            // Link the external ID to the existing person
+            try {
+              await ensurePersonExternalId(
+                finalCheck.bestMatch.existingPersonId,
+                'LAWMATICS',
+                record.id,
+                false, // Not primary — the existing person's original ID is primary
+                finalCheck.bestMatch.matchDetails ? {
+                  matchConfidence: finalCheck.bestMatch.confidenceScore,
+                  matchMethod: finalCheck.bestMatch.type,
+                  linkedDuringRun: runId
+                } : undefined
+              )
+            } catch (linkError) {
+              console.warn('[Lawmatics Import] Failed to link external ID:', linkError)
             }
 
             // Log for review in import_duplicates table
@@ -597,43 +654,74 @@ async function processRecords(
                 externalId: record.id,
                 entityType: 'contact',
                 sourceData: JSON.stringify(record),
-                duplicateType: duplicateCheck.bestMatch.type,
-                matchingField: duplicateCheck.bestMatch.matchingField,
-                matchingValue: duplicateCheck.bestMatch.matchingValue,
-                confidenceScore: duplicateCheck.bestMatch.confidenceScore,
-                existingPersonId: duplicateCheck.bestMatch.existingPersonId,
+                duplicateType: finalCheck.bestMatch.type,
+                matchingField: finalCheck.bestMatch.matchingField,
+                matchingValue: finalCheck.bestMatch.matchingValue,
+                confidenceScore: finalCheck.bestMatch.confidenceScore,
+                existingPersonId: finalCheck.bestMatch.existingPersonId,
                 resolution: 'LINKED',
-                resolvedPersonId: duplicateCheck.bestMatch.existingPersonId,
+                resolvedPersonId: finalCheck.bestMatch.existingPersonId,
                 createdAt: new Date()
               })
             } catch (logError) {
               console.error('[Lawmatics Import] Failed to log duplicate:', logError)
-              // Don't fail the import if logging fails
             }
 
             result.skippedCount++
             continue
           }
 
-          // 2. Non-person check (existing logic)
+          // 2. Fetch structured address data from Lawmatics if available
+          let addressData: { street?: string; city?: string; state?: string; zipcode?: string } | null = null
+          const addressRelation = record.relationships?.addresses?.data
+          const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
+
+          if (addressId && client) {
+            try {
+              const addressObj = await client.fetchAddress(addressId)
+              addressData = addressObj.attributes
+            } catch (addrError) {
+              const errMsg = addrError instanceof Error ? addrError.message : String(addrError)
+              const errType = addrError instanceof Error ? addrError.constructor.name : typeof addrError
+              // Distinguish API errors (expected, warn) from code bugs (unexpected, error)
+              if (errType === 'RateLimitError' || errType === 'LawmaticsApiError') {
+                console.warn(`[Lawmatics Import] Address fetch failed for contact ${record.id} (address ${addressId}): ${errMsg}`)
+              } else {
+                console.error(`[Lawmatics Import] Unexpected error fetching address ${addressId} for contact ${record.id} [${errType}]: ${errMsg}`)
+              }
+            }
+          } else if (addressId && !client) {
+            console.error(`[Lawmatics Import] Cannot fetch address for contact ${record.id} — client not provided to processRecords`)
+          }
+
+          // 3. Non-person check (existing logic)
           const transformed = transformers.transformContactToPerson(record, {
-            importRunId: runId
+            importRunId: runId,
+            addressData
           })
 
           // Skip non-person records (entities, businesses, trusts, etc.)
-          // Note: These legitimately don't get a lookup entry - prospects
-          // referencing them should fail (data issue in Lawmatics)
           if (!transformed) {
             result.skippedCount++
             continue
           }
 
-          // 3. Normal upsert flow (existing logic)
+          // 4. Normal upsert flow (includes personExternalIds linking)
           const upsertResult = await upsert.upsertPerson(transformed)
 
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
+
+          // 5. Handle Lawmatics opt_out / globalUnsubscribe
+          if (record.attributes.opt_out === true || record.attributes.opt_out === 'true') {
+            try {
+              const { setGlobalUnsubscribe } = await import('../utils/marketing-consent')
+              await setGlobalUnsubscribe(upsertResult.id, 'LAWMATICS')
+            } catch (e) {
+              console.warn('[Lawmatics Import] Failed to set global unsubscribe:', e)
+            }
+          }
 
           // Update people cache
           if (peopleLookupCache) {
@@ -883,7 +971,7 @@ async function queueNextPage(
 
 async function queuePhaseComplete(
   env: any,
-  params: { runId: string; phase: ImportPhase }
+  params: { runId: string; phase: ImportPhase; filter?: { updatedSince?: string } }
 ): Promise<void> {
   const queue = env.LAWMATICS_IMPORT_QUEUE
 
@@ -895,7 +983,8 @@ async function queuePhaseComplete(
   const message: PhaseCompleteMessage = {
     type: 'PHASE_COMPLETE',
     runId: params.runId,
-    phase: params.phase
+    phase: params.phase,
+    filter: params.filter
   }
 
   await queue.send(message)
@@ -993,24 +1082,34 @@ async function logMigrationError(
 }
 
 async function updateIntegrationSyncTimestamps(
-  integrationId: string
+  integrationId: string,
+  syncedPhases: ImportPhase[]
 ): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
+  // Only update timestamps for phases that were actually synced
+  const integration = await db.select()
+    .from(schema.integrations)
+    .where(eq(schema.integrations.id, integrationId))
+    .get()
+
+  let existing: Record<string, string> = {}
+  if (integration?.lastSyncTimestamps) {
+    try {
+      existing = JSON.parse(integration.lastSyncTimestamps)
+    } catch { /* start fresh */ }
+  }
+
   const now = new Date().toISOString()
-  const timestamps: Record<ImportPhase, string> = {
-    users: now,
-    contacts: now,
-    prospects: now,
-    notes: now,
-    activities: now
+  for (const phase of syncedPhases) {
+    existing[phase] = now
   }
 
   await db.update(schema.integrations)
     .set({
-      lastSyncTimestamps: JSON.stringify(timestamps),
+      lastSyncTimestamps: JSON.stringify(existing),
       updatedAt: new Date()
     })
     .where(eq(schema.integrations.id, integrationId))

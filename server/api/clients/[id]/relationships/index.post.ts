@@ -27,23 +27,20 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle, schema } = await import('../../../../db')
   const { eq, and } = await import('drizzle-orm')
+  const { resolveClientIds } = await import('../../../../utils/client-ids')
   const db = useDrizzle()
 
-  // Verify client exists
-  const client = await db.select({ id: schema.users.id })
-    .from(schema.users)
-    .where(and(
-      eq(schema.users.id, clientId),
-      eq(schema.users.role, 'CLIENT')
-    ))
-    .get()
+  // Resolve clients.id → users.id (clientRelationships.clientId references users.id)
+  const resolved = await resolveClientIds(clientId)
 
-  if (!client) {
+  if (!resolved || resolved.userIds.length === 0) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
     })
   }
+
+  const legacyClientId = resolved.userIds[0]
 
   // Verify person exists
   const person = await db.select({ id: schema.people.id })
@@ -63,7 +60,7 @@ export default defineEventHandler(async (event) => {
 
   await db.insert(schema.clientRelationships).values({
     id: relationshipId,
-    clientId,
+    clientId: legacyClientId,
     personId,
     relationshipType,
     ordinal: ordinal || 0,

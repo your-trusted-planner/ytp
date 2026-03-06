@@ -13,13 +13,17 @@ export default defineEventHandler(async (event) => {
   requireClientAccess(event, clientId)
 
   const { useDrizzle, schema } = await import('../../../db')
-  const { eq, ne, desc, sql } = await import('drizzle-orm')
+  const { eq, or, desc, sql } = await import('drizzle-orm')
+  const { getLegacyClientIds } = await import('../../../utils/client-ids')
   const db = useDrizzle()
+
+  // clientJourneys.clientId references users.id, but URL param may be clients.id
+  const allIds = await getLegacyClientIds(clientId)
 
   // Get all active journeys for this client
   const clientJourneys = await db.select()
     .from(schema.clientJourneys)
-    .where(eq(schema.clientJourneys.clientId, clientId))
+    .where(or(...allIds.map(id => eq(schema.clientJourneys.clientId, id))))
     .orderBy(desc(schema.clientJourneys.priority), desc(schema.clientJourneys.createdAt))
     .all()
 

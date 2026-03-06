@@ -35,17 +35,29 @@ export default defineEventHandler(async (event) => {
     const client = await db.select({
       firstName: schema.users.firstName,
       lastName: schema.users.lastName,
-      email: schema.users.email
+      email: schema.users.email,
+      personId: schema.users.personId
     })
       .from(schema.users)
       .where(eq(schema.users.id, matter.clientId))
       .get()
 
     if (client) {
+      // Resolve the clients table ID for linking (URL uses clients.id, not users.id)
+      let clientTableId: string | null = null
+      if (client.personId) {
+        const clientRecord = await db.select({ id: schema.clients.id })
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, client.personId))
+          .get()
+        clientTableId = clientRecord?.id || null
+      }
+
       clientInfo = {
         client_first_name: client.firstName,
         client_last_name: client.lastName,
-        client_email: client.email
+        client_email: client.email,
+        client_table_id: clientTableId
       }
     }
   }
@@ -113,6 +125,8 @@ export default defineEventHandler(async (event) => {
         ? Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000)
         : matter.googleDriveLastSyncAt,
       google_drive_subfolder_ids: matter.googleDriveSubfolderIds,
+      // Import/sync metadata
+      import_metadata: matter.importMetadata || null,
       // Timestamps
       created_at: matter.createdAt instanceof Date ? matter.createdAt.getTime() : matter.createdAt,
       updated_at: matter.updatedAt instanceof Date ? matter.updatedAt.getTime() : matter.updatedAt,

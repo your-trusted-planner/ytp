@@ -40,7 +40,7 @@ export interface User {
 export interface Client {
   id: string
   personId: string
-  status: 'LEAD' | 'PROSPECT' | 'ACTIVE' | 'INACTIVE'
+  status: 'PROSPECTIVE' | 'ACTIVE' | 'FORMER'
   hasMinorChildren?: boolean
   childrenInfo?: string
   hasWill?: boolean

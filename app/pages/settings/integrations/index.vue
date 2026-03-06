@@ -7,7 +7,7 @@
 
     <div class="grid gap-6">
       <!-- Lawmatics Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/lawmatics')">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -37,6 +37,7 @@
           <NuxtLink
             to="/settings/integrations/lawmatics"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
           >
             Manage
           </NuxtLink>
@@ -44,7 +45,7 @@
       </UiCard>
 
       <!-- Resend Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="showResendModal = true">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -75,7 +76,7 @@
             </div>
           </div>
           <button
-            @click="showResendModal = true"
+            @click.stop="showResendModal = true"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
           >
             Configure
@@ -84,7 +85,7 @@
       </UiCard>
 
       <!-- WealthCounsel Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/wealthcounsel')">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -105,6 +106,45 @@
           <NuxtLink
             to="/settings/integrations/wealthcounsel"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
+          >
+            Manage
+          </NuxtLink>
+        </div>
+      </UiCard>
+
+      <!-- Apollo Integration Card -->
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/apollo')">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Send class="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">Apollo</h3>
+              <p class="text-sm text-gray-600 mt-1">
+                Sync contacts and marketing preferences with Apollo.io
+              </p>
+              <div class="flex items-center gap-4 mt-3">
+                <UiBadge v-if="apolloStatus === 'connected'" variant="success">
+                  Connected
+                </UiBadge>
+                <UiBadge v-else-if="apolloStatus === 'error'" variant="danger">
+                  Connection Error
+                </UiBadge>
+                <UiBadge v-else variant="default">
+                  Not Configured
+                </UiBadge>
+                <span v-if="apolloLastSync" class="text-xs text-gray-500">
+                  Last sync: {{ formatDate(apolloLastSync) }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <NuxtLink
+            to="/settings/integrations/apollo"
+            class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
           >
             Manage
           </NuxtLink>
@@ -223,7 +263,7 @@
 </template>
 
 <script setup lang="ts">
-import { Database, Cloud, Mail, Eye, EyeOff, CheckCircle, XCircle, FileCode } from 'lucide-vue-next'
+import { Database, Cloud, Mail, Eye, EyeOff, CheckCircle, XCircle, FileCode, Send } from 'lucide-vue-next'
 
 const toast = useToast()
 
@@ -237,12 +277,16 @@ interface Integration {
   type: string
   status: 'CONFIGURED' | 'CONNECTED' | 'ERROR'
   lastTestedAt: string | null
-  lastSyncTimestamps: string | null
+  lastSyncTimestamps: Record<string, string> | null
 }
 
 // Lawmatics state
 const lawmaticsStatus = ref<'connected' | 'error' | 'not_configured'>('not_configured')
 const lawmaticsLastSync = ref<string | null>(null)
+
+// Apollo state
+const apolloStatus = ref<'connected' | 'error' | 'not_configured'>('not_configured')
+const apolloLastSync = ref<string | null>(null)
 
 // Resend state
 const resendStatus = ref<'connected' | 'configured' | 'error' | 'not_configured'>('not_configured')
@@ -271,9 +315,21 @@ async function loadIntegrations() {
       lawmaticsStatus.value = lawmatics.status === 'CONNECTED' ? 'connected' :
                               lawmatics.status === 'ERROR' ? 'error' : 'not_configured'
       if (lawmatics.lastSyncTimestamps) {
-        const timestamps = JSON.parse(lawmatics.lastSyncTimestamps)
-        const latest = Object.values(timestamps).sort().pop() as string | undefined
+        // Server already parses lastSyncTimestamps from JSON
+        const latest = Object.values(lawmatics.lastSyncTimestamps).sort().pop() as string | undefined
         lawmaticsLastSync.value = latest || null
+      }
+    }
+
+    // Apollo
+    const apollo = integrations.find(i => i.type === 'APOLLO')
+    if (apollo) {
+      apolloStatus.value = apollo.status === 'CONNECTED' ? 'connected' :
+                            apollo.status === 'ERROR' ? 'error' : 'not_configured'
+      if (apollo.lastSyncTimestamps) {
+        // Server already parses lastSyncTimestamps from JSON
+        const latest = Object.values(apollo.lastSyncTimestamps).sort().pop() as string | undefined
+        apolloLastSync.value = latest || null
       }
     }
 

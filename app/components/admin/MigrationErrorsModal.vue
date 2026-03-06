@@ -8,6 +8,42 @@
     </template>
 
     <div class="space-y-4">
+      <!-- Diagnostics Summary -->
+      <div v-if="summary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+        <!-- Entity Breakdown -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-medium text-gray-500 uppercase mr-1">By entity:</span>
+          <button
+            v-for="entry in summary.byEntity"
+            :key="entry.entityType"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors"
+            :class="filters.entityType === entry.entityType
+              ? 'bg-red-600 text-white'
+              : 'bg-red-100 text-red-800 hover:bg-red-200'"
+            @click="toggleEntityFilter(entry.entityType)"
+          >
+            {{ entry.entityType }}
+            <span class="font-bold">{{ entry.count }}</span>
+          </button>
+        </div>
+
+        <!-- Top Error Patterns -->
+        <div v-if="summary.topPatterns.length > 0">
+          <p class="text-xs font-medium text-gray-500 uppercase mb-1.5">Top patterns:</p>
+          <div class="space-y-1.5">
+            <div
+              v-for="(pattern, idx) in summary.topPatterns"
+              :key="idx"
+              class="flex items-start gap-2 text-xs"
+            >
+              <span class="font-bold text-red-700 whitespace-nowrap min-w-[2rem] text-right">{{ pattern.count }}x</span>
+              <span class="text-gray-500">{{ pattern.entityType }}</span>
+              <span class="text-gray-700">{{ pattern.pattern }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Filters -->
       <div class="flex gap-4 flex-wrap">
         <select
@@ -33,6 +69,14 @@
           <option value="API">API</option>
           <option value="UNKNOWN">Unknown</option>
         </select>
+
+        <button
+          v-if="filters.entityType || filters.errorType"
+          class="text-xs text-gray-500 hover:text-gray-700 underline"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
       </div>
 
       <!-- Loading -->
@@ -88,7 +132,7 @@
       <div v-if="pagination.totalPages > 1" class="flex items-center justify-between pt-4 border-t">
         <p class="text-sm text-gray-500">
           Page {{ pagination.page }} of {{ pagination.totalPages }}
-          ({{ pagination.totalCount }} total errors)
+          ({{ pagination.totalCount }} errors{{ hasActiveFilters ? ' matching filters' : '' }})
         </p>
         <div class="flex gap-2">
           <UiButton
@@ -136,6 +180,12 @@ interface MigrationError {
   createdAt: string
 }
 
+interface ErrorSummary {
+  byEntity: { entityType: string; count: number }[]
+  byErrorType: { errorType: string; count: number }[]
+  topPatterns: { pattern: string; entityType: string; count: number; sampleMessages: string[] }[]
+}
+
 const props = defineProps<{
   runId: string
 }>()
@@ -155,6 +205,7 @@ watch(isOpen, (newVal) => {
 
 const loading = ref(true)
 const errors = ref<MigrationError[]>([])
+const summary = ref<ErrorSummary | null>(null)
 const pagination = ref({
   page: 1,
   totalPages: 1,
@@ -166,14 +217,36 @@ const filters = reactive({
   errorType: ''
 })
 
+const hasActiveFilters = computed(() => !!filters.entityType || !!filters.errorType)
+
+function toggleEntityFilter(entityType: string) {
+  filters.entityType = filters.entityType === entityType ? '' : entityType
+}
+
+function clearFilters() {
+  filters.entityType = ''
+  filters.errorType = ''
+}
+
 // Watch filters
 watch(filters, () => {
   loadErrors(1)
 }, { deep: true })
 
 onMounted(() => {
+  loadSummary()
   loadErrors()
 })
+
+async function loadSummary() {
+  try {
+    summary.value = await $fetch<ErrorSummary>(
+      `/api/admin/migrations/${props.runId}/error-summary`
+    )
+  } catch {
+    summary.value = null
+  }
+}
 
 async function loadErrors(page = 1) {
   loading.value = true

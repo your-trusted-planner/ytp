@@ -7,48 +7,93 @@ This document describes the entity relationships in the YTP database schema.
 ```mermaid
 erDiagram
     %% ===================================
-    %% CORE USER & CLIENT MANAGEMENT
+    %% CORE IDENTITY & AUTH (Belly Button Principle)
     %% ===================================
 
-    users {
+    people {
         text id PK
-        text email UK
-        text password
-        text role "ADMIN|LAWYER|CLIENT|LEAD|PROSPECT"
         text firstName
         text lastName
+        text fullName
+        text email
         text phone
-        text avatar
-        text status "PROSPECT|PENDING_APPROVAL|ACTIVE|INACTIVE"
-        timestamp createdAt
-        timestamp updatedAt
-    }
-
-    clientProfiles {
-        text id PK
-        text userId FK,UK
-        timestamp dateOfBirth
+        text personType "individual|entity"
         text address
         text city
         text state
         text zipCode
-        text spouseName
-        text spouseEmail
-        text spousePhone
+        timestamp dateOfBirth
+        text ssnLast4
+        text entityName
+        text entityType
+        text entityEin
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    users {
+        text id PK
+        text personId FK
+        text email UK
+        text password
+        text role "ADMIN|LAWYER|CLIENT|LEAD|PROSPECT"
+        text avatar
+        text status "PROSPECT|PENDING_APPROVAL|ACTIVE|INACTIVE"
+        integer adminLevel
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    clients {
+        text id PK
+        text personId FK_UK
+        text status "PROSPECTIVE|ACTIVE|FORMER"
         boolean hasMinorChildren
         text childrenInfo "JSON"
         text businessName
         text businessType
         boolean hasWill
         boolean hasTrust
-        timestamp lastUpdated
+        text referralType "CLIENT|PROFESSIONAL|EVENT|MARKETING"
+        text referredByPersonId FK
         text assignedLawyerId FK
+        text googleDriveFolderId
+        text googleDriveSyncStatus "NOT_SYNCED|SYNCED|ERROR"
         timestamp createdAt
         timestamp updatedAt
     }
 
-    users ||--o| clientProfiles : "has profile"
-    users ||--o{ clientProfiles : "assigned as lawyer"
+    relationships {
+        text id PK
+        text fromPersonId FK
+        text toPersonId FK
+        text relationshipType "SPOUSE|CHILD|TRUSTEE|BENEFICIARY|etc"
+        text context "client|matter|null"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    people ||--o| users : "may have login"
+    people ||--o| clients : "may be client"
+    people ||--o{ relationships : "from person"
+    people ||--o{ relationships : "to person"
+    users ||--o{ clients : "assigned lawyer"
+    people ||--o{ clients : "referred by"
+
+    clientProfiles {
+        text id PK
+        text userId FK_UK
+        text assignedLawyerId FK
+        timestamp dateOfBirth
+        text address
+        text city
+        text state
+        text zip
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    users ||--o| clientProfiles : "DEPRECATED profile"
 
     %% ===================================
     %% APPOINTMENTS
@@ -68,7 +113,7 @@ erDiagram
         timestamp updatedAt
     }
 
-    users ||--o{ appointments : "has appointments"
+    clients ||--o{ appointments : "has appointments"
 
     %% ===================================
     %% DOCUMENT TEMPLATES & FOLDERS
@@ -138,7 +183,7 @@ erDiagram
         timestamp updatedAt
     }
 
-    users ||--o{ matters : "has matters"
+    users ||--o{ matters : "client has matters"
 
     mattersToServices {
         text matterId FK,PK
@@ -325,7 +370,7 @@ erDiagram
         timestamp updatedAt
     }
 
-    users ||--o{ clientJourneys : "enrolled in"
+    clients ||--o{ clientJourneys : "enrolled in"
     journeys ||--o{ clientJourneys : "instances of"
     journeySteps ||--o{ clientJourneys : "current step"
     mattersToServices ||--o{ clientJourneys : "tracks progress for"
@@ -501,7 +546,7 @@ erDiagram
         timestamp createdAt
     }
 
-    users ||--o| clientMarketingAttribution : "attributed to"
+    clients ||--o| clientMarketingAttribution : "attributed to"
     marketingSources ||--o{ clientMarketingAttribution : "source of"
 
     %% ===================================
@@ -549,9 +594,12 @@ erDiagram
 
 ## Entity Groups
 
-### Core User Management
-- **users** - Central user table for all roles (Admin, Lawyer, Client, Lead, Prospect)
-- **clientProfiles** - Extended profile information for client users
+### Core Identity & Auth (Belly Button Principle)
+- **people** - Identity table for ALL humans in the system (clients, staff, spouses, beneficiaries, etc.)
+- **users** - Authentication/authorization accounts that can log in, linked to a person via `personId`
+- **clients** - Client-specific data (estate planning, referrals, Drive sync), linked to a person via `personId`
+- **relationships** - Unified person-to-person relationships with context (client, matter, or general)
+- **clientProfiles** - DEPRECATED: legacy profile table, use `clients` + `people` instead
 
 ### Appointments & Scheduling
 - **appointments** - Scheduled meetings between lawyers and clients
@@ -594,13 +642,23 @@ erDiagram
 - **settings** - Application configuration key-value store
 - **lawpayConnections** - LawPay OAuth2 connection metadata
 
+### Derived Status View
+- **clients_with_status** - SQL view over `clients` that derives status from matter activity:
+  - **ACTIVE** = has at least one OPEN matter (ABA Rules 1.6-1.8: currently represented)
+  - **FORMER** = has matters but all CLOSED (Rule 1.9: representation ended)
+  - **PROSPECTIVE** = no matters or no OPEN matters (Rule 1.18: consulting about possible representation)
+  - API read endpoints use this view; writes go directly to the `clients` table
+
 ## Key Relationships
 
-1. **Users** are the central entity - they can be lawyers, clients, admins, leads, or prospects
-2. **Matters** represent client engagements with auto-generated matter numbers (YYYY-NNN format)
-3. **MattersToServices** is a junction table creating many-to-many relationships between matters and service catalog items (e.g., "Smith Family Trust 2024" matter engages both WYDAPT and Annual Maintenance)
-4. **Payments** are tracked at the matter level, not per-service, simplifying financial reporting
-5. **ClientJourneys** track client progress through service workflows, referencing the engagement via composite foreign key (matterId, catalogId)
-6. **Journeys** define workflows with **JourneySteps** that clients progress through
-7. **Documents** can be generated from **DocumentTemplates** and linked to matters and specific service engagements
-8. **ActionItems** define tasks that need completion, either at the template level (linked to steps) or instance level (linked to client journeys)
+1. **People** are the central identity entity (Belly Button Principle) — every human has a person record
+2. **Users** are authentication accounts linked to people via `personId`; not every person has a user
+3. **Clients** are client-specific records linked to people via `personId`; not every person is a client
+4. **Client status** is derived from matter activity via the `clients_with_status` SQL view
+5. **Matters** represent client engagements with auto-generated matter numbers (YYYY-NNN format)
+6. **MattersToServices** is a junction table creating many-to-many relationships between matters and service catalog items (e.g., "Smith Family Trust 2024" matter engages both WYDAPT and Annual Maintenance)
+7. **Payments** are tracked at the matter level, not per-service, simplifying financial reporting
+8. **ClientJourneys** track client progress through service workflows, referencing the engagement via composite foreign key (matterId, catalogId)
+9. **Journeys** define workflows with **JourneySteps** that clients progress through
+10. **Documents** can be generated from **DocumentTemplates** and linked to matters and specific service engagements
+11. **ActionItems** define tasks that need completion, either at the template level (linked to steps) or instance level (linked to client journeys)

@@ -496,19 +496,23 @@ describe('parseDate', () => {
 })
 
 describe('parseAddress', () => {
-  it('extracts address fields from contact', () => {
+  it('uses pre-fetched address data when provided', () => {
     const contact: LawmaticsContact = {
       id: 'c1',
       type: 'contact',
       attributes: {
-        address: '123 Main St',
-        city: 'Springfield',
-        state: 'IL',
-        zipcode: '62701'
+        address: '123 Main St, Springfield, IL 62701, United States'
       }
     }
 
-    const result = parseAddress(contact)
+    const addressData = {
+      street: '123 Main St',
+      city: 'Springfield',
+      state: 'IL',
+      zipcode: '62701'
+    }
+
+    const result = parseAddress(contact, addressData)
 
     expect(result.address).toBe('123 Main St')
     expect(result.city).toBe('Springfield')
@@ -516,7 +520,27 @@ describe('parseAddress', () => {
     expect(result.zipCode).toBe('62701')
   })
 
-  it('handles zip_code variant', () => {
+  it('falls back to structured fields on contact attributes', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        street: '456 Oak Ave',
+        city: 'Denver',
+        state: 'CO',
+        zipcode: '80202'
+      }
+    }
+
+    const result = parseAddress(contact)
+
+    expect(result.address).toBe('456 Oak Ave')
+    expect(result.city).toBe('Denver')
+    expect(result.state).toBe('CO')
+    expect(result.zipCode).toBe('80202')
+  })
+
+  it('handles zip_code variant on contact attributes', () => {
     const contact: LawmaticsContact = {
       id: 'c1',
       type: 'contact',
@@ -530,7 +554,25 @@ describe('parseAddress', () => {
     expect(result.zipCode).toBe('90210')
   })
 
-  it('returns null for missing fields', () => {
+  it('returns nulls when no structured data and only full_address string exists', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        address: '1631 Redberry Ct, Fort Collins, CO 80525, United States'
+      }
+    }
+
+    // Without pre-fetched addressData, the full_address string is not parsed
+    const result = parseAddress(contact)
+
+    expect(result.address).toBeNull()
+    expect(result.city).toBeNull()
+    expect(result.state).toBeNull()
+    expect(result.zipCode).toBeNull()
+  })
+
+  it('returns nulls for missing fields', () => {
     const contact: LawmaticsContact = {
       id: 'c1',
       type: 'contact',
@@ -545,7 +587,7 @@ describe('parseAddress', () => {
     expect(result.zipCode).toBeNull()
   })
 
-  it('prefers zipcode over zip_code if both present', () => {
+  it('prefers zipcode over zip_code if both present on contact attributes', () => {
     const contact: LawmaticsContact = {
       id: 'c1',
       type: 'contact',
@@ -558,6 +600,54 @@ describe('parseAddress', () => {
     const result = parseAddress(contact)
 
     expect(result.zipCode).toBe('12345')
+  })
+
+  it('prefers pre-fetched data over contact attributes', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {
+        street: 'Old Street',
+        city: 'Old City',
+        state: 'XX',
+        zipcode: '00000'
+      }
+    }
+
+    const addressData = {
+      street: '789 New Rd',
+      city: 'New City',
+      state: 'NY',
+      zipcode: '10001'
+    }
+
+    const result = parseAddress(contact, addressData)
+
+    expect(result.address).toBe('789 New Rd')
+    expect(result.city).toBe('New City')
+    expect(result.state).toBe('NY')
+    expect(result.zipCode).toBe('10001')
+  })
+
+  it('handles partial pre-fetched address data', () => {
+    const contact: LawmaticsContact = {
+      id: 'c1',
+      type: 'contact',
+      attributes: {}
+    }
+
+    const addressData = {
+      street: '100 Main St',
+      city: 'Portland'
+      // state and zipcode missing
+    }
+
+    const result = parseAddress(contact, addressData)
+
+    expect(result.address).toBe('100 Main St')
+    expect(result.city).toBe('Portland')
+    expect(result.state).toBeNull()
+    expect(result.zipCode).toBeNull()
   })
 })
 
@@ -797,15 +887,18 @@ describe('transformContact', () => {
         first_name: 'John',
         last_name: 'Smith',
         email: 'john@example.com',
-        address: '123 Main St',
-        city: 'Springfield',
-        state: 'IL',
-        zipcode: '62701',
         birthdate: '1980-05-15'
       }
     }
 
-    const result = transformContact(contact)
+    const addressData = {
+      street: '123 Main St',
+      city: 'Springfield',
+      state: 'IL',
+      zipcode: '62701'
+    }
+
+    const result = transformContact(contact, { addressData })
 
     expect(result.profile).not.toBeNull()
     expect(result.profile?.address).toBe('123 Main St')

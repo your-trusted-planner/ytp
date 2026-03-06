@@ -56,6 +56,9 @@
               <div class="font-medium">{{ suggestion.street }}</div>
               <div class="text-xs text-gray-500">
                 {{ suggestion.city }}, {{ suggestion.state }} {{ suggestion.zipCode }}
+                <template v-if="suggestion.countryCode && suggestion.countryCode !== 'US'">
+                  {{ suggestion.countryCode }}
+                </template>
               </div>
             </li>
           </ul>
@@ -82,30 +85,32 @@
       />
     </div>
 
-    <!-- City, State, ZIP row -->
+    <!-- City, State, ZIP, Country row -->
     <div class="grid grid-cols-6 gap-3">
       <div class="col-span-3">
         <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
         <input
           v-model="localCity"
           type="text"
-          :disabled="disabled || (!manualEntry && !localCity)"
+          :disabled="disabled || (!allowDirectInput && !localCity)"
           :class="[
             'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localCity) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localCity) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @input="emitUpdate"
         />
       </div>
       <div class="col-span-1">
-        <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ stateLabel }}</label>
+        <!-- US/PR: dropdown -->
         <select
+          v-if="isUSAddress"
           v-model="localState"
-          :disabled="disabled || (!manualEntry && !localState)"
+          :disabled="disabled || (!allowDirectInput && !localState)"
           :class="[
             'w-full px-2 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @change="emitUpdate"
@@ -115,17 +120,69 @@
             {{ state.code }}
           </option>
         </select>
+        <!-- Non-US: free text -->
+        <input
+          v-else
+          v-model="localState"
+          type="text"
+          :placeholder="'e.g. ON'"
+          :disabled="disabled || (!allowDirectInput && !localState)"
+          :class="[
+            'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+            disabled || (!allowDirectInput && !localState) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            'border-gray-300'
+          ]"
+          @input="emitUpdate"
+        />
       </div>
       <div class="col-span-2">
-        <label class="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ zipLabel }}</label>
         <input
           v-model="localZipCode"
           type="text"
           maxlength="10"
-          :disabled="disabled || (!manualEntry && !localZipCode)"
+          :disabled="disabled || (!allowDirectInput && !localZipCode)"
           :class="[
             'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
-            disabled || (!manualEntry && !localZipCode) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            disabled || (!allowDirectInput && !localZipCode) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            'border-gray-300'
+          ]"
+          @input="emitUpdate"
+        />
+      </div>
+    </div>
+
+    <!-- Country row -->
+    <div class="grid grid-cols-6 gap-3">
+      <div class="col-span-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+        <select
+          v-model="localCountry"
+          :disabled="disabled"
+          :class="[
+            'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+            disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
+            'border-gray-300'
+          ]"
+          @change="handleCountryChange"
+        >
+          <option value="">-- Select Country --</option>
+          <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
+            {{ c.name }}
+          </option>
+          <option value="OTHER">Other</option>
+        </select>
+      </div>
+      <div v-if="localCountry === 'OTHER'" class="col-span-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Country Name</label>
+        <input
+          v-model="customCountry"
+          type="text"
+          placeholder="Enter country name"
+          :disabled="disabled"
+          :class="[
+            'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+            disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
             'border-gray-300'
           ]"
           @input="emitUpdate"
@@ -154,6 +211,7 @@
 
 <script setup lang="ts">
 import { US_STATES } from '~/utils/us-states'
+import { COUNTRIES, isUSOrTerritory } from '~/utils/countries'
 
 export interface AddressValue {
   address: string
@@ -161,6 +219,7 @@ export interface AddressValue {
   city: string
   state: string
   zipCode: string
+  country?: string
 }
 
 interface AddressSuggestion {
@@ -171,6 +230,8 @@ interface AddressSuggestion {
   state: string
   zipCode: string
   county?: string
+  country?: string
+  countryCode?: string
   latitude?: number
   longitude?: number
 }
@@ -205,11 +266,30 @@ const localAddress2 = ref(props.modelValue.address2 || '')
 const localCity = ref(props.modelValue.city || '')
 const localState = ref(props.modelValue.state || '')
 const localZipCode = ref(props.modelValue.zipCode || '')
+const localCountry = ref(props.modelValue.country || 'US')
+const customCountry = ref('')
 const manualEntry = ref(false)
 const suggestions = ref<AddressSuggestion[]>([])
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 const loading = ref(false)
+
+// If localCountry is set to a value not in COUNTRIES, treat as OTHER
+if (localCountry.value && localCountry.value !== 'OTHER' && !COUNTRIES.find(c => c.code === localCountry.value)) {
+  customCountry.value = localCountry.value
+  localCountry.value = 'OTHER'
+}
+
+// Computed labels
+const isUSAddress = computed(() => {
+  return !localCountry.value || isUSOrTerritory(localCountry.value)
+})
+
+const stateLabel = computed(() => isUSAddress.value ? 'State' : 'Province')
+const zipLabel = computed(() => isUSAddress.value ? 'ZIP Code' : 'Postal Code')
+
+// For non-US addresses, allow manual entry of city/state/zip since autocomplete coverage varies
+const allowDirectInput = computed(() => manualEntry.value || !isUSAddress.value)
 
 // Debounce timer
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -222,8 +302,26 @@ watch(() => props.modelValue, (newVal) => {
     localCity.value = newVal.city || ''
     localState.value = newVal.state || ''
     localZipCode.value = newVal.zipCode || ''
+    const country = newVal.country || ''
+    if (country && country !== 'OTHER' && !COUNTRIES.find(c => c.code === country)) {
+      customCountry.value = country
+      localCountry.value = 'OTHER'
+    } else {
+      localCountry.value = country
+    }
   }
 }, { deep: true })
+
+function handleCountryChange() {
+  if (localCountry.value !== 'OTHER') {
+    customCountry.value = ''
+  }
+  // Clear state when switching away from US (dropdown value may be invalid)
+  if (!isUSAddress.value && localState.value && US_STATES.find(s => s.code === localState.value)) {
+    // Keep the value — it might be a valid abbreviation
+  }
+  emitUpdate()
+}
 
 function handleFocus() {
   if (!manualEntry.value && streetQuery.value.length >= 3) {
@@ -263,8 +361,13 @@ function handleInput() {
 
 async function fetchSuggestions() {
   try {
+    const params: Record<string, any> = { q: streetQuery.value, limit: 5 }
+    // Pass country to narrow autocomplete results
+    if (localCountry.value && localCountry.value !== 'OTHER') {
+      params.country = localCountry.value
+    }
     const response = await $fetch<{ suggestions: AddressSuggestion[] }>('/api/address/autocomplete', {
-      params: { q: streetQuery.value, limit: 5 }
+      params
     })
     suggestions.value = response.suggestions
     showDropdown.value = suggestions.value.length > 0
@@ -310,6 +413,19 @@ function selectSuggestion(suggestion: AddressSuggestion) {
   localCity.value = suggestion.city
   localState.value = suggestion.state
   localZipCode.value = suggestion.zipCode
+
+  // Populate country from autocomplete
+  if (suggestion.countryCode) {
+    const knownCountry = COUNTRIES.find(c => c.code === suggestion.countryCode)
+    if (knownCountry) {
+      localCountry.value = suggestion.countryCode
+      customCountry.value = ''
+    } else {
+      localCountry.value = 'OTHER'
+      customCountry.value = suggestion.country || suggestion.countryCode
+    }
+  }
+
   showDropdown.value = false
   suggestions.value = []
 
@@ -325,12 +441,14 @@ function handleManualEntryChange() {
 }
 
 function emitUpdate() {
+  const country = localCountry.value === 'OTHER' ? customCountry.value : localCountry.value
   emit('update:modelValue', {
     address: streetQuery.value,
     address2: localAddress2.value,
     city: localCity.value,
     state: localState.value,
-    zipCode: localZipCode.value
+    zipCode: localZipCode.value,
+    country
   })
 }
 </script>

@@ -11,7 +11,7 @@ export { people, relationships, clientRelationships, matterRelationships } from 
 export { oauthProviders, users, passwordResetTokens, lawpayConnections } from './auth'
 
 // Clients
-export { clients, clientProfiles, clientMarketingAttribution } from './clients'
+export { clients, clientsWithStatus, clientProfiles, clientMarketingAttribution } from './clients'
 
 // Service Catalog
 export { serviceCategories, serviceCatalog, questionnaires, questionnaireResponses } from './catalog'
@@ -42,7 +42,7 @@ export { appointments, attorneyCalendars, publicBookings } from './appointments'
 export { notes, activities } from './activities'
 
 // Marketing
-export { marketingSources, referralPartners, marketingEvents, eventRegistrations } from './marketing'
+export { marketingSources, referralPartners, marketingEvents, eventRegistrations, marketingChannels, marketingConsent, marketingConsentHistory } from './marketing'
 
 // E-Signatures
 export { signatureSessions } from './signatures'
@@ -66,7 +66,7 @@ export { settings, googleDriveConfig } from './settings'
 export { notices, noticeRecipients } from './notifications'
 
 // Data Migration
-export { integrations, migrationRuns, migrationErrors, importDuplicates } from './migrations'
+export { integrations, migrationRuns, migrationErrors, importDuplicates, personExternalIds } from './migrations'
 
 // Estate Plans
 export {

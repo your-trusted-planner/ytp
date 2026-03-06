@@ -14,7 +14,8 @@ const startMigrationSchema = z.object({
   integrationId: z.string().min(1),
   runType: z.enum(['FULL', 'INCREMENTAL']),
   entityTypes: z.array(z.enum(['users', 'contacts', 'prospects', 'notes', 'activities']))
-    .min(1, 'At least one entity type must be selected')
+    .min(1, 'At least one entity type must be selected'),
+  updatedSince: z.string().optional() // ISO date string to override incremental start date
 })
 
 export default defineEventHandler(async (event) => {
@@ -30,7 +31,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { integrationId, runType, entityTypes } = result.data
+  const { integrationId, runType, entityTypes, updatedSince: overrideDate } = result.data
 
   const db = useDrizzle()
 
@@ -103,11 +104,16 @@ export default defineEventHandler(async (event) => {
 
   // Get filter for incremental sync
   let filter: { updatedSince?: string } | undefined
-  if (runType === 'INCREMENTAL' && integration.lastSyncTimestamps) {
-    const timestamps = JSON.parse(integration.lastSyncTimestamps) as Record<string, string>
-    const firstPhase = entityTypes[0]
-    if (firstPhase && timestamps[firstPhase]) {
-      filter = { updatedSince: timestamps[firstPhase] }
+  if (runType === 'INCREMENTAL') {
+    if (overrideDate) {
+      // Use the manually provided override date
+      filter = { updatedSince: overrideDate }
+    } else if (integration.lastSyncTimestamps) {
+      const timestamps = JSON.parse(integration.lastSyncTimestamps) as Record<string, string>
+      const firstPhase = entityTypes[0]
+      if (firstPhase && timestamps[firstPhase]) {
+        filter = { updatedSince: timestamps[firstPhase] }
+      }
     }
   }
 

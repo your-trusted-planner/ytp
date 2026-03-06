@@ -13,22 +13,22 @@ export default defineEventHandler(async (event) => {
 
   // Status filter
   const statusFilter = typeof query.status === 'string' ? query.status.toUpperCase() : null
-  const validStatuses = ['ACTIVE', 'PROSPECT', 'LEAD', 'INACTIVE']
+  const validStatuses = ['PROSPECTIVE', 'ACTIVE', 'FORMER']
   const status = statusFilter && validStatuses.includes(statusFilter) ? statusFilter : null
 
-  // Build base query for clients using the clients table (Belly Button Principle)
+  // Build base query for clients using the clients_with_status view (derives status from matters)
   // Join with people table to get name/email data
   let clientsQuery = db
     .select({
-      id: schema.clients.id,
-      personId: schema.clients.personId,
-      status: schema.clients.status,
-      hasMinorChildren: schema.clients.hasMinorChildren,
-      childrenInfo: schema.clients.childrenInfo,
-      hasTrust: schema.clients.hasTrust,
-      hasWill: schema.clients.hasWill,
-      createdAt: schema.clients.createdAt,
-      updatedAt: schema.clients.updatedAt,
+      id: schema.clientsWithStatus.id,
+      personId: schema.clientsWithStatus.personId,
+      status: schema.clientsWithStatus.status,
+      hasMinorChildren: schema.clientsWithStatus.hasMinorChildren,
+      childrenInfo: schema.clientsWithStatus.childrenInfo,
+      hasTrust: schema.clientsWithStatus.hasTrust,
+      hasWill: schema.clientsWithStatus.hasWill,
+      createdAt: schema.clientsWithStatus.createdAt,
+      updatedAt: schema.clientsWithStatus.updatedAt,
       // Person data
       firstName: schema.people.firstName,
       lastName: schema.people.lastName,
@@ -41,22 +41,22 @@ export default defineEventHandler(async (event) => {
       zipCode: schema.people.zipCode,
       dateOfBirth: schema.people.dateOfBirth
     })
-    .from(schema.clients)
-    .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+    .from(schema.clientsWithStatus)
+    .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
 
   // Apply status filter if provided
   if (status) {
-    clientsQuery = clientsQuery.where(eq(schema.clients.status, status)) as typeof clientsQuery
+    clientsQuery = clientsQuery.where(eq(schema.clientsWithStatus.status, status)) as typeof clientsQuery
   }
 
   // Apply sorting - use people table for name/email fields
   const sortColumn = sortBy === 'firstName' ? schema.people.firstName
     : sortBy === 'lastName' ? schema.people.lastName
     : sortBy === 'email' ? schema.people.email
-    : sortBy === 'status' ? schema.clients.status
-    : sortBy === 'createdAt' ? schema.clients.createdAt
-    : sortBy === 'updatedAt' ? schema.clients.updatedAt
-    : schema.clients.createdAt // default sort
+    : sortBy === 'status' ? schema.clientsWithStatus.status
+    : sortBy === 'createdAt' ? schema.clientsWithStatus.createdAt
+    : sortBy === 'updatedAt' ? schema.clientsWithStatus.updatedAt
+    : schema.clientsWithStatus.createdAt // default sort
 
   clientsQuery = clientsQuery.orderBy(
     sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)
@@ -67,11 +67,11 @@ export default defineEventHandler(async (event) => {
   if (usePagination) {
     let countQuery = db
       .select({ count: sql<number>`count(*)` })
-      .from(schema.clients)
+      .from(schema.clientsWithStatus)
 
     // Apply same status filter to count query
     if (status) {
-      countQuery = countQuery.where(eq(schema.clients.status, status)) as typeof countQuery
+      countQuery = countQuery.where(eq(schema.clientsWithStatus.status, status)) as typeof countQuery
     }
 
     const countResult = await countQuery.get()

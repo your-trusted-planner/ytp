@@ -89,6 +89,50 @@
       <SignatureImageManager @updated="handleSignatureUpdated" />
     </UiCard>
 
+    <!-- API Token -->
+    <ClientOnly>
+      <UiCard title="API Token">
+        <template #header-actions>
+          <span class="text-sm text-gray-500">For programmatic access</span>
+        </template>
+
+        <div v-if="apiToken.revealed" class="space-y-3">
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p class="text-sm font-medium text-amber-800">This token will only be shown once. Copy it now.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="flex-1 px-3 py-2 bg-gray-100 rounded text-sm font-mono break-all select-all">{{ apiToken.plaintext }}</code>
+            <UiButton variant="outline" size="sm" @click="copyToken" :title="apiToken.copied ? 'Copied' : 'Copy'">
+              <Check v-if="apiToken.copied" class="w-4 h-4 text-green-600" />
+              <Copy v-else class="w-4 h-4" />
+            </UiButton>
+          </div>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div v-if="apiToken.hasToken" class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-700">Active token created {{ formatTokenDate(apiToken.createdAt) }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <UiButton variant="outline" size="sm" :is-loading="apiToken.loading" @click="generateToken" title="Regenerate token">
+                <RefreshCw class="w-4 h-4" />
+              </UiButton>
+              <UiButton variant="danger" size="sm" :is-loading="apiToken.revoking" @click="revokeToken" title="Revoke token">
+                <Trash2 class="w-4 h-4" />
+              </UiButton>
+            </div>
+          </div>
+          <div v-else class="flex items-center justify-between">
+            <p class="text-sm text-gray-500">No API token configured</p>
+            <UiButton size="sm" :is-loading="apiToken.loading" @click="generateToken" title="Generate token">
+              <Plus class="w-4 h-4" />
+            </UiButton>
+          </div>
+        </div>
+      </UiCard>
+    </ClientOnly>
+
     <!-- Notification Settings -->
     <UiCard title="Notification Settings">
       <template #header-actions>
@@ -315,7 +359,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Calendar, Construction } from 'lucide-vue-next'
+import { Calendar, Construction, Copy, Check, RefreshCw, Trash2, Plus } from 'lucide-vue-next'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
 import type { DocumentViewPreference } from '~/stores/usePreferencesStore'
 
@@ -378,6 +422,17 @@ const calendarForm = ref({
   isPrimary: false,
 })
 
+// API Token state
+const apiToken = ref({
+  hasToken: false,
+  createdAt: null as string | null,
+  loading: false,
+  revoking: false,
+  revealed: false,
+  plaintext: '',
+  copied: false
+})
+
 const saving = ref(false)
 const changingPassword = ref(false)
 const savingPreferences = ref(false)
@@ -389,6 +444,9 @@ onMounted(async () => {
   preferencesStore.hydrateFromStorage()
   // Sync local state with store after hydration
   localDocumentView.value = preferencesStore.documentsDefaultView
+
+  // Load API token status
+  await loadApiTokenStatus()
 
   // Load calendars for firm members
   if (isFirmMember.value) {
@@ -462,6 +520,69 @@ const savePreferences = async () => {
   } finally {
     savingPreferences.value = false
   }
+}
+
+// API Token functions
+const loadApiTokenStatus = async () => {
+  try {
+    const data = await $fetch('/api/profile/api-token')
+    apiToken.value.hasToken = data.hasToken
+    apiToken.value.createdAt = data.createdAt
+  } catch (error) {
+    console.error('Failed to load API token status:', error)
+  }
+}
+
+const generateToken = async () => {
+  if (apiToken.value.hasToken && !confirm('This will replace your existing API token. The old token will stop working immediately. Continue?')) {
+    return
+  }
+  apiToken.value.loading = true
+  try {
+    const data = await $fetch('/api/profile/api-token', { method: 'POST' })
+    apiToken.value.plaintext = data.token
+    apiToken.value.revealed = true
+    apiToken.value.hasToken = true
+    apiToken.value.createdAt = new Date().toISOString()
+    apiToken.value.copied = false
+    toast.success('API token generated')
+  } catch (error) {
+    toast.error('Failed to generate API token')
+  } finally {
+    apiToken.value.loading = false
+  }
+}
+
+const revokeToken = async () => {
+  if (!confirm('Revoke your API token? Any scripts using it will stop working.')) return
+  apiToken.value.revoking = true
+  try {
+    await $fetch('/api/profile/api-token', { method: 'DELETE' })
+    apiToken.value.hasToken = false
+    apiToken.value.createdAt = null
+    apiToken.value.revealed = false
+    apiToken.value.plaintext = ''
+    toast.success('API token revoked')
+  } catch (error) {
+    toast.error('Failed to revoke API token')
+  } finally {
+    apiToken.value.revoking = false
+  }
+}
+
+const copyToken = async () => {
+  try {
+    await navigator.clipboard.writeText(apiToken.value.plaintext)
+    apiToken.value.copied = true
+    setTimeout(() => { apiToken.value.copied = false }, 2000)
+  } catch {
+    toast.error('Failed to copy to clipboard')
+  }
+}
+
+const formatTokenDate = (date: string | null) => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 // Calendar functions

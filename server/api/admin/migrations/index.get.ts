@@ -3,7 +3,7 @@
  * List migration runs with pagination and filtering
  */
 
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
@@ -51,6 +51,23 @@ export default defineEventHandler(async (event) => {
 
   const runs = await runsQuery.all()
 
+  // Count duplicates linked per run
+  const runIds = runs.map(r => r.id)
+  const dupCounts = new Map<string, number>()
+  if (runIds.length > 0) {
+    const dupRows = await db.select({
+      runId: schema.importDuplicates.runId,
+      count: sql<number>`count(*)`.as('count')
+    })
+      .from(schema.importDuplicates)
+      .where(sql`${schema.importDuplicates.runId} IN (${sql.join(runIds.map(id => sql`${id}`), sql`, `)})`)
+      .groupBy(schema.importDuplicates.runId)
+      .all()
+    for (const row of dupRows) {
+      dupCounts.set(row.runId, row.count)
+    }
+  }
+
   // Get total count for pagination
   const countResult = await db
     .select({ count: schema.migrationRuns.id })
@@ -71,6 +88,7 @@ export default defineEventHandler(async (event) => {
       updatedRecords: run.updatedRecords,
       skippedRecords: run.skippedRecords,
       errorCount: run.errorCount,
+      duplicatesLinked: dupCounts.get(run.id) || 0,
       progressPercent: run.totalEntities
         ? Math.round((run.processedEntities / run.totalEntities) * 100)
         : null,

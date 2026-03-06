@@ -39,6 +39,13 @@ Initial release of Your Trusted Planner, the estate planning portal for attorney
 - Calendar integration with Google Calendar
 - Appointment status tracking
 
+### Marketing Consent & Apollo Integration
+- Per-channel marketing consent management (opt-in/out per channel)
+- Global unsubscribe with full audit trail
+- Self-service preference pages with signed, non-login URLs
+- Permanent preference tokens for external system sync
+- Apollo.io integration for contact sync and opt-out polling
+
 ### Help System
 - Built-in help center for attorneys and clients
 - Context-aware documentation
@@ -54,6 +61,7 @@ Initial release of Your Trusted Planner, the estate planning portal for attorney
 
 ## Integrations
 
+- **Apollo.io** - Contact sync and marketing preference URL distribution
 - **PandaDoc** - Document signing and notarization
 - **LawPay** - Payment processing
 - **Google Calendar** - Attorney calendar sync

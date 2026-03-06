@@ -61,20 +61,12 @@ export default defineEventHandler(async (event) => {
     .offset(offset)
     .all()
 
-  // Get total count
-  const allErrors = await db.select({ id: schema.migrationErrors.id })
+  // Get total count (respecting filters)
+  const countResult = await db.select({ id: schema.migrationErrors.id })
     .from(schema.migrationErrors)
-    .where(eq(schema.migrationErrors.runId, id))
+    .where(and(...conditions))
     .all()
-  const totalCount = allErrors.length
-
-  // Get error summary by type
-  const errorsByType: Record<string, number> = {}
-  const errorsByEntity: Record<string, number> = {}
-
-  for (const err of allErrors) {
-    // We'd need to fetch all to get accurate counts, but for now just count from the page
-  }
+  const totalCount = countResult.length
 
   return {
     errors: errors.map(err => ({

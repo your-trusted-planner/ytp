@@ -42,7 +42,8 @@ export interface BatchUpsertResult {
 // ===================================
 
 /**
- * Find an existing record by its import source and external ID
+ * Find an existing record by its import source and external ID.
+ * For people, also checks the personExternalIds table (supports merged/dead external IDs).
  */
 async function findByExternalId(
   tableName: 'users' | 'matters' | 'notes' | 'activities' | 'people',
@@ -51,8 +52,23 @@ async function findByExternalId(
 ): Promise<{ id: string } | null> {
   const db = useDrizzle()
 
-  // Use json_extract to query the importMetadata JSON column
-  // SQLite syntax: json_extract(column, '$.key')
+  // For people, check personExternalIds first (handles merged external IDs)
+  if (tableName === 'people') {
+    const extIdResult = await db.select({ personId: schema.personExternalIds.personId })
+      .from(schema.personExternalIds)
+      .where(and(
+        eq(schema.personExternalIds.source, source),
+        eq(schema.personExternalIds.externalId, externalId)
+      ))
+      .limit(1)
+      .get()
+
+    if (extIdResult) {
+      return { id: extIdResult.personId }
+    }
+  }
+
+  // Fallback: check importMetadata JSON column
   const result = await db.all(sql`
     SELECT id FROM ${sql.identifier(tableName)}
     WHERE json_extract(import_metadata, '$.source') = ${source}
@@ -61,6 +77,44 @@ async function findByExternalId(
   `)
 
   return result.length > 0 ? { id: (result[0] as any).id } : null
+}
+
+/**
+ * Ensure a person has an entry in personExternalIds.
+ * Creates one if it doesn't already exist.
+ */
+export async function ensurePersonExternalId(
+  personId: string,
+  source: string,
+  externalId: string,
+  isPrimary: boolean = true,
+  metadata?: Record<string, any>
+): Promise<void> {
+  const db = useDrizzle()
+
+  // Check if this exact mapping already exists
+  const existing = await db.select({ id: schema.personExternalIds.id })
+    .from(schema.personExternalIds)
+    .where(and(
+      eq(schema.personExternalIds.source, source),
+      eq(schema.personExternalIds.externalId, externalId)
+    ))
+    .limit(1)
+    .get()
+
+  if (existing) return
+
+  const { nanoid } = await import('nanoid')
+  await db.insert(schema.personExternalIds).values({
+    id: nanoid(),
+    personId,
+    source,
+    externalId,
+    isPrimary,
+    metadata: metadata ? JSON.stringify(metadata) : null,
+    linkedAt: new Date(),
+    createdAt: new Date()
+  })
 }
 
 /**
@@ -74,6 +128,79 @@ function updateImportMetadataTimestamp(existingMetadata: string): string {
   } catch {
     return existingMetadata
   }
+}
+
+/**
+ * Parse importMetadata JSON from a record, returning null if absent or invalid
+ */
+function parseExistingMetadata(raw: string | null | undefined): ImportMetadata | null {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as ImportMetadata
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Check if a record is owned by the sync source and can be updated.
+ * Returns false (skip updates) when:
+ * - Record has no importMetadata (YTP-native)
+ * - Record's source doesn't match the incoming source
+ * - Record has sourceOfTruth set to 'YTP'
+ */
+function canSyncUpdateRecord(existingMetadata: ImportMetadata | null, incomingSource: string): boolean {
+  // No metadata = YTP-native record, don't overwrite
+  if (!existingMetadata) return false
+  // Source mismatch = record came from a different system
+  if (existingMetadata.source !== incomingSource) return false
+  // Explicit YTP ownership override
+  if (existingMetadata.sourceOfTruth === 'YTP') return false
+  return true
+}
+
+/**
+ * Filter out fields that have been locally modified in YTP.
+ * Returns a new object with locally-modified fields removed.
+ */
+function filterLocallyModifiedFields(
+  updateData: Record<string, any>,
+  existingMetadata: ImportMetadata | null
+): { filteredData: Record<string, any>; skippedFields: string[] } {
+  const locallyModified = existingMetadata?.locallyModifiedFields || []
+  if (locallyModified.length === 0) {
+    return { filteredData: updateData, skippedFields: [] }
+  }
+
+  const filteredData: Record<string, any> = {}
+  const skippedFields: string[] = []
+
+  for (const [key, value] of Object.entries(updateData)) {
+    if (locallyModified.includes(key)) {
+      skippedFields.push(key)
+    } else {
+      filteredData[key] = value
+    }
+  }
+
+  return { filteredData, skippedFields }
+}
+
+/**
+ * Build the updated importMetadata for a synced record, preserving local modifications
+ * and recording a sync snapshot.
+ */
+function buildSyncedMetadata(
+  existingMetadata: ImportMetadata,
+  incomingValues: Record<string, any>,
+  skippedFields: string[]
+): string {
+  const updated: ImportMetadata = {
+    ...existingMetadata,
+    lastSyncedAt: new Date().toISOString(),
+    lastSyncSnapshot: incomingValues
+  }
+  return JSON.stringify(updated)
 }
 
 // ===================================
@@ -96,15 +223,50 @@ export async function upsertUser(
   const existing = await findByExternalId('users', source, externalId)
 
   if (existing) {
-    // Update existing record
+    // Read existing record's importMetadata to check ownership
+    const existingRecord = await db.select({ importMetadata: schema.users.importMetadata })
+      .from(schema.users)
+      .where(eq(schema.users.id, existing.id))
+      .get()
+
+    const existingMeta = parseExistingMetadata(existingRecord?.importMetadata)
+
+    // Guard: skip field updates for YTP-native or YTP-owned records
+    if (!canSyncUpdateRecord(existingMeta, source)) {
+      if (!existingMeta) {
+        const linkMetadata: ImportMetadata = {
+          source,
+          externalId,
+          importedAt: new Date().toISOString(),
+          lastSyncedAt: new Date().toISOString(),
+          sourceOfTruth: 'YTP'
+        }
+        await db.update(schema.users)
+          .set({ importMetadata: JSON.stringify(linkMetadata) })
+          .where(eq(schema.users.id, existing.id))
+      } else {
+        await db.update(schema.users)
+          .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
+          .where(eq(schema.users.id, existing.id))
+      }
+      return { action: 'skipped', id: existing.id, externalId }
+    }
+
+    // Build incoming fields (don't update role/adminLevel/status - preserve manual changes)
+    const incomingFields: Record<string, any> = {
+      email: transformed.email,
+      firstName: transformed.firstName,
+      lastName: transformed.lastName,
+      phone: transformed.phone
+    }
+
+    const { filteredData, skippedFields } = filterLocallyModifiedFields(incomingFields, existingMeta)
+    const syncedMetadata = buildSyncedMetadata(existingMeta!, incomingFields, skippedFields)
+
     await db.update(schema.users)
       .set({
-        email: transformed.email,
-        firstName: transformed.firstName,
-        lastName: transformed.lastName,
-        phone: transformed.phone,
-        // Don't update role/adminLevel/status - preserve manual changes
-        importMetadata: updateImportMetadataTimestamp(transformed.importMetadata),
+        ...filteredData,
+        importMetadata: syncedMetadata,
         updatedAt: new Date()
       })
       .where(eq(schema.users.id, existing.id))
@@ -185,15 +347,50 @@ export async function upsertClient(
   const existing = await findByExternalId('users', source, externalId)
 
   if (existing) {
-    // Update existing user
+    // Read existing record's importMetadata to check ownership
+    const existingRecord = await db.select({ importMetadata: schema.users.importMetadata })
+      .from(schema.users)
+      .where(eq(schema.users.id, existing.id))
+      .get()
+
+    const existingMeta = parseExistingMetadata(existingRecord?.importMetadata)
+
+    // Guard: skip field updates for YTP-native or YTP-owned records
+    if (!canSyncUpdateRecord(existingMeta, source)) {
+      if (!existingMeta) {
+        const linkMetadata: ImportMetadata = {
+          source,
+          externalId,
+          importedAt: new Date().toISOString(),
+          lastSyncedAt: new Date().toISOString(),
+          sourceOfTruth: 'YTP'
+        }
+        await db.update(schema.users)
+          .set({ importMetadata: JSON.stringify(linkMetadata) })
+          .where(eq(schema.users.id, existing.id))
+      } else {
+        await db.update(schema.users)
+          .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
+          .where(eq(schema.users.id, existing.id))
+      }
+      return { action: 'skipped', id: existing.id, externalId }
+    }
+
+    // Build incoming fields (don't update role/status - preserve manual changes)
+    const incomingUserFields: Record<string, any> = {
+      email: transformed.user.email,
+      firstName: transformed.user.firstName,
+      lastName: transformed.user.lastName,
+      phone: transformed.user.phone
+    }
+
+    const { filteredData: filteredUserData, skippedFields } = filterLocallyModifiedFields(incomingUserFields, existingMeta)
+    const syncedMetadata = buildSyncedMetadata(existingMeta!, incomingUserFields, skippedFields)
+
     await db.update(schema.users)
       .set({
-        email: transformed.user.email,
-        firstName: transformed.user.firstName,
-        lastName: transformed.user.lastName,
-        phone: transformed.user.phone,
-        // Don't update role/status - preserve manual changes
-        importMetadata: updateImportMetadataTimestamp(transformed.user.importMetadata),
+        ...filteredUserData,
+        importMetadata: syncedMetadata,
         updatedAt: new Date()
       })
       .where(eq(schema.users.id, existing.id))
@@ -206,13 +403,19 @@ export async function upsertClient(
         .get()
 
       if (existingProfile) {
+        // Apply field-level protection to profile fields too
+        const incomingProfileFields: Record<string, any> = {
+          dateOfBirth: transformed.profile.dateOfBirth,
+          address: transformed.profile.address,
+          city: transformed.profile.city,
+          state: transformed.profile.state,
+          zipCode: transformed.profile.zipCode
+        }
+        const { filteredData: filteredProfileData } = filterLocallyModifiedFields(incomingProfileFields, existingMeta)
+
         await db.update(schema.clientProfiles)
           .set({
-            dateOfBirth: transformed.profile.dateOfBirth,
-            address: transformed.profile.address,
-            city: transformed.profile.city,
-            state: transformed.profile.state,
-            zipCode: transformed.profile.zipCode,
+            ...filteredProfileData,
             updatedAt: new Date()
           })
           .where(eq(schema.clientProfiles.id, existingProfile.id))
@@ -320,23 +523,72 @@ export async function upsertPerson(
   const existing = await findByExternalId('people', source, externalId)
 
   if (existing) {
-    // Update existing record
+    // Read existing record's importMetadata to check ownership
+    const existingRecord = await db.select({ importMetadata: schema.people.importMetadata })
+      .from(schema.people)
+      .where(eq(schema.people.id, existing.id))
+      .get()
+
+    const existingMeta = parseExistingMetadata(existingRecord?.importMetadata)
+
+    // Guard: skip field updates for YTP-native or YTP-owned records
+    if (!canSyncUpdateRecord(existingMeta, source)) {
+      // Only update the external ID link in metadata so duplicate detector doesn't re-flag
+      if (!existingMeta) {
+        // YTP-native record: add minimal import link without overwriting fields
+        const linkMetadata: ImportMetadata = {
+          source,
+          externalId,
+          importedAt: new Date().toISOString(),
+          lastSyncedAt: new Date().toISOString(),
+          sourceOfTruth: 'YTP' // Mark as YTP-owned since it was created here
+        }
+        await db.update(schema.people)
+          .set({ importMetadata: JSON.stringify(linkMetadata) })
+          .where(eq(schema.people.id, existing.id))
+      } else {
+        // Has metadata but owned by YTP — just update sync timestamp
+        await db.update(schema.people)
+          .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
+          .where(eq(schema.people.id, existing.id))
+      }
+      // Ensure external ID is linked even for skipped records
+      await ensurePersonExternalId(existing.id, source, externalId)
+      return { action: 'skipped', id: existing.id, externalId }
+    }
+
+    // Build the incoming field values for conflict-aware update
+    const incomingFields: Record<string, any> = {
+      firstName: transformed.firstName,
+      lastName: transformed.lastName,
+      fullName: transformed.fullName,
+      email: transformed.email,
+      phone: transformed.phone,
+      address: transformed.address,
+      address2: transformed.address2,
+      city: transformed.city,
+      state: transformed.state,
+      zipCode: transformed.zipCode,
+      country: transformed.country,
+      dateOfBirth: transformed.dateOfBirth
+    }
+
+    // Filter out locally modified fields
+    const { filteredData, skippedFields } = filterLocallyModifiedFields(incomingFields, existingMeta)
+
+    // Build updated metadata with sync snapshot
+    const syncedMetadata = buildSyncedMetadata(existingMeta!, incomingFields, skippedFields)
+
     await db.update(schema.people)
       .set({
-        firstName: transformed.firstName,
-        lastName: transformed.lastName,
-        fullName: transformed.fullName,
-        email: transformed.email,
-        phone: transformed.phone,
-        address: transformed.address,
-        city: transformed.city,
-        state: transformed.state,
-        zipCode: transformed.zipCode,
-        dateOfBirth: transformed.dateOfBirth,
-        importMetadata: updateImportMetadataTimestamp(transformed.importMetadata),
+        ...filteredData,
+        importMetadata: syncedMetadata,
         updatedAt: new Date()
       })
       .where(eq(schema.people.id, existing.id))
+
+    // Ensure external ID is linked
+    await ensurePersonExternalId(existing.id, source, externalId)
 
     return { action: 'updated', id: existing.id, externalId }
   }
@@ -350,15 +602,20 @@ export async function upsertPerson(
     email: transformed.email,
     phone: transformed.phone,
     address: transformed.address,
+    address2: transformed.address2,
     city: transformed.city,
     state: transformed.state,
     zipCode: transformed.zipCode,
+    country: transformed.country,
     dateOfBirth: transformed.dateOfBirth,
     notes: transformed.notes,
     importMetadata: transformed.importMetadata,
     createdAt: transformed.createdAt,
     updatedAt: transformed.updatedAt
   })
+
+  // Link external ID in personExternalIds table
+  await ensurePersonExternalId(transformed.id, source, externalId)
 
   return { action: 'created', id: transformed.id, externalId }
 }
@@ -417,16 +674,51 @@ export async function upsertMatter(
   const existing = await findByExternalId('matters', source, externalId)
 
   if (existing) {
-    // Update existing record
+    // Read existing record's importMetadata to check ownership
+    const existingRecord = await db.select({ importMetadata: schema.matters.importMetadata })
+      .from(schema.matters)
+      .where(eq(schema.matters.id, existing.id))
+      .get()
+
+    const existingMeta = parseExistingMetadata(existingRecord?.importMetadata)
+
+    // Guard: skip field updates for YTP-native or YTP-owned records
+    if (!canSyncUpdateRecord(existingMeta, source)) {
+      if (!existingMeta) {
+        const linkMetadata: ImportMetadata = {
+          source,
+          externalId,
+          importedAt: new Date().toISOString(),
+          lastSyncedAt: new Date().toISOString(),
+          sourceOfTruth: 'YTP'
+        }
+        await db.update(schema.matters)
+          .set({ importMetadata: JSON.stringify(linkMetadata) })
+          .where(eq(schema.matters.id, existing.id))
+      } else {
+        await db.update(schema.matters)
+          .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
+          .where(eq(schema.matters.id, existing.id))
+      }
+      return { action: 'skipped', id: existing.id, externalId }
+    }
+
+    const incomingFields: Record<string, any> = {
+      clientId: transformed.clientId,
+      title: transformed.title,
+      matterNumber: transformed.matterNumber,
+      description: transformed.description,
+      status: transformed.status,
+      leadAttorneyId: transformed.leadAttorneyId
+    }
+
+    const { filteredData, skippedFields } = filterLocallyModifiedFields(incomingFields, existingMeta)
+    const syncedMetadata = buildSyncedMetadata(existingMeta!, incomingFields, skippedFields)
+
     await db.update(schema.matters)
       .set({
-        clientId: transformed.clientId,
-        title: transformed.title,
-        matterNumber: transformed.matterNumber,
-        description: transformed.description,
-        status: transformed.status,
-        leadAttorneyId: transformed.leadAttorneyId,
-        importMetadata: updateImportMetadataTimestamp(transformed.importMetadata),
+        ...filteredData,
+        importMetadata: syncedMetadata,
         updatedAt: new Date()
       })
       .where(eq(schema.matters.id, existing.id))
@@ -759,6 +1051,23 @@ export async function buildPeopleLookupMap(
     const p = person as { id: string; external_id: string }
     if (p.external_id) {
       map.set(p.external_id, p.id)
+    }
+  }
+
+  // Also include duplicate-linked contacts: these were matched to existing people
+  // during import but never got import_metadata on the person record
+  const duplicates = await db.all(sql`
+    SELECT external_id, existing_person_id
+    FROM import_duplicates
+    WHERE source = ${source}
+      AND entity_type = 'contact'
+      AND resolution = 'LINKED'
+      AND existing_person_id IS NOT NULL
+  `)
+  for (const dup of duplicates) {
+    const d = dup as { external_id: string; existing_person_id: string }
+    if (d.external_id && !map.has(d.external_id)) {
+      map.set(d.external_id, d.existing_person_id)
     }
   }
 

@@ -43,6 +43,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // body.clientId may be clients.id — resolve to users.id for legacy table queries
+  const { resolveClientIds } = await import('../../utils/client-ids')
+  const resolved = await resolveClientIds(body.clientId)
+  const legacyClientId = resolved?.userIds[0] || body.clientId
+
   // Get client data
   const clientData = await db.select({
     // User fields
@@ -64,7 +69,7 @@ export default defineEventHandler(async (event) => {
   })
     .from(schema.users)
     .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
-    .where(eq(schema.users.id, body.clientId))
+    .where(eq(schema.users.id, legacyClientId))
     .get()
 
   if (!clientData) {
@@ -98,7 +103,7 @@ export default defineEventHandler(async (event) => {
     .from(schema.people)
     .innerJoin(schema.clientRelationships, eq(schema.people.id, schema.clientRelationships.personId))
     .where(and(
-      eq(schema.clientRelationships.clientId, body.clientId),
+      eq(schema.clientRelationships.clientId, legacyClientId),
       eq(schema.clientRelationships.relationshipType, 'SPOUSE')
     ))
     .orderBy(schema.clientRelationships.ordinal)

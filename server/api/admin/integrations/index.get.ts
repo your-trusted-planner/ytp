@@ -16,12 +16,13 @@ export default defineEventHandler(async (event) => {
       type: schema.integrations.type,
       name: schema.integrations.name,
       status: schema.integrations.status,
+      settings: schema.integrations.settings,
       lastTestedAt: schema.integrations.lastTestedAt,
       lastErrorMessage: schema.integrations.lastErrorMessage,
       lastSyncTimestamps: schema.integrations.lastSyncTimestamps,
       createdAt: schema.integrations.createdAt,
       updatedAt: schema.integrations.updatedAt
-      // Note: We explicitly exclude credentialsKey and settings for list view
+      // Note: We explicitly exclude credentialsKey for security
     })
     .from(schema.integrations)
     .orderBy(desc(schema.integrations.createdAt))
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
       type: integration.type,
       name: integration.name,
       status: integration.status,
+      settings: integration.settings ? JSON.parse(integration.settings) : null,
       lastTestedAt: integration.lastTestedAt instanceof Date
         ? integration.lastTestedAt.toISOString()
         : integration.lastTestedAt,

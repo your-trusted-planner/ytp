@@ -22,15 +22,19 @@ export default defineEventHandler(async (event) => {
   const { relationshipType, ordinal, notes } = body
 
   const { useDrizzle, schema } = await import('../../../../db')
-  const { eq, and } = await import('drizzle-orm')
+  const { eq, and, or } = await import('drizzle-orm')
+  const { getLegacyClientIds } = await import('../../../../utils/client-ids')
   const db = useDrizzle()
+
+  // clientRelationships.clientId references users.id, but URL param is clients.id
+  const allIds = await getLegacyClientIds(clientId)
 
   // Verify relationship exists and belongs to this client
   const existing = await db.select({ id: schema.clientRelationships.id })
     .from(schema.clientRelationships)
     .where(and(
       eq(schema.clientRelationships.id, relationshipId),
-      eq(schema.clientRelationships.clientId, clientId)
+      or(...allIds.map(id => eq(schema.clientRelationships.clientId, id)))
     ))
     .get()
 

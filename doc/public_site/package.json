@@ -7,7 +7,7 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "deploy": "pnpm run build && pnpm wrangler pages deploy"
+    "deploy": "pnpm run build && rm -f ../../.wrangler/deploy/config.json && pnpm wrangler pages deploy"
   },
   "devDependencies": {
     "vitepress": "^1.5.0",

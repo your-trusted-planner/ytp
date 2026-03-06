@@ -27,7 +27,8 @@ Administrators can:
 - Create and modify matters
 - Set up journey templates
 - Upload document templates
-- Configure integrations (LawPay, PandaDoc, Google Drive)
+- Configure integrations (Apollo, LawPay, PandaDoc, Google Drive)
+- Manage marketing consent channels and preferences
 
 ## Notifications
 
@@ -64,6 +65,31 @@ View all past notifications at **Notifications** (click "View all" from the drop
 - Navigate to related clients, matters, or documents
 
 ## Integrations
+
+### Apollo
+
+Sync contacts and marketing preference URLs with Apollo.io for outbound email campaigns.
+
+- **Push contacts**: Syncs people from YTP to Apollo with a `preference_url` custom field
+- **Pull opt-outs**: Checks Apollo for unsubscribed contacts and applies global unsubscribe in YTP
+- **Self-service preferences**: Each contact gets a permanent URL to manage their own marketing consent
+
+**Setup**: Go to **Settings** → **Integrations** → **Apollo** to configure.
+
+See the full [Apollo Integration Guide](/integrations/apollo) for setup instructions.
+
+### Marketing Consent
+
+Manage per-channel marketing consent for all people in the system.
+
+- **Per-channel opt-in/out**: Each person can be opted in or out of individual marketing channels
+- **Global unsubscribe**: Opts a person out of all channels at once
+- **Audit trail**: All consent changes are recorded with timestamps and source
+- **Self-service**: Preference URLs let recipients manage their own consent without logging in
+
+**Preference tokens** come in two types:
+- **Standard** (30-day) — for on-demand links
+- **Permanent** (non-expiring) — for syncing to external systems like Apollo
 
 ### Google Drive
 

@@ -1,5 +1,6 @@
 // Client-specific data tables (Belly Button Principle)
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteView } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { people } from './people'
 import { users } from './auth'
@@ -11,7 +12,7 @@ import { marketingSources } from './marketing'
 export const clients = sqliteTable('clients', {
   id: text('id').primaryKey(),
   personId: text('person_id').notNull().references(() => people.id).unique(),
-  status: text('status', { enum: ['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE'] }).notNull().default('PROSPECT'),
+  status: text('status', { enum: ['PROSPECTIVE', 'ACTIVE', 'FORMER'] }).notNull().default('PROSPECTIVE'),
 
   // Estate planning (migrated from clientProfiles)
   hasMinorChildren: integer('has_minor_children', { mode: 'boolean' }).notNull().default(false),
@@ -49,6 +50,57 @@ export const clients = sqliteTable('clients', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })
+
+// Clients With Status view - derives status from matter activity
+// ACTIVE = has at least one OPEN matter (Rule 1.6-1.8: currently represented)
+// FORMER = has matters but all CLOSED (Rule 1.9: representation ended)
+// PROSPECTIVE = no matters, or matters but none OPEN and not all CLOSED (Rule 1.18)
+export const clientsWithStatus = sqliteView('clients_with_status').as((qb) =>
+  qb.select({
+    id: clients.id,
+    personId: clients.personId,
+    status: sql<string>`CASE
+      WHEN EXISTS (
+        SELECT 1 FROM matters m
+        INNER JOIN users u ON m.client_id = u.id
+        WHERE u.person_id = "clients"."person_id" AND m.status = 'OPEN'
+      ) THEN 'ACTIVE'
+      WHEN EXISTS (
+        SELECT 1 FROM matters m
+        INNER JOIN users u ON m.client_id = u.id
+        WHERE u.person_id = "clients"."person_id"
+      ) AND NOT EXISTS (
+        SELECT 1 FROM matters m
+        INNER JOIN users u ON m.client_id = u.id
+        WHERE u.person_id = "clients"."person_id" AND m.status != 'CLOSED'
+      ) THEN 'FORMER'
+      ELSE 'PROSPECTIVE'
+    END`.as('status'),
+    hasMinorChildren: clients.hasMinorChildren,
+    childrenInfo: clients.childrenInfo,
+    businessName: clients.businessName,
+    businessType: clients.businessType,
+    hasWill: clients.hasWill,
+    hasTrust: clients.hasTrust,
+    referralType: clients.referralType,
+    referredByPersonId: clients.referredByPersonId,
+    referredByPartnerId: clients.referredByPartnerId,
+    referralNotes: clients.referralNotes,
+    initialAttributionSource: clients.initialAttributionSource,
+    initialAttributionMedium: clients.initialAttributionMedium,
+    initialAttributionCampaign: clients.initialAttributionCampaign,
+    googleDriveFolderId: clients.googleDriveFolderId,
+    googleDriveFolderUrl: clients.googleDriveFolderUrl,
+    googleDriveSyncStatus: clients.googleDriveSyncStatus,
+    googleDriveSyncError: clients.googleDriveSyncError,
+    googleDriveLastSyncAt: clients.googleDriveLastSyncAt,
+    googleDriveSubfolderIds: clients.googleDriveSubfolderIds,
+    assignedLawyerId: clients.assignedLawyerId,
+    importMetadata: clients.importMetadata,
+    createdAt: clients.createdAt,
+    updatedAt: clients.updatedAt
+  }).from(clients)
+)
 
 // Client Profiles table (DEPRECATED: use clients table instead)
 // This table will be removed after data migration to clients table

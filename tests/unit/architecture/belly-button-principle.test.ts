@@ -63,7 +63,7 @@ describe('Belly Button Principle', () => {
       expect(() => {
         repo.createClient({
           personId: 'nonexistent-person',
-          status: 'PROSPECT'
+          status: 'PROSPECTIVE'
         })
       }).toThrow(BellyButtonViolationError)
     })
@@ -84,7 +84,7 @@ describe('Belly Button Principle', () => {
       expect(() => {
         repo.createClient({
           personId: '', // Empty string
-          status: 'PROSPECT'
+          status: 'PROSPECTIVE'
         })
       }).toThrow(BellyButtonViolationError)
     })
@@ -290,7 +290,7 @@ describe('Belly Button Principle', () => {
       expect(() => {
         repo.createClient({
           personId: person.id,
-          status: 'PROSPECT',
+          status: 'PROSPECTIVE',
           referralType: 'CLIENT',
           referredByPersonId: 'nonexistent-referrer'
         })
@@ -405,7 +405,7 @@ describe('Client Creation Order', () => {
     // Step 3: Create client linked to person
     const client = repo.createClient({
       personId: person.id,
-      status: 'PROSPECT',
+      status: 'PROSPECTIVE',
       hasMinorChildren: true
     })
 
@@ -430,7 +430,7 @@ describe('Client Creation Order', () => {
     // Step 3: Create client linked to person
     const client = repo.createClient({
       personId: person.id,
-      status: 'LEAD'
+      status: 'PROSPECTIVE'
     })
 
     // Verify chain (no user is OK)

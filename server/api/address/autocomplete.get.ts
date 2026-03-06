@@ -3,7 +3,8 @@ import { autocompleteAddress, isRadarConfigured } from '../../utils/radar'
 
 const querySchema = z.object({
   q: z.string().min(3, 'Query must be at least 3 characters'),
-  limit: z.coerce.number().min(1).max(10).optional().default(5)
+  limit: z.coerce.number().min(1).max(10).optional().default(5),
+  country: z.string().length(2).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -36,10 +37,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { q, limit } = result.data
+  const { q, limit, country } = result.data
 
   // Call Radar API
-  const addresses = await autocompleteAddress(q, { limit })
+  const addresses = await autocompleteAddress(q, {
+    limit,
+    countryCode: country
+  })
 
   // Transform to simpler format for frontend
   return {
@@ -51,6 +55,8 @@ export default defineEventHandler(async (event) => {
       state: addr.stateCode,
       zipCode: addr.postalCode,
       county: addr.county,
+      country: addr.country,
+      countryCode: addr.countryCode,
       latitude: addr.latitude,
       longitude: addr.longitude
     }))
