@@ -536,7 +536,7 @@ async function ensurePersonIsClient(
     await db.insert(schema.clients).values({
       id: clientId,
       personId: personId,
-      status: 'ACTIVE',
+      status: 'PROSPECTIVE',
       importMetadata: JSON.stringify({
         source: 'LAWMATICS',
         externalId: contactExternalId,

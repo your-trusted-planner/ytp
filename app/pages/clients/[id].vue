@@ -14,7 +14,7 @@
         </div>
       </div>
       <div v-if="client" class="flex items-center space-x-3">
-        <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : 'default'">
+        <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : client.status === 'PROSPECTIVE' ? 'warning' : 'default'">
           {{ client.status }}
         </UiBadge>
         <DriveStatusBadge
@@ -407,11 +407,6 @@
           type="tel"
         />
 
-        <UiSelect v-model="editForm.status" label="Status">
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-        </UiSelect>
-
         <div class="border-t pt-4 mt-4">
           <h4 class="font-semibold text-gray-900 mb-3">Address Information</h4>
 
@@ -648,7 +643,6 @@ const editForm = reactive({
   last_name: '',
   email: '',
   phone: '',
-  status: 'ACTIVE',
   address: '',
   city: '',
   state: '',
@@ -708,7 +702,6 @@ function openEditModal() {
   editForm.last_name = client.value.last_name || ''
   editForm.email = client.value.email || ''
   editForm.phone = client.value.phone || ''
-  editForm.status = client.value.status || 'ACTIVE'
 
   // Populate address data from profile
   editForm.address = clientProfile.value?.address || ''
@@ -730,7 +723,6 @@ async function saveClientChanges() {
         last_name: editForm.last_name,
         email: editForm.email,
         phone: editForm.phone,
-        status: editForm.status,
         address: editForm.address,
         city: editForm.city,
         state: editForm.state,

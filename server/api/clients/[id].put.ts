@@ -125,15 +125,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Update client status if provided
-  if (status) {
-    await db.update(schema.clients)
-      .set({
-        status,
-        updatedAt: now
-      })
-      .where(eq(schema.clients.id, clientId))
-  }
+  // Note: client status is now derived from matters via the clients_with_status view
+  // No manual status updates needed
 
   // Return updated data from people table (source of truth)
   const updatedPerson = await db.select()

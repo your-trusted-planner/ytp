@@ -80,7 +80,7 @@ export async function seedClients(
   await db.insert(schema.clients).values({
     id: clientIds.jane,
     personId: peopleIds.janeDoe,
-    status: 'ACTIVE',
+    status: 'PROSPECTIVE',
     hasMinorChildren: true,
     childrenInfo: JSON.stringify([
       { name: 'Emily Doe', age: 28 },
@@ -96,7 +96,7 @@ export async function seedClients(
   await db.insert(schema.clients).values({
     id: clientIds.michael,
     personId: peopleIds.michaelJohnson,
-    status: 'PROSPECT',
+    status: 'PROSPECTIVE',
     hasMinorChildren: false,
     hasWill: true,
     hasTrust: false,
@@ -108,7 +108,7 @@ export async function seedClients(
   await db.insert(schema.clients).values({
     id: clientIds.sarah,
     personId: peopleIds.sarahWilliams,
-    status: 'ACTIVE',
+    status: 'PROSPECTIVE',
     hasMinorChildren: false,
     hasWill: true,
     hasTrust: true,

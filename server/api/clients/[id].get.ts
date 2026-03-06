@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
-  // Get client record from clients table (primary lookup)
+  // Get client record from clients_with_status view (derives status from matters)
   const clientRecord = await db.select()
-    .from(schema.clients)
-    .where(eq(schema.clients.id, clientId))
+    .from(schema.clientsWithStatus)
+    .where(eq(schema.clientsWithStatus.id, clientId))
     .get()
 
   if (!clientRecord) {

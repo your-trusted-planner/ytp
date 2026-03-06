@@ -38,7 +38,7 @@ export function createCompleteClient(
 
   const client = repo.createClient({
     personId: person.id,
-    status: 'PROSPECT',
+    status: 'PROSPECTIVE',
     ...overrides.client
   })
 
@@ -59,7 +59,7 @@ export function createClientWithoutPortalAccess(
 
   const client = repo.createClient({
     personId: person.id,
-    status: 'PROSPECT',
+    status: 'PROSPECTIVE',
     ...overrides.client
   })
 

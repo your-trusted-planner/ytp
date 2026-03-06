@@ -45,8 +45,8 @@ const createClientSchema = z.object({
   referredByPartnerId: z.string().optional(),
   referralNotes: z.string().optional(),
 
-  // Client status (default: PROSPECT)
-  status: z.enum(['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE']).optional().default('PROSPECT')
+  // Client status (default: PROSPECTIVE — status is derived from matters via view, this is the write-side default)
+  status: z.enum(['PROSPECTIVE', 'ACTIVE', 'FORMER']).optional().default('PROSPECTIVE')
 })
 
 describe('Clients API Validation', () => {
@@ -61,7 +61,7 @@ describe('Clients API Validation', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.status).toBe('PROSPECT') // default
+        expect(result.data.status).toBe('PROSPECTIVE') // default
         expect(result.data.hasMinorChildren).toBe(false) // default
         expect(result.data.hasWill).toBe(false) // default
         expect(result.data.hasTrust).toBe(false) // default
@@ -398,7 +398,7 @@ describe('Clients API Validation', () => {
   })
 
   describe('Create Client Schema - Status', () => {
-    it('should default to PROSPECT status', () => {
+    it('should default to PROSPECTIVE status', () => {
       const result = createClientSchema.safeParse({
         email: 'client@example.com',
         firstName: 'John',
@@ -408,12 +408,12 @@ describe('Clients API Validation', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.status).toBe('PROSPECT')
+        expect(result.data.status).toBe('PROSPECTIVE')
       }
     })
 
     it('should accept valid status values', () => {
-      const validStatuses = ['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE']
+      const validStatuses = ['PROSPECTIVE', 'ACTIVE', 'FORMER']
 
       for (const status of validStatuses) {
         const result = createClientSchema.safeParse({
@@ -428,6 +428,22 @@ describe('Clients API Validation', () => {
         if (result.success) {
           expect(result.data.status).toBe(status)
         }
+      }
+    })
+
+    it('should reject old status values (LEAD, PROSPECT, INACTIVE)', () => {
+      const oldStatuses = ['LEAD', 'PROSPECT', 'INACTIVE']
+
+      for (const status of oldStatuses) {
+        const result = createClientSchema.safeParse({
+          email: 'client@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          password: 'password123',
+          status
+        })
+
+        expect(result.success).toBe(false)
       }
     })
 
@@ -476,7 +492,7 @@ describe('Clients API Validation', () => {
         referredByPartnerId: 'partner-abc',
         referralNotes: 'Referred by CPA firm',
         // Status
-        status: 'PROSPECT'
+        status: 'PROSPECTIVE'
       })
 
       expect(result.success).toBe(true)
@@ -489,7 +505,7 @@ describe('Clients API Validation', () => {
         expect(result.data.hasWill).toBe(true)
         expect(result.data.businessName).toBe('Doe Consulting LLC')
         expect(result.data.referralType).toBe('PROFESSIONAL')
-        expect(result.data.status).toBe('PROSPECT')
+        expect(result.data.status).toBe('PROSPECTIVE')
       }
     })
   })
@@ -509,7 +525,7 @@ describe('Clients API Business Logic', () => {
         firstName: 'John',
         lastName: 'Doe',
         password: 'password123',
-        status: 'PROSPECT'
+        status: 'PROSPECTIVE'
       }
 
       // Simulate what the API does
@@ -582,23 +598,11 @@ describe('Clients API Business Logic', () => {
     })
   })
 
-  describe('Status Transitions', () => {
-    it('should allow LEAD as initial status', () => {
-      const result = createClientSchema.safeParse({
-        email: 'lead@example.com',
-        firstName: 'Jane',
-        lastName: 'Lead',
-        password: 'password123',
-        status: 'LEAD'
-      })
+  describe('Client Status (Derived)', () => {
+    // Note: status is derived from matter activity via the clients_with_status SQL view.
+    // These tests verify the write-side enum accepts the new values.
 
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.status).toBe('LEAD')
-      }
-    })
-
-    it('should allow PROSPECT as initial status (default)', () => {
+    it('should allow PROSPECTIVE as initial status (default)', () => {
       const result = createClientSchema.safeParse({
         email: 'prospect@example.com',
         firstName: 'Jane',
@@ -608,7 +612,7 @@ describe('Clients API Business Logic', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.status).toBe('PROSPECT')
+        expect(result.data.status).toBe('PROSPECTIVE')
       }
     })
 
@@ -624,6 +628,21 @@ describe('Clients API Business Logic', () => {
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.status).toBe('ACTIVE')
+      }
+    })
+
+    it('should allow FORMER as initial status', () => {
+      const result = createClientSchema.safeParse({
+        email: 'former@example.com',
+        firstName: 'Jane',
+        lastName: 'Former',
+        password: 'password123',
+        status: 'FORMER'
+      })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.status).toBe('FORMER')
       }
     })
   })

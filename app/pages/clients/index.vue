@@ -110,7 +110,7 @@
         <!-- Status column with badge -->
         <template #cell-status="{ row }">
           <UiBadge
-            :variant="row.status === 'ACTIVE' ? 'success' : row.status === 'PENDING_APPROVAL' ? 'warning' : 'default'"
+            :variant="row.status === 'ACTIVE' ? 'success' : row.status === 'PROSPECTIVE' ? 'warning' : 'default'"
           >
             {{ row.status }}
           </UiBadge>
@@ -196,7 +196,7 @@ const sortBy = ref<string>('createdAt')
 const sortDirection = ref<'asc' | 'desc'>('desc')
 
 // Status filter
-const availableStatuses = ['ACTIVE', 'PROSPECT', 'LEAD', 'INACTIVE']
+const availableStatuses = ['ACTIVE', 'PROSPECTIVE', 'FORMER']
 const statusFilter = ref<string | null>(null)
 
 // Initialize status filter from URL query param

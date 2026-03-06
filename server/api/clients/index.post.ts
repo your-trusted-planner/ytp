@@ -46,8 +46,8 @@ const createClientSchema = z.object({
   referredByPartnerId: z.string().optional(),
   referralNotes: z.string().optional(),
 
-  // Client status (default: PROSPECT)
-  status: z.enum(['LEAD', 'PROSPECT', 'ACTIVE', 'INACTIVE']).optional().default('PROSPECT')
+  // Client status (default: PROSPECTIVE — status is derived from matters via view, this is the write-side default)
+  status: z.enum(['PROSPECTIVE', 'ACTIVE', 'FORMER']).optional().default('PROSPECTIVE')
 })
 
 export default defineEventHandler(async (event) => {

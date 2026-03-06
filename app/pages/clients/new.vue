@@ -469,15 +469,15 @@ function validate(): boolean {
 
 async function handleSubmit() {
   saveAsLead.value = false
-  await submitForm('PROSPECT')
+  await submitForm('PROSPECTIVE')
 }
 
 async function handleSaveAsLead() {
   saveAsLead.value = true
-  await submitForm('LEAD')
+  await submitForm('PROSPECTIVE')
 }
 
-async function submitForm(status: 'LEAD' | 'PROSPECT') {
+async function submitForm(status: 'PROSPECTIVE') {
   if (!validate()) {
     toast.error('Please fix the errors in the form')
     return
