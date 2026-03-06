@@ -33,6 +33,7 @@ export interface Matter {
   updatedAt: number
 
   // Joined fields (from related tables)
+  clientTableId?: string | null  // clients.id for linking to /clients/:id
   clientFirstName?: string | null
   clientLastName?: string | null
   clientEmail?: string | null
@@ -123,6 +124,7 @@ export function transformMatter(apiResponse: Record<string, any>): Matter {
     createdAt: apiResponse.created_at,
     updatedAt: apiResponse.updated_at,
     // Joined fields
+    clientTableId: apiResponse.client_table_id,
     clientFirstName: apiResponse.client_first_name,
     clientLastName: apiResponse.client_last_name,
     clientEmail: apiResponse.client_email,

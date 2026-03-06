@@ -7,7 +7,7 @@
 
     <div class="grid gap-6">
       <!-- Lawmatics Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/lawmatics')">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -37,6 +37,7 @@
           <NuxtLink
             to="/settings/integrations/lawmatics"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
           >
             Manage
           </NuxtLink>
@@ -44,7 +45,7 @@
       </UiCard>
 
       <!-- Resend Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="showResendModal = true">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -75,7 +76,7 @@
             </div>
           </div>
           <button
-            @click="showResendModal = true"
+            @click.stop="showResendModal = true"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
           >
             Configure
@@ -84,7 +85,7 @@
       </UiCard>
 
       <!-- WealthCounsel Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/wealthcounsel')">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -105,6 +106,7 @@
           <NuxtLink
             to="/settings/integrations/wealthcounsel"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
           >
             Manage
           </NuxtLink>
@@ -112,7 +114,7 @@
       </UiCard>
 
       <!-- Apollo Integration Card -->
-      <UiCard>
+      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/apollo')">
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -142,6 +144,7 @@
           <NuxtLink
             to="/settings/integrations/apollo"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop
           >
             Manage
           </NuxtLink>

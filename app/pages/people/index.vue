@@ -481,7 +481,12 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr v-for="person in people" :key="person.id" class="hover:bg-gray-50">
+          <tr
+            v-for="person in people"
+            :key="person.id"
+            class="hover:bg-gray-50 cursor-pointer"
+            @click="$router.push(`/people/${person.id}`)"
+          >
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <Building2 v-if="person.entityName" class="w-5 h-5 text-gray-400 mr-2" />
@@ -515,13 +520,13 @@ onMounted(() => {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button
-                @click="openEditModal(person)"
+                @click.stop="openEditModal(person)"
                 class="text-burgundy-600 hover:text-burgundy-900 mr-3"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
-                @click="deletePerson(person)"
+                @click.stop="deletePerson(person)"
                 class="text-red-600 hover:text-red-900"
               >
                 <Trash2 class="w-4 h-4" />

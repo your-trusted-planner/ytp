@@ -84,7 +84,14 @@
                 </div>
                 <div>
                   <span class="text-gray-600">Client:</span>
-                  <span class="ml-2 font-medium">{{ matterStore.clientName }}</span>
+                  <NuxtLink
+                    v-if="matter.clientTableId"
+                    :to="`/clients/${matter.clientTableId}`"
+                    class="ml-2 font-medium text-burgundy-600 hover:text-burgundy-800 hover:underline"
+                  >
+                    {{ matterStore.clientName }}
+                  </NuxtLink>
+                  <span v-else class="ml-2 font-medium">{{ matterStore.clientName }}</span>
                 </div>
                 <div v-if="matterStore.leadAttorneyName">
                   <span class="text-gray-600">Lead Attorney:</span>
