@@ -1,0 +1,23 @@
+CREATE INDEX `idx_activities_user_id` ON `activities` (`user_id`);--> statement-breakpoint
+CREATE INDEX `idx_activities_type` ON `activities` (`type`);--> statement-breakpoint
+CREATE INDEX `idx_activities_target_type_id` ON `activities` (`target_type`,`target_id`);--> statement-breakpoint
+CREATE INDEX `idx_activities_created_at` ON `activities` (`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_documents_client_id` ON `documents` (`client_id`);--> statement-breakpoint
+CREATE INDEX `idx_documents_matter_id` ON `documents` (`matter_id`);--> statement-breakpoint
+CREATE INDEX `idx_documents_status` ON `documents` (`status`);--> statement-breakpoint
+CREATE INDEX `idx_matters_client_id` ON `matters` (`client_id`);--> statement-breakpoint
+CREATE INDEX `idx_matters_status` ON `matters` (`status`);--> statement-breakpoint
+CREATE INDEX `idx_matters_created_at` ON `matters` (`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_notes_entity_type_id` ON `notes` (`entity_type`,`entity_id`);--> statement-breakpoint
+CREATE INDEX `idx_notes_created_by` ON `notes` (`created_by`);--> statement-breakpoint
+CREATE INDEX `idx_people_full_name` ON `people` (`full_name`);--> statement-breakpoint
+CREATE INDEX `idx_people_email` ON `people` (`email`);--> statement-breakpoint
+CREATE INDEX `idx_people_phone` ON `people` (`phone`);--> statement-breakpoint
+CREATE INDEX `idx_people_last_name` ON `people` (`last_name`);--> statement-breakpoint
+CREATE INDEX `idx_people_created_at` ON `people` (`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_relationships_from_person_id` ON `relationships` (`from_person_id`);--> statement-breakpoint
+CREATE INDEX `idx_relationships_to_person_id` ON `relationships` (`to_person_id`);--> statement-breakpoint
+CREATE INDEX `idx_relationships_type` ON `relationships` (`relationship_type`);--> statement-breakpoint
+CREATE INDEX `idx_users_person_id` ON `users` (`person_id`);--> statement-breakpoint
+CREATE INDEX `idx_users_role` ON `users` (`role`);--> statement-breakpoint
+CREATE INDEX `idx_users_status` ON `users` (`status`);

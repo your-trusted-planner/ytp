@@ -1,5 +1,5 @@
 // Activities and Notes tables
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
 
@@ -20,7 +20,10 @@ export const notes = sqliteTable('notes', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  entityTypeIdIdx: index('idx_notes_entity_type_id').on(table.entityType, table.entityId),
+  createdByIdx: index('idx_notes_created_by').on(table.createdBy)
+}))
 
 // Activities table - Enhanced for observability, compliance, and KPI tracking
 export const activities = sqliteTable('activities', {
@@ -61,4 +64,9 @@ export const activities = sqliteTable('activities', {
   importMetadata: text('import_metadata'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  userIdIdx: index('idx_activities_user_id').on(table.userId),
+  typeIdx: index('idx_activities_type').on(table.type),
+  targetTypeIdIdx: index('idx_activities_target_type_id').on(table.targetType, table.targetId),
+  createdAtIdx: index('idx_activities_created_at').on(table.createdAt)
+}))

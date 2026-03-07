@@ -1,5 +1,5 @@
 // People and Relationships - Core identity tables (Belly Button Principle)
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { jsonArray } from './common'
 import { users } from './auth'
@@ -41,7 +41,13 @@ export const people = sqliteTable('people', {
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  fullNameIdx: index('idx_people_full_name').on(table.fullName),
+  emailIdx: index('idx_people_email').on(table.email),
+  phoneIdx: index('idx_people_phone').on(table.phone),
+  lastNameIdx: index('idx_people_last_name').on(table.lastName),
+  createdAtIdx: index('idx_people_created_at').on(table.createdAt)
+}))
 
 // Relationships - Unified relationship tracking (Belly Button Principle)
 // Links people to people with context for where the relationship applies
@@ -56,7 +62,11 @@ export const relationships = sqliteTable('relationships', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  fromPersonIdx: index('idx_relationships_from_person_id').on(table.fromPersonId),
+  toPersonIdx: index('idx_relationships_to_person_id').on(table.toPersonId),
+  typeIdx: index('idx_relationships_type').on(table.relationshipType)
+}))
 
 // Client Relationships - Links clients to people (DEPRECATED: use relationships table)
 export const clientRelationships = sqliteTable('client_relationships', {

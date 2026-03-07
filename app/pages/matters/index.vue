@@ -102,9 +102,7 @@
 
     <!-- Matters List -->
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading matters...</p>
-      </div>
+      <UiLoadingState v-if="loading" message="Loading matters..." />
       <div v-else-if="filteredMatters.length === 0" class="text-center py-12">
         <p class="text-gray-500">
           {{ matters.length === 0 ? 'No matters found' : 'No matters match your filters' }}

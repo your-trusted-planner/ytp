@@ -1,9 +1,7 @@
 <template>
   <div>
     <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">{{ loadingText }}</p>
-    </div>
+    <UiLoadingState v-if="loading" :message="loadingText" />
 
     <!-- Empty State -->
     <div v-else-if="!data || data.length === 0" class="text-center py-12">
