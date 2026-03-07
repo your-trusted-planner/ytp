@@ -1,5 +1,5 @@
 // Authentication and Authorization tables
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { people } from './people'
 
@@ -46,7 +46,11 @@ export const users = sqliteTable('users', {
   importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  personIdIdx: index('idx_users_person_id').on(table.personId),
+  roleIdx: index('idx_users_role').on(table.role),
+  statusIdx: index('idx_users_status').on(table.status)
+}))
 
 // Password Reset Tokens - For email-based password reset flow
 export const passwordResetTokens = sqliteTable('password_reset_tokens', {

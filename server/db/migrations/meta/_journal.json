@@ -204,6 +204,13 @@
       "when": 1772830094198,
       "tag": "0028_normal_morlun",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1772903656952,
+      "tag": "0029_parallel_gateway",
+      "breakpoints": true
     }
   ]
 }

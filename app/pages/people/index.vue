@@ -445,9 +445,7 @@ onMounted(() => {
 
     <!-- People Table -->
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div v-if="loading" class="p-8 text-center text-gray-500">
-        Loading people...
-      </div>
+      <UiLoadingState v-if="loading" message="Loading people..." />
 
       <div v-else-if="people.length === 0" class="p-8 text-center text-gray-500">
         <p>No people found</p>

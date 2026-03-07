@@ -1,5 +1,5 @@
 // Matters and related tables
-import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
 import { serviceCatalog } from './catalog'
@@ -30,7 +30,11 @@ export const matters = sqliteTable('matters', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  clientIdIdx: index('idx_matters_client_id').on(table.clientId),
+  statusIdx: index('idx_matters_status').on(table.status),
+  createdAtIdx: index('idx_matters_created_at').on(table.createdAt)
+}))
 
 // Matters to Services - Junction table (many:many)
 export const mattersToServices = sqliteTable('matters_to_services', {

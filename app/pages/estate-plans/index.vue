@@ -52,10 +52,7 @@
 
     <!-- Plans List -->
     <UiCard>
-      <div v-if="loading" class="p-8 text-center text-gray-500">
-        <div class="animate-spin w-8 h-8 border-4 border-burgundy-500 border-t-transparent rounded-full mx-auto mb-4" />
-        Loading estate plans...
-      </div>
+      <UiLoadingState v-if="loading" message="Loading estate plans..." />
 
       <div v-else-if="filteredPlans.length === 0" class="p-8 text-center text-gray-500">
         <FileText class="w-12 h-12 mx-auto mb-4 text-gray-300" />

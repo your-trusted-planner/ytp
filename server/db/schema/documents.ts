@@ -1,5 +1,5 @@
 // Document-related tables
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
 import { matters } from './matters'
@@ -75,7 +75,11 @@ export const documents = sqliteTable('documents', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
+}, (table) => ({
+  clientIdIdx: index('idx_documents_client_id').on(table.clientId),
+  matterIdIdx: index('idx_documents_matter_id').on(table.matterId),
+  statusIdx: index('idx_documents_status').on(table.status)
+}))
 
 // Document Uploads - Client-uploaded documents
 export const documentUploads = sqliteTable('document_uploads', {
