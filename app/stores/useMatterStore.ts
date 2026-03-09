@@ -113,15 +113,18 @@ export const useMatterStore = defineStore('matter', {
       this.currentMatterId = matterId
 
       try {
-        const response = await $fetch<{ matter: Record<string, any> }>(`/api/matters/${matterId}`)
-        this.currentMatter = transformMatter(response.matter)
+        // Single composite endpoint replaces 4 individual calls
+        const response = await $fetch<{
+          matter: Record<string, any>
+          services: Record<string, any>[]
+          journeys: Record<string, any>[]
+          payments: Record<string, any>[]
+        }>(`/api/matters/${matterId}/detail`)
 
-        // Fetch related data in parallel
-        await Promise.all([
-          this.fetchServices(matterId),
-          this.fetchJourneys(matterId),
-          this.fetchPayments(matterId)
-        ])
+        this.currentMatter = transformMatter(response.matter)
+        this.services = (response.services || []).map(transformMatterService)
+        this.journeys = (response.journeys || []).map(transformMatterJourney)
+        this.payments = (response.payments || []).map(transformMatterPayment)
 
         return this.currentMatter
       } catch (err: any) {

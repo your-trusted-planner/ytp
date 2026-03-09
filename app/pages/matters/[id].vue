@@ -922,20 +922,35 @@ onUnmounted(() => {
   // matterStore.clearCurrentMatter()
 })
 
+// Lazy load catalog when "Add Service" modal opens
+watch(showAddServiceModal, async (isOpen) => {
+  if (isOpen && catalog.value.length === 0) {
+    await fetchCatalog()
+  }
+})
+
+// Lazy load clients, lawyers, engagement journeys, and catalog when "Edit Matter" modal opens
+watch(showEditModal, async (isOpen) => {
+  if (isOpen) {
+    const fetches: Promise<void>[] = []
+    if (clients.value.length === 0) fetches.push(fetchClients())
+    if (lawyers.value.length === 0) fetches.push(fetchLawyers())
+    if (engagementJourneys.value.length === 0) fetches.push(fetchEngagementJourneys())
+    if (catalog.value.length === 0) fetches.push(fetchCatalog())
+    if (fetches.length > 0) await Promise.all(fetches)
+  }
+})
+
 onMounted(async () => {
   // Hydrate preferences from localStorage and apply to local state
   preferencesStore.hydrateFromStorage()
   documentView.value = preferencesStore.documentsDefaultView
 
-  // Fetch matter data via store
+  // Fetch matter data via store (single composite endpoint)
   await matterStore.fetchMatter(matterId)
 
-  // Fetch dropdown data for modals and billing data
+  // Fetch billing data (needed on page, not modal-only)
   await Promise.all([
-    fetchCatalog(),
-    fetchClients(),
-    fetchLawyers(),
-    fetchEngagementJourneys(),
     fetchClientTrustBalance(),
     fetchOutstandingInvoices(),
     fetchMatterTimeEntries()

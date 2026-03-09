@@ -657,36 +657,38 @@ const totalExpected = computed(() => matters.value.reduce((sum, m) => sum + (m.t
 const activeJourneys = computed(() => journeys.value.filter(j => j.status === 'IN_PROGRESS').length)
 const totalDocuments = computed(() => documents.value.length)
 
-// Fetch client data
+// Fetch client data via composite endpoint (single API call replaces 8)
 async function fetchClient() {
   loading.value = true
   try {
-    const [clientData, mattersData, journeysData, docsData, relationshipsData, peopleData, trustBalanceData, invoicesData] = await Promise.all([
-      $fetch(`/api/clients/${clientId}`),
-      $fetch(`/api/clients/${clientId}/matters`).catch(() => ({ matters: [] })),
-      $fetch(`/api/client-journeys/client/${clientId}`).catch(() => ({ journeys: [] })),
-      $fetch(`/api/clients/${clientId}/documents`).catch(() => ({ documents: [] })),
-      $fetch(`/api/clients/${clientId}/relationships`).catch(() => ({ relationships: [] })),
-      $fetch('/api/people').catch(() => ({ people: [] })),
-      $fetch(`/api/trust/clients/${clientId}/balance`).catch(() => ({ totalBalance: 0 })),
-      $fetch('/api/invoices', { query: { clientId, status: 'outstanding' } }).catch(() => ({ invoices: [] }))
-    ])
+    const data = await $fetch(`/api/clients/${clientId}/detail`)
 
-    client.value = clientData.client
-    clientProfile.value = clientData.profile
-    matters.value = mattersData.matters || []
-    journeys.value = journeysData.journeys || []
-    documents.value = docsData.documents || []
-    relationships.value = relationshipsData.relationships || []
-    availablePeople.value = peopleData.people || []
-    trustBalance.value = trustBalanceData.totalBalance || 0
-    outstandingInvoices.value = invoicesData.invoices || []
+    client.value = data.client
+    clientProfile.value = data.profile
+    matters.value = data.matters || []
+    journeys.value = data.journeys || []
+    documents.value = data.documents || []
+    relationships.value = data.relationships || []
+    trustBalance.value = data.trustBalance || 0
+    outstandingInvoices.value = data.invoices || []
   } catch (error) {
     console.error('Error fetching client:', error)
   } finally {
     loading.value = false
   }
 }
+
+// Lazy load people list when the "Add Relationship" modal opens
+watch(showAddRelationshipModal, async (isOpen) => {
+  if (isOpen && availablePeople.value.length === 0) {
+    try {
+      const peopleData = await $fetch('/api/people')
+      availablePeople.value = (peopleData as any).people || []
+    } catch {
+      availablePeople.value = []
+    }
+  }
+})
 
 // View journey
 function viewJourney(journeyId: string) {
