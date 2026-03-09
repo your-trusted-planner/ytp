@@ -27,12 +27,18 @@ interface MatterState {
   documents: MatterDocument[]
   uploads: MatterUpload[]
 
+  // Billing data from composite endpoint
+  clientTrustBalance: number
+  outstandingInvoices: any[]
+  timeEntries: any[]
+
   // Loading states
   loading: boolean
   loadingServices: boolean
   loadingJourneys: boolean
   loadingPayments: boolean
   loadingDocuments: boolean
+  loadingTimeEntries: boolean
 
   // Error state
   error: string | null
@@ -47,11 +53,15 @@ export const useMatterStore = defineStore('matter', {
     payments: [],
     documents: [],
     uploads: [],
+    clientTrustBalance: 0,
+    outstandingInvoices: [],
+    timeEntries: [],
     loading: false,
     loadingServices: false,
     loadingJourneys: false,
     loadingPayments: false,
     loadingDocuments: false,
+    loadingTimeEntries: false,
     error: null
   }),
 
@@ -113,18 +123,24 @@ export const useMatterStore = defineStore('matter', {
       this.currentMatterId = matterId
 
       try {
-        // Single composite endpoint replaces 4 individual calls
+        // Single composite endpoint replaces 7 individual calls
         const response = await $fetch<{
           matter: Record<string, any>
           services: Record<string, any>[]
           journeys: Record<string, any>[]
           payments: Record<string, any>[]
+          trustBalance: number
+          outstandingInvoices: Record<string, any>[]
+          timeEntries: Record<string, any>[]
         }>(`/api/matters/${matterId}/detail`)
 
         this.currentMatter = transformMatter(response.matter)
         this.services = (response.services || []).map(transformMatterService)
         this.journeys = (response.journeys || []).map(transformMatterJourney)
         this.payments = (response.payments || []).map(transformMatterPayment)
+        this.clientTrustBalance = response.trustBalance ?? 0
+        this.outstandingInvoices = response.outstandingInvoices || []
+        this.timeEntries = response.timeEntries || []
 
         return this.currentMatter
       } catch (err: any) {
@@ -257,6 +273,9 @@ export const useMatterStore = defineStore('matter', {
       this.payments = []
       this.documents = []
       this.uploads = []
+      this.clientTrustBalance = 0
+      this.outstandingInvoices = []
+      this.timeEntries = []
       this.error = null
     },
 

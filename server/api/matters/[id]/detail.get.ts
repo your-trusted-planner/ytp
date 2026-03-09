@@ -1,7 +1,9 @@
 // Composite matter detail endpoint
-// Combines 4 individual API calls into a single response for the matter detail page
+// Combines 7 individual API calls into a single response for the matter detail page
 // Replaces: /api/matters/:id, /api/matters/:id/services,
-//           /api/client-journeys/matter/:id, /api/payments/matter/:id
+//           /api/client-journeys/matter/:id, /api/payments/matter/:id,
+//           /api/trust/clients/:clientId/balance, /api/invoices?matterId=X,
+//           /api/time-entries?matterId=X
 
 export default defineEventHandler(async (event) => {
   const matterId = getRouterParam(event, 'id')
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { useDrizzle, schema } = await import('../../../db')
-  const { eq, desc, inArray } = await import('drizzle-orm')
+  const { eq, desc, inArray, and } = await import('drizzle-orm')
   const db = useDrizzle()
 
   // 1. Get the matter
@@ -34,7 +36,7 @@ export default defineEventHandler(async (event) => {
   requireClientAccess(event, matter.clientId)
 
   // Run all independent queries in parallel
-  const [clientInfo, attorneyInfo, engagementInfo, services, journeyRows, payments] = await Promise.all([
+  const [clientInfo, attorneyInfo, engagementInfo, services, journeyRows, payments, outstandingInvoices, timeEntryRows] = await Promise.all([
     // Client info (resolve user -> person -> clients table)
     fetchClientInfo(db, schema, matter.clientId),
 
@@ -82,11 +84,20 @@ export default defineEventHandler(async (event) => {
       .from(schema.payments)
       .where(eq(schema.payments.matterId, matterId))
       .orderBy(desc(schema.payments.createdAt))
-      .all()
+      .all(),
+
+    // Outstanding invoices (SENT, VIEWED, PARTIALLY_PAID, OVERDUE)
+    fetchOutstandingInvoices(db, schema, matterId),
+
+    // Time entries for this matter
+    fetchTimeEntries(db, schema, matterId)
   ])
 
   // Enrich journeys (batch fetch instead of N+1)
   const enrichedJourneys = await enrichMatterJourneys(db, schema, journeyRows)
+
+  // Fetch trust balance (needs resolved client ID from clientInfo)
+  const trustBalance = await fetchTrustBalance(clientInfo?.resolvedClientId || null)
 
   // Build response preserving backward-compatible shapes
   return {
@@ -111,7 +122,12 @@ export default defineEventHandler(async (event) => {
       created_at: matter.createdAt instanceof Date ? matter.createdAt.getTime() : matter.createdAt,
       updated_at: matter.updatedAt instanceof Date ? matter.updatedAt.getTime() : matter.updatedAt,
       // Inline client info
-      ...(clientInfo || {}),
+      ...(clientInfo ? {
+        client_first_name: clientInfo.client_first_name,
+        client_last_name: clientInfo.client_last_name,
+        client_email: clientInfo.client_email,
+        client_table_id: clientInfo.client_table_id
+      } : {}),
       // Inline attorney info
       ...(attorneyInfo ? {
         lead_attorney_first_name: attorneyInfo.firstName,
@@ -125,7 +141,10 @@ export default defineEventHandler(async (event) => {
     },
     services,
     journeys: enrichedJourneys,
-    payments
+    payments,
+    trustBalance,
+    outstandingInvoices,
+    timeEntries: timeEntryRows
   }
 })
 
@@ -162,7 +181,9 @@ async function fetchClientInfo(db: any, schema: any, clientId: string | null) {
     client_first_name: client.firstName,
     client_last_name: client.lastName,
     client_email: client.email,
-    client_table_id: clientTableId
+    client_table_id: clientTableId,
+    // Internal: resolved client ID for trust balance lookup
+    resolvedClientId: clientTableId
   }
 }
 
@@ -184,6 +205,154 @@ async function fetchEngagementInfo(db: any, schema: any, engagementJourneyId: st
     .get()
 
   return journey ? { name: journey.name } : null
+}
+
+/**
+ * Fetch client trust balance using the resolved client table ID
+ */
+async function fetchTrustBalance(resolvedClientId: string | null): Promise<number> {
+  if (!resolvedClientId) return 0
+
+  try {
+    const { getClientTrustBalances } = await import('../../../utils/trust-ledger')
+    const balances = await getClientTrustBalances(resolvedClientId)
+    return balances.reduce((sum, b) => sum + b.balance, 0)
+  } catch {
+    // Trust ledger may not have any entries for this client
+    return 0
+  }
+}
+
+/**
+ * Fetch outstanding invoices for a matter (SENT, VIEWED, PARTIALLY_PAID, OVERDUE)
+ */
+async function fetchOutstandingInvoices(db: any, schema: any, matterId: string) {
+  const { eq, and, desc, inArray } = await import('drizzle-orm')
+
+  const invoices = await db.select({
+    id: schema.invoices.id,
+    matterId: schema.invoices.matterId,
+    clientId: schema.invoices.clientId,
+    invoiceNumber: schema.invoices.invoiceNumber,
+    status: schema.invoices.status,
+    subtotal: schema.invoices.subtotal,
+    taxRate: schema.invoices.taxRate,
+    taxAmount: schema.invoices.taxAmount,
+    discountAmount: schema.invoices.discountAmount,
+    totalAmount: schema.invoices.totalAmount,
+    trustApplied: schema.invoices.trustApplied,
+    directPayments: schema.invoices.directPayments,
+    balanceDue: schema.invoices.balanceDue,
+    issueDate: schema.invoices.issueDate,
+    dueDate: schema.invoices.dueDate,
+    sentAt: schema.invoices.sentAt,
+    paidAt: schema.invoices.paidAt,
+    notes: schema.invoices.notes,
+    createdBy: schema.invoices.createdBy,
+    createdAt: schema.invoices.createdAt,
+    updatedAt: schema.invoices.updatedAt,
+    // Client info
+    clientFirstName: schema.people.firstName,
+    clientLastName: schema.people.lastName,
+    clientFullName: schema.people.fullName,
+    clientEmail: schema.people.email,
+    // Matter info
+    matterTitle: schema.matters.title
+  })
+    .from(schema.invoices)
+    .innerJoin(schema.clients, eq(schema.invoices.clientId, schema.clients.id))
+    .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+    .innerJoin(schema.matters, eq(schema.invoices.matterId, schema.matters.id))
+    .where(and(
+      eq(schema.invoices.matterId, matterId),
+      inArray(schema.invoices.status, ['SENT', 'VIEWED', 'PARTIALLY_PAID', 'OVERDUE'])
+    ))
+    .orderBy(desc(schema.invoices.createdAt))
+    .all()
+
+  return invoices.map((inv: any) => ({
+    ...inv,
+    clientName: inv.clientFullName || `${inv.clientFirstName || ''} ${inv.clientLastName || ''}`.trim() || 'Unknown',
+    // Snake case for backward compatibility
+    matter_id: inv.matterId,
+    client_id: inv.clientId,
+    invoice_number: inv.invoiceNumber,
+    tax_rate: inv.taxRate,
+    tax_amount: inv.taxAmount,
+    discount_amount: inv.discountAmount,
+    total_amount: inv.totalAmount,
+    trust_applied: inv.trustApplied,
+    direct_payments: inv.directPayments,
+    balance_due: inv.balanceDue,
+    issue_date: inv.issueDate instanceof Date ? inv.issueDate.getTime() : inv.issueDate,
+    due_date: inv.dueDate instanceof Date ? inv.dueDate.getTime() : inv.dueDate,
+    sent_at: inv.sentAt instanceof Date ? inv.sentAt.getTime() : inv.sentAt,
+    paid_at: inv.paidAt instanceof Date ? inv.paidAt.getTime() : inv.paidAt,
+    created_by: inv.createdBy,
+    created_at: inv.createdAt instanceof Date ? inv.createdAt.getTime() : inv.createdAt,
+    updated_at: inv.updatedAt instanceof Date ? inv.updatedAt.getTime() : inv.updatedAt,
+    client_name: inv.clientFullName || `${inv.clientFirstName || ''} ${inv.clientLastName || ''}`.trim() || 'Unknown',
+    client_email: inv.clientEmail,
+    matter_title: inv.matterTitle
+  }))
+}
+
+/**
+ * Fetch time entries for a matter with user and matter info
+ */
+async function fetchTimeEntries(db: any, schema: any, matterId: string) {
+  const { eq, desc } = await import('drizzle-orm')
+
+  const entries = await db.select({
+    id: schema.timeEntries.id,
+    userId: schema.timeEntries.userId,
+    matterId: schema.timeEntries.matterId,
+    hours: schema.timeEntries.hours,
+    description: schema.timeEntries.description,
+    workDate: schema.timeEntries.workDate,
+    isBillable: schema.timeEntries.isBillable,
+    hourlyRate: schema.timeEntries.hourlyRate,
+    amount: schema.timeEntries.amount,
+    status: schema.timeEntries.status,
+    invoiceId: schema.timeEntries.invoiceId,
+    invoiceLineItemId: schema.timeEntries.invoiceLineItemId,
+    approvedBy: schema.timeEntries.approvedBy,
+    approvedAt: schema.timeEntries.approvedAt,
+    createdAt: schema.timeEntries.createdAt,
+    updatedAt: schema.timeEntries.updatedAt,
+    // User info
+    userFirstName: schema.users.firstName,
+    userLastName: schema.users.lastName,
+    // Matter info
+    matterTitle: schema.matters.title
+  })
+    .from(schema.timeEntries)
+    .leftJoin(schema.users, eq(schema.timeEntries.userId, schema.users.id))
+    .leftJoin(schema.matters, eq(schema.timeEntries.matterId, schema.matters.id))
+    .where(eq(schema.timeEntries.matterId, matterId))
+    .orderBy(desc(schema.timeEntries.workDate), desc(schema.timeEntries.createdAt))
+    .all()
+
+  return entries.map((entry: any) => ({
+    id: entry.id,
+    userId: entry.userId,
+    userName: [entry.userFirstName, entry.userLastName].filter(Boolean).join(' ') || 'Unknown',
+    matterId: entry.matterId,
+    matterTitle: entry.matterTitle || 'Unknown Matter',
+    hours: entry.hours,
+    description: entry.description,
+    workDate: entry.workDate,
+    isBillable: entry.isBillable,
+    hourlyRate: entry.hourlyRate,
+    amount: entry.amount,
+    status: entry.status,
+    invoiceId: entry.invoiceId,
+    invoiceLineItemId: entry.invoiceLineItemId,
+    approvedBy: entry.approvedBy,
+    approvedAt: entry.approvedAt,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt
+  }))
 }
 
 /**

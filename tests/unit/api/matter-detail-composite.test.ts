@@ -165,6 +165,80 @@ function setupTestDb() {
       updated_at INTEGER NOT NULL
     )
   `)
+
+  sqliteDb.exec(`
+    CREATE TABLE trust_accounts (
+      id TEXT PRIMARY KEY,
+      account_name TEXT NOT NULL,
+      current_balance INTEGER NOT NULL DEFAULT 0,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
+
+  sqliteDb.exec(`
+    CREATE TABLE client_trust_ledgers (
+      id TEXT PRIMARY KEY,
+      trust_account_id TEXT NOT NULL REFERENCES trust_accounts(id),
+      client_id TEXT NOT NULL REFERENCES clients(id),
+      matter_id TEXT REFERENCES matters(id),
+      balance INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
+
+  sqliteDb.exec(`
+    CREATE TABLE invoices (
+      id TEXT PRIMARY KEY,
+      matter_id TEXT NOT NULL REFERENCES matters(id),
+      client_id TEXT NOT NULL REFERENCES clients(id),
+      invoice_number TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      subtotal INTEGER NOT NULL DEFAULT 0,
+      tax_rate INTEGER DEFAULT 0,
+      tax_amount INTEGER DEFAULT 0,
+      discount_amount INTEGER DEFAULT 0,
+      total_amount INTEGER NOT NULL DEFAULT 0,
+      trust_applied INTEGER NOT NULL DEFAULT 0,
+      direct_payments INTEGER NOT NULL DEFAULT 0,
+      balance_due INTEGER NOT NULL DEFAULT 0,
+      issue_date INTEGER,
+      due_date INTEGER,
+      sent_at INTEGER,
+      paid_at INTEGER,
+      notes TEXT,
+      terms TEXT,
+      memo TEXT,
+      pdf_blob_key TEXT,
+      pdf_generated_at INTEGER,
+      created_by TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
+
+  sqliteDb.exec(`
+    CREATE TABLE time_entries (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      matter_id TEXT NOT NULL REFERENCES matters(id),
+      hours TEXT NOT NULL,
+      description TEXT NOT NULL,
+      work_date INTEGER NOT NULL,
+      is_billable INTEGER DEFAULT 1,
+      hourly_rate INTEGER,
+      amount INTEGER,
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      invoice_id TEXT,
+      invoice_line_item_id TEXT,
+      approved_by TEXT,
+      approved_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )
+  `)
 }
 
 afterAll(() => {
@@ -182,6 +256,9 @@ const serviceId = 'service-1'
 const journeyDefId = 'journey-def-1'
 const journeyStepId = 'step-1'
 const clientJourneyId = 'cj-1'
+const trustAccountId = 'trust-acct-1'
+const invoiceId = 'inv-1'
+const timeEntryId = 'te-1'
 const now = Math.floor(Date.now() / 1000)
 
 function seedTestData() {
@@ -251,6 +328,40 @@ function seedTestData() {
     INSERT INTO client_journeys (id, client_id, matter_id, catalog_id, journey_id, current_step_id, status, priority, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(clientJourneyId, userId, matterId, serviceId, journeyDefId, journeyStepId, 'IN_PROGRESS', 'HIGH', now, now)
+
+  // Trust account + ledger
+  sqliteDb.prepare(`
+    INSERT INTO trust_accounts (id, account_name, current_balance, is_active, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(trustAccountId, 'IOLTA Account', 500000, 1, now, now)
+
+  sqliteDb.prepare(`
+    INSERT INTO client_trust_ledgers (id, trust_account_id, client_id, matter_id, balance, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run('ledger-1', trustAccountId, clientId, matterId, 250000, now, now)
+
+  sqliteDb.prepare(`
+    INSERT INTO client_trust_ledgers (id, trust_account_id, client_id, matter_id, balance, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run('ledger-2', trustAccountId, clientId, null, 100000, now, now)
+
+  // Outstanding invoice
+  sqliteDb.prepare(`
+    INSERT INTO invoices (id, matter_id, client_id, invoice_number, status, subtotal, total_amount, balance_due, issue_date, due_date, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(invoiceId, matterId, clientId, 'INV-2024-001', 'SENT', 175000, 175000, 175000, now, now + 2592000, now, now)
+
+  // Paid invoice (should NOT appear in outstanding)
+  sqliteDb.prepare(`
+    INSERT INTO invoices (id, matter_id, client_id, invoice_number, status, subtotal, total_amount, balance_due, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run('inv-paid', matterId, clientId, 'INV-2024-002', 'PAID', 50000, 50000, 0, now, now)
+
+  // Time entry
+  sqliteDb.prepare(`
+    INSERT INTO time_entries (id, user_id, matter_id, hours, description, work_date, is_billable, hourly_rate, amount, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(timeEntryId, lawyerId, matterId, '2.5', 'Drafted trust agreement', now, 1, 35000, 87500, 'DRAFT', now, now)
 }
 
 
@@ -377,5 +488,115 @@ describe('Composite Matter Detail - Response Shape', () => {
       SELECT * FROM payments WHERE matter_id = ?
     `).all(bareMatterId) as any[]
     expect(payments).toHaveLength(0)
+  })
+})
+
+describe('Composite Matter Detail - Billing Data', () => {
+  beforeEach(() => {
+    setupTestDb()
+    seedTestData()
+  })
+
+  it('returns client trust balance as sum of all ledger entries', () => {
+    // The client has two trust ledger entries: 250000 (matter-specific) + 100000 (general)
+    const ledgers = sqliteDb.prepare(`
+      SELECT * FROM client_trust_ledgers WHERE client_id = ?
+    `).all(clientId) as any[]
+
+    expect(ledgers).toHaveLength(2)
+
+    const totalBalance = ledgers.reduce((sum: number, l: any) => sum + l.balance, 0)
+    expect(totalBalance).toBe(350000) // $3,500.00
+  })
+
+  it('resolves client table ID for trust balance lookup', () => {
+    // The matter stores users.id as client_id, need to resolve to clients.id
+    const matter = sqliteDb.prepare(`SELECT client_id FROM matters WHERE id = ?`).get(matterId) as any
+    expect(matter.client_id).toBe(userId) // matter references users.id
+
+    // Resolve to clients.id via person_id
+    const user = sqliteDb.prepare(`SELECT person_id FROM users WHERE id = ?`).get(userId) as any
+    const client = sqliteDb.prepare(`SELECT id FROM clients WHERE person_id = ?`).get(user.person_id) as any
+    expect(client.id).toBe(clientId) // resolved to clients.id
+
+    // Trust ledger uses clients.id
+    const ledgers = sqliteDb.prepare(`SELECT * FROM client_trust_ledgers WHERE client_id = ?`).all(client.id) as any[]
+    expect(ledgers).toHaveLength(2)
+  })
+
+  it('returns only outstanding invoices (not paid ones)', () => {
+    // Outstanding = SENT, VIEWED, PARTIALLY_PAID, OVERDUE
+    const outstanding = sqliteDb.prepare(`
+      SELECT * FROM invoices
+      WHERE matter_id = ? AND status IN ('SENT', 'VIEWED', 'PARTIALLY_PAID', 'OVERDUE')
+      ORDER BY created_at DESC
+    `).all(matterId) as any[]
+
+    expect(outstanding).toHaveLength(1)
+    expect(outstanding[0].invoice_number).toBe('INV-2024-001')
+    expect(outstanding[0].status).toBe('SENT')
+    expect(outstanding[0].balance_due).toBe(175000)
+
+    // PAID invoice should not appear
+    const allInvoices = sqliteDb.prepare(`
+      SELECT * FROM invoices WHERE matter_id = ?
+    `).all(matterId) as any[]
+    expect(allInvoices).toHaveLength(2) // total is 2, but outstanding is 1
+  })
+
+  it('returns invoice with client and matter info via joins', () => {
+    const invoice = sqliteDb.prepare(`
+      SELECT i.*, p.first_name, p.last_name, p.full_name, p.email as client_email, m.title as matter_title
+      FROM invoices i
+      INNER JOIN clients c ON i.client_id = c.id
+      INNER JOIN people p ON c.person_id = p.id
+      INNER JOIN matters m ON i.matter_id = m.id
+      WHERE i.id = ?
+    `).get(invoiceId) as any
+
+    expect(invoice).toBeDefined()
+    expect(invoice.first_name).toBe('John')
+    expect(invoice.last_name).toBe('Smith')
+    expect(invoice.matter_title).toBe('Smith Family Trust')
+    expect(invoice.invoice_number).toBe('INV-2024-001')
+  })
+
+  it('returns time entries with user and matter info', () => {
+    const entries = sqliteDb.prepare(`
+      SELECT te.*, u.first_name, u.last_name, m.title as matter_title
+      FROM time_entries te
+      LEFT JOIN users u ON te.user_id = u.id
+      LEFT JOIN matters m ON te.matter_id = m.id
+      WHERE te.matter_id = ?
+      ORDER BY te.work_date DESC
+    `).all(matterId) as any[]
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].hours).toBe('2.5')
+    expect(entries[0].description).toBe('Drafted trust agreement')
+    expect(entries[0].first_name).toBe('Sarah')
+    expect(entries[0].last_name).toBe('Attorney')
+    expect(entries[0].matter_title).toBe('Smith Family Trust')
+    expect(entries[0].hourly_rate).toBe(35000)
+    expect(entries[0].amount).toBe(87500)
+    expect(entries[0].status).toBe('DRAFT')
+  })
+
+  it('returns empty billing data for matter with no billing records', () => {
+    const bareMatterId = 'matter-bare'
+    sqliteDb.prepare(`
+      INSERT INTO matters (id, client_id, title, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(bareMatterId, userId, 'Bare Matter', 'OPEN', now, now)
+
+    const invoices = sqliteDb.prepare(`
+      SELECT * FROM invoices WHERE matter_id = ? AND status IN ('SENT', 'VIEWED', 'PARTIALLY_PAID', 'OVERDUE')
+    `).all(bareMatterId) as any[]
+    expect(invoices).toHaveLength(0)
+
+    const timeEntries = sqliteDb.prepare(`
+      SELECT * FROM time_entries WHERE matter_id = ?
+    `).all(bareMatterId) as any[]
+    expect(timeEntries).toHaveLength(0)
   })
 })
