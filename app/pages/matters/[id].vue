@@ -551,18 +551,20 @@ const newServiceForm = ref({
   catalogId: ''
 })
 
-// Billing state
-const clientTrustBalance = ref(0)
-const outstandingInvoices = ref<any[]>([])
+// Billing state (trust balance, invoices, time entries come from store via composite endpoint)
 const showPaymentModal = ref(false)
 const showCreateInvoiceModal = ref(false)
 const showTrustDepositModal = ref(false)
 
 // Time entries state
-const timeEntries = ref<any[]>([])
-const loadingTimeEntries = ref(false)
 const showTimeEntryModal = ref(false)
 const editingTimeEntry = ref<any>(null)
+
+// Computed billing data from store
+const clientTrustBalance = computed(() => matterStore.clientTrustBalance)
+const outstandingInvoices = computed(() => matterStore.outstandingInvoices)
+const timeEntries = computed(() => matterStore.timeEntries)
+const loadingTimeEntries = computed(() => matterStore.loadingTimeEntries)
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -757,47 +759,42 @@ function setDocumentView(view: 'local' | 'drive') {
   preferencesStore.setDocumentsDefaultView(view)
 }
 
-// Fetch client trust balance
-async function fetchClientTrustBalance() {
+// Refresh billing data after mutations (uses individual endpoints to update store)
+async function refreshTrustBalance() {
   if (!matter.value?.clientId) return
   try {
     const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${matter.value.clientId}/balance`)
-    clientTrustBalance.value = response.totalBalance || 0
+    matterStore.clientTrustBalance = response.totalBalance || 0
   } catch (error) {
     console.error('Failed to fetch trust balance:', error)
-    clientTrustBalance.value = 0
   }
 }
 
-// Fetch outstanding invoices for this matter
-async function fetchOutstandingInvoices() {
+async function refreshOutstandingInvoices() {
   try {
     const response = await $fetch<{ invoices: any[] }>('/api/invoices', {
       query: {
         matterId: matterId,
-        status: 'outstanding' // SENT, VIEWED, PARTIALLY_PAID, OVERDUE
+        status: 'outstanding'
       }
     })
-    outstandingInvoices.value = response.invoices || []
+    matterStore.outstandingInvoices = response.invoices || []
   } catch (error) {
     console.error('Failed to fetch outstanding invoices:', error)
-    outstandingInvoices.value = []
   }
 }
 
-// Fetch time entries for this matter
-async function fetchMatterTimeEntries() {
-  loadingTimeEntries.value = true
+async function refreshTimeEntries() {
+  matterStore.loadingTimeEntries = true
   try {
     const response = await $fetch<{ timeEntries: any[] }>('/api/time-entries', {
       query: { matterId: matterId }
     })
-    timeEntries.value = response.timeEntries || []
+    matterStore.timeEntries = response.timeEntries || []
   } catch (error) {
     console.error('Failed to fetch time entries:', error)
-    timeEntries.value = []
   } finally {
-    loadingTimeEntries.value = false
+    matterStore.loadingTimeEntries = false
   }
 }
 
@@ -807,7 +804,7 @@ async function handleTimeEntrySaved() {
   showTimeEntryModal.value = false
   editingTimeEntry.value = null
   toast.success(wasEditing ? 'Time entry updated' : 'Time entry created')
-  await fetchMatterTimeEntries()
+  await refreshTimeEntries()
 }
 
 // Handle edit time entry
@@ -822,7 +819,7 @@ async function handleDeleteTimeEntry(entry: any) {
   try {
     await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
     toast.success('Time entry deleted')
-    await fetchMatterTimeEntries()
+    await refreshTimeEntries()
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete time entry')
   }
@@ -833,7 +830,7 @@ async function handleSubmitTimeEntry(entry: any) {
   try {
     await $fetch(`/api/time-entries/${entry.id}/submit`, { method: 'POST' })
     toast.success('Time entry submitted for approval')
-    await fetchMatterTimeEntries()
+    await refreshTimeEntries()
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to submit time entry')
   }
@@ -844,7 +841,7 @@ async function handleApproveTimeEntry(entry: any) {
   try {
     await $fetch(`/api/time-entries/${entry.id}/approve`, { method: 'POST' })
     toast.success('Time entry approved')
-    await fetchMatterTimeEntries()
+    await refreshTimeEntries()
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to approve time entry')
   }
@@ -875,8 +872,8 @@ async function handlePaymentRecorded() {
   toast.success('Payment recorded successfully')
   await Promise.all([
     matterStore.refreshMatter(),
-    fetchClientTrustBalance(),
-    fetchOutstandingInvoices()
+    refreshTrustBalance(),
+    refreshOutstandingInvoices()
   ])
 }
 
@@ -884,28 +881,20 @@ async function handlePaymentRecorded() {
 async function handleInvoiceCreated(invoice: any) {
   showCreateInvoiceModal.value = false
   toast.success(`Invoice ${invoice.invoiceNumber} created`)
-  await fetchOutstandingInvoices()
-  // Navigate to invoice detail if desired
-  // router.push(`/invoices/${invoice.id}`)
+  await refreshOutstandingInvoices()
 }
 
 // Handle trust deposit recorded
 async function handleTrustDepositRecorded() {
   showTrustDepositModal.value = false
   toast.success('Trust deposit recorded successfully')
-  await fetchClientTrustBalance()
+  await refreshTrustBalance()
 }
 
 // Watch for tab changes to load documents on demand
 watch(activeTab, (newTab) => {
   if (newTab === 'documents' && matterStore.documents.length === 0 && !matterStore.loadingDocuments) {
     matterStore.fetchDocuments()
-  }
-  // Load billing data when switching to billing tab
-  if (newTab === 'billing') {
-    fetchClientTrustBalance()
-    fetchOutstandingInvoices()
-    fetchMatterTimeEntries()
   }
 })
 
@@ -922,23 +911,31 @@ onUnmounted(() => {
   // matterStore.clearCurrentMatter()
 })
 
+// Lazy load catalog when "Add Service" modal opens
+watch(showAddServiceModal, async (isOpen) => {
+  if (isOpen && catalog.value.length === 0) {
+    await fetchCatalog()
+  }
+})
+
+// Lazy load clients, lawyers, engagement journeys, and catalog when "Edit Matter" modal opens
+watch(showEditModal, async (isOpen) => {
+  if (isOpen) {
+    const fetches: Promise<void>[] = []
+    if (clients.value.length === 0) fetches.push(fetchClients())
+    if (lawyers.value.length === 0) fetches.push(fetchLawyers())
+    if (engagementJourneys.value.length === 0) fetches.push(fetchEngagementJourneys())
+    if (catalog.value.length === 0) fetches.push(fetchCatalog())
+    if (fetches.length > 0) await Promise.all(fetches)
+  }
+})
+
 onMounted(async () => {
   // Hydrate preferences from localStorage and apply to local state
   preferencesStore.hydrateFromStorage()
   documentView.value = preferencesStore.documentsDefaultView
 
-  // Fetch matter data via store
+  // Fetch matter data via store (single composite endpoint - includes billing data)
   await matterStore.fetchMatter(matterId)
-
-  // Fetch dropdown data for modals and billing data
-  await Promise.all([
-    fetchCatalog(),
-    fetchClients(),
-    fetchLawyers(),
-    fetchEngagementJourneys(),
-    fetchClientTrustBalance(),
-    fetchOutstandingInvoices(),
-    fetchMatterTimeEntries()
-  ])
 })
 </script>
