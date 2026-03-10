@@ -12,24 +12,25 @@ export default defineEventHandler(async (event) => {
   // Authorization: lawyers/admins can view any client, clients can only view themselves
   requireClientAccess(event, clientId)
 
+  const { useDrizzle } = await import('../../../db')
+  const { sql } = await import('drizzle-orm')
   const { getLegacyClientIds } = await import('../../../utils/client-ids')
+  const db = useDrizzle()
 
   // matters.clientId references users.id, but URL param is clients.id
   const allIds = await getLegacyClientIds(clientId)
 
   // Single query with correlated subqueries for aggregated stats
   // Replaces the previous N+1 pattern (4 queries per matter)
-  const rawDb = hubDatabase()
-  const mattersResult = await rawDb.prepare(`
+  const inList = sql.join(allIds.map(id => sql`${id}`), sql`, `)
+  const matters = await db.all<any>(sql`
     SELECT m.*,
       (SELECT COUNT(*) FROM matters_to_services WHERE matter_id = m.id) as services_count,
       (SELECT COUNT(*) FROM client_journeys WHERE matter_id = m.id AND status = 'IN_PROGRESS') as active_journeys_count,
       (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE matter_id = m.id AND status = 'COMPLETED') as total_paid
     FROM matters m
-    WHERE m.client_id IN (${allIds.map(() => '?').join(',')})
-  `).bind(...allIds).all()
-
-  const matters = (mattersResult.results || []) as any[]
+    WHERE m.client_id IN (${inList})
+  `)
 
   // Sort matters by status priority and creation date
   const statusPriority: Record<string, number> = {
@@ -49,15 +50,16 @@ export default defineEventHandler(async (event) => {
   let servicesByMatter: Record<string, any[]> = {}
 
   if (matterIds.length > 0) {
-    const servicesResult = await rawDb.prepare(`
+    const matterInList = sql.join(matterIds.map(id => sql`${id}`), sql`, `)
+    const servicesResult = await db.all<any>(sql`
       SELECT mts.matter_id, mts.catalog_id, mts.engaged_at, mts.status as mts_status,
              sc.name, sc.category, sc.price
       FROM matters_to_services mts
       INNER JOIN service_catalog sc ON mts.catalog_id = sc.id
-      WHERE mts.matter_id IN (${matterIds.map(() => '?').join(',')})
-    `).bind(...matterIds).all()
+      WHERE mts.matter_id IN (${matterInList})
+    `)
 
-    for (const svc of (servicesResult.results || []) as any[]) {
+    for (const svc of servicesResult) {
       if (!servicesByMatter[svc.matter_id]) servicesByMatter[svc.matter_id] = []
       servicesByMatter[svc.matter_id].push(svc)
     }

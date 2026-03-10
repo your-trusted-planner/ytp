@@ -177,14 +177,17 @@ Visit: `http://localhost:3000/api/calendar/test-attorney`
 
 ```typescript
 // Get assigned attorney for a client
-const db = hubDatabase()
-const profile = await db.prepare(`
-  SELECT assigned_lawyer_id FROM client_profiles WHERE user_id = ?
-`).bind(clientId).first()
+const { useDrizzle } = await import('../db')
+const { sql } = await import('drizzle-orm')
+const db = useDrizzle()
 
-const attorney = await db.prepare(`
-  SELECT email FROM users WHERE id = ?
-`).bind(profile.assigned_lawyer_id).first()
+const profile = await db.get(sql`
+  SELECT assigned_lawyer_id FROM client_profiles WHERE user_id = ${clientId}
+`)
+
+const attorney = await db.get(sql`
+  SELECT email FROM users WHERE id = ${profile.assigned_lawyer_id}
+`)
 
 // Check their availability
 const busy = await getFreeBusy(

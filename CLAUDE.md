@@ -287,15 +287,29 @@ await db.update(schema.users).set({ ... }).where(eq(schema.users.id, id))
 ```
 
 **Raw SQL** (Only when necessary):
-Some legacy endpoints use `hubDatabase()` with raw SQL. This is acceptable for:
-- Complex queries not easily expressed in Drizzle
-- Performance-critical queries
-- Gradual migration from old patterns
+Use Drizzle's `sql` tagged template with `db.all()`, `db.get()`, or `db.run()` for raw SQL queries:
 
 ```typescript
-const db = hubDatabase()
-const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first()
+const { useDrizzle } = await import('../db')
+const { sql } = await import('drizzle-orm')
+const db = useDrizzle()
+
+// Single value query
+const result = await db.get(sql`SELECT * FROM users WHERE id = ${userId}`)
+
+// Multiple rows
+const rows = await db.all(sql`SELECT * FROM users WHERE role = ${role}`)
+
+// IN clause with dynamic list
+const inList = sql.join(ids.map(id => sql`${id}`), sql`, `)
+const results = await db.all(sql`SELECT * FROM users WHERE id IN (${inList})`)
+
+// Execute without returning rows
+await db.run(sql`UPDATE users SET status = ${status} WHERE id = ${userId}`)
 ```
+
+**⚠️ NEVER use `hubDatabase()`** — it was removed in `@nuxthub/core` 0.10.x and will cause
+`hubDatabase is not defined` errors in production CF Workers builds (even if it works locally).
 
 ## Authentication & Sessions
 
