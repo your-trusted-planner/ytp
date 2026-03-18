@@ -224,19 +224,20 @@ export class ApolloClient {
    * List custom fields
    */
   async listCustomFields(): Promise<ApolloCustomField[]> {
-    const result = await this.request<{ custom_fields: ApolloCustomField[] }>('GET', '/custom_fields')
-    return result.custom_fields ?? []
+    const result = await this.request<{ typed_custom_fields: ApolloCustomField[] }>('GET', '/typed_custom_fields')
+    return result.typed_custom_fields ?? []
   }
 
   /**
    * Create a custom field
    */
   async createCustomField(name: string, fieldType: string = 'text'): Promise<ApolloCustomField> {
-    const result = await this.request<{ custom_field: ApolloCustomField }>('POST', '/custom_fields', {
+    const result = await this.request<{ typed_custom_field: ApolloCustomField }>('POST', '/typed_custom_fields', {
       name,
-      field_type: fieldType
+      field_type: fieldType,
+      modalities: ['contact']
     })
-    return result.custom_field
+    return result.typed_custom_field
   }
 }
 
