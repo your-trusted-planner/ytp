@@ -143,11 +143,13 @@ export const useMatterStore = defineStore('matter', {
         this.timeEntries = response.timeEntries || []
 
         return this.currentMatter
-      } catch (err: any) {
+      }
+      catch (err: any) {
         this.error = err.data?.message || err.message || 'Failed to fetch matter'
         console.error('Failed to fetch matter:', err)
         throw err
-      } finally {
+      }
+      finally {
         this.loading = false
       }
     },
@@ -162,7 +164,8 @@ export const useMatterStore = defineStore('matter', {
         const response = await $fetch<{ matter: Record<string, any> }>(`/api/matters/${this.currentMatterId}`)
         this.currentMatter = transformMatter(response.matter)
         return this.currentMatter
-      } catch (err: any) {
+      }
+      catch (err: any) {
         console.error('Failed to refresh matter:', err)
         throw err
       }
@@ -179,9 +182,11 @@ export const useMatterStore = defineStore('matter', {
       try {
         const response = await $fetch<{ services: Record<string, any>[] }>(`/api/matters/${id}/services`)
         this.services = (response.services || []).map(transformMatterService)
-      } catch (err) {
+      }
+      catch (err) {
         console.error('Failed to fetch services:', err)
-      } finally {
+      }
+      finally {
         this.loadingServices = false
       }
     },
@@ -197,9 +202,11 @@ export const useMatterStore = defineStore('matter', {
       try {
         const response = await $fetch<{ journeys: Record<string, any>[] }>(`/api/client-journeys/matter/${id}`)
         this.journeys = (response.journeys || []).map(transformMatterJourney)
-      } catch (err) {
+      }
+      catch (err) {
         console.error('Failed to fetch journeys:', err)
-      } finally {
+      }
+      finally {
         this.loadingJourneys = false
       }
     },
@@ -215,9 +222,11 @@ export const useMatterStore = defineStore('matter', {
       try {
         const response = await $fetch<{ payments: Record<string, any>[] }>(`/api/payments/matter/${id}`)
         this.payments = (response.payments || []).map(transformMatterPayment)
-      } catch (err) {
+      }
+      catch (err) {
         console.error('Failed to fetch payments:', err)
-      } finally {
+      }
+      finally {
         this.loadingPayments = false
       }
     },
@@ -238,9 +247,11 @@ export const useMatterStore = defineStore('matter', {
 
         this.documents = response.documents || []
         this.uploads = response.uploads || []
-      } catch (err) {
+      }
+      catch (err) {
         console.error('Failed to fetch documents:', err)
-      } finally {
+      }
+      finally {
         this.loadingDocuments = false
       }
     },

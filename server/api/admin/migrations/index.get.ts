@@ -7,7 +7,6 @@ import { desc, eq, sql } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
-
   const query = getQuery(event)
   const page = parseInt(query.page as string) || 1
   const limit = Math.min(parseInt(query.limit as string) || 20, 100)
@@ -89,9 +88,9 @@ export default defineEventHandler(async (event) => {
       skippedRecords: run.skippedRecords,
       errorCount: run.errorCount,
       duplicatesLinked: dupCounts.get(run.id) || 0,
-      progressPercent: run.totalEntities
-        ? Math.round((run.processedEntities / run.totalEntities) * 100)
-        : null,
+      progressPercent: run.totalEntities ?
+          Math.round((run.processedEntities / run.totalEntities) * 100) :
+        null,
       currentPhase: null, // TODO: Add to schema if needed
       estimatedTimeRemaining: null, // TODO: Calculate if needed
       startedAt: run.startedAt instanceof Date ? run.startedAt.toISOString() : run.startedAt,

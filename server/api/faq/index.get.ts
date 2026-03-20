@@ -48,6 +48,3 @@ export default defineEventHandler(async (event) => {
     faqs
   }
 })
-
-
-

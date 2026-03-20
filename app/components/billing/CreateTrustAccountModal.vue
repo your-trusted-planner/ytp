@@ -1,6 +1,13 @@
 <template>
-  <UiModal :modelValue="true" title="Create Trust Account" @update:modelValue="$emit('close')">
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+  <UiModal
+    :model-value="true"
+    title="Create Trust Account"
+    @update:model-value="$emit('close')"
+  >
+    <form
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
           Account Name <span class="text-red-500">*</span>
@@ -11,7 +18,7 @@
           required
           placeholder="Client Trust Account"
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-        />
+        >
       </div>
 
       <div>
@@ -23,9 +30,15 @@
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
         >
-          <option value="IOLTA">IOLTA</option>
-          <option value="NON_IOLTA">Non-IOLTA Trust</option>
-          <option value="ESCROW">Escrow</option>
+          <option value="IOLTA">
+            IOLTA
+          </option>
+          <option value="NON_IOLTA">
+            Non-IOLTA Trust
+          </option>
+          <option value="ESCROW">
+            Escrow
+          </option>
         </select>
         <p class="text-xs text-gray-500 mt-1">
           IOLTA (Interest on Lawyer Trust Accounts) is required in most jurisdictions.
@@ -41,7 +54,7 @@
           type="text"
           placeholder="First National Bank"
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-        />
+        >
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -55,7 +68,7 @@
             maxlength="4"
             placeholder="1234"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
           <p class="text-xs text-gray-500 mt-1">
             For identification only - not stored fully
           </p>
@@ -70,16 +83,21 @@
             maxlength="9"
             placeholder="123456789"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
       </div>
 
       <!-- IOLTA Notice -->
-      <div v-if="form.accountType === 'IOLTA'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div
+        v-if="form.accountType === 'IOLTA'"
+        class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+      >
         <div class="flex items-start gap-2">
           <Info class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p class="text-blue-800 font-medium text-sm">IOLTA Compliance</p>
+            <p class="text-blue-800 font-medium text-sm">
+              IOLTA Compliance
+            </p>
             <p class="text-blue-700 text-sm mt-1">
               Interest earned on IOLTA accounts is remitted to your state bar foundation
               to fund legal services for those in need. Ensure your bank is an approved
@@ -90,10 +108,17 @@
       </div>
 
       <div class="flex justify-end gap-3 pt-4 border-t">
-        <UiButton type="button" variant="secondary" @click="$emit('close')">
+        <UiButton
+          type="button"
+          variant="secondary"
+          @click="$emit('close')"
+        >
           Cancel
         </UiButton>
-        <UiButton type="submit" :disabled="!isValid || submitting">
+        <UiButton
+          type="submit"
+          :disabled="!isValid || submitting"
+        >
           {{ submitting ? 'Creating...' : 'Create Account' }}
         </UiButton>
       </div>
@@ -144,9 +169,11 @@ async function handleSubmit() {
 
     toast.success('Trust account created successfully')
     emit('created', response.account)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to create trust account')
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

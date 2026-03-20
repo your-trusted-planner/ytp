@@ -33,7 +33,7 @@ export async function resolveEntityName(
  * names.get('matter:def456') // "Smith Family Trust 2024"
  */
 export async function resolveEntityNames(
-  refs: Array<{ type: EntityType; id: string }>
+  refs: Array<{ type: EntityType, id: string }>
 ): Promise<Map<string, string>> {
   if (refs.length === 0) {
     return new Map()
@@ -154,9 +154,9 @@ export async function resolveEntityNames(
 
         for (const user of usersWithPeople) {
           // Prefer person data if linked, otherwise use user data
-          const name = user.personId
-            ? (user.personFullName || [user.personFirstName, user.personLastName].filter(Boolean).join(' ') || user.personEmail)
-            : ([user.userFirstName, user.userLastName].filter(Boolean).join(' ') || user.userEmail)
+          const name = user.personId ?
+              (user.personFullName || [user.personFirstName, user.personLastName].filter(Boolean).join(' ') || user.personEmail) :
+              ([user.userFirstName, user.userLastName].filter(Boolean).join(' ') || user.userEmail)
           results.set(`user:${user.userId}`, name || 'Unknown')
         }
       })()

@@ -37,7 +37,8 @@ export default defineEventHandler(async (event) => {
   if (cancelOnGoogle && existing.googleCalendarEventId && existing.googleCalendarEmail) {
     try {
       await deleteCalendarEvent(existing.googleCalendarEmail, existing.googleCalendarEventId)
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('Failed to delete Google Calendar event:', err.message)
     }
   }
@@ -61,7 +62,8 @@ export default defineEventHandler(async (event) => {
           .set({ status: 'CANCELLED', updatedAt: new Date() })
           .where(eq(schema.videoMeetings.id, existing.videoMeetingId))
       }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('Failed to cancel video meeting:', err.message)
     }
   }

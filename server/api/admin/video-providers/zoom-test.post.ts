@@ -41,7 +41,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: 'Zoom credentials verified. Redirect URI: ' + config.redirectUri
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     // Update status to ERROR
     await db.update(schema.integrations)
       .set({

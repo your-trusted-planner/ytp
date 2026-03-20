@@ -12,11 +12,11 @@ export default withMermaid(
 
     vite: {
       optimizeDeps: {
-        include: ['mermaid'],
+        include: ['mermaid']
       },
       ssr: {
-        noExternal: ['mermaid'],
-      },
+        noExternal: ['mermaid']
+      }
     },
 
     themeConfig: {

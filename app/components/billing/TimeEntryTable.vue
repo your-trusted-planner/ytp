@@ -1,29 +1,45 @@
 <template>
   <UiCard>
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="timeEntries.length === 0" class="text-center py-12">
+    <div
+      v-else-if="timeEntries.length === 0"
+      class="text-center py-12"
+    >
       <Clock class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">No time entries found</h3>
-      <p class="text-gray-500 mt-1">Create your first time entry to start tracking billable work.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        No time entries found
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Create your first time entry to start tracking billable work.
+      </p>
     </div>
 
     <!-- Table -->
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th v-if="selectable" class="px-4 py-3 text-left">
+            <th
+              v-if="selectable"
+              class="px-4 py-3 text-left"
+            >
               <input
                 type="checkbox"
                 :checked="allSelected"
-                @change="toggleSelectAll"
                 class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
-              />
+                @change="toggleSelectAll"
+              >
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Date
@@ -31,7 +47,10 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               User
             </th>
-            <th v-if="showMatterColumn" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              v-if="showMatterColumn"
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Matter
             </th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -61,14 +80,17 @@
             class="hover:bg-gray-50"
             :class="{ 'bg-burgundy-50': isSelected(entry.id) }"
           >
-            <td v-if="selectable" class="px-4 py-4">
+            <td
+              v-if="selectable"
+              class="px-4 py-4"
+            >
               <input
                 type="checkbox"
                 :checked="isSelected(entry.id)"
-                @change="toggleSelect(entry.id)"
                 :disabled="!canSelect(entry)"
                 class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500 disabled:opacity-50"
-              />
+                @change="toggleSelect(entry.id)"
+              >
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm font-medium text-gray-900">
@@ -80,8 +102,14 @@
                 {{ entry.userName }}
               </div>
             </td>
-            <td v-if="showMatterColumn" class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900 max-w-[200px] truncate" :title="entry.matterTitle">
+            <td
+              v-if="showMatterColumn"
+              class="px-6 py-4 whitespace-nowrap"
+            >
+              <div
+                class="text-sm text-gray-900 max-w-[200px] truncate"
+                :title="entry.matterTitle"
+              >
                 {{ entry.matterTitle }}
               </div>
             </td>
@@ -91,7 +119,10 @@
               </div>
             </td>
             <td class="px-6 py-4">
-              <div class="text-sm text-gray-900 max-w-[300px] truncate" :title="entry.description">
+              <div
+                class="text-sm text-gray-900 max-w-[300px] truncate"
+                :title="entry.description"
+              >
                 {{ entry.description }}
               </div>
             </td>
@@ -101,10 +132,16 @@
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
-              <div class="text-sm font-medium" :class="entry.isBillable ? 'text-gray-900' : 'text-gray-400'">
+              <div
+                class="text-sm font-medium"
+                :class="entry.isBillable ? 'text-gray-900' : 'text-gray-400'"
+              >
                 {{ formatCurrency(entry.amount) }}
               </div>
-              <div v-if="!entry.isBillable" class="text-xs text-gray-400">
+              <div
+                v-if="!entry.isBillable"
+                class="text-xs text-gray-400"
+              >
                 Non-billable
               </div>
             </td>
@@ -121,9 +158,9 @@
                 <!-- Edit - only for DRAFT -->
                 <button
                   v-if="entry.status === 'DRAFT'"
-                  @click="emit('edit', entry)"
                   class="text-gray-400 hover:text-gray-600"
                   title="Edit"
+                  @click="emit('edit', entry)"
                 >
                   <Edit class="w-4 h-4" />
                 </button>
@@ -131,9 +168,9 @@
                 <!-- Submit - only for DRAFT -->
                 <button
                   v-if="entry.status === 'DRAFT'"
-                  @click="emit('submit', entry)"
                   class="text-blue-400 hover:text-blue-600"
                   title="Submit for Approval"
+                  @click="emit('submit', entry)"
                 >
                   <Send class="w-4 h-4" />
                 </button>
@@ -141,9 +178,9 @@
                 <!-- Approve - only for SUBMITTED, admin/lawyer only -->
                 <button
                   v-if="entry.status === 'SUBMITTED' && canApprove"
-                  @click="emit('approve', entry)"
                   class="text-green-400 hover:text-green-600"
                   title="Approve"
+                  @click="emit('approve', entry)"
                 >
                   <Check class="w-4 h-4" />
                 </button>
@@ -151,9 +188,9 @@
                 <!-- View Invoice - only for BILLED -->
                 <button
                   v-if="entry.status === 'BILLED' && entry.invoiceId"
-                  @click="navigateTo(`/invoices/${entry.invoiceId}`)"
                   class="text-burgundy-400 hover:text-burgundy-600"
                   title="View Invoice"
+                  @click="navigateTo(`/invoices/${entry.invoiceId}`)"
                 >
                   <FileText class="w-4 h-4" />
                 </button>
@@ -161,9 +198,9 @@
                 <!-- Delete - only for DRAFT -->
                 <button
                   v-if="entry.status === 'DRAFT'"
-                  @click="emit('delete', entry)"
                   class="text-red-400 hover:text-red-600"
                   title="Delete"
+                  @click="emit('delete', entry)"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
@@ -238,9 +275,9 @@ function canSelect(entry: TimeEntry): boolean {
 }
 
 function toggleSelect(id: string) {
-  const newSelection = isSelected(id)
-    ? props.selectedIds.filter(i => i !== id)
-    : [...props.selectedIds, id]
+  const newSelection = isSelected(id) ?
+      props.selectedIds.filter(i => i !== id) :
+      [...props.selectedIds, id]
   emit('select', newSelection)
 }
 
@@ -248,7 +285,8 @@ function toggleSelectAll() {
   const selectableEntries = props.timeEntries.filter(e => canSelect(e))
   if (allSelected.value) {
     emit('select', [])
-  } else {
+  }
+  else {
     emit('select', selectableEntries.map(e => e.id))
   }
 }

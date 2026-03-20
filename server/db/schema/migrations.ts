@@ -115,10 +115,10 @@ export const importDuplicates = sqliteTable('import_duplicates', {
 export const personExternalIds = sqliteTable('person_external_ids', {
   id: text('id').primaryKey(),
   personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
-  source: text('source').notNull(),       // 'LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', etc.
+  source: text('source').notNull(), // 'LAWMATICS', 'WEALTHCOUNSEL', 'CLIO', etc.
   externalId: text('external_id').notNull(),
   isPrimary: integer('is_primary', { mode: 'boolean' }).notNull().default(true),
-  metadata: text('metadata'),             // JSON: source-specific data (e.g., merge history)
+  metadata: text('metadata'), // JSON: source-specific data (e.g., merge history)
   linkedAt: integer('linked_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
 })

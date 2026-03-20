@@ -33,7 +33,7 @@ export interface Matter {
   updatedAt: number
 
   // Joined fields (from related tables)
-  clientTableId?: string | null  // clients.id for linking to /clients/:id
+  clientTableId?: string | null // clients.id for linking to /clients/:id
   clientFirstName?: string | null
   clientLastName?: string | null
   clientEmail?: string | null

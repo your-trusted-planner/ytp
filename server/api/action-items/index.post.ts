@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
       ]
 
       if (journey.journeyType === 'ENGAGEMENT' &&
-          !ALLOWED_ENGAGEMENT_ACTIONS.includes(body.actionType)) {
+        !ALLOWED_ENGAGEMENT_ACTIONS.includes(body.actionType)) {
         throw createError({
           statusCode: 400,
           message: `Action type ${body.actionType} is not allowed for ENGAGEMENT journeys. Allowed types: ${ALLOWED_ENGAGEMENT_ACTIONS.join(', ')}`
@@ -124,6 +124,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-
-
-

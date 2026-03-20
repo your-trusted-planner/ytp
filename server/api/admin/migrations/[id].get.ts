@@ -7,7 +7,6 @@ import { eq, sql } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
-
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -66,15 +65,16 @@ export default defineEventHandler(async (event) => {
       const checkpoint = JSON.parse(run.checkpoint)
       currentPhase = checkpoint.phase || null
       currentPage = checkpoint.page || null
-    } catch {
+    }
+    catch {
       // Ignore parse errors
     }
   }
 
   // Calculate progress percentage
-  const progressPercentage = run.totalEntities && run.totalEntities > 0
-    ? Math.round((run.processedEntities / run.totalEntities) * 100)
-    : null
+  const progressPercentage = run.totalEntities && run.totalEntities > 0 ?
+      Math.round((run.processedEntities / run.totalEntities) * 100) :
+    null
 
   // Estimate time remaining (rough calculation based on processing rate)
   let estimatedSecondsRemaining: number | null = null

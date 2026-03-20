@@ -30,7 +30,8 @@ export default defineEventHandler(async (event) => {
     const statuses = status.split(',') as Array<'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'BILLED' | 'WRITTEN_OFF'>
     if (statuses.length === 1 && statuses[0]) {
       conditions.push(eq(schema.timeEntries.status, statuses[0]))
-    } else if (statuses.length > 1) {
+    }
+    else if (statuses.length > 1) {
       conditions.push(inArray(schema.timeEntries.status, statuses))
     }
   }

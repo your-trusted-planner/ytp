@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Appointment Types</h1>
-        <p class="text-gray-600 mt-1">Configure bookable appointment types with custom durations, fees, and booking links</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Appointment Types
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Configure bookable appointment types with custom durations, fees, and booking links
+        </p>
       </div>
       <UiButton @click="openAddModal">
         Add Appointment Type
@@ -14,30 +18,67 @@
     <UiCard>
       <div class="flex items-start justify-between">
         <div>
-          <h3 class="font-medium text-gray-900">Default Business Hours</h3>
+          <h3 class="font-medium text-gray-900">
+            Default Business Hours
+          </h3>
           <p class="text-sm text-gray-500 mt-1">
             Availability shown to prospects when booking. Individual appointment types can override this.
           </p>
-          <div v-if="systemHours" class="mt-3 flex items-center gap-4 text-sm text-gray-700">
+          <div
+            v-if="systemHours"
+            class="mt-3 flex items-center gap-4 text-sm text-gray-700"
+          >
             <span class="font-medium">{{ formatHour(systemHours.start) }} - {{ formatHour(systemHours.end) }}</span>
             <span class="text-gray-400">|</span>
             <span>{{ systemHours.days.map(d => dayNames[d]).join(', ') }}</span>
           </div>
-          <div v-else class="mt-3 text-sm text-gray-400">Loading...</div>
+          <div
+            v-else
+            class="mt-3 text-sm text-gray-400"
+          >
+            Loading...
+          </div>
         </div>
-        <UiButton variant="outline" size="sm" @click="showHoursModal = true">Edit</UiButton>
+        <UiButton
+          variant="outline"
+          size="sm"
+          @click="showHoursModal = true"
+        >
+          Edit
+        </UiButton>
       </div>
     </UiCard>
 
     <!-- Business Hours Modal -->
-    <UiModal v-model="showHoursModal" title="Default Business Hours">
+    <UiModal
+      v-model="showHoursModal"
+      title="Default Business Hours"
+    >
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
-          <UiSelect v-model="hoursForm.start" label="Start Hour">
-            <option v-for="h in 24" :key="h-1" :value="h-1">{{ formatHour(h-1) }}</option>
+          <UiSelect
+            v-model="hoursForm.start"
+            label="Start Hour"
+          >
+            <option
+              v-for="h in 24"
+              :key="h-1"
+              :value="h-1"
+            >
+              {{ formatHour(h-1) }}
+            </option>
           </UiSelect>
-          <UiSelect v-model="hoursForm.end" label="End Hour">
-            <option v-for="h in 24" :key="h" :value="h">{{ formatHour(h) }}</option>
+          <UiSelect
+            v-model="hoursForm.end"
+            label="End Hour"
+          >
+            <option
+              v-for="h in 24"
+              :key="h"
+              :value="h"
+            >
+              {{ formatHour(h) }}
+            </option>
           </UiSelect>
         </div>
         <div>
@@ -49,23 +90,46 @@
               class="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm cursor-pointer transition-colors"
               :class="hoursForm.days.includes(dayIndex) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600'"
             >
-              <input type="checkbox" :value="dayIndex" v-model="hoursForm.days" class="sr-only" />
+              <input
+                v-model="hoursForm.days"
+                type="checkbox"
+                :value="dayIndex"
+                class="sr-only"
+              >
               {{ dayName }}
             </label>
           </div>
         </div>
       </div>
       <template #footer>
-        <UiButton variant="outline" @click="showHoursModal = false">Cancel</UiButton>
-        <UiButton @click="saveBusinessHours" :is-loading="savingHours">Save</UiButton>
+        <UiButton
+          variant="outline"
+          @click="showHoursModal = false"
+        >
+          Cancel
+        </UiButton>
+        <UiButton
+          :is-loading="savingHours"
+          @click="saveBusinessHours"
+        >
+          Save
+        </UiButton>
       </template>
     </UiModal>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading appointment types...</div>
+    <div
+      v-if="loading"
+      class="text-center py-12 text-gray-500"
+    >
+      Loading appointment types...
+    </div>
 
     <!-- Types Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
       <UiCard
         v-for="type in types"
         :key="type.id"
@@ -80,18 +144,43 @@
                 :style="{ backgroundColor: type.color }"
               />
               <div>
-                <h3 class="font-semibold text-gray-900 text-lg">{{ type.name }}</h3>
-                <p class="text-xs text-gray-400 font-mono">/book/{{ type.slug }}</p>
+                <h3 class="font-semibold text-gray-900 text-lg">
+                  {{ type.name }}
+                </h3>
+                <p class="text-xs text-gray-400 font-mono">
+                  /book/{{ type.slug }}
+                </p>
               </div>
             </div>
             <div class="flex gap-1">
-              <UiBadge v-if="type.isPubliclyBookable" variant="success" size="sm">Public</UiBadge>
-              <UiBadge v-else variant="default" size="sm">Internal</UiBadge>
-              <UiBadge v-if="!type.isActive" variant="danger" size="sm">Inactive</UiBadge>
+              <UiBadge
+                v-if="type.isPubliclyBookable"
+                variant="success"
+                size="sm"
+              >
+                Public
+              </UiBadge>
+              <UiBadge
+                v-else
+                variant="default"
+                size="sm"
+              >
+                Internal
+              </UiBadge>
+              <UiBadge
+                v-if="!type.isActive"
+                variant="danger"
+                size="sm"
+              >
+                Inactive
+              </UiBadge>
             </div>
           </div>
 
-          <p v-if="type.description" class="text-sm text-gray-600 mb-4 line-clamp-2">
+          <p
+            v-if="type.description"
+            class="text-sm text-gray-600 mb-4 line-clamp-2"
+          >
             {{ type.description }}
           </p>
 
@@ -100,7 +189,10 @@
               <span class="text-gray-600">Duration:</span>
               <span class="font-medium text-gray-900">{{ type.defaultDurationMinutes }} min</span>
             </div>
-            <div v-if="type.consultationFeeEnabled" class="flex justify-between text-sm">
+            <div
+              v-if="type.consultationFeeEnabled"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Fee:</span>
               <span class="font-medium text-gray-900">${{ (type.consultationFee / 100).toFixed(2) }}</span>
             </div>
@@ -113,16 +205,21 @@
           </div>
 
           <!-- Booking Links Panel (for public types) -->
-          <div v-if="type.isPubliclyBookable && type.isActive" class="mt-4 border-t border-gray-200 pt-4">
-            <p class="text-xs font-medium text-gray-500 uppercase mb-2">Booking Links</p>
+          <div
+            v-if="type.isPubliclyBookable && type.isActive"
+            class="mt-4 border-t border-gray-200 pt-4"
+          >
+            <p class="text-xs font-medium text-gray-500 uppercase mb-2">
+              Booking Links
+            </p>
             <div class="space-y-1.5">
               <!-- Generic link -->
               <div class="flex items-center justify-between">
                 <code class="text-xs text-gray-600 truncate flex-1">/book/{{ type.slug }}</code>
                 <span class="text-[10px] text-gray-400 mx-1 flex-shrink-0">generic</span>
                 <button
-                  @click="copyLink(`/book/${type.slug}`)"
                   class="text-xs text-accent-600 hover:text-accent-800 ml-1 flex-shrink-0"
+                  @click="copyLink(`/book/${type.slug}`)"
                 >
                   Copy
                 </button>
@@ -136,8 +233,8 @@
                 <code class="text-xs text-gray-600 truncate flex-1">/book/{{ type.slug }}/{{ staffSlug(staff) }}</code>
                 <span class="text-[10px] text-gray-400 mx-1 flex-shrink-0 truncate max-w-[80px]">{{ staff.name }}</span>
                 <button
-                  @click="copyLink(`/book/${type.slug}/${staffSlug(staff)}`)"
                   class="text-xs text-accent-600 hover:text-accent-800 ml-1 flex-shrink-0"
+                  @click="copyLink(`/book/${type.slug}/${staffSlug(staff)}`)"
                 >
                   Copy
                 </button>
@@ -147,14 +244,14 @@
 
           <div class="mt-4 flex space-x-2">
             <button
-              @click="editType(type)"
               class="flex-1 text-sm text-accent-600 hover:text-accent-900 font-medium"
+              @click="editType(type)"
             >
               Edit
             </button>
             <button
-              @click="toggleStatus(type)"
               class="flex-1 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              @click="toggleStatus(type)"
             >
               {{ type.isActive ? 'Deactivate' : 'Activate' }}
             </button>
@@ -164,14 +261,31 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="!loading && types.length === 0" class="text-center py-12">
-      <p class="text-gray-500">No appointment types configured yet.</p>
-      <UiButton class="mt-4" @click="openAddModal">Create Your First Type</UiButton>
+    <div
+      v-if="!loading && types.length === 0"
+      class="text-center py-12"
+    >
+      <p class="text-gray-500">
+        No appointment types configured yet.
+      </p>
+      <UiButton
+        class="mt-4"
+        @click="openAddModal"
+      >
+        Create Your First Type
+      </UiButton>
     </div>
 
     <!-- Add/Edit Modal -->
-    <UiModal v-model="showModal" :title="editing ? 'Edit Appointment Type' : 'Add Appointment Type'" size="lg">
-      <form @submit.prevent="handleSave" class="space-y-4">
+    <UiModal
+      v-model="showModal"
+      :title="editing ? 'Edit Appointment Type' : 'Add Appointment Type'"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSave"
+      >
         <UiInput
           v-model="form.name"
           label="Name"
@@ -192,7 +306,7 @@
                 v-model="form.color"
                 type="color"
                 class="w-10 h-10 rounded border border-gray-300 cursor-pointer"
-              />
+              >
               <div class="flex gap-1 flex-wrap">
                 <button
                   v-for="swatch in colorSwatches"
@@ -230,10 +344,18 @@
             v-model="form.locationType"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           >
-            <option value="none">No default location</option>
-            <option value="room">Room</option>
-            <option value="video">Video Meeting</option>
-            <option value="custom">Custom Text</option>
+            <option value="none">
+              No default location
+            </option>
+            <option value="room">
+              Room
+            </option>
+            <option value="video">
+              Video Meeting
+            </option>
+            <option value="custom">
+              Custom Text
+            </option>
           </select>
 
           <!-- Room Selector -->
@@ -242,13 +364,25 @@
               v-model="form.locationRoomId"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
-              <option value="">Select a room...</option>
-              <option v-for="room in activeRooms" :key="room.id" :value="room.id">
+              <option value="">
+                Select a room...
+              </option>
+              <option
+                v-for="room in activeRooms"
+                :key="room.id"
+                :value="room.id"
+              >
                 {{ room.name }}{{ room.building ? ` (${room.building})` : '' }}
               </option>
             </select>
-            <p v-if="activeRooms.length === 0" class="text-xs text-gray-400 mt-1">
-              No rooms configured. <NuxtLink to="/settings/rooms" class="text-accent-600 underline">Add rooms</NuxtLink>
+            <p
+              v-if="activeRooms.length === 0"
+              class="text-xs text-gray-400 mt-1"
+            >
+              No rooms configured. <NuxtLink
+                to="/settings/rooms"
+                class="text-accent-600 underline"
+              >Add rooms</NuxtLink>
             </p>
           </div>
 
@@ -258,8 +392,15 @@
               v-model="form.locationVideoProvider"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
-              <option value="zoom">Zoom</option>
-              <option value="google_meet" disabled>Google Meet (coming soon)</option>
+              <option value="zoom">
+                Zoom
+              </option>
+              <option
+                value="google_meet"
+                disabled
+              >
+                Google Meet (coming soon)
+              </option>
             </select>
           </div>
 
@@ -303,20 +444,40 @@
           <label class="block text-sm font-medium text-gray-700">Eligible Staff</label>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.staffEligibility" value="any" class="text-accent-600 focus:ring-accent-500" />
+              <input
+                v-model="form.staffEligibility"
+                type="radio"
+                value="any"
+                class="text-accent-600 focus:ring-accent-500"
+              >
               <span class="text-sm text-gray-700">Any staff member with a calendar</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.staffEligibility" value="attorneys_only" class="text-accent-600 focus:ring-accent-500" />
+              <input
+                v-model="form.staffEligibility"
+                type="radio"
+                value="attorneys_only"
+                class="text-accent-600 focus:ring-accent-500"
+              >
               <span class="text-sm text-gray-700">Attorneys only</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" v-model="form.staffEligibility" value="specific" class="text-accent-600 focus:ring-accent-500" />
+              <input
+                v-model="form.staffEligibility"
+                type="radio"
+                value="specific"
+                class="text-accent-600 focus:ring-accent-500"
+              >
               <span class="text-sm text-gray-700">Specific people</span>
             </label>
           </div>
-          <div v-if="form.staffEligibility === 'specific'" class="space-y-2 pt-2">
-            <p class="text-sm text-gray-600">Select eligible staff members:</p>
+          <div
+            v-if="form.staffEligibility === 'specific'"
+            class="space-y-2 pt-2"
+          >
+            <p class="text-sm text-gray-600">
+              Select eligible staff members:
+            </p>
             <div class="flex flex-wrap gap-2">
               <label
                 v-for="staff in staffList"
@@ -325,11 +486,11 @@
                 :class="form.assignedAttorneyIds.includes(staff.id) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
               >
                 <input
+                  v-model="form.assignedAttorneyIds"
                   type="checkbox"
                   :value="staff.id"
-                  v-model="form.assignedAttorneyIds"
                   class="sr-only"
-                />
+                >
                 {{ staff.name }}
               </label>
             </div>
@@ -343,13 +504,34 @@
             label="Custom Business Hours"
             description="Override the default 9 AM - 5 PM, Monday-Friday schedule"
           />
-          <div v-if="customBusinessHours" class="space-y-3">
+          <div
+            v-if="customBusinessHours"
+            class="space-y-3"
+          >
             <div class="grid grid-cols-2 gap-4">
-              <UiSelect v-model="form.businessHoursStart" label="Start Hour">
-                <option v-for="h in 24" :key="h-1" :value="h-1">{{ formatHour(h-1) }}</option>
+              <UiSelect
+                v-model="form.businessHoursStart"
+                label="Start Hour"
+              >
+                <option
+                  v-for="h in 24"
+                  :key="h-1"
+                  :value="h-1"
+                >
+                  {{ formatHour(h-1) }}
+                </option>
               </UiSelect>
-              <UiSelect v-model="form.businessHoursEnd" label="End Hour">
-                <option v-for="h in 24" :key="h" :value="h">{{ formatHour(h) }}</option>
+              <UiSelect
+                v-model="form.businessHoursEnd"
+                label="End Hour"
+              >
+                <option
+                  v-for="h in 24"
+                  :key="h"
+                  :value="h"
+                >
+                  {{ formatHour(h) }}
+                </option>
               </UiSelect>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -360,11 +542,11 @@
                 :class="form.businessHoursDays.includes(dayIndex) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600'"
               >
                 <input
+                  v-model="form.businessHoursDays"
                   type="checkbox"
                   :value="dayIndex"
-                  v-model="form.businessHoursDays"
                   class="sr-only"
-                />
+                >
                 {{ dayName }}
               </label>
             </div>
@@ -373,8 +555,16 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="closeModal">Cancel</UiButton>
-        <UiButton @click="handleSave" :is-loading="saving">
+        <UiButton
+          variant="outline"
+          @click="closeModal"
+        >
+          Cancel
+        </UiButton>
+        <UiButton
+          :is-loading="saving"
+          @click="handleSave"
+        >
           {{ editing ? 'Update' : 'Create' }}
         </UiButton>
       </template>
@@ -406,7 +596,7 @@ interface AppointmentType {
   serviceCatalogId: string | null
   staffEligibility: 'any' | 'attorneys_only' | 'specific'
   assignedAttorneyIds: string[] | null
-  businessHours: { start: number; end: number; days: number[] } | null
+  businessHours: { start: number, end: number, days: number[] } | null
   defaultLocation: string | null
   defaultLocationConfig: any | null
   isPubliclyBookable: boolean
@@ -436,7 +626,7 @@ const showModal = ref(false)
 const editing = ref<AppointmentType | null>(null)
 
 // System default business hours
-const systemHours = ref<{ start: number; end: number; days: number[] } | null>(null)
+const systemHours = ref<{ start: number, end: number, days: number[] } | null>(null)
 const showHoursModal = ref(false)
 const savingHours = ref(false)
 const hoursForm = ref({ start: 9, end: 17, days: [1, 2, 3, 4, 5] as number[] })
@@ -496,9 +686,11 @@ async function fetchTypes() {
   loading.value = true
   try {
     types.value = await $fetch<AppointmentType[]>('/api/admin/appointment-types')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to load appointment types')
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -508,7 +700,7 @@ async function fetchStaff() {
     const calendars = await $fetch<any[]>('/api/admin/calendars')
     const seen = new Set<string>()
     staffList.value = calendars
-      .filter(c => {
+      .filter((c) => {
         if (seen.has(c.attorneyId)) return false
         seen.add(c.attorneyId)
         return true
@@ -518,7 +710,8 @@ async function fetchStaff() {
         name: c.attorneyName || c.attorneyEmail,
         email: c.attorneyEmail || ''
       }))
-  } catch {
+  }
+  catch {
     // Non-admin or no calendars configured
   }
 }
@@ -561,13 +754,16 @@ function editType(type: AppointmentType) {
     if (config.type === 'room') {
       locationType = 'room'
       locationRoomId = config.roomId || ''
-    } else if (config.type === 'video') {
+    }
+    else if (config.type === 'video') {
       locationType = 'video'
       locationVideoProvider = config.provider || 'zoom'
-    } else if (config.type === 'custom') {
+    }
+    else if (config.type === 'custom') {
       locationType = 'custom'
     }
-  } else if (type.defaultLocation) {
+  }
+  else if (type.defaultLocation) {
     // Legacy: has free-text location but no structured config
     locationType = 'custom'
   }
@@ -609,10 +805,12 @@ async function handleSave() {
       if (room) {
         defaultLocation = room.building ? `${room.name}, ${room.building}` : room.name
       }
-    } else if (form.value.locationType === 'video') {
+    }
+    else if (form.value.locationType === 'video') {
       defaultLocationConfig = { type: 'video', provider: form.value.locationVideoProvider }
       defaultLocation = form.value.locationVideoProvider === 'zoom' ? 'Zoom Meeting' : 'Google Meet'
-    } else if (form.value.locationType === 'custom' && form.value.defaultLocation) {
+    }
+    else if (form.value.locationType === 'custom' && form.value.defaultLocation) {
       defaultLocationConfig = { type: 'custom', text: form.value.defaultLocation }
       defaultLocation = form.value.defaultLocation
     }
@@ -624,21 +822,21 @@ async function handleSave() {
       defaultDurationMinutes: Number(form.value.defaultDurationMinutes),
       color: form.value.color,
       consultationFeeEnabled: form.value.consultationFeeEnabled,
-      consultationFee: form.value.consultationFeeEnabled
-        ? Math.round(parseFloat(form.value.consultationFeeDisplay || '0') * 100)
-        : 0,
+      consultationFee: form.value.consultationFeeEnabled ?
+          Math.round(parseFloat(form.value.consultationFeeDisplay || '0') * 100) :
+        0,
       defaultLocation,
       defaultLocationConfig,
       isPubliclyBookable: form.value.isPubliclyBookable,
       staffEligibility: form.value.staffEligibility,
       assignedAttorneyIds: form.value.staffEligibility === 'specific' ? form.value.assignedAttorneyIds : null,
-      businessHours: customBusinessHours.value
-        ? {
+      businessHours: customBusinessHours.value ?
+          {
             start: Number(form.value.businessHoursStart),
             end: Number(form.value.businessHoursEnd),
             days: form.value.businessHoursDays
-          }
-        : null
+          } :
+        null
     }
 
     if (editing.value) {
@@ -647,7 +845,8 @@ async function handleSave() {
         body: payload
       })
       toast.success('Appointment type updated')
-    } else {
+    }
+    else {
       await $fetch('/api/admin/appointment-types', {
         method: 'POST',
         body: payload
@@ -657,9 +856,11 @@ async function handleSave() {
 
     closeModal()
     await fetchTypes()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save appointment type')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -669,7 +870,8 @@ async function toggleStatus(type: AppointmentType) {
     if (type.isActive) {
       await $fetch(`/api/admin/appointment-types/${type.id}`, { method: 'DELETE' })
       toast.success(`${type.name} deactivated`)
-    } else {
+    }
+    else {
       await $fetch(`/api/admin/appointment-types/${type.id}`, {
         method: 'PUT',
         body: { isActive: true }
@@ -677,7 +879,8 @@ async function toggleStatus(type: AppointmentType) {
       toast.success(`${type.name} activated`)
     }
     await fetchTypes()
-  } catch {
+  }
+  catch {
     toast.error('Failed to update status')
   }
 }
@@ -703,17 +906,19 @@ async function copyLink(path: string) {
   try {
     await navigator.clipboard.writeText(window.location.origin + path)
     toast.success('Link copied to clipboard')
-  } catch {
+  }
+  catch {
     toast.error('Failed to copy link')
   }
 }
 
 async function fetchBusinessHours() {
   try {
-    const data = await $fetch<{ start: number; end: number; days: number[] }>('/api/admin/settings/business-hours')
+    const data = await $fetch<{ start: number, end: number, days: number[] }>('/api/admin/settings/business-hours')
     systemHours.value = data
     hoursForm.value = { start: data.start, end: data.end, days: [...data.days] }
-  } catch {
+  }
+  catch {
     // Default will show from the API
     systemHours.value = { start: 9, end: 17, days: [1, 2, 3, 4, 5] }
     hoursForm.value = { start: 9, end: 17, days: [1, 2, 3, 4, 5] }
@@ -734,9 +939,11 @@ async function saveBusinessHours() {
     systemHours.value = { ...hoursForm.value }
     showHoursModal.value = false
     toast.success('Business hours updated')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save business hours')
-  } finally {
+  }
+  finally {
     savingHours.value = false
   }
 }
@@ -745,7 +952,8 @@ async function fetchRooms() {
   try {
     const allRooms = await $fetch<Room[]>('/api/admin/rooms')
     activeRooms.value = allRooms.filter(r => r.isActive)
-  } catch {
+  }
+  catch {
     // No rooms configured — that's fine
   }
 }

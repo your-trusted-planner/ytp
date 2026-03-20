@@ -1,5 +1,8 @@
 <template>
-  <div v-if="parsedMeta" class="inline-flex items-center gap-2 text-xs">
+  <div
+    v-if="parsedMeta"
+    class="inline-flex items-center gap-2 text-xs"
+  >
     <!-- Source badge -->
     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
       <RefreshCw class="w-3 h-3" />
@@ -7,7 +10,10 @@
     </span>
 
     <!-- Last synced -->
-    <span v-if="lastSyncedText" class="text-gray-500">
+    <span
+      v-if="lastSyncedText"
+      class="text-gray-500"
+    >
       Synced {{ lastSyncedText }}
     </span>
 
@@ -55,7 +61,8 @@ const parsedMeta = computed((): ParsedMetadata | null => {
   try {
     const meta = JSON.parse(props.importMetadata) as ParsedMetadata
     return meta.source ? meta : null
-  } catch {
+  }
+  catch {
     return null
   }
 })

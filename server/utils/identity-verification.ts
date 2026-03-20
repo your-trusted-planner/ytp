@@ -98,14 +98,15 @@ export async function verifyByAttestation(
  */
 export async function verifyByKba(
   request: KbaRequest,
-  storedData: { dateOfBirth?: string; lastFourSsn?: string }
+  storedData: { dateOfBirth?: string, lastFourSsn?: string }
 ): Promise<VerificationResult> {
   const errors: string[] = []
 
   // Validate date of birth
   if (!request.dateOfBirth) {
     errors.push('Date of birth is required')
-  } else if (storedData.dateOfBirth) {
+  }
+  else if (storedData.dateOfBirth) {
     // Normalize dates for comparison (handle timezone issues)
     const providedDate = request.dateOfBirth.split('T')[0]
     const storedDate = storedData.dateOfBirth.split('T')[0]

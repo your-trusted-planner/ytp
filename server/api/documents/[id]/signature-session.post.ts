@@ -219,7 +219,8 @@ export default defineEventHandler(async (event) => {
     emailSent = emailResult.success
     if (!emailResult.success) {
       console.error('[Signature Session] Failed to send email:', emailResult.error)
-    } else {
+    }
+    else {
       console.log('[Signature Session] Email sent to', signer.email)
     }
   }

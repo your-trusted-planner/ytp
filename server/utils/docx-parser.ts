@@ -70,7 +70,7 @@ export function parseDocx(buffer: ArrayBuffer): DocxContent {
     }
 
     // Process body content (paragraphs and tables)
-    const processedParagraphs: Array<{ text: string; style?: string }> = []
+    const processedParagraphs: Array<{ text: string, style?: string }> = []
     let fullText = ''
     let fullHtml = ''
 
@@ -178,7 +178,8 @@ export function parseDocx(buffer: ArrayBuffer): DocxContent {
       html: fullHtml,
       paragraphs: processedParagraphs
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error parsing DOCX:', error)
     throw new Error(`Failed to parse DOCX: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
@@ -193,8 +194,8 @@ function escapeHtml(text: string): string {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;'
+    '\'': '&#39;'
   }
 
-  return text.replace(/[&<>"']/g, (char) => htmlEscapes[char])
+  return text.replace(/[&<>"']/g, char => htmlEscapes[char])
 }

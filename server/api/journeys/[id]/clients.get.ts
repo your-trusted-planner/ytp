@@ -37,41 +37,41 @@ export default defineEventHandler(async (event) => {
   // Fetch all related data in parallel
   const [clients, steps, matters, progressRecords] = await Promise.all([
     // Get all clients
-    clientIds.length > 0
-      ? db.select({
+    clientIds.length > 0 ?
+        db.select({
           id: schema.users.id,
           firstName: schema.users.firstName,
           lastName: schema.users.lastName,
           email: schema.users.email
         })
-        .from(schema.users)
-        .where(inArray(schema.users.id, clientIds))
-        .all()
-      : [],
+          .from(schema.users)
+          .where(inArray(schema.users.id, clientIds))
+          .all() :
+        [],
 
     // Get all current steps
-    stepIds.length > 0
-      ? db.select({
+    stepIds.length > 0 ?
+        db.select({
           id: schema.journeySteps.id,
           name: schema.journeySteps.name,
           stepType: schema.journeySteps.stepType
         })
-        .from(schema.journeySteps)
-        .where(inArray(schema.journeySteps.id, stepIds))
-        .all()
-      : [],
+          .from(schema.journeySteps)
+          .where(inArray(schema.journeySteps.id, stepIds))
+          .all() :
+        [],
 
     // Get all matters
-    matterIds.length > 0
-      ? db.select({
+    matterIds.length > 0 ?
+        db.select({
           id: schema.matters.id,
           name: schema.matters.name,
           price: schema.matters.price
         })
-        .from(schema.matters)
-        .where(inArray(schema.matters.id, matterIds))
-        .all()
-      : [],
+          .from(schema.matters)
+          .where(inArray(schema.matters.id, matterIds))
+          .all() :
+        [],
 
     // Get all progress records
     db.select()
@@ -92,13 +92,13 @@ export default defineEventHandler(async (event) => {
   )
 
   // Enrich client journeys with related data
-  const enrichedJourneys = clientJourneys.map(cj => {
+  const enrichedJourneys = clientJourneys.map((cj) => {
     const client = clientMap.get(cj.clientId)
     const step = cj.currentStepId ? stepMap.get(cj.currentStepId) : null
     const matter = cj.matterId ? matterMap.get(cj.matterId) : null
-    const progress = cj.currentStepId
-      ? progressMap.get(`${cj.id}-${cj.currentStepId}`)
-      : null
+    const progress = cj.currentStepId ?
+        progressMap.get(`${cj.id}-${cj.currentStepId}`) :
+      null
 
     return {
       ...cj,
@@ -118,6 +118,3 @@ export default defineEventHandler(async (event) => {
     journeys: enrichedJourneys
   }
 })
-
-
-

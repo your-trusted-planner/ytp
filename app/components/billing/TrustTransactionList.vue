@@ -1,16 +1,29 @@
 <template>
   <UiCard>
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
-    <div v-else-if="transactions.length === 0" class="text-center py-12">
+    <div
+      v-else-if="transactions.length === 0"
+      class="text-center py-12"
+    >
       <ArrowLeftRight class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">No transactions</h3>
-      <p class="text-gray-500 mt-1">Record a deposit to see trust transactions here.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        No transactions
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Record a deposit to see trust transactions here.
+      </p>
     </div>
 
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -44,7 +57,10 @@
               <div class="text-sm text-gray-900">
                 {{ formatDate(tx.transactionDate || tx.transaction_date) }}
               </div>
-              <div v-if="tx.referenceNumber || tx.reference_number" class="text-xs text-gray-500">
+              <div
+                v-if="tx.referenceNumber || tx.reference_number"
+                class="text-xs text-gray-500"
+              >
                 Ref: {{ tx.referenceNumber || tx.reference_number }}
               </div>
             </td>
@@ -68,7 +84,10 @@
               <div class="text-sm text-gray-900 max-w-[300px] truncate">
                 {{ tx.description }}
               </div>
-              <div v-if="tx.checkNumber || tx.check_number" class="text-xs text-gray-500">
+              <div
+                v-if="tx.checkNumber || tx.check_number"
+                class="text-xs text-gray-500"
+              >
                 Check #{{ tx.checkNumber || tx.check_number }}
               </div>
             </td>
@@ -90,11 +109,14 @@
       </table>
 
       <!-- Pagination -->
-      <div v-if="hasMore" class="px-6 py-4 border-t border-gray-200">
+      <div
+        v-if="hasMore"
+        class="px-6 py-4 border-t border-gray-200"
+      >
         <button
-          @click="loadMore"
           :disabled="loadingMore"
           class="text-sm text-burgundy-600 hover:text-burgundy-800"
+          @click="loadMore"
         >
           {{ loadingMore ? 'Loading...' : 'Load more transactions' }}
         </button>
@@ -157,12 +179,13 @@ function typeClass(type: string): string {
 async function fetchTransactions(append = false) {
   if (append) {
     loadingMore.value = true
-  } else {
+  }
+  else {
     loading.value = true
   }
 
   try {
-    const response = await $fetch<{ transactions: any[]; total: number }>('/api/trust/transactions', {
+    const response = await $fetch<{ transactions: any[], total: number }>('/api/trust/transactions', {
       query: {
         limit,
         offset: offset.value
@@ -171,14 +194,17 @@ async function fetchTransactions(append = false) {
 
     if (append) {
       transactions.value = [...transactions.value, ...response.transactions]
-    } else {
+    }
+    else {
       transactions.value = response.transactions
     }
 
     hasMore.value = transactions.value.length < response.total
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch transactions:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
     loadingMore.value = false
   }

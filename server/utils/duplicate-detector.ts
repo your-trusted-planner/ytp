@@ -31,8 +31,8 @@ export interface DuplicateMatch {
     rawScore: number
     adjustedScore: number
     confidence: 'high' | 'medium' | 'low'
-    fieldScores: Array<{ field: string; score: number; method: string; details?: string }>
-    antiSignals: Array<{ type: string; penalty: number; description: string }>
+    fieldScores: Array<{ field: string, score: number, method: string, details?: string }>
+    antiSignals: Array<{ type: string, penalty: number, description: string }>
   }
 }
 
@@ -149,9 +149,9 @@ export function checkForDuplicatesWithMatcher(
   const matchingValue = getFieldValue(record, matchingField)
 
   // Map confidence to duplicate type
-  const type: DuplicateType = bestFieldScore && bestFieldScore.field === 'email' && bestFieldScore.score === 1.0
-    ? 'EMAIL'
-    : 'PROBABILISTIC'
+  const type: DuplicateType = bestFieldScore && bestFieldScore.field === 'email' && bestFieldScore.score === 1.0 ?
+    'EMAIL' :
+    'PROBABILISTIC'
 
   return {
     isDuplicate: true,
@@ -221,7 +221,7 @@ export function checkForDuplicates(
  * Check if a specific email already exists in the people table.
  * Used for quick single-email checks when full index isn't needed.
  */
-export async function emailExistsInPeople(email: string): Promise<{ exists: boolean; personId?: string }> {
+export async function emailExistsInPeople(email: string): Promise<{ exists: boolean, personId?: string }> {
   const { useDrizzle, schema } = await import('../db')
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()

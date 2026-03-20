@@ -17,16 +17,6 @@
  */
 
 // Conditionally import MSW if available
-let http: any, HttpResponse: any
-try {
-  const msw = require('msw')
-  http = msw.http
-  HttpResponse = msw.HttpResponse
-} catch {
-  // MSW not installed - handlers will be empty
-  http = null
-  HttpResponse = null
-}
 import {
   usersFixture,
   contactsFixture,
@@ -38,6 +28,31 @@ import {
   error429Fixture,
   error500Fixture
 } from '../fixtures/lawmatics'
+
+// ============================================
+// MOCK LAWMATICS CLIENT FOR UNIT TESTS
+// ============================================
+
+import type {
+  LawmaticsUser,
+  LawmaticsContact,
+  LawmaticsProspect,
+  LawmaticsNote,
+  LawmaticsActivity,
+  PageResult
+} from '../../server/utils/lawmatics-client'
+
+let http: any, HttpResponse: any // eslint-disable-line @typescript-eslint/no-explicit-any
+try {
+  const msw = require('msw') // eslint-disable-line @typescript-eslint/no-require-imports
+  http = msw.http
+  HttpResponse = msw.HttpResponse
+}
+catch {
+  // MSW not installed - handlers will be empty
+  http = null
+  HttpResponse = null
+}
 
 const LAWMATICS_BASE_URL = 'https://api.lawmatics.com/v1'
 
@@ -316,19 +331,6 @@ export const lawmaticsHandlers = !http ? [] : [
   })
 ]
 
-// ============================================
-// MOCK LAWMATICS CLIENT FOR UNIT TESTS
-// ============================================
-
-import type {
-  LawmaticsUser,
-  LawmaticsContact,
-  LawmaticsProspect,
-  LawmaticsNote,
-  LawmaticsActivity,
-  PageResult
-} from '../../server/utils/lawmatics-client'
-
 /**
  * Mock Lawmatics Client for unit testing
  *
@@ -443,37 +445,37 @@ export class MockLawmaticsClient {
     }
   }
 
-  async fetchUsers(options: { page?: number; perPage?: number } = {}): Promise<PageResult<LawmaticsUser>> {
+  async fetchUsers(options: { page?: number, perPage?: number } = {}): Promise<PageResult<LawmaticsUser>> {
     this.checkFailure()
     return this.paginate(this.users, options.page || 1, options.perPage || 100)
   }
 
-  async fetchContacts(options: { page?: number; perPage?: number } = {}): Promise<PageResult<LawmaticsContact>> {
+  async fetchContacts(options: { page?: number, perPage?: number } = {}): Promise<PageResult<LawmaticsContact>> {
     this.checkFailure()
     return this.paginate(this.contacts, options.page || 1, options.perPage || 100)
   }
 
-  async fetchProspects(options: { page?: number; perPage?: number } = {}): Promise<PageResult<LawmaticsProspect>> {
+  async fetchProspects(options: { page?: number, perPage?: number } = {}): Promise<PageResult<LawmaticsProspect>> {
     this.checkFailure()
     return this.paginate(this.prospects, options.page || 1, options.perPage || 100)
   }
 
-  async fetchNotes(options: { page?: number; perPage?: number } = {}): Promise<PageResult<LawmaticsNote>> {
+  async fetchNotes(options: { page?: number, perPage?: number } = {}): Promise<PageResult<LawmaticsNote>> {
     this.checkFailure()
     return this.paginate(this.notes, options.page || 1, options.perPage || 100)
   }
 
-  async fetchActivities(options: { page?: number; perPage?: number } = {}): Promise<PageResult<LawmaticsActivity>> {
+  async fetchActivities(options: { page?: number, perPage?: number } = {}): Promise<PageResult<LawmaticsActivity>> {
     this.checkFailure()
     return this.paginate(this.activities, options.page || 1, options.perPage || 25)
   }
 
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<{ success: boolean, error?: string }> {
     this.checkFailure()
     return { success: true }
   }
 
-  async getEntityCounts(): Promise<{ users: number; contacts: number; prospects: number }> {
+  async getEntityCounts(): Promise<{ users: number, contacts: number, prospects: number }> {
     this.checkFailure()
     return {
       users: this.users.length,

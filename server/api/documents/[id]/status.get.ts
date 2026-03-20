@@ -54,7 +54,8 @@ export default defineEventHandler(async (event) => {
       createdAt: doc.createdAt,
       processedAt: doc.processedAt
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching document status:', error)
 
     // Re-throw if it's already an H3 error

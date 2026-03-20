@@ -27,7 +27,7 @@ class ChannelStore {
   private channels: Map<string, Channel> = new Map()
   private idCounter = 0
 
-  create(data: { name: string; description?: string; channelType: 'EMAIL' | 'SMS'; slug: string; sortOrder?: number }): Channel {
+  create(data: { name: string, description?: string, channelType: 'EMAIL' | 'SMS', slug: string, sortOrder?: number }): Channel {
     // Check slug uniqueness
     for (const ch of this.channels.values()) {
       if (ch.slug === data.slug) {

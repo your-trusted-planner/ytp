@@ -90,7 +90,8 @@ export default defineEventHandler(async (event) => {
           userUpdateData,
           TRACKABLE_CLIENT_FIELDS
         )
-      } catch (err) {
+      }
+      catch (err) {
         console.error('[Clients PUT] Failed to track locally modified fields:', err)
       }
     }
@@ -111,7 +112,8 @@ export default defineEventHandler(async (event) => {
           updatedAt: now
         })
         .where(eq(schema.clientProfiles.userId, legacyUserId))
-    } else {
+    }
+    else {
       await db.insert(schema.clientProfiles).values({
         id: crypto.randomUUID(),
         userId: legacyUserId,
@@ -134,12 +136,12 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.people.id, resolved.personId))
     .get()
 
-  const updatedProfile = legacyUserId
-    ? await db.select()
+  const updatedProfile = legacyUserId ?
+      await db.select()
         .from(schema.clientProfiles)
         .where(eq(schema.clientProfiles.userId, legacyUserId))
-        .get()
-    : null
+        .get() :
+    null
 
   return {
     success: true,

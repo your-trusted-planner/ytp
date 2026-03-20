@@ -11,7 +11,11 @@
         <p class="text-sm font-medium text-gray-900 truncate">
           {{ role.person.fullName }}
         </p>
-        <UiBadge v-if="role.status !== 'ACTIVE'" size="sm" :variant="statusVariant">
+        <UiBadge
+          v-if="role.status !== 'ACTIVE'"
+          size="sm"
+          :variant="statusVariant"
+        >
           {{ role.status }}
         </UiBadge>
       </div>
@@ -19,26 +23,44 @@
         {{ roleTypeLabel }}
       </p>
       <!-- Show whose document this role is for (in joint plans) -->
-      <div v-if="showForPerson && role.forPerson" class="mt-1 flex items-center gap-1 text-xs text-gray-400">
+      <div
+        v-if="showForPerson && role.forPerson"
+        class="mt-1 flex items-center gap-1 text-xs text-gray-400"
+      >
         <span>for</span>
         <span class="font-medium text-gray-500">{{ role.forPerson.fullName }}</span>
-        <span v-if="documentContext" class="text-gray-400">({{ documentContext }})</span>
+        <span
+          v-if="documentContext"
+          class="text-gray-400"
+        >({{ documentContext }})</span>
       </div>
       <!-- Show document context in person view -->
-      <div v-else-if="showDocumentContext && documentContext" class="mt-1 text-xs text-gray-400">
+      <div
+        v-else-if="showDocumentContext && documentContext"
+        class="mt-1 text-xs text-gray-400"
+      >
         {{ documentContext }}
       </div>
-      <div v-if="role.sharePercentage" class="mt-1 text-xs text-gray-400">
+      <div
+        v-if="role.sharePercentage"
+        class="mt-1 text-xs text-gray-400"
+      >
         {{ role.sharePercentage }}% {{ role.shareType === 'PER_STIRPES' ? '(per stirpes)' : '' }}
       </div>
-      <div v-if="role.conditions" class="mt-1 text-xs text-gray-400 italic">
+      <div
+        v-if="role.conditions"
+        class="mt-1 text-xs text-gray-400 italic"
+      >
         {{ role.conditions }}
       </div>
     </div>
-    <div v-if="showActions" class="flex-shrink-0">
+    <div
+      v-if="showActions"
+      class="flex-shrink-0"
+    >
       <button
-        @click="$emit('edit', role)"
         class="p-1 text-gray-400 hover:text-gray-600 rounded"
+        @click="$emit('edit', role)"
       >
         <Edit2 class="w-4 h-4" />
       </button>
@@ -110,8 +132,8 @@ const roleTypeLabels: Record<string, string> = {
 interface Props {
   role: RoleData
   showActions?: boolean
-  showForPerson?: boolean  // Show "for [person]" context
-  showDocumentContext?: boolean  // Show document type context
+  showForPerson?: boolean // Show "for [person]" context
+  showDocumentContext?: boolean // Show document type context
 }
 
 const props = withDefaults(defineProps<Props>(), {

@@ -56,7 +56,7 @@ export function normalizeEmail(email: string): string | null {
 export function normalizeName(name: string): string {
   if (!name) return ''
 
-  let normalized = name
+  const normalized = name
     // Strip accents (é → e, ñ → n, etc.)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -85,7 +85,8 @@ export function normalizePhone(phone: string, defaultCountry: 'US' | string = 'U
     if (parsed && parsed.isValid()) {
       return parsed.format('E.164')
     }
-  } catch {
+  }
+  catch {
     // Fall through to digit extraction
   }
 
@@ -100,7 +101,8 @@ export function normalizePhone(phone: string, defaultCountry: 'US' | string = 'U
       if (withPlus && withPlus.isValid()) {
         return withPlus.format('E.164')
       }
-    } catch {
+    }
+    catch {
       // Fall through
     }
   }

@@ -65,7 +65,7 @@ export function resetTestDatabase(): void {
 
   // Get all table names
   const tables = sqliteDb
-    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    .prepare('SELECT name FROM sqlite_master WHERE type=\'table\' AND name NOT LIKE \'sqlite_%\'')
     .all() as { name: string }[]
 
   // Delete all data from each table
@@ -414,20 +414,22 @@ export function createMockEvent(options: {
   user?: Partial<typeof schema.users.$inferSelect>
   method?: string
   path?: string
-  body?: any
+  body?: any // eslint-disable-line @typescript-eslint/no-explicit-any
   query?: Record<string, string>
-} = {}): any {
+} = {}): any { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     context: {
-      user: options.user ? {
-        id: options.user.id || 'test-user-id',
-        email: options.user.email || 'test@example.com',
-        role: options.user.role || 'ADMIN',
-        adminLevel: options.user.adminLevel ?? 3,
-        firstName: options.user.firstName || 'Test',
-        lastName: options.user.lastName || 'User',
-        status: 'ACTIVE'
-      } : undefined,
+      user: options.user ?
+          {
+            id: options.user.id || 'test-user-id',
+            email: options.user.email || 'test@example.com',
+            role: options.user.role || 'ADMIN',
+            adminLevel: options.user.adminLevel ?? 3,
+            firstName: options.user.firstName || 'Test',
+            lastName: options.user.lastName || 'User',
+            status: 'ACTIVE'
+          } :
+        undefined,
       cloudflare: {
         env: {
           // Mock env for encryption

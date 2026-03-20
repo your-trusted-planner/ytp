@@ -59,9 +59,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
 
       // Verify we can extract the contact ID from array format
       const contactData = prospectWithArrayContact.relationships.contact.data
-      const contactId = Array.isArray(contactData)
-        ? contactData[0]?.id
-        : contactData?.id
+      const contactId = Array.isArray(contactData) ?
+        contactData[0]?.id :
+        contactData?.id
 
       expect(contactId).toBe('lm-contact-001')
     })
@@ -84,9 +84,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
 
       // Verify we can extract the contact ID from object format
       const contactData = prospectWithObjectContact.relationships.contact.data
-      const contactId = Array.isArray(contactData)
-        ? contactData[0]?.id
-        : contactData?.id
+      const contactId = Array.isArray(contactData) ?
+        contactData[0]?.id :
+        contactData?.id
 
       expect(contactId).toBe('lm-contact-002')
     })
@@ -99,9 +99,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
 
       for (const prospect of prospectsFixture.data) {
         const contactData = prospect.relationships?.contact?.data
-        const contactExternalId = Array.isArray(contactData)
-          ? contactData[0]?.id
-          : contactData?.id
+        const contactExternalId = Array.isArray(contactData) ?
+          contactData[0]?.id :
+          contactData?.id
 
         if (contactExternalId) {
           const existing = prospectsByContact.get(contactExternalId) || []
@@ -167,9 +167,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
 
       for (const prospect of prospectsFixture.data) {
         const contactData = prospect.relationships?.contact?.data
-        const contactExternalId = Array.isArray(contactData)
-          ? contactData[0]?.id
-          : contactData?.id
+        const contactExternalId = Array.isArray(contactData) ?
+          contactData[0]?.id :
+          contactData?.id
 
         if (!contactExternalId) continue
 
@@ -193,7 +193,7 @@ describe('Lawmatics Import - Prospects Processing', () => {
       // Verify: number of users created should be <= number of unique contacts
       const uniqueContacts = new Set(
         prospectsFixture.data
-          .map(p => {
+          .map((p) => {
             const cd = p.relationships?.contact?.data
             return Array.isArray(cd) ? cd[0]?.id : cd?.id
           })
@@ -206,9 +206,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
       const contactToMatters = new Map<string, string[]>()
       for (const prospect of prospectsFixture.data) {
         const contactData = prospect.relationships?.contact?.data
-        const contactExternalId = Array.isArray(contactData)
-          ? contactData[0]?.id
-          : contactData?.id
+        const contactExternalId = Array.isArray(contactData) ?
+          contactData[0]?.id :
+          contactData?.id
 
         if (contactExternalId) {
           const matters = contactToMatters.get(contactExternalId) || []
@@ -256,9 +256,9 @@ describe('Lawmatics Import - Prospects Processing', () => {
       }
 
       const contactData = prospectWithUnknownContact.relationships.contact.data
-      const contactExternalId = Array.isArray(contactData)
-        ? contactData[0]?.id
-        : contactData?.id
+      const contactExternalId = Array.isArray(contactData) ?
+        contactData[0]?.id :
+        contactData?.id
 
       const personId = peopleLookup.get(contactExternalId!)
       expect(personId).toBeUndefined()
@@ -324,7 +324,7 @@ describe('buildPersonToUserMap Logic', () => {
   })
 
   it('should handle empty user list', () => {
-    const users: Array<{ id: string; personId: string | null }> = []
+    const users: Array<{ id: string, personId: string | null }> = []
 
     const map = new Map<string, string>()
     for (const user of users) {
@@ -475,9 +475,9 @@ describe('Prospects Phase Processing Integration', () => {
 
     // Extract contact ID
     const contactData = prospect.relationships.contact.data
-    const contactExternalId = Array.isArray(contactData)
-      ? contactData[0]?.id
-      : contactData?.id
+    const contactExternalId = Array.isArray(contactData) ?
+      contactData[0]?.id :
+      contactData?.id
 
     expect(contactExternalId).toBe('lm-contact-001')
 
@@ -522,13 +522,13 @@ describe('Prospects Phase Processing Integration', () => {
     ]
 
     const createdUsers: string[] = []
-    const results: Array<{ prospectId: string; clientId: string }> = []
+    const results: Array<{ prospectId: string, clientId: string }> = []
 
     for (const prospect of prospects) {
       const contactData = prospect.relationships.contact.data
-      const contactExternalId = Array.isArray(contactData)
-        ? contactData[0]?.id
-        : contactData?.id
+      const contactExternalId = Array.isArray(contactData) ?
+        contactData[0]?.id :
+        contactData?.id
 
       const personId = peopleLookup.get(contactExternalId!)!
 
@@ -576,13 +576,13 @@ describe('Prospects Phase Processing Integration', () => {
     ]
 
     const createdUsers: string[] = []
-    const results: Array<{ prospectId: string; clientId: string }> = []
+    const results: Array<{ prospectId: string, clientId: string }> = []
 
     for (const prospect of prospects) {
       const contactData = prospect.relationships.contact.data
-      const contactExternalId = Array.isArray(contactData)
-        ? contactData[0]?.id
-        : contactData?.id
+      const contactExternalId = Array.isArray(contactData) ?
+        contactData[0]?.id :
+        contactData?.id
 
       const personId = peopleLookup.get(contactExternalId!)!
 

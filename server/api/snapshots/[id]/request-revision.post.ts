@@ -70,7 +70,8 @@ export default defineEventHandler(async (event) => {
         updatedAt: now
       })
       .where(eq(schema.snapshotVersions.id, snapshotId))
-  } else {
+  }
+  else {
     await db.update(schema.snapshotVersions)
       .set({
         status: 'UNDER_REVISION',
@@ -82,6 +83,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true }
 })
-
-
-

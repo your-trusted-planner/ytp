@@ -51,55 +51,55 @@ export function generateDescription(
     case 'USER_LOGOUT':
       return `${actorName} logged out`
     case 'USER_CREATED':
-      return targetName
-        ? `${actorName} created user account for ${targetName}`
-        : `${actorName} account created`
+      return targetName ?
+        `${actorName} created user account for ${targetName}` :
+        `${actorName} account created`
     case 'USER_UPDATED':
-      return targetName
-        ? `${actorName} updated ${targetName}'s profile`
-        : `${actorName} profile updated`
+      return targetName ?
+        `${actorName} updated ${targetName}'s profile` :
+        `${actorName} profile updated`
     case 'USER_PASSWORD_CHANGED':
       return `${actorName} changed password`
 
     // Client events
     case 'CLIENT_CREATED':
-      return targetName
-        ? `${actorName} created client ${targetName}`
-        : `${actorName} created a new client`
+      return targetName ?
+        `${actorName} created client ${targetName}` :
+        `${actorName} created a new client`
     case 'CLIENT_UPDATED':
-      return targetName
-        ? `${actorName} updated client ${targetName}`
-        : `${actorName} updated a client`
+      return targetName ?
+        `${actorName} updated client ${targetName}` :
+        `${actorName} updated a client`
     case 'CLIENT_VIEWED':
-      return targetName
-        ? `${actorName} viewed client ${targetName}`
-        : `${actorName} viewed a client`
+      return targetName ?
+        `${actorName} viewed client ${targetName}` :
+        `${actorName} viewed a client`
     case 'CLIENT_STATUS_CHANGED':
       const newStatus = details?.newStatus || details?.status
       if (targetName && newStatus) {
         return `${actorName} changed ${targetName}'s status to ${newStatus}`
       }
-      return targetName
-        ? `${actorName} changed status for ${targetName}`
-        : `${actorName} changed client status`
+      return targetName ?
+        `${actorName} changed status for ${targetName}` :
+        `${actorName} changed client status`
 
     // Matter events
     case 'MATTER_CREATED':
-      return targetName
-        ? `${actorName} created matter "${targetName}"`
-        : `${actorName} created a new matter`
+      return targetName ?
+        `${actorName} created matter "${targetName}"` :
+        `${actorName} created a new matter`
     case 'MATTER_UPDATED':
-      return targetName
-        ? `${actorName} updated matter "${targetName}"`
-        : `${actorName} updated a matter`
+      return targetName ?
+        `${actorName} updated matter "${targetName}"` :
+        `${actorName} updated a matter`
     case 'MATTER_STATUS_CHANGED':
       const matterStatus = details?.newStatus || details?.status
       if (targetName && matterStatus) {
         return `${actorName} changed "${targetName}" status to ${matterStatus}`
       }
-      return targetName
-        ? `${actorName} changed status for "${targetName}"`
-        : `${actorName} changed matter status`
+      return targetName ?
+        `${actorName} changed status for "${targetName}"` :
+        `${actorName} changed matter status`
     case 'MATTER_SERVICE_ADDED':
       const serviceName = findRelated('service')?.name
       if (targetName && serviceName) {
@@ -115,21 +115,21 @@ export function generateDescription(
       if (targetName && template?.name) {
         return `${actorName} created "${targetName}" from template "${template.name}"`
       }
-      return targetName
-        ? `${actorName} created document "${targetName}"`
-        : `${actorName} created a document`
+      return targetName ?
+        `${actorName} created document "${targetName}"` :
+        `${actorName} created a document`
     case 'DOCUMENT_VIEWED':
-      return targetName
-        ? `${actorName} viewed "${targetName}"`
-        : `${actorName} viewed a document`
+      return targetName ?
+        `${actorName} viewed "${targetName}"` :
+        `${actorName} viewed a document`
     case 'DOCUMENT_SIGNED':
-      return targetName
-        ? `${actorName} signed "${targetName}"`
-        : `${actorName} signed a document`
+      return targetName ?
+        `${actorName} signed "${targetName}"` :
+        `${actorName} signed a document`
     case 'DOCUMENT_DOWNLOADED':
-      return targetName
-        ? `${actorName} downloaded "${targetName}"`
-        : `${actorName} downloaded a document`
+      return targetName ?
+        `${actorName} downloaded "${targetName}"` :
+        `${actorName} downloaded a document`
     case 'DOCUMENT_STATUS_CHANGED':
       const docStatus = details?.newStatus || details?.status
       if (targetName && docStatus) {
@@ -137,15 +137,15 @@ export function generateDescription(
       }
       return `${actorName} changed document status`
     case 'DOCUMENT_DELETED':
-      return targetName
-        ? `${actorName} deleted document "${targetName}"`
-        : `${actorName} deleted a document`
+      return targetName ?
+        `${actorName} deleted document "${targetName}"` :
+        `${actorName} deleted a document`
 
     // Journey events
     case 'JOURNEY_STARTED':
-      return targetName
-        ? `${actorName} started journey "${targetName}"`
-        : `${actorName} started a journey`
+      return targetName ?
+        `${actorName} started journey "${targetName}"` :
+        `${actorName} started a journey`
     case 'JOURNEY_STEP_COMPLETED':
       const stepName = details?.stepName as string | undefined
       if (targetName && stepName) {
@@ -153,27 +153,27 @@ export function generateDescription(
       }
       return `${actorName} completed a journey step`
     case 'JOURNEY_COMPLETED':
-      return targetName
-        ? `${actorName} completed journey "${targetName}"`
-        : `${actorName} completed a journey`
+      return targetName ?
+        `${actorName} completed journey "${targetName}"` :
+        `${actorName} completed a journey`
     case 'JOURNEY_PAUSED':
-      return targetName
-        ? `${actorName} paused journey "${targetName}"`
-        : `${actorName} paused a journey`
+      return targetName ?
+        `${actorName} paused journey "${targetName}"` :
+        `${actorName} paused a journey`
 
     // Template events
     case 'TEMPLATE_CREATED':
-      return targetName
-        ? `${actorName} created template "${targetName}"`
-        : `${actorName} created a template`
+      return targetName ?
+        `${actorName} created template "${targetName}"` :
+        `${actorName} created a template`
     case 'TEMPLATE_UPDATED':
-      return targetName
-        ? `${actorName} updated template "${targetName}"`
-        : `${actorName} updated a template`
+      return targetName ?
+        `${actorName} updated template "${targetName}"` :
+        `${actorName} updated a template`
     case 'TEMPLATE_DELETED':
-      return targetName
-        ? `${actorName} deleted template "${targetName}"`
-        : `${actorName} deleted a template`
+      return targetName ?
+        `${actorName} deleted template "${targetName}"` :
+        `${actorName} deleted a template`
 
     // Note events
     case 'NOTE_CREATED':
@@ -194,27 +194,27 @@ export function generateDescription(
 
     // Referral partner events
     case 'REFERRAL_PARTNER_CREATED':
-      return targetName
-        ? `${actorName} added referral partner "${targetName}"`
-        : `${actorName} added a referral partner`
+      return targetName ?
+        `${actorName} added referral partner "${targetName}"` :
+        `${actorName} added a referral partner`
     case 'REFERRAL_PARTNER_UPDATED':
-      return targetName
-        ? `${actorName} updated referral partner "${targetName}"`
-        : `${actorName} updated a referral partner`
+      return targetName ?
+        `${actorName} updated referral partner "${targetName}"` :
+        `${actorName} updated a referral partner`
 
     // Estate plan events
     case 'ESTATE_PLAN_CREATED':
-      return targetName
-        ? `${actorName} created estate plan "${targetName}"`
-        : `${actorName} created an estate plan`
+      return targetName ?
+        `${actorName} created estate plan "${targetName}"` :
+        `${actorName} created an estate plan`
     case 'ESTATE_PLAN_UPDATED':
-      return targetName
-        ? `${actorName} updated estate plan "${targetName}"`
-        : `${actorName} updated an estate plan`
+      return targetName ?
+        `${actorName} updated estate plan "${targetName}"` :
+        `${actorName} updated an estate plan`
     case 'ESTATE_PLAN_AMENDED':
-      return targetName
-        ? `${actorName} amended estate plan "${targetName}"`
-        : `${actorName} amended an estate plan`
+      return targetName ?
+        `${actorName} amended estate plan "${targetName}"` :
+        `${actorName} amended an estate plan`
     case 'ESTATE_PLAN_IMPORTED':
       const source = details?.source as string | undefined
       const peopleCreated = details?.peopleCreated as number | undefined
@@ -229,143 +229,143 @@ export function generateDescription(
         }
         return desc
       }
-      return targetName
-        ? `${actorName} imported estate plan "${targetName}"`
-        : `${actorName} imported an estate plan`
+      return targetName ?
+        `${actorName} imported estate plan "${targetName}"` :
+        `${actorName} imported an estate plan`
     case 'ESTATE_PLAN_STATUS_CHANGED':
       const planStatus = details?.newStatus || details?.status
       if (targetName && planStatus) {
         return `${actorName} changed "${targetName}" status to ${planStatus}`
       }
-      return targetName
-        ? `${actorName} changed status for "${targetName}"`
-        : `${actorName} changed estate plan status`
+      return targetName ?
+        `${actorName} changed status for "${targetName}"` :
+        `${actorName} changed estate plan status`
 
     // Trust account events
     case 'TRUST_ACCOUNT_CREATED':
-      return targetName
-        ? `${actorName} created trust account "${targetName}"`
-        : `${actorName} created a trust account`
+      return targetName ?
+        `${actorName} created trust account "${targetName}"` :
+        `${actorName} created a trust account`
     case 'TRUST_DEPOSIT_RECEIVED':
       const depositAmount = details?.amount as number | undefined
       const depositFormatted = depositAmount ? `$${(depositAmount / 100).toFixed(2)}` : ''
-      return targetName
-        ? `${actorName} recorded ${depositFormatted} trust deposit for ${targetName}`
-        : `${actorName} recorded a trust deposit`
+      return targetName ?
+        `${actorName} recorded ${depositFormatted} trust deposit for ${targetName}` :
+        `${actorName} recorded a trust deposit`
     case 'TRUST_DISBURSEMENT_MADE':
       const disbursementAmount = details?.amount as number | undefined
       const disbursementFormatted = disbursementAmount ? `$${(disbursementAmount / 100).toFixed(2)}` : ''
-      return targetName
-        ? `${actorName} disbursed ${disbursementFormatted} from trust for ${targetName}`
-        : `${actorName} made a trust disbursement`
+      return targetName ?
+        `${actorName} disbursed ${disbursementFormatted} from trust for ${targetName}` :
+        `${actorName} made a trust disbursement`
     case 'TRUST_REFUND_ISSUED':
       const refundAmount = details?.amount as number | undefined
       const refundFormatted = refundAmount ? `$${(refundAmount / 100).toFixed(2)}` : ''
-      return targetName
-        ? `${actorName} issued ${refundFormatted} trust refund to ${targetName}`
-        : `${actorName} issued a trust refund`
+      return targetName ?
+        `${actorName} issued ${refundFormatted} trust refund to ${targetName}` :
+        `${actorName} issued a trust refund`
 
     // Invoice events
     case 'INVOICE_CREATED':
       const invoiceNumber = details?.invoiceNumber as string | undefined
-      return invoiceNumber
-        ? `${actorName} created invoice ${invoiceNumber}${targetName ? ` for ${targetName}` : ''}`
-        : `${actorName} created an invoice${targetName ? ` for ${targetName}` : ''}`
+      return invoiceNumber ?
+        `${actorName} created invoice ${invoiceNumber}${targetName ? ` for ${targetName}` : ''}` :
+        `${actorName} created an invoice${targetName ? ` for ${targetName}` : ''}`
     case 'INVOICE_UPDATED':
-      return targetName
-        ? `${actorName} updated invoice for ${targetName}`
-        : `${actorName} updated an invoice`
+      return targetName ?
+        `${actorName} updated invoice for ${targetName}` :
+        `${actorName} updated an invoice`
     case 'INVOICE_SENT':
-      return targetName
-        ? `${actorName} sent invoice to ${targetName}`
-        : `${actorName} sent an invoice`
+      return targetName ?
+        `${actorName} sent invoice to ${targetName}` :
+        `${actorName} sent an invoice`
     case 'INVOICE_PAID':
-      return targetName
-        ? `Invoice for ${targetName} was marked as paid`
-        : `An invoice was marked as paid`
+      return targetName ?
+        `Invoice for ${targetName} was marked as paid` :
+        `An invoice was marked as paid`
     case 'INVOICE_CANCELLED':
-      return targetName
-        ? `${actorName} cancelled invoice for ${targetName}`
-        : `${actorName} cancelled an invoice`
+      return targetName ?
+        `${actorName} cancelled invoice for ${targetName}` :
+        `${actorName} cancelled an invoice`
     case 'INVOICE_VOID':
-      return targetName
-        ? `${actorName} voided invoice for ${targetName}`
-        : `${actorName} voided an invoice`
+      return targetName ?
+        `${actorName} voided invoice for ${targetName}` :
+        `${actorName} voided an invoice`
 
     // Payment events
     case 'PAYMENT_RECEIVED':
       const paymentAmount = details?.amount as number | undefined
       const paymentFormatted = paymentAmount ? `$${(paymentAmount / 100).toFixed(2)}` : ''
-      return targetName
-        ? `${actorName} recorded ${paymentFormatted} payment for ${targetName}`
-        : `${actorName} recorded a payment`
+      return targetName ?
+        `${actorName} recorded ${paymentFormatted} payment for ${targetName}` :
+        `${actorName} recorded a payment`
     case 'PAYMENT_APPLIED':
-      return targetName
-        ? `${actorName} applied payment to invoice for ${targetName}`
-        : `${actorName} applied a payment`
+      return targetName ?
+        `${actorName} applied payment to invoice for ${targetName}` :
+        `${actorName} applied a payment`
 
     // Appointment events
     case 'APPOINTMENT_CREATED':
       if (targetName && client?.name) {
         return `${actorName} scheduled "${targetName}" with ${client.name}`
       }
-      return targetName
-        ? `${actorName} scheduled "${targetName}"`
-        : `${actorName} scheduled an appointment`
+      return targetName ?
+        `${actorName} scheduled "${targetName}"` :
+        `${actorName} scheduled an appointment`
     case 'APPOINTMENT_UPDATED':
-      return targetName
-        ? `${actorName} updated appointment "${targetName}"`
-        : `${actorName} updated an appointment`
+      return targetName ?
+        `${actorName} updated appointment "${targetName}"` :
+        `${actorName} updated an appointment`
     case 'APPOINTMENT_CANCELLED':
-      return targetName
-        ? `${actorName} cancelled appointment "${targetName}"`
-        : `${actorName} cancelled an appointment`
+      return targetName ?
+        `${actorName} cancelled appointment "${targetName}"` :
+        `${actorName} cancelled an appointment`
 
     // Appointment type events
     case 'APPOINTMENT_TYPE_CREATED':
-      return targetName
-        ? `${actorName} created appointment type "${targetName}"`
-        : `${actorName} created an appointment type`
+      return targetName ?
+        `${actorName} created appointment type "${targetName}"` :
+        `${actorName} created an appointment type`
     case 'APPOINTMENT_TYPE_UPDATED':
-      return targetName
-        ? `${actorName} updated appointment type "${targetName}"`
-        : `${actorName} updated an appointment type`
+      return targetName ?
+        `${actorName} updated appointment type "${targetName}"` :
+        `${actorName} updated an appointment type`
     case 'APPOINTMENT_TYPE_DELETED':
-      return targetName
-        ? `${actorName} deleted appointment type "${targetName}"`
-        : `${actorName} deleted an appointment type`
+      return targetName ?
+        `${actorName} deleted appointment type "${targetName}"` :
+        `${actorName} deleted an appointment type`
 
     // Room events
     case 'ROOM_CREATED':
-      return targetName
-        ? `${actorName} created room "${targetName}"`
-        : `${actorName} created a room`
+      return targetName ?
+        `${actorName} created room "${targetName}"` :
+        `${actorName} created a room`
     case 'ROOM_UPDATED':
-      return targetName
-        ? `${actorName} updated room "${targetName}"`
-        : `${actorName} updated a room`
+      return targetName ?
+        `${actorName} updated room "${targetName}"` :
+        `${actorName} updated a room`
     case 'ROOM_DELETED':
-      return targetName
-        ? `${actorName} deactivated room "${targetName}"`
-        : `${actorName} deactivated a room`
+      return targetName ?
+        `${actorName} deactivated room "${targetName}"` :
+        `${actorName} deactivated a room`
 
     // Admin events
     case 'ADMIN_ACTION':
       const actionName = details?.action as string | undefined
-      return actionName
-        ? `${actorName} performed admin action: ${actionName}`
-        : `${actorName} performed an admin action`
+      return actionName ?
+        `${actorName} performed admin action: ${actionName}` :
+        `${actorName} performed an admin action`
     case 'SETTINGS_CHANGED':
       const settingKey = details?.key || target?.name
-      return settingKey
-        ? `${actorName} changed setting: ${settingKey}`
-        : `${actorName} changed system settings`
+      return settingKey ?
+        `${actorName} changed setting: ${settingKey}` :
+        `${actorName} changed system settings`
 
     default:
       // Fallback for unknown activity types
-      return targetName
-        ? `${actorName} performed ${formatActivityType(type)} on ${targetName}`
-        : `${actorName} performed ${formatActivityType(type)}`
+      return targetName ?
+        `${actorName} performed ${formatActivityType(type)} on ${targetName}` :
+        `${actorName} performed ${formatActivityType(type)}`
   }
 }
 

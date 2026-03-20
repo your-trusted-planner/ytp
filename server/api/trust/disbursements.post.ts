@@ -116,9 +116,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const transactionId = crypto.randomUUID()
-  const transactionDate = parsed.data.transactionDate
-    ? new Date(parsed.data.transactionDate)
-    : new Date()
+  const transactionDate = parsed.data.transactionDate ?
+      new Date(parsed.data.transactionDate) :
+      new Date()
 
   // Calculate new balance (disbursements are negative)
   const currentBalance = await getClientTrustBalance(
@@ -169,8 +169,9 @@ export default defineEventHandler(async (event) => {
     if (invoice) {
       const newTrustApplied = invoice.trustApplied + parsed.data.amount
       const newBalanceDue = invoice.totalAmount - newTrustApplied - invoice.directPayments
-      const newStatus = newBalanceDue <= 0 ? 'PAID' :
-        (newTrustApplied > 0 || invoice.directPayments > 0) ? 'PARTIALLY_PAID' : 'SENT'
+      const newStatus = newBalanceDue <= 0 ?
+        'PAID' :
+          (newTrustApplied > 0 || invoice.directPayments > 0) ? 'PARTIALLY_PAID' : 'SENT'
 
       await db.update(schema.invoices)
         .set({
@@ -194,11 +195,13 @@ export default defineEventHandler(async (event) => {
     userRole: user.role,
     target: { type: 'client', id: parsed.data.clientId, name: clientName || 'Unknown Client' },
     relatedEntities: [
-      ...(parsed.data.matterId ? [{
-        type: 'matter' as const,
-        id: parsed.data.matterId,
-        name: await resolveEntityName('matter', parsed.data.matterId) || 'Unknown Matter'
-      }] : []),
+      ...(parsed.data.matterId ?
+          [{
+            type: 'matter' as const,
+            id: parsed.data.matterId,
+            name: await resolveEntityName('matter', parsed.data.matterId) || 'Unknown Matter'
+          }] :
+          []),
       ...(parsed.data.invoiceId ? [{
         type: 'document' as const, // Using 'document' as closest entity type for invoice
         id: parsed.data.invoiceId,

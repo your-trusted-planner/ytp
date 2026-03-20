@@ -177,9 +177,9 @@ export default defineEventHandler(async (event) => {
       google_drive_folder_url: clientRecord.googleDriveFolderUrl,
       google_drive_sync_status: clientRecord.googleDriveSyncStatus,
       google_drive_sync_error: clientRecord.googleDriveSyncError,
-      google_drive_last_sync_at: clientRecord.googleDriveLastSyncAt instanceof Date
-        ? Math.floor(clientRecord.googleDriveLastSyncAt.getTime() / 1000)
-        : clientRecord.googleDriveLastSyncAt
+      google_drive_last_sync_at: clientRecord.googleDriveLastSyncAt instanceof Date ?
+          Math.floor(clientRecord.googleDriveLastSyncAt.getTime() / 1000) :
+        clientRecord.googleDriveLastSyncAt
     },
     matters: mattersWithStats,
     journeys: enrichedJourneys,
@@ -236,10 +236,10 @@ async function fetchMattersWithStats(db: any, allIds: string[]) {
 
   // Sort by status priority then creation date
   const statusPriority: Record<string, number> = {
-    'OPEN': 1,
-    'IN_PROGRESS': 2,
-    'PENDING': 3,
-    'CLOSED': 4
+    OPEN: 1,
+    IN_PROGRESS: 2,
+    PENDING: 3,
+    CLOSED: 4
   }
   matters.sort((a, b) => {
     const priorityDiff = (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5)
@@ -249,7 +249,7 @@ async function fetchMattersWithStats(db: any, allIds: string[]) {
 
   // Batch fetch services
   const matterIds = matters.map((m: any) => m.id)
-  let servicesByMatter: Record<string, any[]> = {}
+  const servicesByMatter: Record<string, any[]> = {}
 
   if (matterIds.length > 0) {
     const matterInList = sql.join(matterIds.map(id => sql`${id}`), sql`, `)
@@ -311,7 +311,8 @@ async function fetchTrustBalance(
     const { getClientTrustBalances } = await import('../../../utils/trust-ledger')
     const balances = await getClientTrustBalances(clientId)
     return balances.reduce((sum, b) => sum + b.balance, 0)
-  } catch {
+  }
+  catch {
     return 0
   }
 }
@@ -333,55 +334,55 @@ async function enrichJourneys(db: any, schema: any, journeys: any[]) {
   // Batch fetch all related data in parallel
   const [journeyInfos, stepInfos, catalogInfos, matterInfos, stepCounts] = await Promise.all([
     // Journey metadata
-    journeyIds.length > 0
-      ? db.select({
+    journeyIds.length > 0 ?
+        db.select({
           id: schema.journeys.id,
           name: schema.journeys.name,
           description: schema.journeys.description,
           estimatedDurationDays: schema.journeys.estimatedDurationDays
-        }).from(schema.journeys).where(inArray(schema.journeys.id, journeyIds)).all()
-      : [],
+        }).from(schema.journeys).where(inArray(schema.journeys.id, journeyIds)).all() :
+        [],
 
     // Current step info
-    stepIds.length > 0
-      ? db.select({
+    stepIds.length > 0 ?
+        db.select({
           id: schema.journeySteps.id,
           name: schema.journeySteps.name,
           stepType: schema.journeySteps.stepType,
           stepOrder: schema.journeySteps.stepOrder
-        }).from(schema.journeySteps).where(inArray(schema.journeySteps.id, stepIds)).all()
-      : [],
+        }).from(schema.journeySteps).where(inArray(schema.journeySteps.id, stepIds)).all() :
+        [],
 
     // Service catalog info
-    catalogIds.length > 0
-      ? db.select({
+    catalogIds.length > 0 ?
+        db.select({
           id: schema.serviceCatalog.id,
           name: schema.serviceCatalog.name
-        }).from(schema.serviceCatalog).where(inArray(schema.serviceCatalog.id, catalogIds as string[])).all()
-      : [],
+        }).from(schema.serviceCatalog).where(inArray(schema.serviceCatalog.id, catalogIds as string[])).all() :
+        [],
 
     // Matter info
-    matterIds.length > 0
-      ? db.select({
+    matterIds.length > 0 ?
+        db.select({
           id: schema.matters.id,
           title: schema.matters.title,
           matterNumber: schema.matters.matterNumber
-        }).from(schema.matters).where(inArray(schema.matters.id, matterIds)).all()
-      : [],
+        }).from(schema.matters).where(inArray(schema.matters.id, matterIds)).all() :
+        [],
 
     // Step counts per journey (batch)
-    journeyIds.length > 0
-      ? (async () => {
+    journeyIds.length > 0 ?
+        (async () => {
           const { sql } = await import('drizzle-orm')
           const journeyInList = sql.join(journeyIds.map(id => sql`${id}`), sql`, `)
-          return await db.all<{ journey_id: string; count: number }>(sql`
+          return await db.all<{ journey_id: string, count: number }>(sql`
             SELECT journey_id, COUNT(*) as count
             FROM journey_steps
             WHERE journey_id IN (${journeyInList})
             GROUP BY journey_id
           `)
-        })()
-      : []
+        })() :
+        []
   ])
 
   // Build lookup maps
@@ -392,7 +393,7 @@ async function enrichJourneys(db: any, schema: any, journeys: any[]) {
   const stepCountMap = new Map(stepCounts.map((sc: any) => [sc.journey_id, sc.count]))
 
   // Map to response shape (matching existing snake_case format)
-  return journeys.map(cj => {
+  return journeys.map((cj) => {
     const journey = journeyMap.get(cj.journeyId)
     const currentStep = cj.currentStepId ? stepMap.get(cj.currentStepId) : null
     const serviceCatalogId = cj.catalogId || cj.selectedCatalogId
@@ -444,7 +445,7 @@ async function enrichRelationships(db: any, schema: any, relationships: any[]) {
 
   const personMap = new Map(people.map((p: any) => [p.id, p]))
 
-  return relationships.map(cr => {
+  return relationships.map((cr) => {
     const person = personMap.get(cr.personId)
     return {
       id: cr.id,
@@ -455,14 +456,16 @@ async function enrichRelationships(db: any, schema: any, relationships: any[]) {
       notes: cr.notes,
       created_at: cr.createdAt instanceof Date ? cr.createdAt.getTime() : cr.createdAt,
       updated_at: cr.updatedAt instanceof Date ? cr.updatedAt.getTime() : cr.updatedAt,
-      person: person ? {
-        id: person.id,
-        first_name: person.firstName,
-        last_name: person.lastName,
-        full_name: person.fullName,
-        email: person.email,
-        phone: person.phone
-      } : null
+      person: person ?
+          {
+            id: person.id,
+            first_name: person.firstName,
+            last_name: person.lastName,
+            full_name: person.fullName,
+            email: person.email,
+            phone: person.phone
+          } :
+        null
     }
   })
 }

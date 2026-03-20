@@ -73,7 +73,8 @@ export default defineEventHandler(async (event) => {
         updated_at = ${now.getTime()}
       WHERE id = ${snapshotId}
     `)
-  } else if (isAttorney) {
+  }
+  else if (isAttorney) {
     // Attorney approval - use raw SQL for conditional status and approved_at update
     await db.run(sql`
       UPDATE snapshot_versions
@@ -119,6 +120,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true, bothApproved: updated.approvedByClient && updated.approvedByAttorney }
 })
-
-
-

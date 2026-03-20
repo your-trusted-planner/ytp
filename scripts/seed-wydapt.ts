@@ -94,60 +94,60 @@ const DOCUMENT_GROUPS: DocumentGroup[] = [
 
 // Standard variable mappings
 const VARIABLE_MAP: Record<string, string> = {
-  'client': 'clientFirstName',
-  'clientname': 'clientFirstName',
-  'name': 'clientFirstName',
-  'firstname': 'clientFirstName',
-  'lastname': 'clientLastName',
-  'fullname': 'clientFullName',
-  'address': 'clientAddress',
-  'city': 'clientCity',
-  'state': 'clientState',
-  'zip': 'clientZipCode',
-  'zipcode': 'clientZipCode',
-  'email': 'clientEmail',
-  'phone': 'clientPhone',
-  'spouse': 'spouseName',
-  'spousename': 'spouseName',
-  'spousefirstname': 'spouseFirstName',
-  'spouselastname': 'spouseLastName',
-  'trust': 'trustName',
-  'trustname': 'trustName',
-  'trustee': 'trusteeName',
-  'trusteename': 'trusteeName',
-  'trustee1': 'trustee1Name',
-  'trustee2': 'trustee2Name',
-  'settlor': 'settlorName',
-  'settlorname': 'settlorName',
-  'grantor': 'grantorName',
-  'grantorname': 'grantorName',
-  'grantor1': 'grantor1Name',
-  'grantor2': 'grantor2Name',
-  'beneficiary': 'beneficiaryName',
-  'date': 'currentDate',
-  'signaturedate': 'signatureDate',
-  'today': 'currentDate',
-  'trustdate': 'trustCreationDate',
-  'contribution': 'contributionAmount',
-  'distribution': 'distributionAmount',
-  'amount': 'amount',
-  'property': 'propertyDescription',
-  'asset': 'assetDescription',
-  'notary': 'notaryName',
-  'notaryname': 'notaryName',
-  'commission': 'notaryCommissionNumber',
-  'expiration': 'notaryExpirationDate',
-  'ddc': 'ddcName',
-  'wapa': 'wapaName',
-  'ptc': 'ptcName',
-  'pftc': 'pftcName',
-  'investmentcommittee': 'investmentCommitteeName',
-  'member1': 'investmentCommitteeMember1',
-  'member2': 'investmentCommitteeMember2',
-  'member3': 'investmentCommitteeMember3'
+  client: 'clientFirstName',
+  clientname: 'clientFirstName',
+  name: 'clientFirstName',
+  firstname: 'clientFirstName',
+  lastname: 'clientLastName',
+  fullname: 'clientFullName',
+  address: 'clientAddress',
+  city: 'clientCity',
+  state: 'clientState',
+  zip: 'clientZipCode',
+  zipcode: 'clientZipCode',
+  email: 'clientEmail',
+  phone: 'clientPhone',
+  spouse: 'spouseName',
+  spousename: 'spouseName',
+  spousefirstname: 'spouseFirstName',
+  spouselastname: 'spouseLastName',
+  trust: 'trustName',
+  trustname: 'trustName',
+  trustee: 'trusteeName',
+  trusteename: 'trusteeName',
+  trustee1: 'trustee1Name',
+  trustee2: 'trustee2Name',
+  settlor: 'settlorName',
+  settlorname: 'settlorName',
+  grantor: 'grantorName',
+  grantorname: 'grantorName',
+  grantor1: 'grantor1Name',
+  grantor2: 'grantor2Name',
+  beneficiary: 'beneficiaryName',
+  date: 'currentDate',
+  signaturedate: 'signatureDate',
+  today: 'currentDate',
+  trustdate: 'trustCreationDate',
+  contribution: 'contributionAmount',
+  distribution: 'distributionAmount',
+  amount: 'amount',
+  property: 'propertyDescription',
+  asset: 'assetDescription',
+  notary: 'notaryName',
+  notaryname: 'notaryName',
+  commission: 'notaryCommissionNumber',
+  expiration: 'notaryExpirationDate',
+  ddc: 'ddcName',
+  wapa: 'wapaName',
+  ptc: 'ptcName',
+  pftc: 'pftcName',
+  investmentcommittee: 'investmentCommitteeName',
+  member1: 'investmentCommitteeMember1',
+  member2: 'investmentCommitteeMember2',
+  member3: 'investmentCommitteeMember3'
 }
 
-async function parseDocx(filePath: string): Promise<{ html: string; text: string }> {
+async function parseDocx(filePath: string): Promise<{ html: string, text: string }> {
   const buffer = await readFile(filePath)
   const result = await mammoth.convertToHtml({ buffer })
   const textResult = await mammoth.extractRawText({ buffer })
@@ -159,7 +159,7 @@ async function parseDocx(filePath: string): Promise<{ html: string; text: string
 
 function extractVariables(text: string): Set<string> {
   const variables = new Set<string>()
-  
+
   // Pattern 1: [[Variable]]
   const pattern1 = /\[\[([^\]]+)\]\]/g
   let match
@@ -167,7 +167,7 @@ function extractVariables(text: string): Set<string> {
     const varName = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '')
     variables.add(VARIABLE_MAP[varName] || match[1].trim())
   }
-  
+
   // Pattern 2: {Variable} - but filter out dates/numbers
   const pattern2 = /\{([^}]+)\}/g
   while ((match = pattern2.exec(text)) !== null) {
@@ -177,39 +177,39 @@ function extractVariables(text: string): Set<string> {
       variables.add(VARIABLE_MAP[varName] || content.trim())
     }
   }
-  
+
   // Pattern 3: <<Variable>>
   const pattern3 = /<<([^>]+)>>/g
   while ((match = pattern3.exec(text)) !== null) {
     const varName = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '')
     variables.add(VARIABLE_MAP[varName] || match[1].trim())
   }
-  
+
   // Common fields in legal documents (add standard ones)
   if (text.toLowerCase().includes('signature') || text.toLowerCase().includes('sign')) {
     variables.add('clientSignature')
     variables.add('signatureDate')
   }
-  
+
   if (text.toLowerCase().includes('notary')) {
     variables.add('notaryName')
     variables.add('notaryCommissionNumber')
     variables.add('notaryExpirationDate')
     variables.add('notaryState')
   }
-  
+
   return variables
 }
 
 function convertToTemplate(html: string): string {
   let template = html
-  
+
   // Replace [[Variable]] with {{variable}}
   template = template.replace(/\[\[([^\]]+)\]\]/g, (match, varName) => {
     const normalized = varName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
     return `{{${VARIABLE_MAP[normalized] || varName.trim()}}}`
   })
-  
+
   // Replace {Variable} with {{variable}} - but not dates/numbers
   template = template.replace(/\{([^}]+)\}/g, (match, varName) => {
     const content = varName.trim()
@@ -219,23 +219,23 @@ function convertToTemplate(html: string): string {
     const normalized = content.toLowerCase().replace(/[^a-z0-9]/g, '')
     return `{{${VARIABLE_MAP[normalized] || content.trim()}}}`
   })
-  
+
   // Replace <<Variable>> with {{variable}}
   template = template.replace(/<<([^>]+)>>/g, (match, varName) => {
     const normalized = varName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
     return `{{${VARIABLE_MAP[normalized] || varName.trim()}}}`
   })
-  
+
   return template
 }
 
 async function seedWYDAPTDocuments() {
   console.log('🚀 Starting WYDAPT Document Seeding...\n')
-  
+
   // Connect to database
   const dbPath = '.wrangler/state/v3/d1/miniflare-D1DatabaseObject/local.sqlite'
   const db = new Database(dbPath)
-  
+
   try {
     // 1. Create WYDAPT Service Catalog Entry
     console.log('📋 Creating WYDAPT Service Catalog Entry...')
@@ -275,12 +275,12 @@ async function seedWYDAPTDocuments() {
       Date.now()
     )
     console.log(`✅ Journey created: ${journeyId}\n`)
-    
+
     // 3. Process each document group
     for (const group of DOCUMENT_GROUPS) {
       console.log(`\n📂 Processing: ${group.name}`)
       console.log(`   Creating step: ${group.journeyStepName}`)
-      
+
       // Create journey step
       const stepId = nanoid()
       db.prepare(`
@@ -303,47 +303,47 @@ async function seedWYDAPTDocuments() {
         Date.now()
       )
       console.log(`   ✅ Step created: ${stepId}`)
-      
+
       // Get all DOCX files in this group
       const groupPath = join(WYDAPT_DOCS_PATH, group.path)
       const files = await readdir(groupPath)
       const docxFiles = files.filter(f => f.endsWith('.docx')).sort()
-      
+
       console.log(`   Found ${docxFiles.length} documents to import`)
-      
+
       // Process each document
       for (const filename of docxFiles) {
         const filePath = join(groupPath, filename)
         console.log(`   📄 Parsing: ${filename}`)
-        
+
         try {
           // Parse DOCX
           const { html, text } = await parseDocx(filePath)
-          
+
           // Extract variables
           const variables = extractVariables(text)
           console.log(`      Variables found: ${variables.size}`)
-          
+
           // Convert to template
           const templateContent = convertToTemplate(html)
-          
+
           // Determine document metadata
           const lowerFilename = filename.toLowerCase()
           const lowerText = text.toLowerCase()
-          
-          const requiresSignature = 
+
+          const requiresSignature =
             lowerText.includes('signature') ||
             lowerText.includes('signed by') ||
             lowerFilename.includes('agreement') ||
             lowerFilename.includes('affidavit') ||
             lowerFilename.includes('trust')
-          
-          const requiresNotary = 
+
+          const requiresNotary =
             lowerText.includes('notary') ||
             lowerText.includes('notarized') ||
             lowerFilename.includes('affidavit') ||
             lowerFilename.includes('certification')
-          
+
           let category = 'Trust'
           if (lowerFilename.includes('operating agreement')) category = 'LLC'
           else if (lowerFilename.includes('meeting') || lowerFilename.includes('minutes')) category = 'Meeting Minutes'
@@ -351,7 +351,7 @@ async function seedWYDAPTDocuments() {
           else if (lowerFilename.includes('affidavit')) category = 'Affidavit'
           else if (lowerFilename.includes('certification')) category = 'Certificate'
           else if (lowerFilename.includes('engagement')) category = 'Engagement'
-          
+
           // Create document template
           const templateId = nanoid()
           db.prepare(`
@@ -373,30 +373,31 @@ async function seedWYDAPTDocuments() {
             Date.now(),
             Date.now()
           )
-          
+
           console.log(`      ✅ Template created: ${templateId}`)
           console.log(`         - Requires Signature: ${requiresSignature}`)
           console.log(`         - Requires Notary: ${requiresNotary}`)
-          
-        } catch (error) {
+        }
+        catch (error) {
           console.error(`      ❌ Error parsing ${filename}:`, error.message)
         }
       }
-      
+
       console.log(`   ✅ Completed ${group.name}`)
     }
-    
+
     console.log('\n\n🎉 WYDAPT Document Seeding Complete!')
     console.log(`\n📊 Summary:`)
     console.log(`   - Matter ID: ${matterId}`)
     console.log(`   - Journey ID: ${journeyId}`)
     console.log(`   - Steps Created: ${DOCUMENT_GROUPS.length}`)
     console.log(`   - Total Documents: 28`)
-    
-  } catch (error) {
+  }
+  catch (error) {
     console.error('\n❌ Seeding failed:', error)
     throw error
-  } finally {
+  }
+  finally {
     db.close()
   }
 }
@@ -407,4 +408,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { seedWYDAPTDocuments }
-

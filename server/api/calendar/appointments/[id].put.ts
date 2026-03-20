@@ -83,7 +83,8 @@ export default defineEventHandler(async (event) => {
       if (Object.keys(gcalUpdate).length > 0) {
         await updateCalendarEvent(existing.googleCalendarEmail, existing.googleCalendarEventId, gcalUpdate)
       }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('Failed to update Google Calendar event:', err.message)
     }
   }
@@ -122,7 +123,8 @@ export default defineEventHandler(async (event) => {
           .set({ status: 'UPDATED', updatedAt: new Date() })
           .where(eq(schema.videoMeetings.id, existing.videoMeetingId))
       }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('Failed to update video meeting:', err.message)
     }
   }

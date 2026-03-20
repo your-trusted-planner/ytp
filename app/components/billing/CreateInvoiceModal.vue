@@ -1,6 +1,14 @@
 <template>
-  <UiModal :modelValue="true" title="Create Invoice" size="lg" @update:modelValue="$emit('close')">
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+  <UiModal
+    :model-value="true"
+    title="Create Invoice"
+    size="lg"
+    @update:model-value="$emit('close')"
+  >
+    <form
+      class="space-y-6"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Matter Selection -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -16,7 +24,10 @@
           :loading="loadingMatters"
           @select="handleMatterSelect"
         />
-        <p v-if="matters.length === 0 && !loadingMatters" class="text-xs text-amber-600 mt-1">
+        <p
+          v-if="matters.length === 0 && !loadingMatters"
+          class="text-xs text-amber-600 mt-1"
+        >
           No matters found. Create a matter first before creating an invoice.
         </p>
       </div>
@@ -29,8 +40,8 @@
           </label>
           <button
             type="button"
-            @click="addLineItem"
             class="text-sm text-burgundy-600 hover:text-burgundy-700"
+            @click="addLineItem"
           >
             + Add Item
           </button>
@@ -47,32 +58,48 @@
               <div class="w-36">
                 <select
                   v-model="item.itemType"
-                  @change="handleItemTypeChange(item)"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 bg-white"
+                  @change="handleItemTypeChange(item)"
                 >
-                  <option v-for="type in ITEM_TYPES" :key="type.value" :value="type.value">
+                  <option
+                    v-for="type in ITEM_TYPES"
+                    :key="type.value"
+                    :value="type.value"
+                  >
                     {{ type.label }}
                   </option>
                 </select>
               </div>
-              <div v-if="item.itemType === 'SERVICE' && catalogItems.length > 0" class="flex-1">
+              <div
+                v-if="item.itemType === 'SERVICE' && catalogItems.length > 0"
+                class="flex-1"
+              >
                 <select
                   :value="item.catalogId || ''"
-                  @change="handleCatalogSelect(item, ($event.target as HTMLSelectElement).value || null)"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 bg-white"
+                  @change="handleCatalogSelect(item, ($event.target as HTMLSelectElement).value || null)"
                 >
-                  <option value="">Custom item (no catalog)</option>
-                  <option v-for="catalogItem in catalogItems" :key="catalogItem.id" :value="catalogItem.id">
+                  <option value="">
+                    Custom item (no catalog)
+                  </option>
+                  <option
+                    v-for="catalogItem in catalogItems"
+                    :key="catalogItem.id"
+                    :value="catalogItem.id"
+                  >
                     {{ catalogItem.name }} - {{ formatCurrency(catalogItem.price) }}
                   </option>
                 </select>
               </div>
-              <div v-else class="flex-1"></div>
+              <div
+                v-else
+                class="flex-1"
+              />
               <button
                 v-if="form.lineItems.length > 1"
                 type="button"
-                @click="removeLineItem(index)"
                 class="p-2 text-gray-400 hover:text-red-600"
+                @click="removeLineItem(index)"
               >
                 <X class="w-4 h-4" />
               </button>
@@ -91,7 +118,7 @@
                     'w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500',
                     item.catalogId ? 'bg-gray-100 text-gray-600' : ''
                   ]"
-                />
+                >
               </div>
               <div class="w-20">
                 <input
@@ -105,7 +132,7 @@
                     'w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500',
                     isQuantityDisabled(item) ? 'bg-gray-100 text-gray-600' : ''
                   ]"
-                />
+                >
               </div>
               <div class="w-28">
                 <div class="relative">
@@ -122,7 +149,7 @@
                       'w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500',
                       item.catalogId ? 'bg-gray-100 text-gray-600' : ''
                     ]"
-                  />
+                  >
                 </div>
               </div>
               <div class="w-24 text-right">
@@ -131,7 +158,10 @@
                 </div>
               </div>
               <!-- Spacer to match delete button width when hidden -->
-              <div v-if="form.lineItems.length === 1" class="w-8"></div>
+              <div
+                v-if="form.lineItems.length === 1"
+                class="w-8"
+              />
             </div>
           </div>
         </div>
@@ -143,7 +173,10 @@
           <span class="text-gray-600">Subtotal</span>
           <span class="font-medium">{{ formatCurrency(subtotal) }}</span>
         </div>
-        <div v-if="form.discountAmount > 0" class="flex justify-between text-sm mb-2">
+        <div
+          v-if="form.discountAmount > 0"
+          class="flex justify-between text-sm mb-2"
+        >
           <span class="text-gray-600">Discount</span>
           <span class="font-medium text-green-600">-{{ formatCurrency(form.discountAmount * 100) }}</span>
         </div>
@@ -161,7 +194,7 @@
             v-model="form.dueDate"
             type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-          />
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Discount ($)</label>
@@ -171,7 +204,7 @@
             min="0"
             step="0.01"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-          />
+          >
         </div>
       </div>
 
@@ -182,11 +215,14 @@
           rows="2"
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
           placeholder="Add any notes for the client..."
-        ></textarea>
+        />
       </div>
 
       <!-- Client Trust Balance Info -->
-      <div v-if="clientTrustBalance > 0" class="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div
+        v-if="clientTrustBalance > 0"
+        class="bg-green-50 border border-green-200 rounded-lg p-4"
+      >
         <div class="flex items-center gap-2">
           <Landmark class="w-5 h-5 text-green-600" />
           <span class="text-green-800">
@@ -200,10 +236,17 @@
 
       <!-- Actions -->
       <div class="flex justify-end gap-3 pt-4 border-t">
-        <UiButton type="button" variant="secondary" @click="$emit('close')">
+        <UiButton
+          type="button"
+          variant="secondary"
+          @click="$emit('close')"
+        >
           Cancel
         </UiButton>
-        <UiButton type="submit" :disabled="!isValid || submitting">
+        <UiButton
+          type="submit"
+          :disabled="!isValid || submitting"
+        >
           {{ submitting ? 'Creating...' : 'Create Invoice' }}
         </UiButton>
       </div>
@@ -293,7 +336,8 @@ function handleCatalogSelect(item: LineItem, catalogId: string | null) {
       item.quantity = 1 // Catalog items are fixed quantity
       item.itemType = 'SERVICE'
     }
-  } else {
+  }
+  else {
     item.catalogId = undefined
   }
 }
@@ -322,15 +366,19 @@ onMounted(async () => {
     // Handle both array and object response formats
     if (Array.isArray(response)) {
       matters.value = response
-    } else if (response?.matters) {
+    }
+    else if (response?.matters) {
       matters.value = response.matters
-    } else {
+    }
+    else {
       matters.value = []
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch matters:', error)
     matters.value = []
-  } finally {
+  }
+  finally {
     loadingMatters.value = false
   }
 
@@ -339,10 +387,12 @@ onMounted(async () => {
     loadingCatalog.value = true
     const response = await $fetch<{ catalog: CatalogItem[] }>('/api/service-catalog')
     catalogItems.value = response.catalog || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch catalog:', error)
     catalogItems.value = []
-  } finally {
+  }
+  finally {
     loadingCatalog.value = false
   }
 
@@ -408,7 +458,8 @@ async function handleMatterSelect(matter: any) {
     try {
       const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${clientId}/balance`)
       clientTrustBalance.value = response.totalBalance || 0
-    } catch (error) {
+    }
+    catch (error) {
       clientTrustBalance.value = 0
     }
   }
@@ -439,9 +490,11 @@ async function handleSubmit() {
 
     toast.success('Invoice created successfully')
     emit('created', response.invoice)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to create invoice')
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

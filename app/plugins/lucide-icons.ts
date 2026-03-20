@@ -342,7 +342,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     // Log/History
     IconHistory: History,
-    IconArchive: Archive,
+    IconArchive: Archive
   }
 
   // Register each icon as a global component

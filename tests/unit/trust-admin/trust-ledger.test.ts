@@ -157,7 +157,7 @@ describe('Trust Ledger Utilities', () => {
         { amount: 500000 }, // Deposit
         { amount: -200000 }, // Disbursement
         { amount: 100000 }, // Deposit
-        { amount: -50000 }, // Expense
+        { amount: -50000 } // Expense
       ]
 
       let runningBalance = 0
@@ -274,7 +274,7 @@ describe('Trust Ledger Utilities', () => {
       { type: 'TRANSFER_IN', expectPositive: true },
       { type: 'TRANSFER_OUT', expectPositive: false },
       { type: 'INTEREST', expectPositive: true },
-      { type: 'BANK_FEE', expectPositive: false },
+      { type: 'BANK_FEE', expectPositive: false }
     ]
 
     it.each(transactionTypes)(
@@ -286,7 +286,8 @@ describe('Trust Ledger Utilities', () => {
 
         if (expectPositive) {
           expect(signedAmount).toBeGreaterThan(0)
-        } else {
+        }
+        else {
           expect(signedAmount).toBeLessThan(0)
         }
       }

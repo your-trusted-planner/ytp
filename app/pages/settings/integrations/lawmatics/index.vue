@@ -9,46 +9,74 @@
         <ArrowLeft class="w-5 h-5" />
       </NuxtLink>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Lawmatics Integration</h1>
-        <p class="text-gray-600 mt-1">Configure API connection and manage data imports</p>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Lawmatics Integration
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Configure API connection and manage data imports
+        </p>
       </div>
     </div>
 
     <!-- Sync Health Summary -->
     <UiCard v-if="integration?.status === 'CONNECTED' && syncSummary">
       <template #header>
-        <h3 class="text-lg font-semibold text-gray-900">Sync Health</h3>
+        <h3 class="text-lg font-semibold text-gray-900">
+          Sync Health
+        </h3>
       </template>
 
       <div class="space-y-4">
         <!-- Status Row -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-2xl font-bold" :class="syncSummary.lastSync?.status === 'COMPLETED' ? 'text-green-600' : syncSummary.lastSync?.status === 'FAILED' ? 'text-red-600' : 'text-gray-600'">
+            <p
+              class="text-2xl font-bold"
+              :class="syncSummary.lastSync?.status === 'COMPLETED' ? 'text-green-600' : syncSummary.lastSync?.status === 'FAILED' ? 'text-red-600' : 'text-gray-600'"
+            >
               {{ syncSummary.lastSync?.status || 'Never' }}
             </p>
-            <p class="text-xs text-gray-500">Last Sync Status</p>
+            <p class="text-xs text-gray-500">
+              Last Sync Status
+            </p>
           </div>
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-2xl font-bold text-gray-900">{{ syncSummary.totalImportedRecords }}</p>
-            <p class="text-xs text-gray-500">Total Imported</p>
+            <p class="text-2xl font-bold text-gray-900">
+              {{ syncSummary.totalImportedRecords }}
+            </p>
+            <p class="text-xs text-gray-500">
+              Total Imported
+            </p>
           </div>
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-2xl font-bold" :class="syncSummary.totalLocalEdits > 0 ? 'text-amber-600' : 'text-gray-600'">
+            <p
+              class="text-2xl font-bold"
+              :class="syncSummary.totalLocalEdits > 0 ? 'text-amber-600' : 'text-gray-600'"
+            >
               {{ syncSummary.totalLocalEdits }}
             </p>
-            <p class="text-xs text-gray-500">Local Edits</p>
+            <p class="text-xs text-gray-500">
+              Local Edits
+            </p>
           </div>
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-2xl font-bold" :class="syncSummary.lastRunErrors > 0 ? 'text-red-600' : 'text-gray-600'">
+            <p
+              class="text-2xl font-bold"
+              :class="syncSummary.lastRunErrors > 0 ? 'text-red-600' : 'text-gray-600'"
+            >
               {{ syncSummary.lastRunErrors }}
             </p>
-            <p class="text-xs text-gray-500">Last Run Errors</p>
+            <p class="text-xs text-gray-500">
+              Last Run Errors
+            </p>
           </div>
         </div>
 
         <!-- Last Sync Time -->
-        <div v-if="syncSummary.lastSync" class="flex items-center justify-between text-sm text-gray-600 px-1">
+        <div
+          v-if="syncSummary.lastSync"
+          class="flex items-center justify-between text-sm text-gray-600 px-1"
+        >
           <span>
             Last sync: {{ syncSummary.lastSync.completedAt ? formatDate(syncSummary.lastSync.completedAt) : 'In progress' }}
             ({{ syncSummary.lastSync.runType }})
@@ -67,8 +95,12 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">Data Migration</h3>
-            <p class="text-sm text-gray-600 mt-1">Import data from Lawmatics into the system</p>
+            <h3 class="text-lg font-semibold text-gray-900">
+              Data Migration
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">
+              Import data from Lawmatics into the system
+            </p>
           </div>
           <NuxtLink to="/settings/integrations/lawmatics/migrate">
             <UiButton>
@@ -81,9 +113,17 @@
 
       <div class="space-y-4">
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
-          <div v-for="entity in entityStats" :key="entity.type" class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-2xl font-bold text-gray-900">{{ entity.count }}</p>
-            <p class="text-sm text-gray-600">{{ entity.label }}</p>
+          <div
+            v-for="entity in entityStats"
+            :key="entity.type"
+            class="p-4 bg-gray-50 rounded-lg"
+          >
+            <p class="text-2xl font-bold text-gray-900">
+              {{ entity.count }}
+            </p>
+            <p class="text-sm text-gray-600">
+              {{ entity.label }}
+            </p>
           </div>
         </div>
         <p class="text-xs text-gray-500 text-center">
@@ -100,14 +140,17 @@
           <div
             :class="[
               'w-3 h-3 rounded-full',
-              integration?.status === 'CONNECTED' ? 'bg-green-500' :
-              integration?.status === 'ERROR' ? 'bg-red-500' : 'bg-gray-300'
+              integration?.status === 'CONNECTED' ? 'bg-green-500'
+              : integration?.status === 'ERROR' ? 'bg-red-500' : 'bg-gray-300'
             ]"
           />
           <span class="text-sm font-medium text-gray-700">
             {{ statusText }}
           </span>
-          <span v-if="integration?.lastTestedAt" class="text-xs text-gray-500">
+          <span
+            v-if="integration?.lastTestedAt"
+            class="text-xs text-gray-500"
+          >
             (Last tested: {{ formatDate(integration.lastTestedAt) }})
           </span>
         </div>
@@ -123,14 +166,20 @@
               :type="showApiKey ? 'text' : 'password'"
               placeholder="Enter your Lawmatics API key"
               class="flex-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
-            />
+            >
             <button
               type="button"
-              @click="showApiKey = !showApiKey"
               class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+              @click="showApiKey = !showApiKey"
             >
-              <Eye v-if="!showApiKey" class="w-5 h-5" />
-              <EyeOff v-else class="w-5 h-5" />
+              <Eye
+                v-if="!showApiKey"
+                class="w-5 h-5"
+              />
+              <EyeOff
+                v-else
+                class="w-5 h-5"
+              />
             </button>
           </div>
           <p class="mt-1 text-xs text-gray-500">
@@ -141,35 +190,50 @@
         <!-- Action Buttons -->
         <div class="flex gap-3">
           <UiButton
-            @click="saveCredentials"
             :is-loading="saving"
             :disabled="!apiKey"
+            @click="saveCredentials"
           >
             Save Credentials
           </UiButton>
           <UiButton
             variant="outline"
-            @click="testConnection"
             :is-loading="testing"
             :disabled="!integration?.id"
+            @click="testConnection"
           >
             Test Connection
           </UiButton>
         </div>
 
         <!-- Test Result -->
-        <div v-if="testResult" :class="[
-          'p-4 rounded-lg',
-          testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-        ]">
+        <div
+          v-if="testResult"
+          :class="[
+            'p-4 rounded-lg',
+            testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          ]"
+        >
           <div class="flex items-start gap-3">
-            <CheckCircle v-if="testResult.success" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <XCircle v-else class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle
+              v-if="testResult.success"
+              class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+            />
+            <XCircle
+              v-else
+              class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+            />
             <div>
-              <p :class="testResult.success ? 'text-green-800' : 'text-red-800'" class="font-medium">
+              <p
+                :class="testResult.success ? 'text-green-800' : 'text-red-800'"
+                class="font-medium"
+              >
                 {{ testResult.success ? 'Connection successful!' : 'Connection failed' }}
               </p>
-              <p v-if="testResult.error" class="text-sm text-red-700 mt-1">
+              <p
+                v-if="testResult.error"
+                class="text-sm text-red-700 mt-1"
+              >
                 {{ testResult.error }}
               </p>
             </div>
@@ -183,8 +247,12 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">Automatic Sync</h3>
-            <p class="text-sm text-gray-600 mt-1">Keep data fresh with periodic sync from Lawmatics</p>
+            <h3 class="text-lg font-semibold text-gray-900">
+              Automatic Sync
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">
+              Keep data fresh with periodic sync from Lawmatics
+            </p>
           </div>
         </div>
       </template>
@@ -193,16 +261,20 @@
         <!-- Enable/Disable Toggle -->
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-700">Enable automatic sync</p>
-            <p class="text-xs text-gray-500">Runs an incremental sync every 4 hours</p>
+            <p class="text-sm font-medium text-gray-700">
+              Enable automatic sync
+            </p>
+            <p class="text-xs text-gray-500">
+              Runs an incremental sync every 4 hours
+            </p>
           </div>
           <button
             type="button"
-            @click="toggleAutoSync"
             :class="[
               'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2',
               syncSettings.syncEnabled ? 'bg-accent-600' : 'bg-gray-200'
             ]"
+            @click="toggleAutoSync"
           >
             <span
               :class="[
@@ -215,15 +287,21 @@
 
         <!-- Entity Type Checkboxes -->
         <div v-if="syncSettings.syncEnabled">
-          <p class="text-sm font-medium text-gray-700 mb-2">Data types to sync</p>
+          <p class="text-sm font-medium text-gray-700 mb-2">
+            Data types to sync
+          </p>
           <div class="space-y-2">
-            <label v-for="entity in syncEntityOptions" :key="entity.value" class="flex items-center gap-2">
+            <label
+              v-for="entity in syncEntityOptions"
+              :key="entity.value"
+              class="flex items-center gap-2"
+            >
               <input
                 type="checkbox"
                 :checked="syncSettings.syncEntityTypes.includes(entity.value)"
-                @change="toggleSyncEntity(entity.value)"
                 class="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
-              />
+                @change="toggleSyncEntity(entity.value)"
+              >
               <span class="text-sm text-gray-700">{{ entity.label }}</span>
             </label>
           </div>
@@ -232,26 +310,35 @@
         <!-- Save Button -->
         <div v-if="syncSettings.syncEnabled">
           <UiButton
-            @click="saveSyncSettings"
             :is-loading="savingSyncSettings"
             size="sm"
+            @click="saveSyncSettings"
           >
             Save Sync Settings
           </UiButton>
         </div>
 
         <!-- Sync Status -->
-        <div v-if="syncSettings.syncEnabled" class="p-4 bg-gray-50 rounded-lg">
+        <div
+          v-if="syncSettings.syncEnabled"
+          class="p-4 bg-gray-50 rounded-lg"
+        >
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-700">Last automatic sync</p>
+              <p class="text-sm font-medium text-gray-700">
+                Last automatic sync
+              </p>
               <p class="text-xs text-gray-500">
                 {{ syncSettings.lastAutoSyncAt ? formatDate(syncSettings.lastAutoSyncAt) : 'Never' }}
               </p>
             </div>
             <div class="text-right">
-              <p class="text-sm font-medium text-gray-700">Next sync</p>
-              <p class="text-xs text-gray-500">~Every 4 hours</p>
+              <p class="text-sm font-medium text-gray-700">
+                Next sync
+              </p>
+              <p class="text-xs text-gray-500">
+                ~Every 4 hours
+              </p>
             </div>
           </div>
           <div class="mt-3 pt-3 border-t border-gray-200 space-y-2">
@@ -265,8 +352,8 @@
               <UiButton
                 variant="outline"
                 size="sm"
-                @click="triggerSync"
                 :is-loading="triggeringSync"
+                @click="triggerSync"
               >
                 <RefreshCw class="w-4 h-4 mr-2" />
                 Sync Now
@@ -278,47 +365,88 @@
     </UiCard>
 
     <!-- Danger Zone -->
-    <UiCard v-if="integration?.id" class="border-red-200">
+    <UiCard
+      v-if="integration?.id"
+      class="border-red-200"
+    >
       <template #header>
-        <h3 class="text-lg font-semibold text-red-700">Danger Zone</h3>
+        <h3 class="text-lg font-semibold text-red-700">
+          Danger Zone
+        </h3>
       </template>
       <div class="space-y-6">
         <!-- Clean Up Imports -->
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-700">Clean up imported data</p>
-            <p class="text-xs text-gray-500">Remove all records imported from Lawmatics (people, clients, users, relationships, notes)</p>
+            <p class="text-sm text-gray-700">
+              Clean up imported data
+            </p>
+            <p class="text-xs text-gray-500">
+              Remove all records imported from Lawmatics (people, clients, users, relationships, notes)
+            </p>
           </div>
           <div class="flex gap-2">
-            <UiButton variant="outline" size="sm" @click="previewCleanup" :is-loading="cleanupPreviewing">
+            <UiButton
+              variant="outline"
+              size="sm"
+              :is-loading="cleanupPreviewing"
+              @click="previewCleanup"
+            >
               Preview
             </UiButton>
-            <UiButton variant="danger" size="sm" @click="cleanupImports" :is-loading="cleanupRunning" :disabled="!cleanupPreview">
+            <UiButton
+              variant="danger"
+              size="sm"
+              :is-loading="cleanupRunning"
+              :disabled="!cleanupPreview"
+              @click="cleanupImports"
+            >
               Clean Up
             </UiButton>
           </div>
         </div>
 
         <!-- Cleanup Preview -->
-        <div v-if="cleanupPreview" class="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p class="text-sm font-medium text-red-800 mb-2">Records to be deleted:</p>
+        <div
+          v-if="cleanupPreview"
+          class="p-4 bg-red-50 border border-red-200 rounded-lg"
+        >
+          <p class="text-sm font-medium text-red-800 mb-2">
+            Records to be deleted:
+          </p>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
-            <div v-for="(count, type) in cleanupPreview" :key="type" class="bg-white rounded p-2">
-              <p class="text-lg font-bold text-red-700">{{ count }}</p>
-              <p class="text-xs text-gray-600 capitalize">{{ type }}</p>
+            <div
+              v-for="(count, type) in cleanupPreview"
+              :key="type"
+              class="bg-white rounded p-2"
+            >
+              <p class="text-lg font-bold text-red-700">
+                {{ count }}
+              </p>
+              <p class="text-xs text-gray-600 capitalize">
+                {{ type }}
+              </p>
             </div>
           </div>
         </div>
 
-        <hr class="border-gray-200" />
+        <hr class="border-gray-200">
 
         <!-- Delete Integration -->
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-700">Remove this integration</p>
-            <p class="text-xs text-gray-500">This will delete the stored credentials. Imported data will not be affected.</p>
+            <p class="text-sm text-gray-700">
+              Remove this integration
+            </p>
+            <p class="text-xs text-gray-500">
+              This will delete the stored credentials. Imported data will not be affected.
+            </p>
           </div>
-          <UiButton variant="danger" @click="deleteIntegration" :is-loading="deleting">
+          <UiButton
+            variant="danger"
+            :is-loading="deleting"
+            @click="deleteIntegration"
+          >
             Delete Integration
           </UiButton>
         </div>
@@ -359,7 +487,7 @@ const showApiKey = ref(false)
 const saving = ref(false)
 const testing = ref(false)
 const deleting = ref(false)
-const testResult = ref<{ success: boolean; error?: string } | null>(null)
+const testResult = ref<{ success: boolean, error?: string } | null>(null)
 
 // Trigger sync state
 const triggeringSync = ref(false)
@@ -447,7 +575,8 @@ async function loadIntegration() {
     }
 
     loadSyncSettings()
-  } catch {
+  }
+  catch {
     // Integration not found or no access
   }
 }
@@ -471,7 +600,8 @@ async function loadImportStats() {
       { type: 'notes', label: 'Notes', count: stats.notes },
       { type: 'activities', label: 'Activities', count: stats.activities }
     ]
-  } catch {
+  }
+  catch {
     // Stats not available
   }
 }
@@ -480,7 +610,8 @@ async function loadSyncSummary() {
   try {
     const data = await $fetch<any>('/api/admin/sync/summary')
     syncSummary.value = data
-  } catch {
+  }
+  catch {
     // Summary not available
   }
 }
@@ -490,9 +621,9 @@ function loadSyncSettings() {
   if (settings) {
     syncSettings.value = {
       syncEnabled: !!settings.syncEnabled,
-      syncEntityTypes: settings.syncEntityTypes?.length
-        ? settings.syncEntityTypes
-        : ['users', 'contacts', 'prospects', 'notes', 'activities'],
+      syncEntityTypes: settings.syncEntityTypes?.length ?
+        settings.syncEntityTypes :
+          ['users', 'contacts', 'prospects', 'notes', 'activities'],
       lastAutoSyncAt: settings.lastAutoSyncAt || null
     }
   }
@@ -507,7 +638,8 @@ function toggleSyncEntity(entityType: string) {
   const idx = syncSettings.value.syncEntityTypes.indexOf(entityType)
   if (idx >= 0) {
     syncSettings.value.syncEntityTypes.splice(idx, 1)
-  } else {
+  }
+  else {
     syncSettings.value.syncEntityTypes.push(entityType)
   }
 }
@@ -522,7 +654,7 @@ async function saveSyncSettings() {
     const mergedSettings = {
       ...existingSettings,
       syncEnabled: syncSettings.value.syncEnabled,
-      syncEntityTypes: syncSettings.value.syncEntityTypes,
+      syncEntityTypes: syncSettings.value.syncEntityTypes
       // Preserve lastAutoSyncAt from server
     }
 
@@ -532,9 +664,11 @@ async function saveSyncSettings() {
     })
     await loadIntegration()
     toast.success('Sync settings saved')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save sync settings')
-  } finally {
+  }
+  finally {
     savingSyncSettings.value = false
   }
 }
@@ -552,7 +686,8 @@ async function saveCredentials() {
         method: 'PUT',
         body: { accessToken: apiKey.value }
       })
-    } else {
+    }
+    else {
       // Create new
       const result = await $fetch<{ integration: Integration }>('/api/admin/integrations', {
         method: 'POST',
@@ -568,13 +703,15 @@ async function saveCredentials() {
     apiKey.value = '••••••••••••••••'
     await loadIntegration()
     toast.success('Credentials saved successfully')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save credentials')
     testResult.value = {
       success: false,
       error: error.data?.message || 'Failed to save credentials'
     }
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -586,7 +723,7 @@ async function testConnection() {
   testResult.value = null
 
   try {
-    const result = await $fetch<{ success: boolean; error?: string }>(
+    const result = await $fetch<{ success: boolean, error?: string }>(
       `/api/admin/integrations/${integration.value.id}/test`,
       { method: 'POST' }
     )
@@ -594,16 +731,19 @@ async function testConnection() {
     await loadIntegration()
     if (result.success) {
       toast.success('Connection test successful!')
-    } else {
+    }
+    else {
       toast.error(result.error || 'Connection test failed')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Test failed')
     testResult.value = {
       success: false,
       error: error.data?.message || 'Test failed'
     }
-  } finally {
+  }
+  finally {
     testing.value = false
   }
 }
@@ -620,9 +760,11 @@ async function deleteIntegration() {
     integration.value = null
     apiKey.value = ''
     toast.success('Integration deleted')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete integration')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }
@@ -632,14 +774,16 @@ async function previewCleanup() {
   cleanupPreview.value = null
 
   try {
-    const result = await $fetch<{ dryRun: boolean; wouldDelete: Record<string, number> }>(
+    const result = await $fetch<{ dryRun: boolean, wouldDelete: Record<string, number> }>(
       '/api/admin/integrations/lawmatics/cleanup-imports?dryRun=true',
       { method: 'DELETE' }
     )
     cleanupPreview.value = result.wouldDelete
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to preview cleanup')
-  } finally {
+  }
+  finally {
     cleanupPreviewing.value = false
   }
 }
@@ -653,7 +797,7 @@ async function cleanupImports() {
   cleanupRunning.value = true
 
   try {
-    const result = await $fetch<{ success: boolean; deleted: Record<string, number> }>(
+    const result = await $fetch<{ success: boolean, deleted: Record<string, number> }>(
       '/api/admin/integrations/lawmatics/cleanup-imports',
       { method: 'DELETE' }
     )
@@ -661,9 +805,11 @@ async function cleanupImports() {
     toast.success(`Successfully deleted ${deletedTotal} imported records`)
     cleanupPreview.value = null
     await loadImportStats()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to clean up imports')
-  } finally {
+  }
+  finally {
     cleanupRunning.value = false
   }
 }
@@ -680,9 +826,11 @@ async function triggerSync() {
     const dateNote = syncOverrideDate.value ? ` from ${syncOverrideDate.value}` : ''
     toast.success(`Sync triggered${dateNote} — check back shortly for results`)
     await loadSyncSummary()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to trigger sync')
-  } finally {
+  }
+  finally {
     triggeringSync.value = false
   }
 }

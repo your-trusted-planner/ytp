@@ -253,7 +253,8 @@ test.describe('Google Drive API - Client Data', () => {
     if (clientDetail.profile) {
       expect(clientDetail.profile).toHaveProperty('google_drive_sync_status')
       expect(clientDetail.profile).toHaveProperty('google_drive_folder_url')
-    } else {
+    }
+    else {
       // Document that profile is missing - this may be the bug
       console.log('WARNING: clientDetail.profile is null/undefined')
     }

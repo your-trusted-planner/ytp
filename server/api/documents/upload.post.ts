@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
   // Validate file type (must be DOCX)
   if (file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' &&
-      !file.filename?.endsWith('.docx')) {
+    !file.filename?.endsWith('.docx')) {
     throw createError({
       statusCode: 400,
       message: 'File must be a DOCX document'
@@ -77,7 +77,8 @@ export default defineEventHandler(async (event) => {
       status: 'processing',
       message: 'Document uploaded successfully and queued for processing'
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Document upload error:', error)
     throw createError({
       statusCode: 500,

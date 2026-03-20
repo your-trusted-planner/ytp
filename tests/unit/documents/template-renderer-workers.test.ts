@@ -46,7 +46,6 @@ describe('Template Renderer - Workers Compatibility', () => {
     it('should verify Function is blocked', () => {
       // Verify our proxy is working
       expect(() => {
-        // eslint-disable-next-line no-new-func
         new Function('return 1')
       }).toThrow('Code generation from strings disallowed')
     })

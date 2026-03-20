@@ -1,20 +1,42 @@
 <template>
-  <UiModal :modelValue="true" title="Trust Account Reconciliation" size="lg" @update:modelValue="$emit('close')">
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+  <UiModal
+    :model-value="true"
+    title="Trust Account Reconciliation"
+    size="lg"
+    @update:model-value="$emit('close')"
+  >
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
-    <div v-else-if="!report" class="text-center py-12">
+    <div
+      v-else-if="!report"
+      class="text-center py-12"
+    >
       <AlertCircle class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">Unable to load reconciliation</h3>
-      <p class="text-gray-500 mt-1">Please try again later.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        Unable to load reconciliation
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Please try again later.
+      </p>
     </div>
 
-    <div v-else class="space-y-6">
+    <div
+      v-else
+      class="space-y-6"
+    >
       <!-- Reconciliation Header -->
       <div class="text-center pb-4 border-b">
-        <h3 class="text-lg font-bold text-gray-900">THREE-WAY RECONCILIATION</h3>
-        <p class="text-sm text-gray-500">As of {{ formatDate(report.asOfDate) }}</p>
+        <h3 class="text-lg font-bold text-gray-900">
+          THREE-WAY RECONCILIATION
+        </h3>
+        <p class="text-sm text-gray-500">
+          As of {{ formatDate(report.asOfDate) }}
+        </p>
       </div>
 
       <!-- Bank Balance Entry -->
@@ -31,7 +53,7 @@
             step="0.01"
             placeholder="Enter bank statement balance"
             class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
         <p class="text-xs text-gray-500 mt-1">
           Enter the balance from your most recent bank statement
@@ -44,7 +66,10 @@
           <!-- Bank Balance -->
           <div class="flex justify-between items-center">
             <span class="text-sm font-medium text-gray-700">Bank Balance (entered)</span>
-            <span class="text-lg font-bold" :class="bankBalanceDollars ? 'text-gray-900' : 'text-gray-400'">
+            <span
+              class="text-lg font-bold"
+              :class="bankBalanceDollars ? 'text-gray-900' : 'text-gray-400'"
+            >
               {{ bankBalanceDollars ? formatCurrency(bankBalanceDollars * 100) : 'Not entered' }}
             </span>
           </div>
@@ -79,7 +104,10 @@
             </div>
 
             <!-- Bank vs Ledger Difference -->
-            <div v-if="bankBalanceDollars" class="flex justify-between items-center">
+            <div
+              v-if="bankBalanceDollars"
+              class="flex justify-between items-center"
+            >
               <span class="text-sm text-gray-600">Bank vs Ledger Difference</span>
               <span
                 class="font-medium"
@@ -98,13 +126,25 @@
         :class="isBalanced ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'"
       >
         <div class="flex items-center gap-3">
-          <CheckCircle v-if="isBalanced" class="w-6 h-6 text-green-600" />
-          <XCircle v-else class="w-6 h-6 text-red-600" />
+          <CheckCircle
+            v-if="isBalanced"
+            class="w-6 h-6 text-green-600"
+          />
+          <XCircle
+            v-else
+            class="w-6 h-6 text-red-600"
+          />
           <div>
-            <p class="font-medium" :class="isBalanced ? 'text-green-800' : 'text-red-800'">
+            <p
+              class="font-medium"
+              :class="isBalanced ? 'text-green-800' : 'text-red-800'"
+            >
               {{ isBalanced ? 'BALANCED' : 'OUT OF BALANCE' }}
             </p>
-            <p class="text-sm" :class="isBalanced ? 'text-green-700' : 'text-red-700'">
+            <p
+              class="text-sm"
+              :class="isBalanced ? 'text-green-700' : 'text-red-700'"
+            >
               {{ isBalanced
                 ? 'Trust ledger and client balances match.'
                 : 'There is a discrepancy that needs to be investigated.' }}
@@ -115,7 +155,9 @@
 
       <!-- Client Breakdown -->
       <div>
-        <h4 class="text-sm font-medium text-gray-700 mb-3">Client Balance Breakdown</h4>
+        <h4 class="text-sm font-medium text-gray-700 mb-3">
+          Client Balance Breakdown
+        </h4>
         <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50 sticky top-0">
@@ -129,7 +171,10 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="client in report.clientBalances" :key="client.clientId">
+              <tr
+                v-for="client in report.clientBalances"
+                :key="client.clientId"
+              >
                 <td class="px-4 py-2 text-sm text-gray-900">
                   {{ client.clientName }}
                 </td>
@@ -138,7 +183,10 @@
                 </td>
               </tr>
               <tr v-if="report.clientBalances.length === 0">
-                <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">
+                <td
+                  colspan="2"
+                  class="px-4 py-4 text-sm text-gray-500 text-center"
+                >
                   No client balances
                 </td>
               </tr>
@@ -150,8 +198,8 @@
       <!-- Actions -->
       <div class="flex justify-between items-center pt-4 border-t">
         <button
-          @click="printReport"
           class="text-sm text-burgundy-600 hover:text-burgundy-800"
+          @click="printReport"
         >
           Print Report
         </button>
@@ -228,9 +276,11 @@ async function fetchReport() {
   try {
     const response = await $fetch<{ report: ReconciliationReport }>('/api/trust/reconciliation')
     report.value = response.report
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch reconciliation:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

@@ -2,15 +2,28 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <NuxtLink to="/documents" class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block">
+        <NuxtLink
+          to="/documents"
+          class="text-sm text-accent-600 hover:text-accent-900 mb-2 inline-block"
+        >
           ← Back to Documents
         </NuxtLink>
-        <h1 class="text-3xl font-bold text-gray-900">{{ document?.title || 'Document' }}</h1>
-        <p v-if="document?.description" class="text-gray-600 mt-1">{{ document.description }}</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          {{ document?.title || 'Document' }}
+        </h1>
+        <p
+          v-if="document?.description"
+          class="text-gray-600 mt-1"
+        >
+          {{ document.description }}
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <!-- Actions Dropdown -->
-        <div v-if="document" class="relative actions-dropdown">
+        <div
+          v-if="document"
+          class="relative actions-dropdown"
+        >
           <UiButton
             variant="secondary"
             size="sm"
@@ -23,44 +36,44 @@
           <!-- Dropdown Menu -->
           <div
             v-if="showActionsDropdown"
-            @click="showActionsDropdown = false"
             class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50"
+            @click="showActionsDropdown = false"
           >
             <button
-              @click="showPreviewModal = true"
               class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              @click="showPreviewModal = true"
             >
               <Eye class="w-4 h-4 mr-2" />
               Preview Document
             </button>
             <button
               v-if="!isSigned"
-              @click="downloadDocx"
               class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+              @click="downloadDocx"
             >
               <Download class="w-4 h-4 mr-2" />
               Download DOCX
             </button>
             <button
               v-if="isSigned && document?.signedPdfBlobKey"
-              @click="downloadSignedPdf"
               class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+              @click="downloadSignedPdf"
             >
               <Download class="w-4 h-4 mr-2" />
               Download Signed PDF
             </button>
             <button
               v-if="canSendForSignature"
-              @click="showSignatureModal = true"
               class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+              @click="showSignatureModal = true"
             >
               <PenTool class="w-4 h-4 mr-2" />
               Send for E-Signature
             </button>
             <button
               v-if="canDelete"
-              @click="showDeleteModal = true"
               class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+              @click="showDeleteModal = true"
             >
               <Trash2 class="w-4 h-4 mr-2" />
               Delete Document
@@ -70,7 +83,6 @@
         <select
           v-if="document"
           v-model="selectedStatus"
-          @change="updateStatus"
           :disabled="isSigned"
           class="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-500"
           :class="{
@@ -79,22 +91,43 @@
             'bg-gray-50 text-gray-700': selectedStatus === 'DRAFT',
             'opacity-60 cursor-not-allowed': isSigned
           }"
+          @change="updateStatus"
         >
-          <option value="DRAFT">DRAFT</option>
-          <option value="SENT">SENT</option>
-          <option value="VIEWED">VIEWED</option>
-          <option value="SIGNED">SIGNED</option>
-          <option value="COMPLETED">COMPLETED</option>
+          <option value="DRAFT">
+            DRAFT
+          </option>
+          <option value="SENT">
+            SENT
+          </option>
+          <option value="VIEWED">
+            VIEWED
+          </option>
+          <option value="SIGNED">
+            SIGNED
+          </option>
+          <option value="COMPLETED">
+            COMPLETED
+          </option>
         </select>
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading document...</p>
+    <div
+      v-if="loading"
+      class="text-center py-12"
+    >
+      <p class="text-gray-500">
+        Loading document...
+      </p>
     </div>
 
-    <div v-else-if="!document" class="text-center py-12">
-      <p class="text-red-600">Document not found</p>
+    <div
+      v-else-if="!document"
+      class="text-center py-12"
+    >
+      <p class="text-red-600">
+        Document not found
+      </p>
     </div>
 
     <template v-else>
@@ -102,26 +135,53 @@
       <div class="sticky top-0 z-10 bg-gray-50 space-y-4 pb-4">
         <!-- Document Metadata (Collapsible) -->
         <UiCard>
-          <div class="flex justify-between items-center cursor-pointer" @click="showMetadata = !showMetadata">
-            <h3 class="text-lg font-semibold text-gray-900">Document Information</h3>
-            <component :is="showMetadata ? ChevronUp : ChevronDown" class="w-5 h-5 text-gray-500" />
+          <div
+            class="flex justify-between items-center cursor-pointer"
+            @click="showMetadata = !showMetadata"
+          >
+            <h3 class="text-lg font-semibold text-gray-900">
+              Document Information
+            </h3>
+            <component
+              :is="showMetadata ? ChevronUp : ChevronDown"
+              class="w-5 h-5 text-gray-500"
+            />
           </div>
-          <div v-if="showMetadata" class="grid grid-cols-2 gap-4 text-sm mt-4">
+          <div
+            v-if="showMetadata"
+            class="grid grid-cols-2 gap-4 text-sm mt-4"
+          >
             <div>
-              <p class="text-gray-600">Created:</p>
-              <p class="font-medium text-gray-900">{{ formatDate(document.createdAt) }}</p>
+              <p class="text-gray-600">
+                Created:
+              </p>
+              <p class="font-medium text-gray-900">
+                {{ formatDate(document.createdAt) }}
+              </p>
             </div>
             <div>
-              <p class="text-gray-600">Status:</p>
-              <p class="font-medium text-gray-900">{{ document.status }}</p>
+              <p class="text-gray-600">
+                Status:
+              </p>
+              <p class="font-medium text-gray-900">
+                {{ document.status }}
+              </p>
             </div>
             <div v-if="document.sentAt">
-              <p class="text-gray-600">Sent:</p>
-              <p class="font-medium text-gray-900">{{ formatDateTime(document.sentAt) }}</p>
+              <p class="text-gray-600">
+                Sent:
+              </p>
+              <p class="font-medium text-gray-900">
+                {{ formatDateTime(document.sentAt) }}
+              </p>
             </div>
             <div v-if="document.viewedAt">
-              <p class="text-gray-600">First Viewed:</p>
-              <p class="font-medium text-gray-900">{{ formatDateTime(document.viewedAt) }}</p>
+              <p class="text-gray-600">
+                First Viewed:
+              </p>
+              <p class="font-medium text-gray-900">
+                {{ formatDateTime(document.viewedAt) }}
+              </p>
             </div>
           </div>
         </UiCard>
@@ -129,14 +189,24 @@
         <!-- Variables Display (Read-only overview) -->
         <UiCard v-if="needsVariables && !isSigned">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Document Variables</h3>
-            <UiButton @click="showEditVariablesModal = true" size="sm" variant="outline">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Document Variables
+            </h3>
+            <UiButton
+              size="sm"
+              variant="outline"
+              @click="showEditVariablesModal = true"
+            >
               Edit Variables
             </UiButton>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="variable in documentVariables" :key="variable.name" class="space-y-1">
+            <div
+              v-for="variable in documentVariables"
+              :key="variable.name"
+              class="space-y-1"
+            >
               <div class="flex items-center justify-between">
                 <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {{ variable.description || variable.name }}
@@ -157,12 +227,15 @@
       </div>
 
       <!-- Signature Section (only for clients signing their own documents directly) -->
-      <UiCard v-if="!isSigned && document.status === 'SENT' && isClientSigningOwnDocument" title="Sign Document">
+      <UiCard
+        v-if="!isSigned && document.status === 'SENT' && isClientSigningOwnDocument"
+        title="Sign Document"
+      >
         <div class="space-y-4">
           <p class="text-sm text-gray-600">
             Please sign below to complete this document. Your signature will be securely stored.
           </p>
-          
+
           <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
             <label class="block text-sm font-medium text-gray-700 mb-2">Your Signature</label>
             <canvas
@@ -177,24 +250,32 @@
               @touchstart="startDrawing"
               @touchmove="draw"
               @touchend="stopDrawing"
-            ></canvas>
+            />
             <div class="mt-2 flex justify-between">
               <button
                 type="button"
-                @click="clearSignature"
                 class="text-sm text-gray-600 hover:text-gray-900"
+                @click="clearSignature"
               >
                 Clear Signature
               </button>
-              <p class="text-xs text-gray-500">Draw your signature above</p>
+              <p class="text-xs text-gray-500">
+                Draw your signature above
+              </p>
             </div>
           </div>
 
           <div class="flex justify-end space-x-3">
-            <UiButton variant="outline" @click="clearSignature">
+            <UiButton
+              variant="outline"
+              @click="clearSignature"
+            >
               Clear
             </UiButton>
-            <UiButton @click="handleSign" :is-loading="signing">
+            <UiButton
+              :is-loading="signing"
+              @click="handleSign"
+            >
               Sign Document
             </UiButton>
           </div>
@@ -202,29 +283,53 @@
       </UiCard>
 
       <!-- Signed Status -->
-      <UiCard v-if="isSigned" title="Document Signed">
+      <UiCard
+        v-if="isSigned"
+        title="Document Signed"
+      >
         <div class="text-center py-8">
           <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle class="w-10 h-10 text-green-600" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Document Signed Successfully</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            Document Signed Successfully
+          </h3>
           <p class="text-sm text-gray-600">
             Signed on {{ formatDateTime(document.signedAt) }}
           </p>
-          <div v-if="document.signatureData" class="mt-6 max-w-md mx-auto border border-gray-300 rounded-lg p-4 bg-gray-50">
-            <p class="text-xs text-gray-500 mb-2">Your Signature:</p>
-            <img :src="document.signatureData" alt="Signature" class="max-w-full h-auto" />
+          <div
+            v-if="document.signatureData"
+            class="mt-6 max-w-md mx-auto border border-gray-300 rounded-lg p-4 bg-gray-50"
+          >
+            <p class="text-xs text-gray-500 mb-2">
+              Your Signature:
+            </p>
+            <img
+              :src="document.signatureData"
+              alt="Signature"
+              class="max-w-full h-auto"
+            >
           </div>
         </div>
       </UiCard>
-
     </template>
 
     <!-- Edit Variables Modal -->
-    <UiModal v-model="showEditVariablesModal" title="Edit Document Variables" size="lg">
-      <form @submit.prevent="handleFillVariables" class="space-y-4">
+    <UiModal
+      v-model="showEditVariablesModal"
+      title="Edit Document Variables"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleFillVariables"
+      >
         <div class="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
-          <div v-for="variable in documentVariables" :key="variable.name" class="space-y-1">
+          <div
+            v-for="variable in documentVariables"
+            :key="variable.name"
+            class="space-y-1"
+          >
             <div class="flex items-center justify-between">
               <label class="block text-sm font-medium text-gray-700">
                 {{ variable.description || variable.name }}
@@ -247,8 +352,11 @@
                   : 'border-gray-300 focus:ring-burgundy-500 focus:border-burgundy-500'
               ]"
               required
-            />
-            <p v-if="isVariableMapped(variable.name)" class="text-xs text-gray-500 italic">
+            >
+            <p
+              v-if="isVariableMapped(variable.name)"
+              class="text-xs text-gray-500 italic"
+            >
               This field is automatically populated from the database and cannot be edited.
             </p>
           </div>
@@ -256,23 +364,39 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showEditVariablesModal = false">
+        <UiButton
+          variant="outline"
+          @click="showEditVariablesModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleFillVariables" :is-loading="savingVariables">
+        <UiButton
+          :is-loading="savingVariables"
+          @click="handleFillVariables"
+        >
           Update Document
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Preview Document Modal -->
-    <UiModal v-model="showPreviewModal" title="Document Preview" size="xl">
+    <UiModal
+      v-model="showPreviewModal"
+      title="Document Preview"
+      size="xl"
+    >
       <div class="max-h-[70vh] overflow-y-auto">
-        <div class="prose max-w-none" v-html="renderedContent"></div>
+        <div
+          class="prose max-w-none"
+          v-html="renderedContent"
+        />
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showPreviewModal = false">
+        <UiButton
+          variant="outline"
+          @click="showPreviewModal = false"
+        >
           Close
         </UiButton>
         <UiButton @click="downloadDocx">
@@ -283,7 +407,11 @@
     </UiModal>
 
     <!-- E-Signature Modal -->
-    <UiModal v-model="showSignatureModal" title="Send for E-Signature" size="md">
+    <UiModal
+      v-model="showSignatureModal"
+      title="Send for E-Signature"
+      size="md"
+    >
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           Create a secure signing link to send to the client. They will be able to review and sign the document.
@@ -293,15 +421,31 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Signature Type</label>
           <div class="space-y-2">
-            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'STANDARD' }">
-              <input type="radio" v-model="signatureTier" value="STANDARD" class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]" />
+            <label
+              class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'STANDARD' }"
+            >
+              <input
+                v-model="signatureTier"
+                type="radio"
+                value="STANDARD"
+                class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]"
+              >
               <div class="ml-3">
                 <span class="font-medium text-gray-900">Standard</span>
                 <p class="text-sm text-gray-500">Email verification + audit trail. Suitable for engagement letters, permissions.</p>
               </div>
             </label>
-            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'ENHANCED' }">
-              <input type="radio" v-model="signatureTier" value="ENHANCED" class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]" />
+            <label
+              class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              :class="{ 'border-[#C41E3A] bg-red-50': signatureTier === 'ENHANCED' }"
+            >
+              <input
+                v-model="signatureTier"
+                type="radio"
+                value="ENHANCED"
+                class="mt-1 text-[#C41E3A] focus:ring-[#C41E3A]"
+              >
               <div class="ml-3">
                 <span class="font-medium text-gray-900">Enhanced</span>
                 <p class="text-sm text-gray-500">Requires identity verification. For distribution acknowledgements, affirmations.</p>
@@ -313,10 +457,19 @@
         <!-- Expiration -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Link Expires In</label>
-          <select v-model="signatureExpiry" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#C41E3A] focus:ring-[#C41E3A]">
-            <option value="24h">24 hours</option>
-            <option value="48h">48 hours</option>
-            <option value="7d">7 days</option>
+          <select
+            v-model="signatureExpiry"
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#C41E3A] focus:ring-[#C41E3A]"
+          >
+            <option value="24h">
+              24 hours
+            </option>
+            <option value="48h">
+              48 hours
+            </option>
+            <option value="7d">
+              7 days
+            </option>
           </select>
         </div>
 
@@ -324,10 +477,10 @@
         <div class="border-t border-gray-200 pt-4">
           <label class="flex items-center cursor-pointer">
             <input
-              type="checkbox"
               v-model="sendSignatureEmail"
+              type="checkbox"
               class="rounded border-gray-300 text-[#C41E3A] focus:ring-[#C41E3A]"
-            />
+            >
             <span class="ml-3 text-sm text-gray-700">Email signing link to client</span>
           </label>
           <p class="mt-1 ml-6 text-xs text-gray-500">
@@ -343,27 +496,42 @@
             rows="3"
             placeholder="Add a personal message to include in the email..."
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#C41E3A] focus:ring-[#C41E3A] text-sm"
-          ></textarea>
+          />
         </div>
 
         <!-- Error message -->
-        <div v-if="signatureError" class="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p class="text-sm text-red-700">{{ signatureError }}</p>
+        <div
+          v-if="signatureError"
+          class="bg-red-50 border border-red-200 rounded-lg p-3"
+        >
+          <p class="text-sm text-red-700">
+            {{ signatureError }}
+          </p>
         </div>
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showSignatureModal = false">
+        <UiButton
+          variant="outline"
+          @click="showSignatureModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="createSignatureSession" :is-loading="creatingSession">
+        <UiButton
+          :is-loading="creatingSession"
+          @click="createSignatureSession"
+        >
           Create Signing Link
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Signing Link Created Modal -->
-    <UiModal v-model="showSigningLinkModal" title="Signing Link Created" size="md">
+    <UiModal
+      v-model="showSigningLinkModal"
+      title="Signing Link Created"
+      size="md"
+    >
       <div class="space-y-4">
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
           <div class="flex items-center">
@@ -380,10 +548,10 @@
               :value="signingUrl"
               readonly
               class="flex-1 rounded-l-md border-gray-300 bg-gray-50 text-sm"
-            />
+            >
             <button
-              @click="copySigningUrl"
               class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-200 transition-colors"
+              @click="copySigningUrl"
             >
               {{ copied ? 'Copied!' : 'Copy' }}
             </button>
@@ -394,17 +562,26 @@
           <p><strong>Expires:</strong> {{ signatureSessionData?.expiresAt ? new Date(signatureSessionData.expiresAt).toLocaleString() : 'N/A' }}</p>
           <p><strong>Signer:</strong> {{ signatureSessionData?.signer?.name }} ({{ signatureSessionData?.signer?.email }})</p>
           <p><strong>Type:</strong> {{ signatureSessionData?.tier }}</p>
-          <p v-if="signatureSessionData?.emailSent" class="text-green-600">
+          <p
+            v-if="signatureSessionData?.emailSent"
+            class="text-green-600"
+          >
             <strong>Email:</strong> Sent to {{ signatureSessionData?.signer?.email }}
           </p>
         </div>
 
-        <div v-if="!signatureSessionData?.emailSent" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div
+          v-if="!signatureSessionData?.emailSent"
+          class="bg-blue-50 border border-blue-200 rounded-lg p-3"
+        >
           <p class="text-sm text-blue-700">
             <strong>Tip:</strong> Copy this URL and send it to the client via email, or open in an incognito window to test the signing flow.
           </p>
         </div>
-        <div v-else class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <div
+          v-else
+          class="bg-green-50 border border-green-200 rounded-lg p-3"
+        >
           <p class="text-sm text-green-700">
             The client has been notified by email. You can also copy the link above if you need to send it through another channel.
           </p>
@@ -412,7 +589,10 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showSigningLinkModal = false">
+        <UiButton
+          variant="outline"
+          @click="showSigningLinkModal = false"
+        >
           Close
         </UiButton>
         <UiButton @click="openSigningUrl">
@@ -422,9 +602,16 @@
     </UiModal>
 
     <!-- Delete Confirmation Modal -->
-    <UiModal v-model="showDeleteModal" title="Delete Document" size="md">
+    <UiModal
+      v-model="showDeleteModal"
+      title="Delete Document"
+      size="md"
+    >
       <div class="space-y-4">
-        <div v-if="document" class="space-y-3">
+        <div
+          v-if="document"
+          class="space-y-3"
+        >
           <p class="text-sm text-gray-700">
             Are you sure you want to delete "<strong>{{ document.title }}</strong>"?
           </p>
@@ -432,25 +619,33 @@
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <div class="text-sm text-gray-600 space-y-1">
               <p><strong>Status:</strong> {{ document.status }}</p>
-              <p v-if="document.signedAt"><strong>Signed:</strong> {{ formatDateTime(document.signedAt) }}</p>
+              <p v-if="document.signedAt">
+                <strong>Signed:</strong> {{ formatDateTime(document.signedAt) }}
+              </p>
             </div>
           </div>
 
-          <div v-if="document.status !== 'DRAFT'" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div
+            v-if="document.status !== 'DRAFT'"
+            class="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+          >
             <p class="text-sm text-yellow-800">
               <strong>Warning:</strong> This document has status {{ document.status }}. This action cannot be undone.
             </p>
             <label class="flex items-center mt-2">
               <input
-                type="checkbox"
                 v-model="confirmDelete"
+                type="checkbox"
                 class="rounded border-gray-300 text-red-600 focus:ring-red-500"
-              />
+              >
               <span class="ml-2 text-sm text-yellow-900">I understand this action is permanent</span>
             </label>
           </div>
 
-          <div v-if="document.status === 'SIGNED' || document.status === 'COMPLETED'" class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div
+            v-if="document.status === 'SIGNED' || document.status === 'COMPLETED'"
+            class="bg-red-50 border border-red-200 rounded-lg p-3"
+          >
             <p class="text-sm text-red-800">
               <strong>Legal Document:</strong> This signed document may have legal significance. Only admins can delete signed documents.
             </p>
@@ -459,14 +654,17 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showDeleteModal = false; confirmDelete = false">
+        <UiButton
+          variant="outline"
+          @click="showDeleteModal = false; confirmDelete = false"
+        >
           Cancel
         </UiButton>
         <UiButton
           variant="danger"
-          @click="handleDeleteDocument"
           :is-loading="deleting"
           :disabled="requiresConfirmation && !confirmDelete"
+          @click="handleDeleteDocument"
         >
           Delete Document
         </UiButton>
@@ -591,7 +789,8 @@ const variableMappings = computed(() => {
   if (!document.value?.template?.variableMappings) return {}
   try {
     return JSON.parse(document.value.template.variableMappings)
-  } catch (e) {
+  }
+  catch (e) {
     console.error('Error parsing variable mappings:', e)
     return {}
   }
@@ -607,7 +806,8 @@ const documentVariables = computed(() => {
       name,
       description: name.replace(/([A-Z])/g, ' $1').trim() // Convert camelCase to Title Case
     }))
-  } catch (e) {
+  }
+  catch (e) {
     console.error('Error parsing template variables:', e)
     return []
   }
@@ -661,9 +861,11 @@ const fetchDocument = async () => {
     // Log variable mappings for debugging
     console.log('[Document] Variable mappings:', variableMappings.value)
     console.log('[Document] Current variable values:', variableValues.value)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch document:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -679,7 +881,8 @@ const updateStatus = async () => {
     if (document.value) {
       document.value.status = selectedStatus.value
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to update status:', error)
     toast.error('Failed to update document status')
     // Revert the selection
@@ -700,10 +903,12 @@ const handleFillVariables = async () => {
     })
     await fetchDocument()
     console.log('[Client] Variables saved successfully')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('[Client] Failed to save variables:', error)
     toast.error('Failed to save variables')
-  } finally {
+  }
+  finally {
     savingVariables.value = false
   }
 }
@@ -722,22 +927,22 @@ const initCanvas = () => {
 const startDrawing = (e: MouseEvent | TouchEvent) => {
   if (!ctx.value || !signatureCanvas.value) return
   isDrawing.value = true
-  
+
   const rect = signatureCanvas.value.getBoundingClientRect()
   const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.offsetX
   const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.offsetY
-  
+
   ctx.value.beginPath()
   ctx.value.moveTo(x, y)
 }
 
 const draw = (e: MouseEvent | TouchEvent) => {
   if (!isDrawing.value || !ctx.value || !signatureCanvas.value) return
-  
+
   const rect = signatureCanvas.value.getBoundingClientRect()
   const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.offsetX
   const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.offsetY
-  
+
   ctx.value.lineTo(x, y)
   ctx.value.stroke()
 }
@@ -765,9 +970,11 @@ const handleSign = async () => {
 
     await fetchDocument()
     toast.success('Document signed successfully!')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to sign document')
-  } finally {
+  }
+  finally {
     signing.value = false
   }
 }
@@ -806,7 +1013,8 @@ const downloadDocx = async () => {
     window.URL.revokeObjectURL(url)
 
     console.log('Download completed successfully')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Download error:', error)
     toast.error(`Failed to download document: ${error.message || 'Unknown error'}`)
   }
@@ -836,7 +1044,8 @@ const downloadSignedPdf = async () => {
     // Cleanup
     window.document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Download signed PDF error:', error)
     toast.error(`Failed to download signed PDF: ${error.message || 'Unknown error'}`)
   }
@@ -879,9 +1088,11 @@ const createSignatureSession = async () => {
       // Refresh document to get updated status
       await fetchDocument()
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     signatureError.value = error.data?.message || error.message || 'Failed to create signature session'
-  } finally {
+  }
+  finally {
     creatingSession.value = false
   }
 }
@@ -893,7 +1104,8 @@ const copySigningUrl = async () => {
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (err) {
+  }
+  catch (err) {
     // Fallback for older browsers
     const textArea = window.document.createElement('textarea')
     textArea.value = signingUrl.value
@@ -937,15 +1149,18 @@ const handleDeleteDocument = async () => {
       // Navigate back to documents list
       await navigateTo('/documents')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     if (error.statusCode === 400 && error.data?.error === 'Confirmation required') {
       // Server requires confirmation
       requiresConfirmation.value = true
       toast.warning(`This document has status ${document.value.status}. Please check the confirmation box to proceed.`)
-    } else {
+    }
+    else {
       toast.error(`Failed to delete document: ${error.data?.message || error.message || 'Unknown error'}`)
     }
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }
@@ -968,4 +1183,3 @@ onUnmounted(() => {
   window.document.removeEventListener('click', handleClickOutside)
 })
 </script>
-

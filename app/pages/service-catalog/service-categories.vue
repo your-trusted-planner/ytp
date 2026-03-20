@@ -2,8 +2,8 @@
   <div class="space-y-6">
     <!-- Back link -->
     <button
-      @click="router.back()"
       class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+      @click="router.back()"
     >
       <ArrowLeft class="w-4 h-4 mr-1" />
       Back
@@ -11,8 +11,12 @@
 
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Service Categories</h1>
-        <p class="text-gray-600 mt-1">Manage categories for organizing your service catalog</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Service Categories
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage categories for organizing your service catalog
+        </p>
       </div>
       <UiButton @click="openCreateModal">
         <Plus class="w-4 h-4 mr-2" />
@@ -21,18 +25,29 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
+    <div
+      v-if="loading"
+      class="text-center py-12"
+    >
       <Loader class="w-8 h-8 animate-spin text-burgundy-600 mx-auto" />
-      <p class="text-gray-500 mt-2">Loading categories...</p>
+      <p class="text-gray-500 mt-2">
+        Loading categories...
+      </p>
     </div>
 
     <!-- Empty State -->
     <UiCard v-else-if="categories.length === 0">
       <div class="text-center py-12">
         <FolderOpen class="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
-        <p class="text-gray-600 mb-4">Create your first service category to organize your catalog</p>
-        <UiButton @click="openCreateModal">Add Category</UiButton>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          No categories yet
+        </h3>
+        <p class="text-gray-600 mb-4">
+          Create your first service category to organize your catalog
+        </p>
+        <UiButton @click="openCreateModal">
+          Add Category
+        </UiButton>
       </div>
     </UiCard>
 
@@ -41,7 +56,9 @@
       <template #header>
         <div class="flex justify-between items-center">
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">Categories</h2>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Categories
+            </h2>
             <p class="text-sm text-gray-600 mt-1">
               Drag to reorder. Categories appear in this order in dropdowns.
             </p>
@@ -53,8 +70,8 @@
         v-model="categories"
         item-key="id"
         handle=".drag-handle"
-        @end="handleReorder"
         class="divide-y divide-gray-200"
+        @end="handleReorder"
       >
         <template #item="{ element: category }">
           <div class="flex items-center justify-between py-4 px-2 hover:bg-gray-50 -mx-2">
@@ -63,21 +80,28 @@
                 <GripVertical class="w-5 h-5" />
               </button>
               <div>
-                <h3 class="font-medium text-gray-900">{{ category.name }}</h3>
-                <p v-if="category.description" class="text-sm text-gray-500">{{ category.description }}</p>
+                <h3 class="font-medium text-gray-900">
+                  {{ category.name }}
+                </h3>
+                <p
+                  v-if="category.description"
+                  class="text-sm text-gray-500"
+                >
+                  {{ category.description }}
+                </p>
               </div>
             </div>
             <div class="flex items-center space-x-3">
               <span class="text-sm text-gray-400">Order: {{ category.display_order }}</span>
               <button
-                @click="editCategory(category)"
                 class="text-burgundy-600 hover:text-burgundy-800 text-sm font-medium"
+                @click="editCategory(category)"
               >
                 Edit
               </button>
               <button
-                @click="confirmDelete(category)"
                 class="text-red-600 hover:text-red-800 text-sm font-medium"
+                @click="confirmDelete(category)"
               >
                 Delete
               </button>
@@ -88,8 +112,15 @@
     </UiCard>
 
     <!-- Create/Edit Modal -->
-    <UiModal v-model="showEditModal" :title="editingCategory ? 'Edit Category' : 'Add Category'" size="md">
-      <form @submit.prevent="handleSave" class="space-y-4">
+    <UiModal
+      v-model="showEditModal"
+      :title="editingCategory ? 'Edit Category' : 'Add Category'"
+      size="md"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSave"
+      >
         <UiInput
           v-model="form.name"
           label="Category Name"
@@ -106,17 +137,27 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showEditModal = false">
+        <UiButton
+          variant="outline"
+          @click="showEditModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleSave" :loading="saving">
+        <UiButton
+          :loading="saving"
+          @click="handleSave"
+        >
           {{ editingCategory ? 'Save Changes' : 'Add Category' }}
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Delete Confirmation Modal -->
-    <UiModal v-model="showDeleteModal" title="Delete Category" size="sm">
+    <UiModal
+      v-model="showDeleteModal"
+      title="Delete Category"
+      size="sm"
+    >
       <div class="space-y-4">
         <p class="text-gray-700">
           Are you sure you want to delete <strong>{{ deletingCategory?.name }}</strong>?
@@ -130,10 +171,17 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showDeleteModal = false">
+        <UiButton
+          variant="outline"
+          @click="showDeleteModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton variant="danger" @click="handleDelete" :loading="deleting">
+        <UiButton
+          variant="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
           Delete Category
         </UiButton>
       </template>
@@ -181,9 +229,11 @@ async function fetchCategories() {
   try {
     const { categories: data } = await $fetch<{ categories: Category[] }>('/api/service-categories')
     categories.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch categories:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -213,7 +263,8 @@ async function handleSave() {
         method: 'PUT',
         body: form.value
       })
-    } else {
+    }
+    else {
       await $fetch('/api/service-categories', {
         method: 'POST',
         body: form.value
@@ -221,10 +272,12 @@ async function handleSave() {
     }
     showEditModal.value = false
     await fetchCategories()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save category:', error)
     toast.error(error.data?.message || 'Failed to save category')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -244,10 +297,12 @@ async function handleDelete() {
     })
     showDeleteModal.value = false
     await fetchCategories()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to delete category:', error)
     toast.error(error.data?.message || 'Failed to delete category')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }
@@ -263,7 +318,8 @@ async function handleReorder() {
     categories.value.forEach((cat, index) => {
       cat.display_order = index + 1
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to reorder categories:', error)
     // Refetch to restore correct order
     await fetchCategories()

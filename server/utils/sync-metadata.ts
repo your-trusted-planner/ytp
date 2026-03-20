@@ -18,7 +18,8 @@ export function isImportedRecord(importMetadata: string | null | undefined): boo
   try {
     const meta = JSON.parse(importMetadata) as ImportMetadata
     return !!meta.source
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -31,7 +32,8 @@ export function getLocallyModifiedFields(importMetadata: string | null | undefin
   try {
     const meta = JSON.parse(importMetadata) as ImportMetadata
     return meta.locallyModifiedFields || []
-  } catch {
+  }
+  catch {
     return []
   }
 }
@@ -95,7 +97,8 @@ export async function markFieldsAsLocallyModified(
   let meta: ImportMetadata
   try {
     meta = JSON.parse(rawMeta) as ImportMetadata
-  } catch {
+  }
+  catch {
     return []
   }
 

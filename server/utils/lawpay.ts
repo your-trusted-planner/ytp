@@ -123,7 +123,7 @@ export async function deauthorizeMerchant(
     {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       }
     }
   )

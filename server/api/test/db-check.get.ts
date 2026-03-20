@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
     const { useDrizzle } = await import('../../db')
     const db = useDrizzle()
     drizzleWorks = !!db
-  } catch (e) {
+  }
+  catch (e) {
     drizzleWorks = false
   }
 
@@ -18,4 +19,3 @@ export default defineEventHandler(async (event) => {
     drizzleAvailable: drizzleWorks
   }
 })
-

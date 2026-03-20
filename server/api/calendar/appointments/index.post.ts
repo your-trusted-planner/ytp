@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
 
     if (calendar) {
       // Build attendee list from attendeeIds
-      const attendeeEmails: Array<{ email: string; displayName?: string }> = []
+      const attendeeEmails: Array<{ email: string, displayName?: string }> = []
       if (data.attendeeIds.length > 0) {
         const attendeeUsers = await db
           .select({
@@ -84,7 +84,8 @@ export default defineEventHandler(async (event) => {
 
         googleCalendarEventId = gcalEvent.id || null
         googleCalendarEmail = calendar.calendarEmail
-      } catch (err: any) {
+      }
+      catch (err: any) {
         console.error('Failed to create Google Calendar event:', err.message)
         // Continue without Google sync — appointment still created in DB
       }
@@ -94,6 +95,8 @@ export default defineEventHandler(async (event) => {
   // Handle video meeting creation if locationConfig indicates video
   let videoMeetingId: string | null = null
   let resolvedLocation = data.location || null
+
+  console.log('[Appointment] locationConfig:', data.locationConfig, '| location:', data.location)
 
   if (data.locationConfig) {
     try {
@@ -134,12 +137,14 @@ export default defineEventHandler(async (event) => {
 
           videoMeetingId = vmId
           resolvedLocation = meeting.joinUrl
-        } catch (err: any) {
+        }
+        catch (err: any) {
           console.error('Failed to create video meeting:', err.message)
           // Continue without video meeting — appointment still created
         }
       }
-    } catch { /* ignore parse errors */ }
+    }
+    catch { /* ignore parse errors */ }
   }
 
   await db.insert(schema.appointments).values({

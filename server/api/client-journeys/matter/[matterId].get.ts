@@ -26,38 +26,38 @@ export default defineEventHandler(async (event) => {
   const enrichedJourneys = await Promise.all(
     clientJourneys.map(async (cj) => {
       // Get journey info
-      const journey = cj.journeyId
-        ? await db.select({
+      const journey = cj.journeyId ?
+          await db.select({
             name: schema.journeys.name,
             description: schema.journeys.description,
             estimatedDurationDays: schema.journeys.estimatedDurationDays
           })
-          .from(schema.journeys)
-          .where(eq(schema.journeys.id, cj.journeyId))
-          .get()
-        : null
+            .from(schema.journeys)
+            .where(eq(schema.journeys.id, cj.journeyId))
+            .get() :
+        null
 
       // Get current step info
-      const currentStep = cj.currentStepId
-        ? await db.select({
+      const currentStep = cj.currentStepId ?
+          await db.select({
             name: schema.journeySteps.name,
             stepType: schema.journeySteps.stepType
           })
-          .from(schema.journeySteps)
-          .where(eq(schema.journeySteps.id, cj.currentStepId))
-          .get()
-        : null
+            .from(schema.journeySteps)
+            .where(eq(schema.journeySteps.id, cj.currentStepId))
+            .get() :
+        null
 
       // Get service catalog info
-      const service = cj.catalogId
-        ? await db.select({
+      const service = cj.catalogId ?
+          await db.select({
             name: schema.serviceCatalog.name,
             category: schema.serviceCatalog.category
           })
-          .from(schema.serviceCatalog)
-          .where(eq(schema.serviceCatalog.id, cj.catalogId))
-          .get()
-        : null
+            .from(schema.serviceCatalog)
+            .where(eq(schema.serviceCatalog.id, cj.catalogId))
+            .get() :
+        null
 
       // Get client info
       const client = await db.select({

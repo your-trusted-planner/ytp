@@ -92,7 +92,8 @@ export default defineEventHandler(async (event) => {
       updateData,
       TRACKABLE_PERSON_FIELDS
     )
-  } catch (err) {
+  }
+  catch (err) {
     // Don't fail the update if metadata tracking fails
     console.error('[People PUT] Failed to track locally modified fields:', err)
   }

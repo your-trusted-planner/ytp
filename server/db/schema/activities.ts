@@ -20,7 +20,7 @@ export const notes = sqliteTable('notes', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   entityTypeIdIdx: index('idx_notes_entity_type_id').on(table.entityType, table.entityId),
   createdByIdx: index('idx_notes_created_by').on(table.createdBy)
 }))
@@ -64,7 +64,7 @@ export const activities = sqliteTable('activities', {
   importMetadata: text('import_metadata'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   userIdIdx: index('idx_activities_user_id').on(table.userId),
   typeIdx: index('idx_activities_type').on(table.type),
   targetTypeIdIdx: index('idx_activities_target_type_id').on(table.targetType, table.targetId),

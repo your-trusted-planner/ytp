@@ -7,7 +7,8 @@
  * Screenshots are saved to doc/public_site/public/screenshots/
  */
 
-import { test, expect, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -24,7 +25,7 @@ const CLIENT_PASSWORD = 'password123'
 // Screenshot options for consistency
 const screenshotOptions = {
   fullPage: false,
-  animations: 'disabled' as const,
+  animations: 'disabled' as const
 }
 
 async function login(page: Page, email: string, password: string) {

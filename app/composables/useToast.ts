@@ -45,7 +45,8 @@ export function useToast() {
   const dismiss = (id?: string | number) => {
     if (id !== undefined) {
       toast.dismiss(id)
-    } else {
+    }
+    else {
       toast.clear()
     }
   }

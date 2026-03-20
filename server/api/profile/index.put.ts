@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
 
   const body = await readBody(event)
-  
+
   const result = updateProfileSchema.safeParse(body)
   if (!result.success) {
     throw createError({
@@ -20,9 +20,9 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid input'
     })
   }
-  
+
   const db = useDrizzle()
-  
+
   await db
     .update(schema.users)
     .set({
@@ -30,7 +30,6 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     .where(eq(schema.users.id, user.id))
-  
+
   return { success: true }
 })
-

@@ -78,7 +78,8 @@ export async function autocompleteAddress(
 
     const data: RadarAutocompleteResult = await response.json()
     return data.addresses || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Radar API fetch error:', error)
     return []
   }

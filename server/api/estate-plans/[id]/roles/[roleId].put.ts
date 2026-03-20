@@ -217,13 +217,15 @@ export default defineEventHandler(async (event) => {
       id: updatedRole.role.id,
       planId: updatedRole.role.planId,
       personId: updatedRole.role.personId,
-      person: updatedRole.person ? {
-        id: updatedRole.person.id,
-        fullName: updatedRole.person.fullName,
-        firstName: updatedRole.person.firstName,
-        lastName: updatedRole.person.lastName,
-        email: updatedRole.person.email
-      } : null,
+      person: updatedRole.person ?
+          {
+            id: updatedRole.person.id,
+            fullName: updatedRole.person.fullName,
+            firstName: updatedRole.person.firstName,
+            lastName: updatedRole.person.lastName,
+            email: updatedRole.person.email
+          } :
+        null,
       forPersonId: updatedRole.role.forPersonId,
       willId: updatedRole.role.willId,
       ancillaryDocumentId: updatedRole.role.ancillaryDocumentId,

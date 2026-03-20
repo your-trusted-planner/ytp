@@ -95,9 +95,9 @@ export default defineEventHandler(async (event) => {
   // Set default dates
   const now = new Date()
   const issueDate = parsed.data.issueDate ? new Date(parsed.data.issueDate) : now
-  const dueDate = parsed.data.dueDate
-    ? new Date(parsed.data.dueDate)
-    : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+  const dueDate = parsed.data.dueDate ?
+      new Date(parsed.data.dueDate) :
+      new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
 
   // Create invoice
   const invoiceId = crypto.randomUUID()

@@ -324,7 +324,8 @@ export default defineEventHandler(async (event) => {
             log.push(`         - Paragraphs: ${paragraphs.length}`)
             log.push(`         - Requires Notary: ${requiresNotary}`)
             totalDocs++
-          } catch (error) {
+          }
+          catch (error) {
             const errorMsg = `Error parsing ${filename}: ${error instanceof Error ? error.message : 'Unknown error'}`
             log.push(`      ❌ ${errorMsg}`)
             errors.push(errorMsg)
@@ -332,7 +333,8 @@ export default defineEventHandler(async (event) => {
         }
 
         log.push(`   ✅ Completed ${group.name}`)
-      } catch (error) {
+      }
+      catch (error) {
         const errorMsg = `Error listing files for ${group.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
         log.push(`   ❌ ${errorMsg}`)
         errors.push(errorMsg)
@@ -360,7 +362,8 @@ export default defineEventHandler(async (event) => {
       errors: errors.length > 0 ? errors : undefined,
       log: log.join('\n')
     }
-  } catch (error) {
+  }
+  catch (error) {
     log.push(`\n❌ Seeding failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     throw createError({
       statusCode: 500,

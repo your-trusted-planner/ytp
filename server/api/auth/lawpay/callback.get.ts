@@ -63,8 +63,8 @@ export default defineEventHandler(async (event) => {
 
     // Redirect to success page
     return sendRedirect(event, '/dashboard?lawpay=connected')
-
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('LawPay OAuth error:', error)
     throw createError({
       statusCode: 500,

@@ -97,7 +97,8 @@ export default defineEventHandler(async (event) => {
     // Manual rate override
     newRate = hourlyRate
     updates.hourlyRate = hourlyRate
-  } else if (hours !== undefined || isBillable !== undefined) {
+  }
+  else if (hours !== undefined || isBillable !== undefined) {
     // Recalculate with existing rate if hours or billable status changed
     newRate = existing.hourlyRate
   }
@@ -109,7 +110,8 @@ export default defineEventHandler(async (event) => {
 
   if (finalIsBillable && finalRate) {
     updates.amount = calculateTimeEntryAmount(finalHours, finalRate)
-  } else {
+  }
+  else {
     updates.amount = 0
   }
 

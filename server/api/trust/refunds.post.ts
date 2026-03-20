@@ -103,9 +103,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const transactionId = crypto.randomUUID()
-  const transactionDate = parsed.data.transactionDate
-    ? new Date(parsed.data.transactionDate)
-    : new Date()
+  const transactionDate = parsed.data.transactionDate ?
+      new Date(parsed.data.transactionDate) :
+      new Date()
 
   // Calculate new balance (refunds are negative)
   const currentBalance = await getClientTrustBalance(
@@ -150,9 +150,9 @@ export default defineEventHandler(async (event) => {
     userId: user.id,
     userRole: user.role,
     target: { type: 'client', id: parsed.data.clientId, name: clientName || 'Unknown Client' },
-    relatedEntities: parsed.data.matterId
-      ? [{ type: 'matter', id: parsed.data.matterId, name: await resolveEntityName('matter', parsed.data.matterId) || 'Unknown Matter' }]
-      : [],
+    relatedEntities: parsed.data.matterId ?
+        [{ type: 'matter', id: parsed.data.matterId, name: await resolveEntityName('matter', parsed.data.matterId) || 'Unknown Matter' }] :
+        [],
     event,
     details: {
       amount: parsed.data.amount,

@@ -5,7 +5,7 @@ import { requireRole } from '../../utils/rbac'
 const callNotesSchema = z.object({
   appointmentId: z.string(),
   preCallNotes: z.string().optional(),
-  callNotes: z.string().optional(),
+  callNotes: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -55,4 +55,3 @@ export default defineEventHandler(async (event) => {
     message: 'Call notes updated'
   }
 })
-

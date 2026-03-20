@@ -224,9 +224,9 @@ describe('WealthCounsel Import Flow', () => {
       const personLookup = buildPersonLookup(people)
 
       const clientPersonId = personLookup.get(parsedData.client.fullName!)!
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
 
       const { plan, trust, will, version } = transformToEstatePlan(
         parsedData,
@@ -286,9 +286,9 @@ describe('WealthCounsel Import Flow', () => {
 
       const planId = 'plan_test123'
       const clientPersonId = personLookup.get(parsedData.client.fullName!)!
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
       const roles = transformRoles(parsedData, planId, personLookup, clientPersonId, spousePersonId)
 
       // Should have multiple roles
@@ -368,9 +368,9 @@ describe('WealthCounsel Import Flow', () => {
       }
 
       const planId = 'plan_test'
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
       const roles = transformRoles(parsedData, planId, personLookup, existingPersonId, spousePersonId)
 
       // Grantor role should use the existing person ID
@@ -635,9 +635,9 @@ describe('WealthCounsel Import Flow', () => {
       const personLookup = buildPersonLookup(people)
 
       const clientPersonId = personLookup.get(parsedData.client.fullName!)!
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
       const roles = transformRoles(parsedData, 'plan_123', personLookup, clientPersonId, spousePersonId)
       const grantors = roles.filter(r => r.roleType === 'GRANTOR')
 
@@ -683,9 +683,9 @@ describe('WealthCounsel Import Flow', () => {
       const personLookup = buildPersonLookup(people)
 
       const clientPersonId = personLookup.get(parsedData.client.fullName!)!
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
       const roles = transformRoles(parsedData, 'plan_123', personLookup, clientPersonId, spousePersonId)
       const trustees = roles.filter(r => r.roleType === 'TRUSTEE')
 
@@ -701,9 +701,9 @@ describe('WealthCounsel Import Flow', () => {
       const personLookup = buildPersonLookup(people)
 
       const clientPersonId = personLookup.get(parsedData.client.fullName!)!
-      const spousePersonId = parsedData.spouse?.fullName
-        ? personLookup.get(parsedData.spouse.fullName)
-        : undefined
+      const spousePersonId = parsedData.spouse?.fullName ?
+          personLookup.get(parsedData.spouse.fullName) :
+        undefined
       const roles = transformRoles(parsedData, 'plan_123', personLookup, clientPersonId, spousePersonId)
       const successorTrustees = roles.filter(r => r.roleType === 'SUCCESSOR_TRUSTEE')
 
@@ -1102,13 +1102,16 @@ describe('WealthCounsel Parse Person Extraction', () => {
       if (emailMatches && nameMatches) {
         matchType = 'NAME_EMAIL'
         confidence = 95
-      } else if (dobMatches && nameMatches) {
+      }
+      else if (dobMatches && nameMatches) {
         matchType = 'NAME_DOB'
         confidence = 85
-      } else if (emailMatches) {
+      }
+      else if (emailMatches) {
         matchType = 'NAME_EMAIL'
         confidence = 80
-      } else if (nameMatches) {
+      }
+      else if (nameMatches) {
         matchType = 'NAME_ONLY'
         confidence = 60
       }

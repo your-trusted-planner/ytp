@@ -1,5 +1,8 @@
 <template>
-  <div :class="containerClasses" v-html="renderedContent" />
+  <div
+    :class="containerClasses"
+    v-html="renderedContent"
+  />
 </template>
 
 <script setup lang="ts">

@@ -6,7 +6,10 @@
     :class="sizeClasses"
   >
     <HelpCircle :class="iconClasses" />
-    <span v-if="label" class="ml-1 text-sm">{{ label }}</span>
+    <span
+      v-if="label"
+      class="ml-1 text-sm"
+    >{{ label }}</span>
   </NuxtLink>
 </template>
 

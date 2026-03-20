@@ -23,7 +23,7 @@ export const COUNTRIES: Country[] = [
   { code: 'NL', name: 'Netherlands' },
   { code: 'NZ', name: 'New Zealand' },
   { code: 'PR', name: 'Puerto Rico' },
-  { code: 'SG', name: 'Singapore' },
+  { code: 'SG', name: 'Singapore' }
 ]
 
 /**

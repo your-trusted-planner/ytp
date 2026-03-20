@@ -53,4 +53,3 @@ export function formatCurrency(cents: number | null | undefined): string {
     maximumFractionDigits: 2
   }).format(dollars)
 }
-

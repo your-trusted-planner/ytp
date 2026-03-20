@@ -2,15 +2,15 @@
   <div class="space-y-4">
     <!-- Upload Zone -->
     <div
+      :class="[
+        'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
+        isDragging
+          ? 'border-burgundy-500 bg-burgundy-50'
+          : 'border-gray-300 hover:border-gray-400'
+      ]"
       @drop.prevent="handleDrop"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
-      :class="[
-        'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
-        isDragging 
-          ? 'border-burgundy-500 bg-burgundy-50' 
-          : 'border-gray-300 hover:border-gray-400'
-      ]"
       @click="fileInput?.click()"
     >
       <input
@@ -18,9 +18,9 @@
         type="file"
         :multiple="allowMultiple"
         :accept="acceptedTypes"
-        @change="handleFileSelect"
         class="hidden"
-      />
+        @change="handleFileSelect"
+      >
 
       <IconUpload class="w-12 h-12 mx-auto text-gray-400 mb-4" />
       <p class="text-lg font-medium text-gray-900 mb-1">
@@ -29,7 +29,10 @@
       <p class="text-sm text-gray-600">
         {{ acceptedTypesLabel }}
       </p>
-      <p v-if="maxSize" class="text-xs text-gray-500 mt-1">
+      <p
+        v-if="maxSize"
+        class="text-xs text-gray-500 mt-1"
+      >
         Max file size: {{ formatFileSize(maxSize) }}
       </p>
     </div>
@@ -41,17 +44,32 @@
         v-model="selectedCategory"
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-burgundy-500"
       >
-        <option value="">-- Select Category --</option>
-        <option value="Legal">Legal Documents</option>
-        <option value="Financial">Financial Statements</option>
-        <option value="Identity">Identity Documents</option>
-        <option value="Address">Proof of Address</option>
-        <option value="Other">Other</option>
+        <option value="">
+          -- Select Category --
+        </option>
+        <option value="Legal">
+          Legal Documents
+        </option>
+        <option value="Financial">
+          Financial Statements
+        </option>
+        <option value="Identity">
+          Identity Documents
+        </option>
+        <option value="Address">
+          Proof of Address
+        </option>
+        <option value="Other">
+          Other
+        </option>
       </select>
     </div>
 
     <!-- Upload Progress -->
-    <div v-if="uploading" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div
+      v-if="uploading"
+      class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+    >
       <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium text-blue-900">Uploading {{ uploadingFileName }}...</span>
         <span class="text-sm text-blue-700">{{ uploadProgress }}%</span>
@@ -60,24 +78,36 @@
         <div
           class="bg-blue-600 h-2 rounded-full transition-all"
           :style="{ width: uploadProgress + '%' }"
-        ></div>
+        />
       </div>
     </div>
 
     <!-- Error Message -->
-    <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div
+      v-if="errorMessage"
+      class="bg-red-50 border border-red-200 rounded-lg p-4"
+    >
       <div class="flex items-start">
         <IconAlertCircle class="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
         <div>
-          <p class="text-sm font-medium text-red-900">Upload failed</p>
-          <p class="text-sm text-red-700 mt-1">{{ errorMessage }}</p>
+          <p class="text-sm font-medium text-red-900">
+            Upload failed
+          </p>
+          <p class="text-sm text-red-700 mt-1">
+            {{ errorMessage }}
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Uploaded Files List -->
-    <div v-if="uploadedFiles.length > 0" class="space-y-2">
-      <h4 class="text-sm font-medium text-gray-900">Uploaded Files</h4>
+    <div
+      v-if="uploadedFiles.length > 0"
+      class="space-y-2"
+    >
+      <h4 class="text-sm font-medium text-gray-900">
+        Uploaded Files
+      </h4>
       <div
         v-for="file in uploadedFiles"
         :key="file.id"
@@ -86,13 +116,17 @@
         <div class="flex items-center space-x-3">
           <IconCheck class="w-5 h-5 text-green-600" />
           <div>
-            <p class="text-sm font-medium text-gray-900">{{ file.original_file_name }}</p>
-            <p class="text-xs text-gray-600">{{ formatFileSize(file.file_size) }} • {{ file.document_category }}</p>
+            <p class="text-sm font-medium text-gray-900">
+              {{ file.original_file_name }}
+            </p>
+            <p class="text-xs text-gray-600">
+              {{ formatFileSize(file.file_size) }} • {{ file.document_category }}
+            </p>
           </div>
         </div>
         <button
-          @click="$emit('file-uploaded', file)"
           class="text-sm text-burgundy-600 hover:text-burgundy-700"
+          @click="$emit('file-uploaded', file)"
         >
           View
         </button>
@@ -183,7 +217,7 @@ function handleFileSelect(e: Event) {
 // Upload files
 async function uploadFiles(files: File[]) {
   errorMessage.value = ''
-  
+
   for (const file of files) {
     // Validate file size
     if (props.maxSize && file.size > props.maxSize) {
@@ -239,7 +273,8 @@ async function uploadFile(file: File) {
       uploadProgress.value = 0
       uploadingFileName.value = ''
     }, 1000)
-  } catch (error: unknown) {
+  }
+  catch (error: unknown) {
     console.error('Upload error:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Failed to upload file'
     uploading.value = false
@@ -255,4 +290,3 @@ function formatFileSize(bytes: number): string {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 </script>
-

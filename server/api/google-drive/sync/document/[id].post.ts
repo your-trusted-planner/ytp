@@ -76,13 +76,15 @@ export default defineEventHandler(async (event) => {
         fileId: result.fileId,
         fileUrl: result.fileUrl
       }
-    } else {
+    }
+    else {
       throw createError({
         statusCode: 500,
         message: result.error || 'Failed to sync document'
       })
     }
-  } catch (error) {
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
       message: `Failed to sync document: ${error instanceof Error ? error.message : 'Unknown error'}`

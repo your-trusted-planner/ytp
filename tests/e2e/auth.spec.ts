@@ -100,7 +100,7 @@ test.describe('Protected API Endpoints - Unauthenticated Access', () => {
     '/api/documents',
     '/api/templates',
     '/api/client-journeys',
-    '/api/services',
+    '/api/services'
   ]
 
   for (const endpoint of firmEndpoints) {
@@ -114,7 +114,7 @@ test.describe('Protected API Endpoints - Unauthenticated Access', () => {
   // Admin endpoints
   const adminEndpoints = [
     '/api/users',
-    '/api/oauth-providers',
+    '/api/oauth-providers'
   ]
 
   for (const endpoint of adminEndpoints) {
@@ -129,7 +129,7 @@ test.describe('Protected API Endpoints - Unauthenticated Access', () => {
   const clientEndpoints = [
     '/api/my-matters',
     '/api/my-journeys',
-    '/api/client/stats',
+    '/api/client/stats'
   ]
 
   for (const endpoint of clientEndpoints) {

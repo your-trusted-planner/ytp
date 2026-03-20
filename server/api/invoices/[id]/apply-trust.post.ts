@@ -110,7 +110,8 @@ export default defineEventHandler(async (event) => {
   if (parsed.data.applyFull) {
     // Apply up to the balance due or available balance, whichever is less
     applyAmount = Math.min(availableBalance, invoice.balanceDue)
-  } else {
+  }
+  else {
     applyAmount = parsed.data.amount!
 
     // Don't apply more than needed
@@ -160,8 +161,9 @@ export default defineEventHandler(async (event) => {
   // Update invoice
   const newTrustApplied = invoice.trustApplied + applyAmount
   const newBalanceDue = invoice.totalAmount - newTrustApplied - invoice.directPayments
-  const newStatus = newBalanceDue <= 0 ? 'PAID' :
-    (newTrustApplied > 0 || invoice.directPayments > 0) ? 'PARTIALLY_PAID' : invoice.status
+  const newStatus = newBalanceDue <= 0 ?
+    'PAID' :
+      (newTrustApplied > 0 || invoice.directPayments > 0) ? 'PARTIALLY_PAID' : invoice.status
 
   await db.update(schema.invoices)
     .set({

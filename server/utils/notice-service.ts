@@ -2,12 +2,12 @@ import { useDrizzle, schema } from '../db'
 import { eq, and, or, isNull, desc, sql } from 'drizzle-orm'
 
 type NoticeType =
-  | 'DRIVE_SYNC_ERROR'
-  | 'DOCUMENT_SIGNED'
-  | 'CLIENT_FILE_UPLOADED'
-  | 'JOURNEY_ACTION_REQUIRED'
-  | 'SYSTEM_ANNOUNCEMENT'
-  | 'PAYMENT_RECEIVED'
+  | 'DRIVE_SYNC_ERROR' |
+  'DOCUMENT_SIGNED' |
+  'CLIENT_FILE_UPLOADED' |
+  'JOURNEY_ACTION_REQUIRED' |
+  'SYSTEM_ANNOUNCEMENT' |
+  'PAYMENT_RECEIVED'
 
 type NoticeSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS'
 
@@ -249,7 +249,7 @@ export async function getNoticesForUser(
   const { limit = 50, offset = 0, unreadOnly = false } = options
 
   // Build the query to get notices for this user or their role
-  let query = db
+  const query = db
     .select({
       id: schema.notices.id,
       type: schema.notices.type,

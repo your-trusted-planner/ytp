@@ -24,23 +24,23 @@ const statusEnum = z.enum([
 
 // State machine: valid transitions from each status
 const validTransitions: Record<string, string[]> = {
-  'DRAFT': ['ACTIVE'],
-  'ACTIVE': ['AMENDED', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
-  'AMENDED': ['ACTIVE', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
-  'INCAPACITATED': ['ACTIVE', 'ADMINISTERED'],
-  'ADMINISTERED': ['DISTRIBUTED', 'CLOSED'],
-  'DISTRIBUTED': ['CLOSED'],
-  'CLOSED': []  // Terminal state
+  DRAFT: ['ACTIVE'],
+  ACTIVE: ['AMENDED', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
+  AMENDED: ['ACTIVE', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
+  INCAPACITATED: ['ACTIVE', 'ADMINISTERED'],
+  ADMINISTERED: ['DISTRIBUTED', 'CLOSED'],
+  DISTRIBUTED: ['CLOSED'],
+  CLOSED: [] // Terminal state
 }
 
 // Event types to auto-create for each status transition
 const statusEventTypes: Record<string, string> = {
-  'ACTIVE': 'PLAN_SIGNED',
-  'AMENDED': 'PLAN_AMENDED',
-  'INCAPACITATED': 'GRANTOR_INCAPACITATED',
-  'ADMINISTERED': 'ADMINISTRATION_STARTED',
-  'DISTRIBUTED': 'FINAL_DISTRIBUTION',
-  'CLOSED': 'PLAN_CLOSED'
+  ACTIVE: 'PLAN_SIGNED',
+  AMENDED: 'PLAN_AMENDED',
+  INCAPACITATED: 'GRANTOR_INCAPACITATED',
+  ADMINISTERED: 'ADMINISTRATION_STARTED',
+  DISTRIBUTED: 'FINAL_DISTRIBUTION',
+  CLOSED: 'PLAN_CLOSED'
 }
 
 const statusUpdateSchema = z.object({

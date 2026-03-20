@@ -17,8 +17,8 @@ import type {
 /** Create person → user → client chain (client with portal access) */
 export function createCompleteClient(
   repo: MockRepository,
-  overrides: { person?: Partial<Person>; user?: Partial<User>; client?: Partial<Client> } = {}
-): { person: Person; user: User; client: Client } {
+  overrides: { person?: Partial<Person>, user?: Partial<User>, client?: Partial<Client> } = {}
+): { person: Person, user: User, client: Client } {
   const person = repo.createPerson({
     personType: 'individual',
     firstName: 'Test',
@@ -48,8 +48,8 @@ export function createCompleteClient(
 /** Create person → client chain (no portal access) */
 export function createClientWithoutPortalAccess(
   repo: MockRepository,
-  overrides: { person?: Partial<Person>; client?: Partial<Client> } = {}
-): { person: Person; client: Client } {
+  overrides: { person?: Partial<Person>, client?: Partial<Client> } = {}
+): { person: Person, client: Client } {
   const person = repo.createPerson({
     personType: 'individual',
     firstName: 'No Portal',
@@ -70,8 +70,8 @@ export function createClientWithoutPortalAccess(
 export function createStaffUser(
   repo: MockRepository,
   role: 'ADMIN' | 'LAWYER' | 'STAFF',
-  overrides: { person?: Partial<Person>; user?: Partial<User> } = {}
-): { person: Person; user: User } {
+  overrides: { person?: Partial<Person>, user?: Partial<User> } = {}
+): { person: Person, user: User } {
   const person = repo.createPerson({
     personType: 'individual',
     firstName: 'Staff',
@@ -99,8 +99,8 @@ export function createStaffUser(
 /** Create single-grantor trust plan with trust + pour-over will */
 export function createSingleGrantorTrustPlan(
   repo: MockRepository,
-  overrides: { grantor?: Partial<Person>; plan?: Partial<EstatePlan>; trust?: Partial<Trust>; will?: Partial<Will> } = {}
-): { grantor: Person; plan: EstatePlan; trust: Trust; will: Will } {
+  overrides: { grantor?: Partial<Person>, plan?: Partial<EstatePlan>, trust?: Partial<Trust>, will?: Partial<Will> } = {}
+): { grantor: Person, plan: EstatePlan, trust: Trust, will: Will } {
   const grantor = repo.createPerson({
     personType: 'individual',
     firstName: 'John',
@@ -147,8 +147,8 @@ export function createSingleGrantorTrustPlan(
 /** Create joint (married couple) trust plan */
 export function createJointTrustPlan(
   repo: MockRepository,
-  overrides: { grantor1?: Partial<Person>; grantor2?: Partial<Person>; plan?: Partial<EstatePlan>; trust?: Partial<Trust> } = {}
-): { grantor1: Person; grantor2: Person; plan: EstatePlan; trust: Trust; will1: Will; will2: Will } {
+  overrides: { grantor1?: Partial<Person>, grantor2?: Partial<Person>, plan?: Partial<EstatePlan>, trust?: Partial<Trust> } = {}
+): { grantor1: Person, grantor2: Person, plan: EstatePlan, trust: Trust, will1: Will, will2: Will } {
   const grantor1 = repo.createPerson({ personType: 'individual', firstName: 'John', lastName: 'Smith', ...overrides.grantor1 })
   const grantor2 = repo.createPerson({ personType: 'individual', firstName: 'Jane', lastName: 'Smith', ...overrides.grantor2 })
 
@@ -183,8 +183,8 @@ export function createJointTrustPlan(
 /** Create will-based plan (no trust) */
 export function createWillBasedPlan(
   repo: MockRepository,
-  overrides: { grantor?: Partial<Person>; plan?: Partial<EstatePlan>; will?: Partial<Will> } = {}
-): { grantor: Person; plan: EstatePlan; will: Will } {
+  overrides: { grantor?: Partial<Person>, plan?: Partial<EstatePlan>, will?: Partial<Will> } = {}
+): { grantor: Person, plan: EstatePlan, will: Will } {
   const grantor = repo.createPerson({ personType: 'individual', firstName: 'Mary', lastName: 'Johnson', ...overrides.grantor })
 
   const plan = repo.createEstatePlan({
@@ -209,8 +209,8 @@ export function createWillBasedPlan(
 export function addBeneficiaryToPlan(
   repo: MockRepository,
   planId: string,
-  overrides: { beneficiary?: Partial<Person>; role?: Partial<PlanRole> } = {}
-): { beneficiary: Person; role: PlanRole } {
+  overrides: { beneficiary?: Partial<Person>, role?: Partial<PlanRole> } = {}
+): { beneficiary: Person, role: PlanRole } {
   const beneficiary = repo.createPerson({ personType: 'individual', firstName: 'Child', lastName: 'Beneficiary', ...overrides.beneficiary })
 
   const role = repo.createPlanRole({
@@ -232,8 +232,8 @@ export function addFiduciaryToPlan(
   repo: MockRepository,
   planId: string,
   roleType: 'TRUSTEE' | 'SUCCESSOR_TRUSTEE' | 'EXECUTOR' | 'ALTERNATE_EXECUTOR',
-  overrides: { fiduciary?: Partial<Person>; role?: Partial<PlanRole> } = {}
-): { fiduciary: Person; role: PlanRole } {
+  overrides: { fiduciary?: Partial<Person>, role?: Partial<PlanRole> } = {}
+): { fiduciary: Person, role: PlanRole } {
   const fiduciary = repo.createPerson({ personType: 'individual', firstName: 'Trusted', lastName: 'Fiduciary', ...overrides.fiduciary })
 
   const role = repo.createPlanRole({

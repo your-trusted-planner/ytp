@@ -99,7 +99,7 @@ export function compareFirstName(a: string | undefined, b: string | undefined): 
 
   // Cross-compare primary/secondary
   if ((metaA[0] && metaB[1] && metaA[0] === metaB[1]) ||
-      (metaA[1] && metaB[0] && metaA[1] === metaB[0])) {
+    (metaA[1] && metaB[0] && metaA[1] === metaB[0])) {
     return {
       field: 'firstName',
       score: 0.75,
@@ -177,7 +177,7 @@ export function compareLastName(a: string | undefined, b: string | undefined): F
 
   // Cross-compare
   if ((metaA[0] && metaB[1] && metaA[0] === metaB[1]) ||
-      (metaA[1] && metaB[0] && metaA[1] === metaB[0])) {
+    (metaA[1] && metaB[0] && metaA[1] === metaB[0])) {
     return {
       field: 'lastName',
       score: 0.75,

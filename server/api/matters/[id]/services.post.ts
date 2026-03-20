@@ -10,7 +10,7 @@ const addServiceSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const matterId = getRouterParam(event, 'id')
   if (!matterId) {
     throw createError({
@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
       message: 'Matter ID required'
     })
   }
-  
+
   const body = await readBody(event)
   const result = addServiceSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       data: result.error
     })
   }
-  
+
   const { catalogId, assignedAttorneyId } = result.data
 
   if (!isDatabaseAvailable()) {
@@ -76,4 +76,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true, engagement: newEngagement }
 })
-

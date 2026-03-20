@@ -29,7 +29,8 @@ export default defineEventHandler(async (event) => {
       .from(schema.people)
       .where(eq(schema.people.id, id))
       .all()
-  } else {
+  }
+  else {
     people = await db.select()
       .from(schema.people)
       .where(or(
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     found: people.length,
-    people: people.map((p) => ({
+    people: people.map(p => ({
       id: p.id,
       firstName: p.firstName,
       lastName: p.lastName,

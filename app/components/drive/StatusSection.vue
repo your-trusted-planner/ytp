@@ -5,12 +5,19 @@
         <IconsGoogleDrive :size="20" />
         Google Drive
       </h3>
-      <DriveStatusBadge :status="syncStatus" :folder-url="folderUrl" :show-label="true" />
+      <DriveStatusBadge
+        :status="syncStatus"
+        :folder-url="folderUrl"
+        :show-label="true"
+      />
     </div>
 
     <div class="space-y-3 text-sm">
       <!-- Folder Link -->
-      <div v-if="folderUrl && syncStatus === 'SYNCED'" class="flex items-center justify-between">
+      <div
+        v-if="folderUrl && syncStatus === 'SYNCED'"
+        class="flex items-center justify-between"
+      >
         <span class="text-gray-600">Folder:</span>
         <a
           :href="folderUrl"
@@ -25,26 +32,39 @@
       </div>
 
       <!-- Last Sync Time -->
-      <div v-if="lastSyncAt && syncStatus === 'SYNCED'" class="flex items-center justify-between">
+      <div
+        v-if="lastSyncAt && syncStatus === 'SYNCED'"
+        class="flex items-center justify-between"
+      >
         <span class="text-gray-600">Last synced:</span>
         <span class="text-gray-900">{{ formatRelativeTime(lastSyncAt) }}</span>
       </div>
 
       <!-- Error Message -->
-      <div v-if="syncError && syncStatus === 'ERROR'" class="mt-3">
+      <div
+        v-if="syncError && syncStatus === 'ERROR'"
+        class="mt-3"
+      >
         <div class="bg-red-50 border border-red-200 rounded-lg p-3">
           <div class="flex items-start gap-2">
             <AlertTriangle class="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p class="text-sm font-medium text-red-800">Sync Error</p>
-              <p class="text-sm text-red-700 mt-1">{{ syncError }}</p>
+              <p class="text-sm font-medium text-red-800">
+                Sync Error
+              </p>
+              <p class="text-sm text-red-700 mt-1">
+                {{ syncError }}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Not Synced Message -->
-      <div v-if="syncStatus === 'NOT_SYNCED' || !syncStatus" class="mt-3">
+      <div
+        v-if="syncStatus === 'NOT_SYNCED' || !syncStatus"
+        class="mt-3"
+      >
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
           <p class="text-sm text-gray-600">
             This {{ entityType }} is not synced to Google Drive yet.
@@ -59,10 +79,13 @@
           size="sm"
           variant="outline"
           :is-loading="isSyncing"
-          @click="handleSync(false)"
           class="w-full"
+          @click="handleSync(false)"
         >
-          <RefreshCw v-if="!isSyncing" class="w-4 h-4 mr-2" />
+          <RefreshCw
+            v-if="!isSyncing"
+            class="w-4 h-4 mr-2"
+          />
           {{ syncStatus === 'SYNCED' ? 'Verify Folder' : 'Sync Now' }}
         </UiButton>
 
@@ -72,13 +95,19 @@
           size="sm"
           variant="ghost"
           :is-loading="isSyncing"
-          @click="handleSync(true)"
           class="w-full text-gray-600"
+          @click="handleSync(true)"
         >
-          <RefreshCw v-if="!isSyncing" class="w-4 h-4 mr-2" />
+          <RefreshCw
+            v-if="!isSyncing"
+            class="w-4 h-4 mr-2"
+          />
           Force New Folder
         </UiButton>
-        <p v-if="syncStatus === 'SYNCED' || syncStatus === 'ERROR'" class="text-xs text-gray-500 text-center">
+        <p
+          v-if="syncStatus === 'SYNCED' || syncStatus === 'ERROR'"
+          class="text-xs text-gray-500 text-center"
+        >
           Use "Force New Folder" to create a new folder in the currently configured drive
         </p>
       </div>
@@ -102,7 +131,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'synced', data: { folderId: string; folderUrl: string }): void
+  (e: 'synced', data: { folderId: string, folderUrl: string }): void
 }>()
 
 const toast = useToast()
@@ -111,9 +140,9 @@ const isSyncing = ref(false)
 async function handleSync(force = false) {
   isSyncing.value = true
   try {
-    const baseEndpoint = props.entityType === 'client'
-      ? `/api/google-drive/sync/client/${props.entityId}`
-      : `/api/google-drive/sync/matter/${props.entityId}`
+    const baseEndpoint = props.entityType === 'client' ?
+      `/api/google-drive/sync/client/${props.entityId}` :
+      `/api/google-drive/sync/matter/${props.entityId}`
 
     const endpoint = force ? `${baseEndpoint}?force=true` : baseEndpoint
 
@@ -129,15 +158,16 @@ async function handleSync(force = false) {
     })
 
     if (response.success && response.folderId && response.folderUrl) {
-      const message = response.alreadyExists
-        ? `${props.entityType === 'client' ? 'Client' : 'Matter'} folder verified`
-        : `${props.entityType === 'client' ? 'Client' : 'Matter'} folder synced to Google Drive`
+      const message = response.alreadyExists ?
+        `${props.entityType === 'client' ? 'Client' : 'Matter'} folder verified` :
+        `${props.entityType === 'client' ? 'Client' : 'Matter'} folder synced to Google Drive`
       toast.success(message)
       emit('synced', {
         folderId: response.folderId,
         folderUrl: response.folderUrl
       })
-    } else if (response.success) {
+    }
+    else if (response.success) {
       // Success but missing folder info - still emit with what we have
       toast.success(response.message || 'Sync completed')
       if (response.folderId) {
@@ -146,13 +176,16 @@ async function handleSync(force = false) {
           folderUrl: response.folderUrl || ''
         })
       }
-    } else {
+    }
+    else {
       toast.error(response.error || 'Failed to sync to Google Drive')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Sync error:', error)
     toast.error(error.data?.message || error.message || 'Failed to sync to Google Drive')
-  } finally {
+  }
+  finally {
     isSyncing.value = false
   }
 }

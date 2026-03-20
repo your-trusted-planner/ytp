@@ -56,7 +56,8 @@ export default {
 
         // Acknowledge successful processing
         message.ack()
-      } catch (error) {
+      }
+      catch (error) {
         console.error(`Failed to process document ${documentId}:`, error)
 
         // Update database with error
@@ -74,7 +75,8 @@ export default {
               updatedAt: now
             })
             .where(eq(schema.uploadedDocuments.id, documentId))
-        } catch (dbError) {
+        }
+        catch (dbError) {
           console.error(`Failed to update error status for document ${documentId}:`, dbError)
         }
 

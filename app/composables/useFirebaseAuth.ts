@@ -68,7 +68,8 @@ export function useFirebaseAuth() {
       if (preferredFlow === 'popup') {
         try {
           result = await signInWithPopup(auth, provider)
-        } catch (popupError: any) {
+        }
+        catch (popupError: any) {
           // If popup blocked, fall back to redirect
           if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
             console.log('[Firebase] Popup blocked, falling back to redirect')
@@ -78,7 +79,8 @@ export function useFirebaseAuth() {
           }
           throw popupError
         }
-      } else {
+      }
+      else {
         await signInWithRedirect(auth, provider)
         return { success: true } // Will complete after redirect
       }
@@ -87,11 +89,13 @@ export function useFirebaseAuth() {
       const idToken = await result.user.getIdToken()
 
       return { success: true, idToken }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('[Firebase] Sign-in error:', err)
       error.value = getFirebaseErrorMessage(err.code)
       return { success: false, error: error.value }
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -111,7 +115,8 @@ export function useFirebaseAuth() {
 
       const idToken = await result.user.getIdToken()
       return { success: true, idToken }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       console.error('[Firebase] Redirect result error:', err)
       error.value = getFirebaseErrorMessage(err.code)
       return { success: false, error: error.value }
@@ -125,7 +130,8 @@ export function useFirebaseAuth() {
 
     try {
       return await auth.currentUser.getIdToken()
-    } catch {
+    }
+    catch {
       return null
     }
   }
@@ -135,7 +141,8 @@ export function useFirebaseAuth() {
 
     try {
       await firebaseSignOut(auth)
-    } catch (err) {
+    }
+    catch (err) {
       console.error('[Firebase] Sign-out error:', err)
     }
   }

@@ -34,10 +34,10 @@ export default defineEventHandler(async (event) => {
 
   // Sort matters by status priority and creation date
   const statusPriority: Record<string, number> = {
-    'OPEN': 1,
-    'IN_PROGRESS': 2,
-    'PENDING': 3,
-    'CLOSED': 4
+    OPEN: 1,
+    IN_PROGRESS: 2,
+    PENDING: 3,
+    CLOSED: 4
   }
   matters.sort((a, b) => {
     const priorityDiff = (statusPriority[a.status] || 5) - (statusPriority[b.status] || 5)
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
   // Batch fetch all engaged services for all matters in a single query
   const matterIds = matters.map((m: any) => m.id)
-  let servicesByMatter: Record<string, any[]> = {}
+  const servicesByMatter: Record<string, any[]> = {}
 
   if (matterIds.length > 0) {
     const matterInList = sql.join(matterIds.map(id => sql`${id}`), sql`, `)

@@ -9,27 +9,37 @@
         <ArrowLeft class="w-5 h-5" />
       </NuxtLink>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Apollo Integration</h1>
-        <p class="text-gray-600 mt-1">Sync contacts and marketing preferences with Apollo.io</p>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Apollo Integration
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Sync contacts and marketing preferences with Apollo.io
+        </p>
       </div>
     </div>
 
     <!-- Sync Status Card -->
     <UiCard v-if="integration?.status === 'CONNECTED'">
       <template #header>
-        <h3 class="text-lg font-semibold text-gray-900">Sync Status</h3>
+        <h3 class="text-lg font-semibold text-gray-900">
+          Sync Status
+        </h3>
       </template>
 
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-sm font-medium text-gray-700">Last Contact Sync</p>
+            <p class="text-sm font-medium text-gray-700">
+              Last Contact Sync
+            </p>
             <p class="text-sm text-gray-500 mt-1">
               {{ syncStatus?.lastContactSync ? formatDate(syncStatus.lastContactSync) : 'Never' }}
             </p>
           </div>
           <div class="p-3 bg-gray-50 rounded-lg text-center">
-            <p class="text-sm font-medium text-gray-700">Last Opt-Out Check</p>
+            <p class="text-sm font-medium text-gray-700">
+              Last Opt-Out Check
+            </p>
             <p class="text-sm text-gray-500 mt-1">
               {{ syncStatus?.lastOptOutSync ? formatDate(syncStatus.lastOptOutSync) : 'Never' }}
             </p>
@@ -37,21 +47,33 @@
         </div>
 
         <!-- Sync Results -->
-        <div v-if="lastSyncResult" :class="[
-          'p-4 rounded-lg',
-          lastSyncResult.errors?.length ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'
-        ]">
-          <p class="font-medium" :class="lastSyncResult.errors?.length ? 'text-amber-800' : 'text-green-800'">
+        <div
+          v-if="lastSyncResult"
+          :class="[
+            'p-4 rounded-lg',
+            lastSyncResult.errors?.length ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'
+          ]"
+        >
+          <p
+            class="font-medium"
+            :class="lastSyncResult.errors?.length ? 'text-amber-800' : 'text-green-800'"
+          >
             {{ lastSyncResult.type === 'contacts' ? 'Contact Sync' : 'Opt-Out Sync' }} Complete
           </p>
-          <div class="mt-2 text-sm" :class="lastSyncResult.errors?.length ? 'text-amber-700' : 'text-green-700'">
+          <div
+            class="mt-2 text-sm"
+            :class="lastSyncResult.errors?.length ? 'text-amber-700' : 'text-green-700'"
+          >
             <template v-if="lastSyncResult.type === 'contacts'">
               <span>{{ lastSyncResult.created }} created, {{ lastSyncResult.updated }} updated, {{ lastSyncResult.skipped }} skipped</span>
             </template>
             <template v-else>
               <span>{{ lastSyncResult.checked }} checked, {{ lastSyncResult.newUnsubscribes }} new unsubscribes</span>
             </template>
-            <span v-if="lastSyncResult.errors?.length" class="block mt-1">
+            <span
+              v-if="lastSyncResult.errors?.length"
+              class="block mt-1"
+            >
               {{ lastSyncResult.errors.length }} error(s)
             </span>
           </div>
@@ -60,16 +82,16 @@
         <!-- Sync Buttons -->
         <div class="flex gap-3">
           <UiButton
-            @click="runContactSync"
             :is-loading="syncingContacts"
+            @click="runContactSync"
           >
             <RefreshCw class="w-4 h-4 mr-2" />
             Sync Contacts to Apollo
           </UiButton>
           <UiButton
             variant="outline"
-            @click="runOptOutSync"
             :is-loading="syncingOptOuts"
+            @click="runOptOutSync"
           >
             <Download class="w-4 h-4 mr-2" />
             Check Opt-Outs
@@ -79,12 +101,15 @@
         <!-- Sync Scope -->
         <div class="flex items-center gap-2">
           <input
+            id="clients-only"
             v-model="syncClientsOnly"
             type="checkbox"
-            id="clients-only"
             class="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
-          />
-          <label for="clients-only" class="text-sm text-gray-700">
+          >
+          <label
+            for="clients-only"
+            class="text-sm text-gray-700"
+          >
             Only sync clients (skip other people records)
           </label>
         </div>
@@ -99,14 +124,17 @@
           <div
             :class="[
               'w-3 h-3 rounded-full',
-              integration?.status === 'CONNECTED' ? 'bg-green-500' :
-              integration?.status === 'ERROR' ? 'bg-red-500' : 'bg-gray-300'
+              integration?.status === 'CONNECTED' ? 'bg-green-500'
+              : integration?.status === 'ERROR' ? 'bg-red-500' : 'bg-gray-300'
             ]"
           />
           <span class="text-sm font-medium text-gray-700">
             {{ statusText }}
           </span>
-          <span v-if="integration?.lastTestedAt" class="text-xs text-gray-500">
+          <span
+            v-if="integration?.lastTestedAt"
+            class="text-xs text-gray-500"
+          >
             (Last tested: {{ formatDate(integration.lastTestedAt) }})
           </span>
         </div>
@@ -122,14 +150,20 @@
               :type="showApiKey ? 'text' : 'password'"
               placeholder="Enter your Apollo API key"
               class="flex-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
-            />
+            >
             <button
               type="button"
-              @click="showApiKey = !showApiKey"
               class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+              @click="showApiKey = !showApiKey"
             >
-              <Eye v-if="!showApiKey" class="w-5 h-5" />
-              <EyeOff v-else class="w-5 h-5" />
+              <Eye
+                v-if="!showApiKey"
+                class="w-5 h-5"
+              />
+              <EyeOff
+                v-else
+                class="w-5 h-5"
+              />
             </button>
           </div>
           <p class="mt-1 text-xs text-gray-500">
@@ -140,35 +174,50 @@
         <!-- Action Buttons -->
         <div class="flex gap-3">
           <UiButton
-            @click="saveCredentials"
             :is-loading="saving"
             :disabled="!apiKey"
+            @click="saveCredentials"
           >
             Save Credentials
           </UiButton>
           <UiButton
             variant="outline"
-            @click="testConnection"
             :is-loading="testing"
             :disabled="!integration?.id"
+            @click="testConnection"
           >
             Test Connection
           </UiButton>
         </div>
 
         <!-- Test Result -->
-        <div v-if="testResult" :class="[
-          'p-4 rounded-lg',
-          testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-        ]">
+        <div
+          v-if="testResult"
+          :class="[
+            'p-4 rounded-lg',
+            testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          ]"
+        >
           <div class="flex items-start gap-3">
-            <CheckCircle v-if="testResult.success" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <XCircle v-else class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle
+              v-if="testResult.success"
+              class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+            />
+            <XCircle
+              v-else
+              class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+            />
             <div>
-              <p :class="testResult.success ? 'text-green-800' : 'text-red-800'" class="font-medium">
+              <p
+                :class="testResult.success ? 'text-green-800' : 'text-red-800'"
+                class="font-medium"
+              >
                 {{ testResult.success ? 'Connection successful!' : 'Connection failed' }}
               </p>
-              <p v-if="testResult.error" class="text-sm text-red-700 mt-1">
+              <p
+                v-if="testResult.error"
+                class="text-sm text-red-700 mt-1"
+              >
                 {{ testResult.error }}
               </p>
             </div>
@@ -178,16 +227,29 @@
     </UiCard>
 
     <!-- Danger Zone -->
-    <UiCard v-if="integration?.id" class="border-red-200">
+    <UiCard
+      v-if="integration?.id"
+      class="border-red-200"
+    >
       <template #header>
-        <h3 class="text-lg font-semibold text-red-700">Danger Zone</h3>
+        <h3 class="text-lg font-semibold text-red-700">
+          Danger Zone
+        </h3>
       </template>
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-700">Remove this integration</p>
-          <p class="text-xs text-gray-500">This will delete the stored credentials.</p>
+          <p class="text-sm text-gray-700">
+            Remove this integration
+          </p>
+          <p class="text-xs text-gray-500">
+            This will delete the stored credentials.
+          </p>
         </div>
-        <UiButton variant="danger" @click="deleteIntegration" :is-loading="deleting">
+        <UiButton
+          variant="danger"
+          :is-loading="deleting"
+          @click="deleteIntegration"
+        >
           Delete Integration
         </UiButton>
       </div>
@@ -229,7 +291,7 @@ const showApiKey = ref(false)
 const saving = ref(false)
 const testing = ref(false)
 const deleting = ref(false)
-const testResult = ref<{ success: boolean; error?: string } | null>(null)
+const testResult = ref<{ success: boolean, error?: string } | null>(null)
 
 // Sync state
 const syncStatus = ref<SyncStatusData | null>(null)
@@ -243,7 +305,7 @@ const lastSyncResult = ref<{
   skipped?: number
   checked?: number
   newUnsubscribes?: number
-  errors?: Array<{ personId: string; error: string }>
+  errors?: Array<{ personId: string, error: string }>
 } | null>(null)
 
 const statusText = computed(() => {
@@ -269,7 +331,8 @@ async function loadIntegration() {
     if (integration.value?.id) {
       apiKey.value = '••••••••••••••••'
     }
-  } catch {
+  }
+  catch {
     // Integration not found or no access
   }
 }
@@ -277,7 +340,8 @@ async function loadIntegration() {
 async function loadSyncStatus() {
   try {
     syncStatus.value = await $fetch<SyncStatusData>('/api/admin/integrations/apollo/sync-status')
-  } catch {
+  }
+  catch {
     // Status not available
   }
 }
@@ -294,7 +358,8 @@ async function saveCredentials() {
         method: 'PUT',
         body: { accessToken: apiKey.value }
       })
-    } else {
+    }
+    else {
       const result = await $fetch<{ integration: Integration }>('/api/admin/integrations', {
         method: 'POST',
         body: {
@@ -309,13 +374,15 @@ async function saveCredentials() {
     apiKey.value = '••••••••••••••••'
     await loadIntegration()
     toast.success('Credentials saved successfully')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save credentials')
     testResult.value = {
       success: false,
       error: error.data?.message || 'Failed to save credentials'
     }
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -327,7 +394,7 @@ async function testConnection() {
   testResult.value = null
 
   try {
-    const result = await $fetch<{ success: boolean; error?: string }>(
+    const result = await $fetch<{ success: boolean, error?: string }>(
       `/api/admin/integrations/${integration.value.id}/test`,
       { method: 'POST' }
     )
@@ -335,16 +402,19 @@ async function testConnection() {
     await loadIntegration()
     if (result.success) {
       toast.success('Connection test successful!')
-    } else {
+    }
+    else {
       toast.error(result.error || 'Connection test failed')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Test failed')
     testResult.value = {
       success: false,
       error: error.data?.message || 'Test failed'
     }
-  } finally {
+  }
+  finally {
     testing.value = false
   }
 }
@@ -359,7 +429,7 @@ async function runContactSync() {
       created: number
       updated: number
       skipped: number
-      errors: Array<{ personId: string; error: string }>
+      errors: Array<{ personId: string, error: string }>
     }>('/api/admin/integrations/apollo/sync-contacts', {
       method: 'POST',
       body: { clientsOnly: syncClientsOnly.value }
@@ -377,12 +447,15 @@ async function runContactSync() {
 
     if (result.errors.length === 0) {
       toast.success(`Synced ${result.created + result.updated} contacts to Apollo`)
-    } else {
+    }
+    else {
       toast.warning(`Synced with ${result.errors.length} error(s)`)
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Contact sync failed')
-  } finally {
+  }
+  finally {
     syncingContacts.value = false
   }
 }
@@ -396,7 +469,7 @@ async function runOptOutSync() {
       success: boolean
       checked: number
       newUnsubscribes: number
-      errors: Array<{ personId: string; error: string }>
+      errors: Array<{ personId: string, error: string }>
     }>('/api/admin/integrations/apollo/sync-optouts', {
       method: 'POST'
     })
@@ -412,12 +485,15 @@ async function runOptOutSync() {
 
     if (result.newUnsubscribes > 0) {
       toast.info(`${result.newUnsubscribes} new opt-out(s) applied`)
-    } else {
+    }
+    else {
       toast.success('No new opt-outs found')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Opt-out sync failed')
-  } finally {
+  }
+  finally {
     syncingOptOuts.value = false
   }
 }
@@ -434,9 +510,11 @@ async function deleteIntegration() {
     integration.value = null
     apiKey.value = ''
     toast.success('Integration deleted')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete integration')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }

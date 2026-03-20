@@ -384,9 +384,9 @@ export async function generateInvoicePdf(options: InvoicePdfOptions): Promise<Ui
       font: helveticaBold,
       color: secondaryColor
     })
-    const matterText = matter.matterNumber
-      ? `${matter.title} (${matter.matterNumber})`
-      : matter.title
+    const matterText = matter.matterNumber ?
+      `${matter.title} (${matter.matterNumber})` :
+      matter.title
     page.drawText(matterText, {
       x: marginLeft + helveticaBold.widthOfTextAtSize('Matter: ', 10),
       y: currentY,

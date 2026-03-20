@@ -19,7 +19,6 @@ const createIntegrationSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-
   const body = await readBody(event)
   const result = createIntegrationSchema.safeParse(body)
 

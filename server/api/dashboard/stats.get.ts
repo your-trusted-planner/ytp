@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // Get users pending approval
   const allUsers = await db.select().from(schema.users).all()
   const pendingApprovals = allUsers.filter(u => u.status === 'PENDING_APPROVAL').length
-  
+
   // Get upcoming appointments
   const upcomingAppointments = await db
     .select()
@@ -28,14 +28,14 @@ export default defineEventHandler(async (event) => {
       )
     )
     .all()
-  
+
   // Get documents this month
   const documentsThisMonth = await db
     .select()
     .from(schema.documents)
     .where(gte(schema.documents.createdAt, startOfMonth))
     .all()
-  
+
   return {
     totalClients,
     activeClients,
@@ -44,4 +44,3 @@ export default defineEventHandler(async (event) => {
     documentsThisMonth: documentsThisMonth.length
   }
 })
-

@@ -23,7 +23,7 @@ function validateJourneyStart(params: {
   catalogId?: string
   hasEngagement?: boolean
   existingJourneyStatus?: JourneyStatus | null
-}): { valid: boolean; error?: string } {
+}): { valid: boolean, error?: string } {
   // Matter and catalog are required
   if (!params.matterId || !params.catalogId) {
     return { valid: false, error: 'Matter and service are required to start a journey' }
@@ -46,7 +46,7 @@ function canAdvanceJourney(params: {
   journeyExists: boolean
   currentStepExists: boolean
   journeyStatus: JourneyStatus
-}): { canAdvance: boolean; error?: string } {
+}): { canAdvance: boolean, error?: string } {
   if (!params.journeyExists) {
     return { canAdvance: false, error: 'Client journey not found' }
   }
@@ -73,10 +73,11 @@ function canAdvanceJourney(params: {
 function determineNextState(params: {
   hasNextStep: boolean
   currentStatus: JourneyStatus
-}): { newStatus: JourneyStatus; completed: boolean } {
+}): { newStatus: JourneyStatus, completed: boolean } {
   if (params.hasNextStep) {
     return { newStatus: 'IN_PROGRESS', completed: false }
-  } else {
+  }
+  else {
     return { newStatus: 'COMPLETED', completed: true }
   }
 }
@@ -259,7 +260,7 @@ describe('Journey Priority Handling', () => {
   it('should validate priority values', () => {
     const validPriorities: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
 
-    validPriorities.forEach(p => {
+    validPriorities.forEach((p) => {
       expect(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).toContain(p)
     })
   })

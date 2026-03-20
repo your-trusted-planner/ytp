@@ -14,13 +14,13 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
 
   // Build where clause for search
-  const searchCondition = search
-    ? or(
+  const searchCondition = search ?
+      or(
         like(schema.people.fullName, `%${search}%`),
         like(schema.people.email, `%${search}%`),
         like(schema.people.phone, `%${search}%`)
-      )
-    : undefined
+      ) :
+    undefined
 
   // Get total count for pagination
   let totalCount = 0
@@ -41,13 +41,19 @@ export default defineEventHandler(async (event) => {
   }
 
   // Apply sorting
-  const sortColumn = sortBy === 'firstName' ? schema.people.firstName
-    : sortBy === 'lastName' ? schema.people.lastName
-    : sortBy === 'email' ? schema.people.email
-    : sortBy === 'phone' ? schema.people.phone
-    : sortBy === 'createdAt' ? schema.people.createdAt
-    : sortBy === 'updatedAt' ? schema.people.updatedAt
-    : schema.people.fullName // default sort
+  const sortColumn = sortBy === 'firstName' ?
+    schema.people.firstName :
+    sortBy === 'lastName' ?
+      schema.people.lastName :
+      sortBy === 'email' ?
+        schema.people.email :
+        sortBy === 'phone' ?
+          schema.people.phone :
+          sortBy === 'createdAt' ?
+            schema.people.createdAt :
+            sortBy === 'updatedAt' ?
+              schema.people.updatedAt :
+              schema.people.fullName // default sort
 
   peopleQuery = peopleQuery.orderBy(
     sortDirection === 'desc' ? desc(sortColumn) : asc(sortColumn)
@@ -63,7 +69,7 @@ export default defineEventHandler(async (event) => {
   const people = await peopleQuery.all()
 
   const result = {
-    people: people.map((p) => ({
+    people: people.map(p => ({
       id: p.id,
       // camelCase (keep for backwards compatibility)
       firstName: p.firstName,

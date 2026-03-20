@@ -39,7 +39,8 @@ export class SimpleTemplateRenderer {
       result = this.processVariables(result, context)
 
       return result
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error rendering template:', error)
       throw new Error(`Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -101,9 +102,9 @@ export class SimpleTemplateRenderer {
           // For default helper, argument is "value defaultValue"
           const [val, defaultVal] = argument.split(/\s+/)
           const actualValue = this.getValue(val, context)
-          return actualValue !== null && actualValue !== undefined && actualValue !== ''
-            ? String(actualValue)
-            : defaultVal || ''
+          return actualValue !== null && actualValue !== undefined && actualValue !== '' ?
+              String(actualValue) :
+            defaultVal || ''
         default:
           // Not a recognized helper, leave it as-is for variable substitution
           return match

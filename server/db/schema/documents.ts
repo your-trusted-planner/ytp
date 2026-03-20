@@ -75,7 +75,7 @@ export const documents = sqliteTable('documents', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   clientIdIdx: index('idx_documents_client_id').on(table.clientId),
   matterIdIdx: index('idx_documents_matter_id').on(table.matterId),
   statusIdx: index('idx_documents_status').on(table.status)

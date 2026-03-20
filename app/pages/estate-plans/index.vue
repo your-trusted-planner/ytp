@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Estate Plans</h1>
-        <p class="text-gray-600 mt-1">Manage client estate plans, trusts, and wills</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Estate Plans
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage client estate plans, trusts, and wills
+        </p>
       </div>
       <div class="flex gap-3">
         <NuxtLink
@@ -28,22 +32,25 @@
           type="text"
           placeholder="Search plans by name or client..."
           class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-        />
+        >
       </div>
       <div class="flex gap-2">
         <button
           v-for="statusFilter in statusFilters"
           :key="statusFilter.value"
-          @click="selectedStatus = statusFilter.value"
           :class="[
             'px-3 py-1.5 text-sm font-medium rounded-full transition-colors',
             selectedStatus === statusFilter.value
               ? 'bg-burgundy-100 text-burgundy-800'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           ]"
+          @click="selectedStatus = statusFilter.value"
         >
           {{ statusFilter.label }}
-          <span v-if="statusFilter.count" class="ml-1 text-xs">
+          <span
+            v-if="statusFilter.count"
+            class="ml-1 text-xs"
+          >
             ({{ statusFilter.count }})
           </span>
         </button>
@@ -52,17 +59,28 @@
 
     <!-- Plans List -->
     <UiCard>
-      <UiLoadingState v-if="loading" message="Loading estate plans..." />
+      <UiLoadingState
+        v-if="loading"
+        message="Loading estate plans..."
+      />
 
-      <div v-else-if="filteredPlans.length === 0" class="p-8 text-center text-gray-500">
+      <div
+        v-else-if="filteredPlans.length === 0"
+        class="p-8 text-center text-gray-500"
+      >
         <FileText class="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <p class="text-lg font-medium">No estate plans found</p>
+        <p class="text-lg font-medium">
+          No estate plans found
+        </p>
         <p class="text-sm mt-2">
           {{ searchQuery ? 'Try adjusting your search' : 'Import from WealthCounsel or create a new plan to get started' }}
         </p>
       </div>
 
-      <div v-else class="divide-y divide-gray-200">
+      <div
+        v-else
+        class="divide-y divide-gray-200"
+      >
         <NuxtLink
           v-for="plan in filteredPlans"
           :key="plan.id"
@@ -130,13 +148,19 @@
     </UiCard>
 
     <!-- Create Plan Modal (placeholder) -->
-    <UiModal v-model="showCreateModal" title="Create New Estate Plan">
+    <UiModal
+      v-model="showCreateModal"
+      title="Create New Estate Plan"
+    >
       <p class="text-gray-600">
         Manual plan creation will be available in a future update.
         For now, please import plans from WealthCounsel.
       </p>
       <template #footer>
-        <UiButton variant="outline" @click="showCreateModal = false">
+        <UiButton
+          variant="outline"
+          @click="showCreateModal = false"
+        >
           Close
         </UiButton>
         <NuxtLink to="/settings/integrations/wealthcounsel">

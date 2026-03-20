@@ -41,7 +41,7 @@ export const people = sqliteTable('people', {
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   fullNameIdx: index('idx_people_full_name').on(table.fullName),
   emailIdx: index('idx_people_email').on(table.email),
   phoneIdx: index('idx_people_phone').on(table.phone),
@@ -62,7 +62,7 @@ export const relationships = sqliteTable('relationships', {
   notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   fromPersonIdx: index('idx_relationships_from_person_id').on(table.fromPersonId),
   toPersonIdx: index('idx_relationships_to_person_id').on(table.toPersonId),
   typeIdx: index('idx_relationships_type').on(table.relationshipType)

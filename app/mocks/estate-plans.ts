@@ -25,7 +25,7 @@ export interface MockPlanRole {
   // undefined = plan-level (trust, beneficiaries)
   // personId = person-level (executor for their will, agent for their POA)
   forPersonId?: string
-  forPerson?: MockPerson  // Resolved person data
+  forPerson?: MockPerson // Resolved person data
   // Link to specific document
   willId?: string
   ancillaryDocumentId?: string
@@ -76,8 +76,8 @@ export interface MockTrust {
 export interface MockWill {
   id: string
   planId: string
-  personId?: string  // Whose will (for joint plans, each spouse has their own)
-  person?: MockPerson  // Resolved person data
+  personId?: string // Whose will (for joint plans, each spouse has their own)
+  person?: MockPerson // Resolved person data
   willType: string
   executionDate?: string
   jurisdiction?: string
@@ -87,8 +87,8 @@ export interface MockWill {
 export interface MockAncillaryDocument {
   id: string
   planId: string
-  personId: string  // Whose document (always person-specific)
-  person?: MockPerson  // Resolved person data
+  personId: string // Whose document (always person-specific)
+  person?: MockPerson // Resolved person data
   documentType: 'FINANCIAL_POA' | 'HEALTHCARE_POA' | 'ADVANCE_DIRECTIVE' | 'HIPAA_AUTHORIZATION' | 'NOMINATION_OF_GUARDIAN' | 'DECLARATION_OF_GUARDIAN' | 'OTHER'
   title?: string
   executionDate?: string
@@ -190,8 +190,8 @@ export const mockPeople: MockPerson[] = [
 // Christensen Estate Plan (Trust-based, Joint)
 export const mockChristensenPlan: MockEstatePlan = {
   id: 'plan_christensen_2024',
-  grantor1: mockPeople[0],  // Matt
-  grantor2: mockPeople[1],  // Desiree
+  grantor1: mockPeople[0], // Matt
+  grantor2: mockPeople[1], // Desiree
   planType: 'TRUST_BASED',
   planName: 'Christensen Legacy Family Trust',
   currentVersion: 1,
@@ -304,7 +304,7 @@ export const mockChristensenPlan: MockEstatePlan = {
     {
       id: 'doc_guardian_nomination',
       planId: 'plan_christensen_2024',
-      personId: 'person_matt_christensen',  // Primary signer
+      personId: 'person_matt_christensen', // Primary signer
       person: mockPeople[0],
       documentType: 'DECLARATION_OF_GUARDIAN',
       title: 'Nomination of Guardian for Minor Children',
@@ -333,7 +333,7 @@ export const mockChristensenPlan: MockEstatePlan = {
       personId: 'person_desiree_christensen',
       person: mockPeople[1],
       roleCategory: 'GRANTOR',
-      roleType: 'GRANTOR',  // Both grantors use GRANTOR - no hierarchy
+      roleType: 'GRANTOR', // Both grantors use GRANTOR - no hierarchy
       isPrimary: false,
       ordinal: 2,
       status: 'ACTIVE'
@@ -772,7 +772,7 @@ export const mockSmithPlanInAdmin: MockEstatePlan = {
       codicilCount: 0
     }
   ],
-  ancillaryDocuments: [],  // Simplified for this example
+  ancillaryDocuments: [], // Simplified for this example
   roles: [
     {
       id: 'role_john_grantor',
@@ -916,7 +916,7 @@ export function getMockPlansByStatus(status: string): MockEstatePlan[] {
 }
 
 // Status badge configurations
-export const planStatusConfig: Record<string, { label: string; variant: string; description: string }> = {
+export const planStatusConfig: Record<string, { label: string, variant: string, description: string }> = {
   DRAFT: {
     label: 'Draft',
     variant: 'default',
@@ -955,7 +955,7 @@ export const planStatusConfig: Record<string, { label: string; variant: string; 
 }
 
 // Role category configurations
-export const roleCategoryConfig: Record<string, { label: string; icon: string }> = {
+export const roleCategoryConfig: Record<string, { label: string, icon: string }> = {
   GRANTOR: { label: 'Grantors', icon: 'user' },
   FIDUCIARY: { label: 'Fiduciaries', icon: 'briefcase' },
   BENEFICIARY: { label: 'Beneficiaries', icon: 'gift' },
@@ -994,7 +994,7 @@ export const roleTypeLabels: Record<string, string> = {
 }
 
 // Event type display names and icons
-export const eventTypeConfig: Record<string, { label: string; icon: string; color: string }> = {
+export const eventTypeConfig: Record<string, { label: string, icon: string, color: string }> = {
   PLAN_CREATED: { label: 'Plan Created', icon: 'file-plus', color: 'blue' },
   PLAN_SIGNED: { label: 'Documents Signed', icon: 'pen-tool', color: 'green' },
   PLAN_AMENDED: { label: 'Plan Amended', icon: 'edit', color: 'purple' },

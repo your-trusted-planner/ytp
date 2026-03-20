@@ -119,7 +119,8 @@ export default defineEventHandler(async (event) => {
     }
 
     attachUserContext(dbUser)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     // Re-throw if already an H3 error (like our 403 above)
     if (error.statusCode) {
       throw error

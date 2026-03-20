@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     WHERE run_id = ${id}
     GROUP BY entity_type
     ORDER BY count DESC
-  `) as { entity_type: string; count: number }[]
+  `) as { entity_type: string, count: number }[]
 
   // Breakdown by error type
   const byErrorType = await db.all(sql`
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     WHERE run_id = ${id}
     GROUP BY error_type
     ORDER BY count DESC
-  `) as { error_type: string; count: number }[]
+  `) as { error_type: string, count: number }[]
 
   // Top error patterns: normalize messages by replacing numeric IDs with {id}
   // then group and count
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     GROUP BY entity_type, error_message
     ORDER BY count DESC
     LIMIT 200
-  `) as { entity_type: string; error_message: string; count: number }[]
+  `) as { entity_type: string, error_message: string, count: number }[]
 
   // Group by normalized pattern (replace numeric IDs with placeholder)
   const patternMap = new Map<string, {
@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
       if (existing.sampleMessages.length < 3) {
         existing.sampleMessages.push(row.error_message)
       }
-    } else {
+    }
+    else {
       patternMap.set(key, {
         pattern: normalized,
         entityType: row.entity_type,

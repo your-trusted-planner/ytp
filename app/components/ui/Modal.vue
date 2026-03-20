@@ -1,13 +1,16 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="modelValue" class="fixed inset-0 z-50 overflow-y-auto">
+      <div
+        v-if="modelValue"
+        class="fixed inset-0 z-50 overflow-y-auto"
+      >
         <div class="flex min-h-screen items-center justify-center p-4">
           <!-- Backdrop -->
           <div
             class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
             @click="handleClose"
-          ></div>
+          />
 
           <!-- Modal -->
           <div
@@ -16,10 +19,15 @@
             @click.stop
           >
             <!-- Header -->
-            <div v-if="title || $slots.header" class="px-6 py-4 border-b border-gray-200">
+            <div
+              v-if="title || $slots.header"
+              class="px-6 py-4 border-b border-gray-200"
+            >
               <slot name="header">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900">
+                    {{ title }}
+                  </h3>
                   <button
                     v-if="showClose"
                     type="button"
@@ -27,8 +35,18 @@
                     @click="handleClose"
                   >
                     <span class="sr-only">Close</span>
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      class="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -41,7 +59,10 @@
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3">
+            <div
+              v-if="$slots.footer"
+              class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3"
+            >
               <slot name="footer" />
             </div>
           </div>
@@ -80,7 +101,7 @@ const modalClasses = computed(() => {
     lg: 'max-w-2xl',
     xl: 'max-w-4xl'
   }
-  
+
   return cn('w-full', sizeClasses[props.size])
 })
 
@@ -102,4 +123,3 @@ const handleClose = () => {
   opacity: 0;
 }
 </style>
-

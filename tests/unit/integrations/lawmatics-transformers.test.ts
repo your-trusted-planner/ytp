@@ -1888,7 +1888,7 @@ describe('Fixture Integration', () => {
     const results = usersFixture.data.map(user => transformUser(user))
 
     expect(results).toHaveLength(usersFixture.data.length)
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result.id).toBeDefined()
       expect(result.status).toBe('INACTIVE')
       expect(['ADMIN', 'LAWYER', 'STAFF']).toContain(result.role)
@@ -1899,7 +1899,7 @@ describe('Fixture Integration', () => {
     const results = contactsFixture.data.map(contact => transformContact(contact))
 
     expect(results).toHaveLength(contactsFixture.data.length)
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result.user.id).toBeDefined()
       expect(result.user.role).toBe('CLIENT')
       expect(result.user.status).toBe('INACTIVE')
@@ -1935,7 +1935,7 @@ describe('Fixture Integration', () => {
     expect(lookupMap.size).toBe(usersFixture.data.length)
 
     // Verify each external ID maps to an internal ID
-    usersFixture.data.forEach(user => {
+    usersFixture.data.forEach((user) => {
       const internalId = lookupMap.get(user.id)
       expect(internalId).toBeDefined()
     })

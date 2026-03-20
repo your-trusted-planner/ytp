@@ -1,8 +1,11 @@
 <template>
   <div class="space-y-6">
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <template v-else-if="invoice">
@@ -10,7 +13,10 @@
       <div class="flex justify-between items-start">
         <div>
           <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <NuxtLink to="/billing" class="hover:text-gray-700">Billing</NuxtLink>
+            <NuxtLink
+              to="/billing"
+              class="hover:text-gray-700"
+            >Billing</NuxtLink>
             <span>/</span>
             <span>{{ invoice.invoiceNumber || invoice.invoice_number }}</span>
           </div>
@@ -30,14 +36,24 @@
           </p>
         </div>
         <div class="flex gap-2">
-          <UiButton v-if="invoice.status === 'DRAFT'" variant="secondary" @click="showEditModal = true">
+          <UiButton
+            v-if="invoice.status === 'DRAFT'"
+            variant="secondary"
+            @click="showEditModal = true"
+          >
             Edit
           </UiButton>
-          <UiButton variant="secondary" @click="downloadPdf">
+          <UiButton
+            variant="secondary"
+            @click="downloadPdf"
+          >
             <Download class="w-4 h-4 mr-2" />
             Download PDF
           </UiButton>
-          <UiButton v-if="invoice.status === 'DRAFT'" @click="sendInvoice">
+          <UiButton
+            v-if="invoice.status === 'DRAFT'"
+            @click="sendInvoice"
+          >
             <Send class="w-4 h-4 mr-2" />
             Send Invoice
           </UiButton>
@@ -65,15 +81,29 @@
           <UiCard>
             <div class="flex justify-between items-start mb-6">
               <div>
-                <h2 class="text-xl font-bold text-gray-900">Invoice Details</h2>
+                <h2 class="text-xl font-bold text-gray-900">
+                  Invoice Details
+                </h2>
               </div>
               <div class="text-right">
-                <p class="text-sm text-gray-500">Issue Date</p>
-                <p class="font-medium">{{ formatDate(invoice.issueDate || invoice.issue_date) }}</p>
-                <p class="text-sm text-gray-500 mt-2">Due Date</p>
-                <p class="font-medium" :class="isOverdue ? 'text-red-600' : ''">
+                <p class="text-sm text-gray-500">
+                  Issue Date
+                </p>
+                <p class="font-medium">
+                  {{ formatDate(invoice.issueDate || invoice.issue_date) }}
+                </p>
+                <p class="text-sm text-gray-500 mt-2">
+                  Due Date
+                </p>
+                <p
+                  class="font-medium"
+                  :class="isOverdue ? 'text-red-600' : ''"
+                >
                   {{ formatDate(invoice.dueDate || invoice.due_date) }}
-                  <span v-if="isOverdue" class="text-sm">({{ daysOverdue }} days overdue)</span>
+                  <span
+                    v-if="isOverdue"
+                    class="text-sm"
+                  >({{ daysOverdue }} days overdue)</span>
                 </p>
               </div>
             </div>
@@ -98,10 +128,18 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="item in invoice.lineItems" :key="item.id">
+                  <tr
+                    v-for="item in invoice.lineItems"
+                    :key="item.id"
+                  >
                     <td class="px-4 py-3">
-                      <div class="text-sm text-gray-900">{{ item.description }}</div>
-                      <div v-if="item.itemType !== 'SERVICE'" class="text-xs text-gray-500">
+                      <div class="text-sm text-gray-900">
+                        {{ item.description }}
+                      </div>
+                      <div
+                        v-if="item.itemType !== 'SERVICE'"
+                        class="text-xs text-gray-500"
+                      >
                         {{ item.itemType || item.item_type }}
                       </div>
                     </td>
@@ -127,13 +165,19 @@
                     <span class="text-gray-600">Subtotal</span>
                     <span class="font-medium">{{ formatCurrency(invoice.subtotal) }}</span>
                   </div>
-                  <div v-if="invoice.discountAmount || invoice.discount_amount" class="flex justify-between text-sm">
+                  <div
+                    v-if="invoice.discountAmount || invoice.discount_amount"
+                    class="flex justify-between text-sm"
+                  >
                     <span class="text-gray-600">Discount</span>
                     <span class="font-medium text-green-600">
                       -{{ formatCurrency(invoice.discountAmount || invoice.discount_amount) }}
                     </span>
                   </div>
-                  <div v-if="invoice.taxAmount || invoice.tax_amount" class="flex justify-between text-sm">
+                  <div
+                    v-if="invoice.taxAmount || invoice.tax_amount"
+                    class="flex justify-between text-sm"
+                  >
                     <span class="text-gray-600">Tax</span>
                     <span class="font-medium">{{ formatCurrency(invoice.taxAmount || invoice.tax_amount) }}</span>
                   </div>
@@ -146,15 +190,24 @@
             </div>
 
             <!-- Notes -->
-            <div v-if="invoice.notes" class="mt-6 pt-4 border-t">
-              <h3 class="text-sm font-medium text-gray-700 mb-2">Notes</h3>
-              <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ invoice.notes }}</p>
+            <div
+              v-if="invoice.notes"
+              class="mt-6 pt-4 border-t"
+            >
+              <h3 class="text-sm font-medium text-gray-700 mb-2">
+                Notes
+              </h3>
+              <p class="text-sm text-gray-600 whitespace-pre-wrap">
+                {{ invoice.notes }}
+              </p>
             </div>
           </UiCard>
 
           <!-- Payment History -->
           <UiCard v-if="payments.length > 0">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Payment History</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Payment History
+            </h3>
             <div class="space-y-3">
               <div
                 v-for="payment in payments"
@@ -191,19 +244,27 @@
         <div class="space-y-6">
           <!-- Payment Summary -->
           <UiCard>
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Summary</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Payment Summary
+            </h3>
             <div class="space-y-3">
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Total Amount</span>
                 <span class="font-medium">{{ formatCurrency(invoice.totalAmount || invoice.total_amount) }}</span>
               </div>
-              <div v-if="(invoice.trustApplied || invoice.trust_applied) > 0" class="flex justify-between">
+              <div
+                v-if="(invoice.trustApplied || invoice.trust_applied) > 0"
+                class="flex justify-between"
+              >
                 <span class="text-sm text-gray-600">Trust Applied</span>
                 <span class="font-medium text-green-600">
                   -{{ formatCurrency(invoice.trustApplied || invoice.trust_applied) }}
                 </span>
               </div>
-              <div v-if="(invoice.directPayments || invoice.direct_payments) > 0" class="flex justify-between">
+              <div
+                v-if="(invoice.directPayments || invoice.direct_payments) > 0"
+                class="flex justify-between"
+              >
                 <span class="text-sm text-gray-600">Direct Payments</span>
                 <span class="font-medium text-green-600">
                   -{{ formatCurrency(invoice.directPayments || invoice.direct_payments) }}
@@ -225,7 +286,9 @@
           <UiCard v-if="clientTrustBalance > 0">
             <div class="flex items-center gap-2 mb-2">
               <Landmark class="w-5 h-5 text-green-600" />
-              <h3 class="text-lg font-medium text-gray-900">Client Trust Balance</h3>
+              <h3 class="text-lg font-medium text-gray-900">
+                Client Trust Balance
+              </h3>
             </div>
             <p class="text-2xl font-bold text-green-600 mb-2">
               {{ formatCurrency(clientTrustBalance) }}
@@ -245,7 +308,9 @@
 
           <!-- Quick Links -->
           <UiCard>
-            <h3 class="text-sm font-medium text-gray-700 mb-3">Related</h3>
+            <h3 class="text-sm font-medium text-gray-700 mb-3">
+              Related
+            </h3>
             <div class="space-y-2">
               <NuxtLink
                 :to="`/clients/${invoice.clientId || invoice.client_id}`"
@@ -270,19 +335,21 @@
 
           <!-- Actions -->
           <UiCard v-if="invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && invoice.status !== 'VOID'">
-            <h3 class="text-sm font-medium text-gray-700 mb-3">Actions</h3>
+            <h3 class="text-sm font-medium text-gray-700 mb-3">
+              Actions
+            </h3>
             <div class="space-y-2">
               <button
                 v-if="invoice.status !== 'DRAFT'"
-                @click="voidInvoice"
                 class="block text-sm text-red-600 hover:text-red-800"
+                @click="voidInvoice"
               >
                 Void Invoice
               </button>
               <button
                 v-if="invoice.status === 'DRAFT'"
-                @click="deleteInvoice"
                 class="block text-sm text-red-600 hover:text-red-800"
+                @click="deleteInvoice"
               >
                 Delete Invoice
               </button>
@@ -293,11 +360,21 @@
     </template>
 
     <!-- Not Found -->
-    <div v-else class="text-center py-12">
+    <div
+      v-else
+      class="text-center py-12"
+    >
       <FileText class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">Invoice not found</h3>
-      <p class="text-gray-500 mt-1">The invoice you're looking for doesn't exist.</p>
-      <NuxtLink to="/billing" class="text-burgundy-600 hover:text-burgundy-800 mt-4 inline-block">
+      <h3 class="text-lg font-medium text-gray-900">
+        Invoice not found
+      </h3>
+      <p class="text-gray-500 mt-1">
+        The invoice you're looking for doesn't exist.
+      </p>
+      <NuxtLink
+        to="/billing"
+        class="text-burgundy-600 hover:text-burgundy-800 mt-4 inline-block"
+      >
         Back to Billing
       </NuxtLink>
     </div>
@@ -305,7 +382,7 @@
     <!-- Apply Trust Modal -->
     <BillingApplyTrustModal
       v-if="showApplyTrustModal"
-      :invoiceId="route.params.id as string"
+      :invoice-id="route.params.id as string"
       @close="showApplyTrustModal = false"
       @applied="handleTrustApplied"
     />
@@ -313,7 +390,7 @@
     <!-- Payment Modal -->
     <BillingPaymentRecordModal
       v-if="showPaymentModal"
-      :invoiceId="route.params.id as string"
+      :invoice-id="route.params.id as string"
       @close="showPaymentModal = false"
       @recorded="handlePaymentRecorded"
     />
@@ -416,7 +493,8 @@ async function fetchInvoice() {
       try {
         const balanceResponse = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${clientId}/balance`)
         clientTrustBalance.value = balanceResponse.totalBalance || 0
-      } catch (e) {
+      }
+      catch (e) {
         clientTrustBalance.value = 0
       }
     }
@@ -427,13 +505,16 @@ async function fetchInvoice() {
         query: { invoiceId: route.params.id }
       })
       payments.value = paymentsResponse.payments || []
-    } catch (e) {
+    }
+    catch (e) {
       payments.value = []
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch invoice:', error)
     invoice.value = null
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -447,7 +528,8 @@ async function sendInvoice() {
     await $fetch(`/api/invoices/${route.params.id}/send`, { method: 'POST' })
     toast.success('Invoice sent successfully')
     fetchInvoice()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to send invoice')
   }
 }
@@ -462,7 +544,8 @@ async function voidInvoice() {
     })
     toast.success('Invoice voided')
     fetchInvoice()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to void invoice')
   }
 }
@@ -474,7 +557,8 @@ async function deleteInvoice() {
     await $fetch(`/api/invoices/${route.params.id}`, { method: 'DELETE' })
     toast.success('Invoice deleted')
     navigateTo('/billing')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete invoice')
   }
 }

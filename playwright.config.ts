@@ -45,7 +45,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] }
-    },
+    }
     // Uncomment for multi-browser testing
     // {
     //   name: 'firefox',

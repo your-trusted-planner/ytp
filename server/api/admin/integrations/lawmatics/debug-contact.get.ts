@@ -52,7 +52,8 @@ export default defineEventHandler(async (event) => {
         addressAttribute: contact.attributes.address || null,
         rawData: contact
       }
-    } catch (error) {
+    }
+    catch (error) {
       return { error: String(error) }
     }
   }

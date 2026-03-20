@@ -38,7 +38,7 @@ interface Document {
 }
 
 // Validation helper (mirrors API logic)
-function validateEsignActionConfig(config: any): { valid: boolean; error?: string } {
+function validateEsignActionConfig(config: any): { valid: boolean, error?: string } {
   if (!config) {
     return { valid: false, error: 'ESIGN action items require a config object' }
   }
@@ -54,7 +54,7 @@ function validateEsignActionConfig(config: any): { valid: boolean; error?: strin
 function validateSessionLinking(
   actionItem: ActionItem,
   documentId: string
-): { valid: boolean; error?: string } {
+): { valid: boolean, error?: string } {
   if (actionItem.actionType !== 'ESIGN') {
     return { valid: false, error: 'Action item must be of type ESIGN' }
   }
@@ -632,12 +632,13 @@ describe('Edge Cases', () => {
     })
 
     it('should only auto-complete when status is SIGNED', () => {
-      validStatuses.forEach(status => {
+      validStatuses.forEach((status) => {
         const shouldComplete = status === 'SIGNED'
 
         if (status === 'SIGNED') {
           expect(shouldComplete).toBe(true)
-        } else {
+        }
+        else {
           expect(shouldComplete).toBe(false)
         }
       })

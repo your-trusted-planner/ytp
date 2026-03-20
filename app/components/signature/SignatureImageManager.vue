@@ -1,23 +1,33 @@
 <template>
   <div class="signature-image-manager">
     <div class="bg-white rounded-lg border border-slate-200 p-6">
-      <h3 class="text-lg font-semibold text-slate-900 mb-2">Stored Signature</h3>
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">
+        Stored Signature
+      </h3>
       <p class="text-sm text-slate-600 mb-6">
         Upload a signature image to reuse across documents. You'll need to confirm adoption of your signature each time you sign.
       </p>
 
       <!-- Current Signature Preview -->
-      <div v-if="signatureImage" class="mb-6">
+      <div
+        v-if="signatureImage"
+        class="mb-6"
+      >
         <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
-          <p class="text-sm font-medium text-slate-700 mb-3">Current Signature:</p>
+          <p class="text-sm font-medium text-slate-700 mb-3">
+            Current Signature:
+          </p>
           <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-center justify-center min-h-[100px]">
             <img
               :src="signatureImage"
               alt="Your stored signature"
               class="max-h-24 max-w-full object-contain"
-            />
+            >
           </div>
-          <p v-if="updatedAt" class="text-xs text-slate-500 mt-2">
+          <p
+            v-if="updatedAt"
+            class="text-xs text-slate-500 mt-2"
+          >
             Last updated: {{ formatDate(updatedAt) }}
           </p>
         </div>
@@ -25,15 +35,15 @@
         <div class="flex gap-3 mt-4">
           <button
             type="button"
-            @click="triggerFileUpload"
             class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+            @click="triggerFileUpload"
           >
             Replace Signature
           </button>
           <button
             type="button"
-            @click="confirmDelete = true"
             class="px-4 py-2 text-red-600 hover:text-red-700 font-medium transition-colors"
+            @click="confirmDelete = true"
           >
             Remove
           </button>
@@ -53,13 +63,29 @@
           @drop.prevent="handleFileDrop"
         >
           <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <svg
+              class="w-8 h-8 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
           </div>
-          <p class="text-slate-700 font-medium mb-1">Upload Signature Image</p>
-          <p class="text-sm text-slate-500">PNG, JPG, or SVG up to 500KB</p>
-          <p class="text-xs text-slate-400 mt-2">Click or drag and drop</p>
+          <p class="text-slate-700 font-medium mb-1">
+            Upload Signature Image
+          </p>
+          <p class="text-sm text-slate-500">
+            PNG, JPG, or SVG up to 500KB
+          </p>
+          <p class="text-xs text-slate-400 mt-2">
+            Click or drag and drop
+          </p>
         </div>
       </div>
 
@@ -70,34 +96,83 @@
         accept="image/png,image/jpeg,image/svg+xml"
         class="hidden"
         @change="handleFileSelect"
-      />
+      >
 
       <!-- Loading State -->
-      <div v-if="isLoading" class="mt-4 flex items-center justify-center py-4">
-        <svg class="animate-spin h-6 w-6 text-[#C41E3A] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <div
+        v-if="isLoading"
+        class="mt-4 flex items-center justify-center py-4"
+      >
+        <svg
+          class="animate-spin h-6 w-6 text-[#C41E3A] mr-2"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
         <span class="text-slate-600">{{ loadingMessage }}</span>
       </div>
 
       <!-- Error Message -->
-      <div v-if="error" class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div
+        v-if="error"
+        class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4"
+      >
         <div class="flex items-start">
-          <svg class="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            class="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
-          <p class="text-sm text-red-700">{{ error }}</p>
+          <p class="text-sm text-red-700">
+            {{ error }}
+          </p>
         </div>
       </div>
 
       <!-- Success Message -->
-      <div v-if="successMessage" class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+      <div
+        v-if="successMessage"
+        class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4"
+      >
         <div class="flex items-start">
-          <svg class="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            class="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
-          <p class="text-sm text-green-700">{{ successMessage }}</p>
+          <p class="text-sm text-green-700">
+            {{ successMessage }}
+          </p>
         </div>
       </div>
     </div>
@@ -110,23 +185,25 @@
         @click.self="confirmDelete = false"
       >
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-          <h3 class="text-lg font-semibold text-slate-900 mb-2">Remove Signature?</h3>
+          <h3 class="text-lg font-semibold text-slate-900 mb-2">
+            Remove Signature?
+          </h3>
           <p class="text-slate-600 mb-6">
             Are you sure you want to remove your stored signature? You'll need to draw or upload a new one when signing documents.
           </p>
           <div class="flex justify-end gap-3">
             <button
               type="button"
-              @click="confirmDelete = false"
               class="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium"
+              @click="confirmDelete = false"
             >
               Cancel
             </button>
             <button
               type="button"
-              @click="deleteSignature"
               :disabled="isLoading"
               class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+              @click="deleteSignature"
             >
               {{ isLoading ? 'Removing...' : 'Remove Signature' }}
             </button>
@@ -139,7 +216,7 @@
 
 <script setup lang="ts">
 const emit = defineEmits<{
-  'updated': [hasSignature: boolean]
+  updated: [hasSignature: boolean]
 }>()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -171,10 +248,12 @@ async function fetchSignature() {
       signatureImage.value = response.data.signatureImage
       updatedAt.value = response.data.updatedAt
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     // Silent fail on fetch - user just doesn't have a signature
     console.log('No stored signature found')
-  } finally {
+  }
+  finally {
     isLoading.value = false
     loadingMessage.value = ''
   }
@@ -246,9 +325,11 @@ async function processFile(file: File) {
         successMessage.value = null
       }, 3000)
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Failed to save signature. Please try again.'
-  } finally {
+  }
+  finally {
     isLoading.value = false
     loadingMessage.value = ''
   }
@@ -274,9 +355,11 @@ async function deleteSignature() {
         successMessage.value = null
       }, 3000)
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Failed to remove signature. Please try again.'
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }

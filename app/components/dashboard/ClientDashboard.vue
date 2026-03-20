@@ -1,8 +1,12 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Welcome Back</h1>
-      <p class="text-gray-600 mt-1">Here's an overview of your account</p>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Welcome Back
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Here's an overview of your account
+      </p>
     </div>
 
     <!-- Stats Grid -->
@@ -11,8 +15,12 @@
         <div class="p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">Total Documents</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.totalDocuments }}</p>
+              <p class="text-sm text-gray-600">
+                Total Documents
+              </p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">
+                {{ stats.totalDocuments }}
+              </p>
             </div>
             <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
               <FileText class="w-6 h-6 text-blue-600" />
@@ -25,8 +33,12 @@
         <div class="p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">Pending</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.pendingDocuments }}</p>
+              <p class="text-sm text-gray-600">
+                Pending
+              </p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">
+                {{ stats.pendingDocuments }}
+              </p>
             </div>
             <div class="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
               <FileText class="w-6 h-6 text-yellow-600" />
@@ -39,8 +51,12 @@
         <div class="p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">Signed</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.signedDocuments }}</p>
+              <p class="text-sm text-gray-600">
+                Signed
+              </p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">
+                {{ stats.signedDocuments }}
+              </p>
             </div>
             <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
               <CheckCircle class="w-6 h-6 text-green-600" />
@@ -53,8 +69,12 @@
         <div class="p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">Upcoming Meetings</p>
-              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.upcomingAppointments }}</p>
+              <p class="text-sm text-gray-600">
+                Upcoming Meetings
+              </p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">
+                {{ stats.upcomingAppointments }}
+              </p>
             </div>
             <div class="w-12 h-12 rounded-lg bg-burgundy-100 flex items-center justify-center">
               <Calendar class="w-6 h-6 text-burgundy-600" />
@@ -73,7 +93,10 @@
           :to="action.href"
           class="p-4 border-2 border-gray-200 rounded-lg hover:border-burgundy-500 hover:bg-burgundy-50 transition-colors"
         >
-          <component :is="action.icon" class="w-8 h-8 text-burgundy-500 mb-2" />
+          <component
+            :is="action.icon"
+            class="w-8 h-8 text-burgundy-500 mb-2"
+          />
           <h3 class="font-semibold text-gray-900">{{ action.title }}</h3>
           <p class="text-sm text-gray-600 mt-1">{{ action.description }}</p>
         </NuxtLink>
@@ -82,11 +105,20 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Recent Documents -->
-      <UiCard title="Recent Documents" description="Your latest documents">
-        <div v-if="documents.length === 0" class="text-gray-500 text-center py-8">
+      <UiCard
+        title="Recent Documents"
+        description="Your latest documents"
+      >
+        <div
+          v-if="documents.length === 0"
+          class="text-gray-500 text-center py-8"
+        >
           No documents yet
         </div>
-        <div v-else class="space-y-3">
+        <div
+          v-else
+          class="space-y-3"
+        >
           <NuxtLink
             v-for="doc in documents"
             :key="doc.id"
@@ -107,11 +139,20 @@
       </UiCard>
 
       <!-- Upcoming Appointments -->
-      <UiCard title="Upcoming Appointments" description="Your scheduled meetings">
-        <div v-if="appointments.length === 0" class="text-gray-500 text-center py-8">
+      <UiCard
+        title="Upcoming Appointments"
+        description="Your scheduled meetings"
+      >
+        <div
+          v-if="appointments.length === 0"
+          class="text-gray-500 text-center py-8"
+        >
           No upcoming appointments
         </div>
-        <div v-else class="space-y-3">
+        <div
+          v-else
+          class="space-y-3"
+        >
           <div
             v-for="appt in appointments"
             :key="appt.id"
@@ -119,10 +160,16 @@
           >
             <div class="flex items-start justify-between">
               <div>
-                <h4 class="font-medium text-gray-900">{{ appt.title }}</h4>
-                <p class="text-sm text-gray-600 mt-1">{{ formatDateTime(appt.startTime) }}</p>
+                <h4 class="font-medium text-gray-900">
+                  {{ appt.title }}
+                </h4>
+                <p class="text-sm text-gray-600 mt-1">
+                  {{ formatDateTime(appt.startTime) }}
+                </p>
               </div>
-              <UiBadge variant="info">{{ appt.status }}</UiBadge>
+              <UiBadge variant="info">
+                {{ appt.status }}
+              </UiBadge>
             </div>
           </div>
         </div>
@@ -184,9 +231,9 @@ onMounted(async () => {
     stats.value = statsData as ClientStats
     documents.value = docsData as any[]
     appointments.value = apptsData as any[]
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Failed to fetch dashboard data:', err)
   }
 })
 </script>
-

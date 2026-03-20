@@ -3,11 +3,18 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Billing & Trust</h1>
-        <p class="text-gray-600 mt-1">Manage invoices, payments, and trust accounting</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Billing & Trust
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage invoices, payments, and trust accounting
+        </p>
       </div>
       <div class="flex gap-2">
-        <UiButton variant="secondary" @click="navigateTo('/billing/trust')">
+        <UiButton
+          variant="secondary"
+          @click="navigateTo('/billing/trust')"
+        >
           Trust Accounts
         </UiButton>
         <UiButton @click="showCreateInvoiceModal = true">
@@ -17,19 +24,34 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <!-- Summary Cards -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+    >
       <!-- Outstanding Invoices -->
-      <UiCard class="cursor-pointer hover:shadow-md transition-shadow" @click="navigateTo('/billing?tab=outstanding')">
+      <UiCard
+        class="cursor-pointer hover:shadow-md transition-shadow"
+        @click="navigateTo('/billing?tab=outstanding')"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Outstanding</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary?.invoices?.outstanding?.amountFormatted || '$0.00' }}</p>
-            <p class="text-sm text-gray-500">{{ summary?.invoices?.outstanding?.count || 0 }} invoices</p>
+            <p class="text-sm font-medium text-gray-500">
+              Outstanding
+            </p>
+            <p class="text-2xl font-bold text-gray-900">
+              {{ summary?.invoices?.outstanding?.amountFormatted || '$0.00' }}
+            </p>
+            <p class="text-sm text-gray-500">
+              {{ summary?.invoices?.outstanding?.count || 0 }} invoices
+            </p>
           </div>
           <div class="p-3 bg-yellow-100 rounded-full">
             <FileText class="w-6 h-6 text-yellow-600" />
@@ -38,28 +60,53 @@
       </UiCard>
 
       <!-- Overdue Invoices -->
-      <UiCard class="cursor-pointer hover:shadow-md transition-shadow" @click="navigateTo('/billing?tab=overdue')">
+      <UiCard
+        class="cursor-pointer hover:shadow-md transition-shadow"
+        @click="navigateTo('/billing?tab=overdue')"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Overdue</p>
-            <p class="text-2xl font-bold" :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'text-red-600' : 'text-gray-900'">
+            <p class="text-sm font-medium text-gray-500">
+              Overdue
+            </p>
+            <p
+              class="text-2xl font-bold"
+              :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'text-red-600' : 'text-gray-900'"
+            >
               {{ summary?.invoices?.overdue?.amountFormatted || '$0.00' }}
             </p>
-            <p class="text-sm text-gray-500">{{ summary?.invoices?.overdue?.count || 0 }} invoices</p>
+            <p class="text-sm text-gray-500">
+              {{ summary?.invoices?.overdue?.count || 0 }} invoices
+            </p>
           </div>
-          <div class="p-3 rounded-full" :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'bg-red-100' : 'bg-gray-100'">
-            <AlertTriangle class="w-6 h-6" :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'text-red-600' : 'text-gray-400'" />
+          <div
+            class="p-3 rounded-full"
+            :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'bg-red-100' : 'bg-gray-100'"
+          >
+            <AlertTriangle
+              class="w-6 h-6"
+              :class="(summary?.invoices?.overdue?.count || 0) > 0 ? 'text-red-600' : 'text-gray-400'"
+            />
           </div>
         </div>
       </UiCard>
 
       <!-- Trust Balance -->
-      <UiCard class="cursor-pointer hover:shadow-md transition-shadow" @click="navigateTo('/billing/trust')">
+      <UiCard
+        class="cursor-pointer hover:shadow-md transition-shadow"
+        @click="navigateTo('/billing/trust')"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Trust Balance</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary?.trust?.balanceFormatted || '$0.00' }}</p>
-            <p class="text-sm text-gray-500">{{ summary?.trust?.clientsWithBalance || 0 }} clients</p>
+            <p class="text-sm font-medium text-gray-500">
+              Trust Balance
+            </p>
+            <p class="text-2xl font-bold text-gray-900">
+              {{ summary?.trust?.balanceFormatted || '$0.00' }}
+            </p>
+            <p class="text-sm text-gray-500">
+              {{ summary?.trust?.clientsWithBalance || 0 }} clients
+            </p>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
             <Landmark class="w-6 h-6 text-green-600" />
@@ -71,9 +118,15 @@
       <UiCard>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Collected This Month</p>
-            <p class="text-2xl font-bold text-green-600">{{ summary?.invoices?.paidThisMonth?.amountFormatted || '$0.00' }}</p>
-            <p class="text-sm text-gray-500">{{ summary?.invoices?.paidThisMonth?.count || 0 }} invoices paid</p>
+            <p class="text-sm font-medium text-gray-500">
+              Collected This Month
+            </p>
+            <p class="text-2xl font-bold text-green-600">
+              {{ summary?.invoices?.paidThisMonth?.amountFormatted || '$0.00' }}
+            </p>
+            <p class="text-sm text-gray-500">
+              {{ summary?.invoices?.paidThisMonth?.count || 0 }} invoices paid
+            </p>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
             <DollarSign class="w-6 h-6 text-green-600" />
@@ -83,17 +136,22 @@
     </div>
 
     <!-- Trust Account Alert -->
-    <div v-if="!summary?.trust?.hasAccount" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+    <div
+      v-if="!summary?.trust?.hasAccount"
+      class="bg-amber-50 border border-amber-200 rounded-lg p-4"
+    >
       <div class="flex items-start gap-3">
         <AlertTriangle class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
         <div>
-          <p class="text-amber-800 font-medium">No Trust Account Configured</p>
+          <p class="text-amber-800 font-medium">
+            No Trust Account Configured
+          </p>
           <p class="text-amber-700 text-sm mt-1">
             Set up a trust account to track client retainers and IOLTA compliance.
           </p>
           <button
-            @click="navigateTo('/billing/trust')"
             class="text-sm text-amber-700 hover:text-amber-900 underline mt-2"
+            @click="navigateTo('/billing/trust')"
           >
             Configure Trust Account
           </button>
@@ -107,13 +165,13 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
           :class="[
             'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
             activeTab === tab.id
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
+          @click="activeTab = tab.id"
         >
           {{ tab.name }}
           <span
@@ -129,19 +187,35 @@
 
     <!-- Tab Content -->
     <div v-if="activeTab === 'all'">
-      <BillingInvoiceTable :invoices="invoices" :loading="loadingInvoices" @refresh="fetchInvoices" />
+      <BillingInvoiceTable
+        :invoices="invoices"
+        :loading="loadingInvoices"
+        @refresh="fetchInvoices"
+      />
     </div>
 
     <div v-else-if="activeTab === 'outstanding'">
-      <BillingInvoiceTable :invoices="outstandingInvoices" :loading="loadingOutstanding" @refresh="fetchOutstanding" />
+      <BillingInvoiceTable
+        :invoices="outstandingInvoices"
+        :loading="loadingOutstanding"
+        @refresh="fetchOutstanding"
+      />
     </div>
 
     <div v-else-if="activeTab === 'overdue'">
-      <BillingInvoiceTable :invoices="overdueInvoices" :loading="loadingOverdue" @refresh="fetchOverdue" />
+      <BillingInvoiceTable
+        :invoices="overdueInvoices"
+        :loading="loadingOverdue"
+        @refresh="fetchOverdue"
+      />
     </div>
 
     <div v-else-if="activeTab === 'draft'">
-      <BillingInvoiceTable :invoices="draftInvoices" :loading="loadingDrafts" @refresh="fetchDrafts" />
+      <BillingInvoiceTable
+        :invoices="draftInvoices"
+        :loading="loadingDrafts"
+        @refresh="fetchDrafts"
+      />
     </div>
 
     <!-- Create Invoice Modal -->
@@ -194,9 +268,11 @@ async function fetchSummary() {
   try {
     const response = await $fetch('/api/billing/summary')
     summary.value = response.summary
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch billing summary:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -207,9 +283,11 @@ async function fetchInvoices() {
   try {
     const response = await $fetch<{ invoices: any[] }>('/api/invoices')
     invoices.value = response.invoices
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch invoices:', error)
-  } finally {
+  }
+  finally {
     loadingInvoices.value = false
   }
 }
@@ -220,9 +298,11 @@ async function fetchOutstanding() {
   try {
     const response = await $fetch<{ invoices: any[] }>('/api/billing/outstanding')
     outstandingInvoices.value = response.invoices
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch outstanding invoices:', error)
-  } finally {
+  }
+  finally {
     loadingOutstanding.value = false
   }
 }
@@ -233,9 +313,11 @@ async function fetchOverdue() {
   try {
     const response = await $fetch<{ invoices: any[] }>('/api/billing/overdue')
     overdueInvoices.value = response.invoices
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch overdue invoices:', error)
-  } finally {
+  }
+  finally {
     loadingOverdue.value = false
   }
 }
@@ -248,9 +330,11 @@ async function fetchDrafts() {
       query: { status: 'DRAFT' }
     })
     draftInvoices.value = response.invoices
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch draft invoices:', error)
-  } finally {
+  }
+  finally {
     loadingDrafts.value = false
   }
 }

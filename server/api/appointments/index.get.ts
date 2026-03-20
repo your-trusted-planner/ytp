@@ -13,7 +13,8 @@ export default defineEventHandler(async (event) => {
       .from(schema.appointments)
       .orderBy(desc(schema.appointments.startTime))
       .all()
-  } else {
+  }
+  else {
     appointments = await db
       .select()
       .from(schema.appointments)
@@ -40,4 +41,3 @@ export default defineEventHandler(async (event) => {
     updated_at: appt.updatedAt instanceof Date ? appt.updatedAt.getTime() : appt.updatedAt
   }))
 })
-

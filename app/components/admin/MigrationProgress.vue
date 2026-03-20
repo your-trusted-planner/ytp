@@ -6,15 +6,17 @@
           <div
             :class="[
               'w-3 h-3 rounded-full',
-              run.status === 'RUNNING' ? 'bg-blue-500 animate-pulse' :
-              run.status === 'PAUSED' ? 'bg-yellow-500' :
-              run.status === 'PENDING' ? 'bg-gray-400' : 'bg-gray-300'
+              run.status === 'RUNNING' ? 'bg-blue-500 animate-pulse'
+              : run.status === 'PAUSED' ? 'bg-yellow-500'
+                : run.status === 'PENDING' ? 'bg-gray-400' : 'bg-gray-300'
             ]"
           />
           <h3 class="text-lg font-semibold text-gray-900">
             {{ run.runType === 'FULL' ? 'Full Import' : 'Incremental Import' }}
           </h3>
-          <UiBadge :variant="statusVariant">{{ statusLabel }}</UiBadge>
+          <UiBadge :variant="statusVariant">
+            {{ statusLabel }}
+          </UiBadge>
         </div>
         <div class="flex gap-2">
           <UiButton
@@ -73,28 +75,48 @@
       <!-- Stats Grid -->
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="text-center p-3 bg-gray-50 rounded-lg">
-          <p class="text-2xl font-bold text-gray-900">{{ run.processedEntities.toLocaleString() }}</p>
-          <p class="text-xs text-gray-500">Processed</p>
+          <p class="text-2xl font-bold text-gray-900">
+            {{ run.processedEntities.toLocaleString() }}
+          </p>
+          <p class="text-xs text-gray-500">
+            Processed
+          </p>
         </div>
         <div class="text-center p-3 bg-green-50 rounded-lg">
-          <p class="text-2xl font-bold text-green-700">{{ run.createdRecords.toLocaleString() }}</p>
-          <p class="text-xs text-gray-500">Created</p>
+          <p class="text-2xl font-bold text-green-700">
+            {{ run.createdRecords.toLocaleString() }}
+          </p>
+          <p class="text-xs text-gray-500">
+            Created
+          </p>
         </div>
         <div class="text-center p-3 bg-blue-50 rounded-lg">
-          <p class="text-2xl font-bold text-blue-700">{{ run.updatedRecords.toLocaleString() }}</p>
-          <p class="text-xs text-gray-500">Updated</p>
+          <p class="text-2xl font-bold text-blue-700">
+            {{ run.updatedRecords.toLocaleString() }}
+          </p>
+          <p class="text-xs text-gray-500">
+            Updated
+          </p>
         </div>
         <div class="text-center p-3 bg-gray-50 rounded-lg">
-          <p class="text-2xl font-bold text-gray-500">{{ run.skippedRecords.toLocaleString() }}</p>
-          <p class="text-xs text-gray-500">Skipped</p>
+          <p class="text-2xl font-bold text-gray-500">
+            {{ run.skippedRecords.toLocaleString() }}
+          </p>
+          <p class="text-xs text-gray-500">
+            Skipped
+          </p>
         </div>
         <div
           v-if="run.duplicatesLinked !== undefined && run.duplicatesLinked > 0"
           class="text-center p-3 bg-amber-50 rounded-lg"
           :title="'Duplicate contacts that were auto-linked to existing people'"
         >
-          <p class="text-2xl font-bold text-amber-700">{{ run.duplicatesLinked.toLocaleString() }}</p>
-          <p class="text-xs text-gray-500">Duplicates Linked</p>
+          <p class="text-2xl font-bold text-amber-700">
+            {{ run.duplicatesLinked.toLocaleString() }}
+          </p>
+          <p class="text-xs text-gray-500">
+            Duplicates Linked
+          </p>
         </div>
         <div
           class="text-center p-3 rounded-lg cursor-pointer transition-colors"
@@ -111,7 +133,10 @@
       </div>
 
       <!-- Time Estimate -->
-      <div v-if="run.status === 'RUNNING' && run.estimatedTimeRemaining" class="flex items-center justify-center gap-2 text-sm text-gray-500">
+      <div
+        v-if="run.status === 'RUNNING' && run.estimatedTimeRemaining"
+        class="flex items-center justify-center gap-2 text-sm text-gray-500"
+      >
         <Clock class="w-4 h-4" />
         <span>Estimated time remaining: {{ formatDuration(run.estimatedTimeRemaining) }}</span>
       </div>
@@ -156,9 +181,9 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  pause: []
-  resume: []
-  cancel: []
+  'pause': []
+  'resume': []
+  'cancel': []
   'view-errors': []
 }>()
 

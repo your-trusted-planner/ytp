@@ -27,7 +27,8 @@ function saveToStorage(state: PreferencesState) {
     // Don't save internal state
     const { _hydrated, ...prefs } = state
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to save preferences to localStorage:', e)
   }
 }
@@ -42,7 +43,7 @@ export const usePreferencesStore = defineStore('preferences', {
     /**
      * Get the default view for matter documents tab
      */
-    documentsDefaultView: (state) => state.matterDocumentsDefaultView
+    documentsDefaultView: state => state.matterDocumentsDefaultView
   },
 
   actions: {
@@ -60,7 +61,8 @@ export const usePreferencesStore = defineStore('preferences', {
             this.matterDocumentsDefaultView = prefs.matterDocumentsDefaultView
           }
         }
-      } catch (e) {
+      }
+      catch (e) {
         console.warn('Failed to load preferences from localStorage:', e)
       }
 

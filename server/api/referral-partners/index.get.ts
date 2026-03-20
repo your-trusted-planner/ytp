@@ -34,13 +34,19 @@ export default defineEventHandler(async (event) => {
   }
 
   // Apply sorting
-  const sortColumn = sortBy === 'name' ? schema.referralPartners.name
-    : sortBy === 'company' ? schema.referralPartners.company
-    : sortBy === 'type' ? schema.referralPartners.type
-    : sortBy === 'email' ? schema.referralPartners.email
-    : sortBy === 'createdAt' ? schema.referralPartners.createdAt
-    : sortBy === 'updatedAt' ? schema.referralPartners.updatedAt
-    : schema.referralPartners.createdAt // default sort
+  const sortColumn = sortBy === 'name' ?
+    schema.referralPartners.name :
+    sortBy === 'company' ?
+      schema.referralPartners.company :
+      sortBy === 'type' ?
+        schema.referralPartners.type :
+        sortBy === 'email' ?
+          schema.referralPartners.email :
+          sortBy === 'createdAt' ?
+            schema.referralPartners.createdAt :
+            sortBy === 'updatedAt' ?
+              schema.referralPartners.updatedAt :
+              schema.referralPartners.createdAt // default sort
 
   partnersQuery = partnersQuery.orderBy(
     sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)

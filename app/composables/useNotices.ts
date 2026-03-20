@@ -26,7 +26,7 @@ const error = ref<string | null>(null)
 let pollInterval: NodeJS.Timeout | null = null
 
 export function useNotices() {
-  async function fetchNotices(options?: { unreadOnly?: boolean; limit?: number }) {
+  async function fetchNotices(options?: { unreadOnly?: boolean, limit?: number }) {
     loading.value = true
     error.value = null
 
@@ -37,10 +37,12 @@ export function useNotices() {
 
       const response = await $fetch<{ notices: Notice[] }>(`/api/notices?${query}`)
       notices.value = response.notices
-    } catch (e: any) {
+    }
+    catch (e: any) {
       error.value = e.message || 'Failed to fetch notices'
       console.error('Failed to fetch notices:', e)
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
@@ -49,7 +51,8 @@ export function useNotices() {
     try {
       const response = await $fetch<{ count: number }>('/api/notices/unread-count')
       unreadCount.value = response.count
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Failed to fetch unread count:', e)
     }
   }
@@ -65,7 +68,8 @@ export function useNotices() {
         notice.readAt = Math.floor(Date.now() / 1000)
         unreadCount.value = Math.max(0, unreadCount.value - 1)
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Failed to mark notice as read:', e)
     }
   }
@@ -83,7 +87,8 @@ export function useNotices() {
         }
         notices.value.splice(index, 1)
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Failed to dismiss notice:', e)
     }
   }
@@ -93,12 +98,13 @@ export function useNotices() {
       await $fetch('/api/notices/mark-all-read', { method: 'POST' })
 
       // Update local state
-      notices.value.forEach(notice => {
+      notices.value.forEach((notice) => {
         notice.isRead = true
         notice.readAt = Math.floor(Date.now() / 1000)
       })
       unreadCount.value = 0
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Failed to mark all as read:', e)
     }
   }

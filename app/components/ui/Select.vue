@@ -1,8 +1,15 @@
 <template>
   <div class="w-full">
-    <label v-if="label" :for="selectId" class="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      v-if="label"
+      :for="selectId"
+      class="block text-sm font-medium text-gray-700 mb-1"
+    >
       {{ label }}
-      <span v-if="required" class="text-red-500">*</span>
+      <span
+        v-if="required"
+        class="text-red-500"
+      >*</span>
     </label>
     <select
       :id="selectId"
@@ -12,11 +19,27 @@
       :class="selectClasses"
       @change="handleChange"
     >
-      <option v-if="placeholder" value="" disabled>{{ placeholder }}</option>
+      <option
+        v-if="placeholder"
+        value=""
+        disabled
+      >
+        {{ placeholder }}
+      </option>
       <slot />
     </select>
-    <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
-    <p v-else-if="hint" class="mt-1 text-sm text-gray-500">{{ hint }}</p>
+    <p
+      v-if="error"
+      class="mt-1 text-sm text-red-600"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="hint"
+      class="mt-1 text-sm text-gray-500"
+    >
+      {{ hint }}
+    </p>
   </div>
 </template>
 
@@ -60,4 +83,3 @@ const handleChange = (event: Event) => {
   emit('update:modelValue', target.value)
 }
 </script>
-

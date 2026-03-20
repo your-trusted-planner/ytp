@@ -55,7 +55,7 @@ export const clients = sqliteTable('clients', {
 // ACTIVE = has at least one OPEN matter (Rule 1.6-1.8: currently represented)
 // FORMER = has matters but all CLOSED (Rule 1.9: representation ended)
 // PROSPECTIVE = no matters, or matters but none OPEN and not all CLOSED (Rule 1.18)
-export const clientsWithStatus = sqliteView('clients_with_status').as((qb) =>
+export const clientsWithStatus = sqliteView('clients_with_status').as(qb =>
   qb.select({
     id: clients.id,
     personId: clients.personId,

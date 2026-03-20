@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
   // Transform to simpler format for frontend
   return {
-    suggestions: addresses.map((addr) => ({
+    suggestions: addresses.map(addr => ({
       formattedAddress: addr.formattedAddress,
       addressLabel: addr.addressLabel,
       street: addr.number && addr.street ? `${addr.number} ${addr.street}` : addr.addressLabel,

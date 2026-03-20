@@ -1,12 +1,17 @@
 <template>
   <div class="space-y-4">
-    <div v-if="documents.length === 0 && uploads.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-if="documents.length === 0 && uploads.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       No documents found for this matter
     </div>
 
     <!-- Generated Documents Section -->
     <div v-if="documents.length > 0">
-      <h4 class="text-sm font-medium text-gray-700 mb-3">Generated Documents</h4>
+      <h4 class="text-sm font-medium text-gray-700 mb-3">
+        Generated Documents
+      </h4>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -29,13 +34,22 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="doc in documents" :key="doc.id" class="hover:bg-gray-50">
+            <tr
+              v-for="doc in documents"
+              :key="doc.id"
+              class="hover:bg-gray-50"
+            >
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <FileText class="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div>
-                    <div class="text-sm font-medium text-gray-900">{{ doc.title }}</div>
-                    <div v-if="doc.description" class="text-xs text-gray-500 truncate max-w-xs">
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ doc.title }}
+                    </div>
+                    <div
+                      v-if="doc.description"
+                      class="text-xs text-gray-500 truncate max-w-xs"
+                    >
                       {{ doc.description }}
                     </div>
                   </div>
@@ -45,7 +59,10 @@
                 <UiBadge :variant="getDocStatusVariant(doc.status)">
                   {{ formatStatus(doc.status) }}
                 </UiBadge>
-                <div v-if="doc.signedAt" class="text-xs text-gray-500 mt-1">
+                <div
+                  v-if="doc.signedAt"
+                  class="text-xs text-gray-500 mt-1"
+                >
                   Signed {{ formatDate(doc.signedAt) }}
                 </div>
               </td>
@@ -66,27 +83,36 @@
                   <span>View</span>
                   <ExternalLink class="w-3 h-3" />
                 </a>
-                <span v-else-if="doc.googleDriveSyncStatus === 'PENDING'" class="text-xs text-gray-500">
+                <span
+                  v-else-if="doc.googleDriveSyncStatus === 'PENDING'"
+                  class="text-xs text-gray-500"
+                >
                   Syncing...
                 </span>
-                <span v-else-if="doc.googleDriveSyncStatus === 'ERROR'" class="text-xs text-red-500">
+                <span
+                  v-else-if="doc.googleDriveSyncStatus === 'ERROR'"
+                  class="text-xs text-red-500"
+                >
                   Sync failed
                 </span>
-                <span v-else class="text-xs text-gray-400">-</span>
+                <span
+                  v-else
+                  class="text-xs text-gray-400"
+                >-</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button
-                    @click="$emit('download', doc.id)"
                     class="text-gray-600 hover:text-gray-900 p-1"
                     title="Download"
+                    @click="$emit('download', doc.id)"
                   >
                     <Download class="w-4 h-4" />
                   </button>
                   <button
-                    @click="$emit('view', doc.id)"
                     class="text-gray-600 hover:text-gray-900 p-1"
                     title="View details"
+                    @click="$emit('view', doc.id)"
                   >
                     <Eye class="w-4 h-4" />
                   </button>
@@ -99,8 +125,13 @@
     </div>
 
     <!-- Client Uploads Section -->
-    <div v-if="uploads.length > 0" :class="{ 'mt-6 pt-6 border-t border-gray-200': documents.length > 0 }">
-      <h4 class="text-sm font-medium text-gray-700 mb-3">Client Uploads</h4>
+    <div
+      v-if="uploads.length > 0"
+      :class="{ 'mt-6 pt-6 border-t border-gray-200': documents.length > 0 }"
+    >
+      <h4 class="text-sm font-medium text-gray-700 mb-3">
+        Client Uploads
+      </h4>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -126,10 +157,17 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="upload in uploads" :key="upload.id" class="hover:bg-gray-50">
+            <tr
+              v-for="upload in uploads"
+              :key="upload.id"
+              class="hover:bg-gray-50"
+            >
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
-                  <component :is="getFileIcon(upload.mimeType)" class="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <component
+                    :is="getFileIcon(upload.mimeType)"
+                    class="w-4 h-4 text-gray-400 flex-shrink-0"
+                  />
                   <div>
                     <div class="text-sm font-medium text-gray-900 truncate max-w-xs">
                       {{ upload.originalFileName }}
@@ -141,10 +179,16 @@
                 </div>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
-                <span v-if="upload.documentCategory" class="text-sm text-gray-900">
+                <span
+                  v-if="upload.documentCategory"
+                  class="text-sm text-gray-900"
+                >
                   {{ upload.documentCategory }}
                 </span>
-                <span v-else class="text-sm text-gray-400">-</span>
+                <span
+                  v-else
+                  class="text-sm text-gray-400"
+                >-</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <UiBadge :variant="getUploadStatusVariant(upload.status)">
@@ -168,20 +212,29 @@
                   <span>View</span>
                   <ExternalLink class="w-3 h-3" />
                 </a>
-                <span v-else-if="upload.googleDriveSyncStatus === 'PENDING'" class="text-xs text-gray-500">
+                <span
+                  v-else-if="upload.googleDriveSyncStatus === 'PENDING'"
+                  class="text-xs text-gray-500"
+                >
                   Syncing...
                 </span>
-                <span v-else-if="upload.googleDriveSyncStatus === 'ERROR'" class="text-xs text-red-500">
+                <span
+                  v-else-if="upload.googleDriveSyncStatus === 'ERROR'"
+                  class="text-xs text-red-500"
+                >
                   Sync failed
                 </span>
-                <span v-else class="text-xs text-gray-400">-</span>
+                <span
+                  v-else
+                  class="text-xs text-gray-400"
+                >-</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button
-                    @click="$emit('downloadUpload', upload.id)"
                     class="text-gray-600 hover:text-gray-900 p-1"
                     title="Download"
+                    @click="$emit('downloadUpload', upload.id)"
                   >
                     <Download class="w-4 h-4" />
                   </button>
@@ -259,22 +312,22 @@ function formatFileSize(bytes: number): string {
 
 function formatStatus(status: string): string {
   const statusMap: Record<string, string> = {
-    'DRAFT': 'Draft',
-    'SENT': 'Sent',
-    'VIEWED': 'Viewed',
-    'SIGNED': 'Signed',
-    'COMPLETED': 'Completed'
+    DRAFT: 'Draft',
+    SENT: 'Sent',
+    VIEWED: 'Viewed',
+    SIGNED: 'Signed',
+    COMPLETED: 'Completed'
   }
   return statusMap[status] || status
 }
 
 function formatUploadStatus(status: string): string {
   const statusMap: Record<string, string> = {
-    'PENDING_REVIEW': 'Pending Review',
-    'REVIEWED': 'Reviewed',
-    'APPROVED': 'Approved',
-    'REJECTED': 'Rejected',
-    'REQUIRES_REVISION': 'Needs Revision'
+    PENDING_REVIEW: 'Pending Review',
+    REVIEWED: 'Reviewed',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+    REQUIRES_REVISION: 'Needs Revision'
   }
   return statusMap[status] || status
 }

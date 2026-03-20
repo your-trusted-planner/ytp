@@ -19,7 +19,8 @@ function parseExistingMetadata(raw: string | null | undefined): ImportMetadata |
   if (!raw) return null
   try {
     return JSON.parse(raw) as ImportMetadata
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -34,7 +35,7 @@ function canSyncUpdateRecord(existingMetadata: ImportMetadata | null, incomingSo
 function filterLocallyModifiedFields(
   updateData: Record<string, any>,
   existingMetadata: ImportMetadata | null
-): { filteredData: Record<string, any>; skippedFields: string[] } {
+): { filteredData: Record<string, any>, skippedFields: string[] } {
   const locallyModified = existingMetadata?.locallyModifiedFields || []
   if (locallyModified.length === 0) {
     return { filteredData: updateData, skippedFields: [] }
@@ -46,7 +47,8 @@ function filterLocallyModifiedFields(
   for (const [key, value] of Object.entries(updateData)) {
     if (locallyModified.includes(key)) {
       skippedFields.push(key)
-    } else {
+    }
+    else {
       filteredData[key] = value
     }
   }

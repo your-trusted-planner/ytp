@@ -178,15 +178,15 @@ export const trustTransactions = sqliteTable('trust_transactions', {
   // Transaction type
   transactionType: text('transaction_type', {
     enum: [
-      'DEPOSIT',           // Client deposits retainer/advance
-      'DISBURSEMENT',      // Transfer to operating for earned fees
-      'EXPENSE',           // Pay client expense from trust
-      'REFUND',            // Return unused funds to client
-      'TRANSFER_IN',       // Transfer from another trust account
-      'TRANSFER_OUT',      // Transfer to another trust account
-      'ADJUSTMENT',        // Correction/adjustment
-      'BANK_FEE',          // Bank fees (rare for IOLTA)
-      'INTEREST'           // Interest earned (IOLTA goes to state bar)
+      'DEPOSIT', // Client deposits retainer/advance
+      'DISBURSEMENT', // Transfer to operating for earned fees
+      'EXPENSE', // Pay client expense from trust
+      'REFUND', // Return unused funds to client
+      'TRANSFER_IN', // Transfer from another trust account
+      'TRANSFER_OUT', // Transfer to another trust account
+      'ADJUSTMENT', // Correction/adjustment
+      'BANK_FEE', // Bank fees (rare for IOLTA)
+      'INTEREST' // Interest earned (IOLTA goes to state bar)
     ]
   }).notNull(),
 

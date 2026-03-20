@@ -8,9 +8,11 @@
             src="/ytp-logo.webp"
             alt="Your Trusted Planner"
             class="h-16 w-auto"
-          />
+          >
         </div>
-        <p class="text-gray-300 mt-2 text-lg">Client Portal</p>
+        <p class="text-gray-300 mt-2 text-lg">
+          Client Portal
+        </p>
       </div>
 
       <!-- Login Form -->
@@ -20,12 +22,20 @@
             Sign In
           </h2>
 
-          <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-600">{{ error }}</p>
+          <div
+            v-if="error"
+            class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+          >
+            <p class="text-sm text-red-600">
+              {{ error }}
+            </p>
           </div>
 
           <!-- OAuth Providers -->
-          <div v-if="oauthProviders.length > 0" class="space-y-3 mb-6">
+          <div
+            v-if="oauthProviders.length > 0"
+            class="space-y-3 mb-6"
+          >
             <button
               v-for="provider in oauthProviders"
               :key="provider.id"
@@ -40,12 +50,12 @@
                 :src="provider.logoUrl"
                 :alt="provider.name"
                 class="w-5 h-5 object-contain"
-              />
+              >
               <span
                 v-else
                 class="w-5 h-5 rounded-full"
                 :style="{ backgroundColor: provider.buttonColor }"
-              ></span>
+              />
               <span class="text-gray-700 font-medium">
                 {{ oauthLoading === provider.providerId ? 'Signing in...' : `Continue with ${provider.name}` }}
               </span>
@@ -53,16 +63,22 @@
           </div>
 
           <!-- Divider -->
-          <div v-if="oauthProviders.length > 0" class="relative my-6">
+          <div
+            v-if="oauthProviders.length > 0"
+            class="relative my-6"
+          >
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300"></div>
+              <div class="w-full border-t border-gray-300" />
             </div>
             <div class="relative flex justify-center text-sm">
               <span class="px-2 bg-white text-gray-500">or continue with email</span>
             </div>
           </div>
 
-          <form @submit.prevent="handleSubmit" class="space-y-6">
+          <form
+            class="space-y-6"
+            @submit.prevent="handleSubmit"
+          >
             <UiInput
               v-model="email"
               label="Email Address"
@@ -117,11 +133,11 @@
         <template #fallback>
           <div class="bg-white shadow-xl rounded-lg p-8">
             <div class="animate-pulse space-y-6">
-              <div class="h-8 bg-gray-200 rounded w-24"></div>
+              <div class="h-8 bg-gray-200 rounded w-24" />
               <div class="space-y-4">
-                <div class="h-10 bg-gray-200 rounded"></div>
-                <div class="h-10 bg-gray-200 rounded"></div>
-                <div class="h-12 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded" />
+                <div class="h-10 bg-gray-200 rounded" />
+                <div class="h-12 bg-gray-200 rounded" />
               </div>
             </div>
           </div>
@@ -169,7 +185,8 @@ async function fetchOAuthProviders() {
   try {
     const response = await $fetch<{ providers: OAuthProvider[] }>('/api/oauth-providers/enabled')
     oauthProviders.value = response.providers || []
-  } catch (err) {
+  }
+  catch (err) {
     console.log('[Login] No OAuth providers available')
     oauthProviders.value = []
   }
@@ -193,9 +210,11 @@ async function handleOAuthSignIn(providerId: string) {
       await verifyAndCreateSession(result.idToken)
     }
     // If no idToken, it means redirect flow was used - will be handled on page load
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Failed to sign in with provider'
-  } finally {
+  }
+  finally {
     oauthLoading.value = null
   }
 }
@@ -213,7 +232,8 @@ async function verifyAndCreateSession(idToken: string) {
       await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Failed to complete sign in'
   }
 }
@@ -226,12 +246,15 @@ async function checkRedirectResult() {
     if (result.success && result.idToken) {
       oauthLoading.value = 'redirect'
       await verifyAndCreateSession(result.idToken)
-    } else if (result.error) {
+    }
+    else if (result.error) {
       error.value = result.error
     }
-  } catch (err) {
+  }
+  catch (err) {
     console.log('[Login] No redirect result to process')
-  } finally {
+  }
+  finally {
     oauthLoading.value = null
   }
 }
@@ -241,9 +264,11 @@ onMounted(async () => {
   const reason = route.query.reason as string
   if (reason === 'deleted') {
     error.value = 'Your account has been deleted. Please contact support for assistance.'
-  } else if (reason === 'disabled') {
+  }
+  else if (reason === 'disabled') {
     error.value = 'Your account has been disabled. Please contact support for assistance.'
-  } else if (reason === 'invalid') {
+  }
+  else if (reason === 'invalid') {
     error.value = 'Your session has expired. Please sign in again.'
   }
 
@@ -272,9 +297,11 @@ const handleSubmit = async () => {
       await appConfigStore.fetchConfig()
       await router.push('/dashboard')
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Invalid email or password'
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }

@@ -12,15 +12,15 @@ const createMatterSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['OPEN', 'CLOSED', 'PENDING']).default('PENDING'),
   leadAttorneyId: z.string().optional(),
-  engagementJourneyTemplateId: z.string().optional(), // Journey template ID
+  engagementJourneyTemplateId: z.string().optional() // Journey template ID
 })
 
 export default defineEventHandler(async (event) => {
   const user = await requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const body = await readBody(event)
   const result = createMatterSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
       data: result.error
     })
   }
-  
+
   if (!isDatabaseAvailable()) {
     const mockMatter = {
       id: generateId(),
@@ -108,7 +108,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Create Google Drive folder for matter
-  let googleDrive: {
+  const googleDrive: {
     enabled: boolean
     success: boolean
     folderUrl?: string
@@ -149,7 +149,8 @@ export default defineEventHandler(async (event) => {
           await getFile(clientFolderId)
           console.log('[Matter Create] Client folder verified')
           googleDrive.clientHasFolder = true
-        } catch (folderError) {
+        }
+        catch (folderError) {
           // Client folder is not accessible - need to create a new one
           console.warn('[Matter Create] Client folder not accessible, will create new one:', folderError)
           clientFolderId = null
@@ -169,12 +170,14 @@ export default defineEventHandler(async (event) => {
             clientFolderId = clientFolder.id
             googleDrive.clientHasFolder = true
             console.log('[Matter Create] Client folder created:', clientFolderId)
-          } catch (clientFolderError) {
+          }
+          catch (clientFolderError) {
             const errorMsg = clientFolderError instanceof Error ? clientFolderError.message : 'Unknown error'
             console.error('[Matter Create] Failed to create client folder:', errorMsg)
             googleDrive.error = `Failed to create client folder: ${errorMsg}`
           }
-        } else {
+        }
+        else {
           googleDrive.error = 'Client not found'
         }
       }
@@ -192,7 +195,8 @@ export default defineEventHandler(async (event) => {
           googleDrive.success = true
           googleDrive.folderUrl = folderResult.folder.webViewLink
           console.log('[Matter Create] Matter folder created successfully:', folderResult.folder.id)
-        } catch (matterFolderError) {
+        }
+        catch (matterFolderError) {
           const errorMsg = matterFolderError instanceof Error ? matterFolderError.message : 'Unknown error'
           console.error('[Matter Create] Failed to create matter folder:', errorMsg)
           googleDrive.success = false
@@ -200,7 +204,8 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     // Log error but don't fail the matter creation
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('[Matter Create] Failed to create Google Drive folder:', error)
@@ -217,7 +222,8 @@ export default defineEventHandler(async (event) => {
         newMatter.title,
         errorMessage
       )
-    } catch (noticeError) {
+    }
+    catch (noticeError) {
       console.error('Failed to create Drive sync error notice:', noticeError)
     }
   }

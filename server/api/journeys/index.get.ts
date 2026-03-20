@@ -80,6 +80,3 @@ export default defineEventHandler(async (event) => {
     journeys: enrichedJourneys
   }
 })
-
-
-

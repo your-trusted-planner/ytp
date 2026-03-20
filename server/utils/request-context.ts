@@ -1,4 +1,5 @@
-import { H3Event, getHeader } from 'h3'
+import type { H3Event } from 'h3'
+import { getHeader } from 'h3'
 import { generateId } from './auth'
 
 export interface RequestContext {
@@ -18,10 +19,10 @@ export interface RequestContext {
  */
 export function captureRequestContext(event: H3Event): RequestContext {
   // IP address - try Cloudflare header first, then X-Forwarded-For
-  const ipAddress = getHeader(event, 'CF-Connecting-IP')
-    || getHeader(event, 'X-Forwarded-For')?.split(',')[0]?.trim()
-    || getHeader(event, 'X-Real-IP')
-    || null
+  const ipAddress = getHeader(event, 'CF-Connecting-IP') ||
+    getHeader(event, 'X-Forwarded-For')?.split(',')[0]?.trim() ||
+    getHeader(event, 'X-Real-IP') ||
+    null
 
   const userAgent = getHeader(event, 'User-Agent') || null
 

@@ -2,7 +2,7 @@
 import { customType } from 'drizzle-orm/sqlite-core'
 
 // Custom type for JSON string arrays
-export const jsonArray = customType<{ data: string[]; driverData: string }>({
+export const jsonArray = customType<{ data: string[], driverData: string }>({
   dataType() {
     return 'text'
   },
@@ -14,7 +14,8 @@ export const jsonArray = customType<{ data: string[]; driverData: string }>({
     try {
       const parsed = JSON.parse(value)
       return Array.isArray(parsed) ? parsed : []
-    } catch {
+    }
+    catch {
       return []
     }
   }

@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
   const now = new Date()
 
   return {
-    invoices: invoices.map(inv => {
+    invoices: invoices.map((inv) => {
       const clientName = inv.clientFullName ||
         `${inv.clientFirstName || ''} ${inv.clientLastName || ''}`.trim() ||
         'Unknown'
@@ -101,9 +101,9 @@ export default defineEventHandler(async (event) => {
         ...inv,
         clientName,
         isOverdue,
-        daysPastDue: isOverdue && inv.dueDate
-          ? Math.floor((now.getTime() - new Date(inv.dueDate).getTime()) / (24 * 60 * 60 * 1000))
-          : 0,
+        daysPastDue: isOverdue && inv.dueDate ?
+            Math.floor((now.getTime() - new Date(inv.dueDate).getTime()) / (24 * 60 * 60 * 1000)) :
+          0,
         // Snake case
         invoice_number: inv.invoiceNumber,
         client_id: inv.clientId,

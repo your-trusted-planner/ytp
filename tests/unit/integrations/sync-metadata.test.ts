@@ -21,7 +21,8 @@ function isImportedRecord(importMetadata: string | null | undefined): boolean {
   try {
     const meta = JSON.parse(importMetadata) as ImportMetadata
     return !!meta.source
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -31,7 +32,8 @@ function getLocallyModifiedFields(importMetadata: string | null | undefined): st
   try {
     const meta = JSON.parse(importMetadata) as ImportMetadata
     return meta.locallyModifiedFields || []
-  } catch {
+  }
+  catch {
     return []
   }
 }
@@ -297,13 +299,14 @@ describe('Sync Metadata - field tracking integration', () => {
     existingRecord: Record<string, any>,
     newValues: Record<string, any>,
     trackableFields: string[]
-  ): { updatedFields: string[]; changedFields: string[] } {
+  ): { updatedFields: string[], changedFields: string[] } {
     if (!rawMeta) return { updatedFields: [], changedFields: [] }
 
     let meta: ImportMetadata
     try {
       meta = JSON.parse(rawMeta) as ImportMetadata
-    } catch {
+    }
+    catch {
       return { updatedFields: [], changedFields: [] }
     }
 

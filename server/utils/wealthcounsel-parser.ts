@@ -79,9 +79,9 @@ function extractAllFields(xmlString: string): Map<string, any> {
     ignoreAttributes: false,
     attributeNamePrefix: '@_',
     removeNSPrefix: true, // Remove wc: prefix
-    isArray: (name) => name === 'data' || name === 'repeat', // These can have multiple children
+    isArray: name => name === 'data' || name === 'repeat', // These can have multiple children
     parseAttributeValue: false, // Keep attribute values as strings
-    parseTagValue: true, // Parse tag text content
+    parseTagValue: true // Parse tag text content
   })
 
   try {
@@ -116,13 +116,16 @@ function extractAllFields(xmlString: string): Map<string, any> {
         if (repeatItem.string !== undefined) {
           rawValues = Array.isArray(repeatItem.string) ? repeatItem.string : [repeatItem.string]
           valueType = 'string'
-        } else if (repeatItem.boolean !== undefined) {
+        }
+        else if (repeatItem.boolean !== undefined) {
           rawValues = Array.isArray(repeatItem.boolean) ? repeatItem.boolean : [repeatItem.boolean]
           valueType = 'boolean'
-        } else if (repeatItem.number !== undefined) {
+        }
+        else if (repeatItem.number !== undefined) {
           rawValues = Array.isArray(repeatItem.number) ? repeatItem.number : [repeatItem.number]
           valueType = 'number'
-        } else if (repeatItem.date !== undefined) {
+        }
+        else if (repeatItem.date !== undefined) {
           rawValues = Array.isArray(repeatItem.date) ? repeatItem.date : [repeatItem.date]
           valueType = 'date'
         }
@@ -152,16 +155,19 @@ function extractAllFields(xmlString: string): Map<string, any> {
             const existing = fields.get(key)
             if (Array.isArray(existing)) {
               existing.push(value)
-            } else {
+            }
+            else {
               fields.set(key, [existing, value])
             }
-          } else {
+          }
+          else {
             fields.set(key, value)
           }
         }
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error parsing WealthCounsel XML:', error)
   }
 
@@ -307,7 +313,7 @@ function extractChildren(fields: Map<string, any>): WealthCounselPerson[] {
 
   // Deduplicate by name
   const seen = new Set<string>()
-  return children.filter(child => {
+  return children.filter((child) => {
     if (!child.fullName || seen.has(child.fullName)) return false
     seen.add(child.fullName)
     return true
@@ -457,7 +463,7 @@ function extractRolesForPerson(
 
   // Deduplicate by person name within same role type
   const seen = new Set<string>()
-  return roles.filter(role => {
+  return roles.filter((role) => {
     if (seen.has(role.personName)) return false
     seen.add(role.personName)
     return true
@@ -586,9 +592,9 @@ export function summarizeParsedData(data: WealthCounselData): {
     data.children.length > 0 ? `(${data.children.length} children)` : ''
   ].filter(Boolean).join(' ')
 
-  const planSummary = data.trust
-    ? `${data.trust.name}${data.trust.isJoint ? ' (Joint)' : ''}`
-    : 'Will-Based Plan'
+  const planSummary = data.trust ?
+    `${data.trust.name}${data.trust.isJoint ? ' (Joint)' : ''}` :
+    'Will-Based Plan'
 
   // Count roles across both client and spouse individual fiduciaries
   const clientFids = data.fiduciaries.client
@@ -613,7 +619,7 @@ export function summarizeParsedData(data: WealthCounselData): {
   const roleTypesWithPeople = new Set<string>()
 
   // Helper to add names and track role types
-  const addRoles = (roles: { personName: string; roleType: string }[], roleLabel: string) => {
+  const addRoles = (roles: { personName: string, roleType: string }[], roleLabel: string) => {
     if (roles.length > 0) {
       roleTypesWithPeople.add(roleLabel)
       roles.forEach(r => allFiduciaryNames.add(r.personName.toLowerCase()))

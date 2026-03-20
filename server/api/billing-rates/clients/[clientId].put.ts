@@ -100,7 +100,8 @@ export default defineEventHandler(async (event) => {
       .update(schema.clientBillingRates)
       .set(updateData)
       .where(eq(schema.clientBillingRates.clientId, clientId))
-  } else {
+  }
+  else {
     // Create new record
     await db.insert(schema.clientBillingRates).values({
       id: nanoid(),

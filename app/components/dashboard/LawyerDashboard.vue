@@ -1,15 +1,29 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-      <p class="text-gray-600 mt-1">Welcome back! Here's what's happening today.</p>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Dashboard
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Welcome back! Here's what's happening today.
+      </p>
     </div>
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <template v-for="stat in statCards" :key="stat.title">
-        <NuxtLink v-if="stat.href" :to="stat.href" class="block">
-          <UiCard :padding="false" class="hover:shadow-md transition-shadow cursor-pointer">
+      <template
+        v-for="stat in statCards"
+        :key="stat.title"
+      >
+        <NuxtLink
+          v-if="stat.href"
+          :to="stat.href"
+          class="block"
+        >
+          <UiCard
+            :padding="false"
+            class="hover:shadow-md transition-shadow cursor-pointer"
+          >
             <div class="p-6">
               <div class="flex items-center justify-between">
                 <div>
@@ -19,23 +33,34 @@
                   </p>
                 </div>
                 <div :class="`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
-                  <component :is="stat.icon" :class="`w-6 h-6 ${stat.color}`" />
+                  <component
+                    :is="stat.icon"
+                    :class="`w-6 h-6 ${stat.color}`"
+                  />
                 </div>
               </div>
             </div>
           </UiCard>
         </NuxtLink>
-        <UiCard v-else :padding="false">
+        <UiCard
+          v-else
+          :padding="false"
+        >
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-600">{{ stat.title }}</p>
+                <p class="text-sm text-gray-600">
+                  {{ stat.title }}
+                </p>
                 <p class="text-3xl font-bold text-gray-900 mt-2">
                   {{ stat.value }}
                 </p>
               </div>
               <div :class="`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
-                <component :is="stat.icon" :class="`w-6 h-6 ${stat.color}`" />
+                <component
+                  :is="stat.icon"
+                  :class="`w-6 h-6 ${stat.color}`"
+                />
               </div>
             </div>
           </div>
@@ -44,7 +69,10 @@
     </div>
 
     <!-- Quick Actions -->
-    <UiCard title="Quick Actions" description="Common tasks and shortcuts">
+    <UiCard
+      title="Quick Actions"
+      description="Common tasks and shortcuts"
+    >
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <NuxtLink
           v-for="action in quickActions"
@@ -52,7 +80,10 @@
           :to="action.href"
           class="p-4 border-2 border-gray-200 rounded-lg hover:border-burgundy-500 hover:bg-burgundy-50 transition-colors"
         >
-          <component :is="action.icon" class="w-8 h-8 text-burgundy-500 mb-2" />
+          <component
+            :is="action.icon"
+            class="w-8 h-8 text-burgundy-500 mb-2"
+          />
           <h3 class="font-semibold text-gray-900">{{ action.title }}</h3>
           <p class="text-sm text-gray-600 mt-1">{{ action.description }}</p>
         </NuxtLink>
@@ -60,20 +91,33 @@
     </UiCard>
 
     <!-- Recent Activity -->
-    <UiCard title="Recent Activity" description="Latest updates from your clients">
-      <div v-if="recentActivity.length === 0" class="text-gray-500 text-center py-8">
+    <UiCard
+      title="Recent Activity"
+      description="Latest updates from your clients"
+    >
+      <div
+        v-if="recentActivity.length === 0"
+        class="text-gray-500 text-center py-8"
+      >
         No recent activity
       </div>
-      <div v-else class="space-y-4">
+      <div
+        v-else
+        class="space-y-4"
+      >
         <div
           v-for="(activity, index) in recentActivity.slice(0, 5)"
           :key="index"
           class="flex items-start space-x-3 pb-4 border-b last:border-b-0"
         >
-          <div class="w-2 h-2 bg-burgundy-500 rounded-full mt-2"></div>
+          <div class="w-2 h-2 bg-burgundy-500 rounded-full mt-2" />
           <div class="flex-1">
-            <p class="text-sm text-gray-900">{{ activity.description }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ formatTimeAgo(activity.createdAt) }}</p>
+            <p class="text-sm text-gray-900">
+              {{ activity.description }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ formatTimeAgo(activity.createdAt) }}
+            </p>
           </div>
         </div>
       </div>
@@ -168,9 +212,9 @@ onMounted(async () => {
     ])
     stats.value = statsData as DashboardStats
     recentActivity.value = (activityData as any).activities || []
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Failed to fetch dashboard data:', err)
   }
 })
 </script>
-

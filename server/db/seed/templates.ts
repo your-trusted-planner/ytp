@@ -101,8 +101,8 @@ export async function seedTemplates(db: SeedDb, blob?: any): Promise<SeedTemplat
       template3Id = trustResult.id
       trustHtml = trustResult.html
       console.log(`  Created trust template with ${trustResult.variableCount} variables from DOCX`)
-
-    } catch (error) {
+    }
+    catch (error) {
       console.warn('  Could not load DOCX templates, falling back to simple HTML:', error)
       const simpleEngagement = await createSimpleEngagementTemplate(db, ids.folder, ids.engagement)
       template2Id = simpleEngagement.id
@@ -111,7 +111,8 @@ export async function seedTemplates(db: SeedDb, blob?: any): Promise<SeedTemplat
       template3Id = simpleTrust.id
       trustHtml = simpleTrust.html
     }
-  } else {
+  }
+  else {
     console.log('  No blob storage provided, creating simple HTML templates')
     const simpleEngagement = await createSimpleEngagementTemplate(db, ids.folder, ids.engagement)
     template2Id = simpleEngagement.id
@@ -133,7 +134,7 @@ export async function seedTemplates(db: SeedDb, blob?: any): Promise<SeedTemplat
   }
 }
 
-export async function createSimpleEngagementTemplate(db: SeedDb, folderId: string, templateId: string): Promise<{ id: string; html: string }> {
+export async function createSimpleEngagementTemplate(db: SeedDb, folderId: string, templateId: string): Promise<{ id: string, html: string }> {
   const html = `<h1>ENGAGEMENT AGREEMENT</h1>
 <h2>Wyoming Asset Protection Trust</h2>
 <p><strong>Client:</strong> {{clientName}}</p>
@@ -173,7 +174,7 @@ export async function createSimpleEngagementTemplate(db: SeedDb, folderId: strin
   return { id: templateId, html }
 }
 
-export async function createSimpleTrustTemplate(db: SeedDb, folderId: string, templateId: string): Promise<{ id: string; html: string }> {
+export async function createSimpleTrustTemplate(db: SeedDb, folderId: string, templateId: string): Promise<{ id: string, html: string }> {
   const html = `<h1>DECLARATION OF TRUST</h1>
 <h2>{{trustName}}</h2>
 <p><strong>Effective Date:</strong> {{effectiveDate}}</p>

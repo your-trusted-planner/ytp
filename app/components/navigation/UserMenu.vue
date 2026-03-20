@@ -2,9 +2,9 @@
   <div class="relative">
     <!-- User Menu Button -->
     <button
-      @click="toggleDropdown"
       class="flex items-center space-x-3 px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
       :class="{ 'bg-white/10 text-white': isOpen }"
+      @click="toggleDropdown"
     >
       <!-- Avatar -->
       <div class="w-8 h-8 rounded-full bg-burgundy-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
@@ -14,11 +14,14 @@
           :alt="`${user.firstName} ${user.lastName}`"
           class="w-full h-full object-cover"
           referrerpolicy="no-referrer"
-        />
+        >
         <span v-else>{{ initials }}</span>
       </div>
       <span class="text-sm hidden sm:block">{{ user?.firstName }} {{ user?.lastName }}</span>
-      <ChevronDown class="w-4 h-4 transition-transform" :class="{ 'rotate-180': isOpen }" />
+      <ChevronDown
+        class="w-4 h-4 transition-transform"
+        :class="{ 'rotate-180': isOpen }"
+      />
     </button>
 
     <!-- Backdrop -->
@@ -53,12 +56,16 @@
               :alt="`${user.firstName} ${user.lastName}`"
               class="w-full h-full object-cover"
               referrerpolicy="no-referrer"
-            />
+            >
             <span v-else>{{ initials }}</span>
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-900">{{ user?.firstName }} {{ user?.lastName }}</p>
-            <p class="text-xs text-gray-500 truncate">{{ user?.email }}</p>
+            <p class="text-sm font-medium text-gray-900">
+              {{ user?.firstName }} {{ user?.lastName }}
+            </p>
+            <p class="text-xs text-gray-500 truncate">
+              {{ user?.email }}
+            </p>
           </div>
         </div>
 
@@ -87,9 +94,9 @@
         <!-- Sign Out -->
         <div class="border-t border-gray-100 py-1">
           <button
-            @click="handleLogout"
             :disabled="isLoggingOut"
             class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            @click="handleLogout"
           >
             <LogOut class="w-4 h-4 mr-3 text-gray-400" />
             <span v-if="isLoggingOut">Signing out...</span>
@@ -148,9 +155,11 @@ async function handleLogout() {
     await $fetch('/api/auth/logout', { method: 'POST' })
     appConfigStore.reset()
     await router.push('/login')
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Logout failed:', err)
-  } finally {
+  }
+  finally {
     isLoggingOut.value = false
   }
 }

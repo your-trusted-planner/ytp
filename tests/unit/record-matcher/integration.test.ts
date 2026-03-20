@@ -87,7 +87,7 @@ describe('scoreRecords (integration)', () => {
 
   it('scores typo in name with matching email/lastName as medium-ish', () => {
     const a: PersonRecord = {
-      firstName: 'Jonh',  // Typo (transposition, Levenshtein dist = 2)
+      firstName: 'Jonh', // Typo (transposition, Levenshtein dist = 2)
       lastName: 'Smith',
       email: 'john@example.com'
     }

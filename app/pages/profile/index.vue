@@ -1,14 +1,21 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Profile</h1>
-      <p class="text-gray-600 mt-1">Manage your account information and preferences</p>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Profile
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Manage your account information and preferences
+      </p>
     </div>
 
     <!-- Personal Information -->
     <ClientOnly>
       <UiCard title="Personal Information">
-        <form @submit.prevent="handleSave" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="handleSave"
+        >
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UiInput
               v-model="profile.firstName"
@@ -35,10 +42,17 @@
             label="Phone"
           />
           <div class="flex justify-end space-x-3">
-            <UiButton variant="outline" type="button" @click="resetProfile">
+            <UiButton
+              variant="outline"
+              type="button"
+              @click="resetProfile"
+            >
               Cancel
             </UiButton>
-            <UiButton type="submit" :is-loading="saving">
+            <UiButton
+              type="submit"
+              :is-loading="saving"
+            >
               Save Changes
             </UiButton>
           </div>
@@ -48,8 +62,14 @@
 
     <!-- Change Password (client-only to avoid hydration mismatch) -->
     <ClientOnly>
-      <UiCard v-if="hasPassword" title="Change Password">
-        <form @submit.prevent="handlePasswordChange" class="space-y-4">
+      <UiCard
+        v-if="hasPassword"
+        title="Change Password"
+      >
+        <form
+          class="space-y-4"
+          @submit.prevent="handlePasswordChange"
+        >
           <UiInput
             v-model="passwordForm.currentPassword"
             label="Current Password"
@@ -72,7 +92,10 @@
             required
           />
           <div class="flex justify-end">
-            <UiButton type="submit" :is-loading="changingPassword">
+            <UiButton
+              type="submit"
+              :is-loading="changingPassword"
+            >
               Update Password
             </UiButton>
           </div>
@@ -95,36 +118,82 @@
           <span class="text-sm text-gray-500">For programmatic access</span>
         </template>
 
-        <div v-if="apiToken.revealed" class="space-y-3">
+        <div
+          v-if="apiToken.revealed"
+          class="space-y-3"
+        >
           <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p class="text-sm font-medium text-amber-800">This token will only be shown once. Copy it now.</p>
+            <p class="text-sm font-medium text-amber-800">
+              This token will only be shown once. Copy it now.
+            </p>
           </div>
           <div class="flex items-center gap-2">
             <code class="flex-1 px-3 py-2 bg-gray-100 rounded text-sm font-mono break-all select-all">{{ apiToken.plaintext }}</code>
-            <UiButton variant="outline" size="sm" @click="copyToken" :title="apiToken.copied ? 'Copied' : 'Copy'">
-              <Check v-if="apiToken.copied" class="w-4 h-4 text-green-600" />
-              <Copy v-else class="w-4 h-4" />
+            <UiButton
+              variant="outline"
+              size="sm"
+              :title="apiToken.copied ? 'Copied' : 'Copy'"
+              @click="copyToken"
+            >
+              <Check
+                v-if="apiToken.copied"
+                class="w-4 h-4 text-green-600"
+              />
+              <Copy
+                v-else
+                class="w-4 h-4"
+              />
             </UiButton>
           </div>
         </div>
 
-        <div v-else class="space-y-3">
-          <div v-if="apiToken.hasToken" class="flex items-center justify-between">
+        <div
+          v-else
+          class="space-y-3"
+        >
+          <div
+            v-if="apiToken.hasToken"
+            class="flex items-center justify-between"
+          >
             <div>
-              <p class="text-sm text-gray-700">Active token created {{ formatTokenDate(apiToken.createdAt) }}</p>
+              <p class="text-sm text-gray-700">
+                Active token created {{ formatTokenDate(apiToken.createdAt) }}
+              </p>
             </div>
             <div class="flex items-center gap-2">
-              <UiButton variant="outline" size="sm" :is-loading="apiToken.loading" @click="generateToken" title="Regenerate token">
+              <UiButton
+                variant="outline"
+                size="sm"
+                :is-loading="apiToken.loading"
+                title="Regenerate token"
+                @click="generateToken"
+              >
                 <RefreshCw class="w-4 h-4" />
               </UiButton>
-              <UiButton variant="danger" size="sm" :is-loading="apiToken.revoking" @click="revokeToken" title="Revoke token">
+              <UiButton
+                variant="danger"
+                size="sm"
+                :is-loading="apiToken.revoking"
+                title="Revoke token"
+                @click="revokeToken"
+              >
                 <Trash2 class="w-4 h-4" />
               </UiButton>
             </div>
           </div>
-          <div v-else class="flex items-center justify-between">
-            <p class="text-sm text-gray-500">No API token configured</p>
-            <UiButton size="sm" :is-loading="apiToken.loading" @click="generateToken" title="Generate token">
+          <div
+            v-else
+            class="flex items-center justify-between"
+          >
+            <p class="text-sm text-gray-500">
+              No API token configured
+            </p>
+            <UiButton
+              size="sm"
+              :is-loading="apiToken.loading"
+              title="Generate token"
+              @click="generateToken"
+            >
               <Plus class="w-4 h-4" />
             </UiButton>
           </div>
@@ -143,24 +212,40 @@
       <div class="space-y-4 opacity-60 pointer-events-none">
         <div class="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <h3 class="font-medium text-gray-900">Email Notifications</h3>
-            <p class="text-sm text-gray-500">Receive email updates about your account</p>
+            <h3 class="font-medium text-gray-900">
+              Email Notifications
+            </h3>
+            <p class="text-sm text-gray-500">
+              Receive email updates about your account
+            </p>
           </div>
           <UiToggle v-model="accountPreferences.emailNotifications" />
         </div>
         <div class="flex items-center justify-between py-3 border-b border-gray-200">
           <div>
-            <h3 class="font-medium text-gray-900">SMS Notifications</h3>
-            <p class="text-sm text-gray-500">Receive text message reminders</p>
+            <h3 class="font-medium text-gray-900">
+              SMS Notifications
+            </h3>
+            <p class="text-sm text-gray-500">
+              Receive text message reminders
+            </p>
           </div>
           <UiToggle v-model="accountPreferences.smsNotifications" />
         </div>
         <div class="flex items-center justify-between py-3">
           <div>
-            <h3 class="font-medium text-gray-900">Two-Factor Authentication</h3>
-            <p class="text-sm text-gray-500">Add an extra layer of security</p>
+            <h3 class="font-medium text-gray-900">
+              Two-Factor Authentication
+            </h3>
+            <p class="text-sm text-gray-500">
+              Add an extra layer of security
+            </p>
           </div>
-          <UiButton variant="outline" size="sm" disabled>
+          <UiButton
+            variant="outline"
+            size="sm"
+            disabled
+          >
             Coming Soon
           </UiButton>
         </div>
@@ -172,7 +257,9 @@
       <div class="space-y-4">
         <!-- UI Preferences (stored locally - client only) -->
         <div class="pb-4 border-b border-gray-200">
-          <h4 class="text-sm font-medium text-gray-700 mb-3">Display Preferences</h4>
+          <h4 class="text-sm font-medium text-gray-700 mb-3">
+            Display Preferences
+          </h4>
           <ClientOnly>
             <div class="space-y-3">
               <div>
@@ -184,9 +271,9 @@
                       name="documentView"
                       value="local"
                       :checked="localDocumentView === 'local'"
-                      @change="setDocumentView('local')"
                       class="text-burgundy-600 focus:ring-burgundy-500"
-                    />
+                      @change="setDocumentView('local')"
+                    >
                     <span class="text-sm text-gray-700">System Documents</span>
                   </label>
                   <label class="flex items-center gap-2 cursor-pointer">
@@ -195,17 +282,21 @@
                       name="documentView"
                       value="drive"
                       :checked="localDocumentView === 'drive'"
-                      @change="setDocumentView('drive')"
                       class="text-burgundy-600 focus:ring-burgundy-500"
-                    />
+                      @change="setDocumentView('drive')"
+                    >
                     <span class="text-sm text-gray-700">Google Drive</span>
                   </label>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Choose which view to show by default on the Matter Documents tab</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  Choose which view to show by default on the Matter Documents tab
+                </p>
               </div>
             </div>
             <template #fallback>
-              <div class="text-sm text-gray-500">Loading preferences...</div>
+              <div class="text-sm text-gray-500">
+                Loading preferences...
+              </div>
             </template>
           </ClientOnly>
         </div>
@@ -213,22 +304,42 @@
         <!-- Account Preferences (stored on server) - PLACEHOLDER -->
         <div>
           <div class="flex items-center gap-2 mb-3">
-            <h4 class="text-sm font-medium text-gray-700">Account Preferences</h4>
+            <h4 class="text-sm font-medium text-gray-700">
+              Account Preferences
+            </h4>
             <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
               <Construction class="w-3 h-3" />
               Placeholder
             </span>
           </div>
           <div class="space-y-4 opacity-60 pointer-events-none">
-            <UiSelect v-model="accountPreferences.timezone" label="Time Zone">
-              <option value="America/New_York">Eastern Time</option>
-              <option value="America/Chicago">Central Time</option>
-              <option value="America/Denver">Mountain Time</option>
-              <option value="America/Los_Angeles">Pacific Time</option>
+            <UiSelect
+              v-model="accountPreferences.timezone"
+              label="Time Zone"
+            >
+              <option value="America/New_York">
+                Eastern Time
+              </option>
+              <option value="America/Chicago">
+                Central Time
+              </option>
+              <option value="America/Denver">
+                Mountain Time
+              </option>
+              <option value="America/Los_Angeles">
+                Pacific Time
+              </option>
             </UiSelect>
-            <UiSelect v-model="accountPreferences.language" label="Language">
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
+            <UiSelect
+              v-model="accountPreferences.language"
+              label="Language"
+            >
+              <option value="en">
+                English
+              </option>
+              <option value="es">
+                Spanish
+              </option>
             </UiSelect>
             <div class="flex justify-end">
               <UiButton disabled>
@@ -242,13 +353,24 @@
 
     <!-- Video Meetings (for firm members) -->
     <ClientOnly>
-      <UiCard v-if="isFirmMember" title="Video Meetings">
+      <UiCard
+        v-if="isFirmMember"
+        title="Video Meetings"
+      >
         <template #header-actions>
           <span class="text-sm text-gray-500">Connect your video meeting account</span>
         </template>
 
-        <div v-if="videoConnectionsLoading" class="text-sm text-gray-500">Loading...</div>
-        <div v-else class="space-y-4">
+        <div
+          v-if="videoConnectionsLoading"
+          class="text-sm text-gray-500"
+        >
+          Loading...
+        </div>
+        <div
+          v-else
+          class="space-y-4"
+        >
           <!-- Zoom Connection -->
           <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
             <div class="flex items-center gap-3">
@@ -256,11 +378,21 @@
                 <Video class="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <h3 class="font-medium text-gray-900">Zoom</h3>
-                <p v-if="activeZoomConnection" class="text-sm text-green-600">
+                <h3 class="font-medium text-gray-900">
+                  Zoom
+                </h3>
+                <p
+                  v-if="activeZoomConnection"
+                  class="text-sm text-green-600"
+                >
                   Connected as {{ activeZoomConnection.providerEmail }}
                 </p>
-                <p v-else class="text-sm text-gray-500">Not connected</p>
+                <p
+                  v-else
+                  class="text-sm text-gray-500"
+                >
+                  Not connected
+                </p>
               </div>
             </div>
             <div>
@@ -268,8 +400,8 @@
                 v-if="activeZoomConnection"
                 variant="outline"
                 size="sm"
-                @click="disconnectZoom"
                 :is-loading="disconnectingZoom"
+                @click="disconnectZoom"
               >
                 Disconnect
               </UiButton>
@@ -290,8 +422,12 @@
                 <Video class="w-4 h-4 text-green-600" />
               </div>
               <div>
-                <h3 class="font-medium text-gray-900">Google Meet</h3>
-                <p class="text-sm text-gray-500">Coming soon</p>
+                <h3 class="font-medium text-gray-900">
+                  Google Meet
+                </h3>
+                <p class="text-sm text-gray-500">
+                  Coming soon
+                </p>
               </div>
             </div>
           </div>
@@ -300,70 +436,112 @@
     </ClientOnly>
 
     <!-- My Calendars (for firm members, only when Google service account is configured) -->
-    <ClientOnly><UiCard v-if="isFirmMember && appConfig.isGoogleConfigured">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">My Calendars</h3>
-          <UiButton size="sm" @click="showAddCalendarModal = true">
-            Add Calendar
-          </UiButton>
-        </div>
-      </template>
+    <ClientOnly>
+      <UiCard v-if="isFirmMember && appConfig.isGoogleConfigured">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">
+              My Calendars
+            </h3>
+            <UiButton
+              size="sm"
+              @click="showAddCalendarModal = true"
+            >
+              Add Calendar
+            </UiButton>
+          </div>
+        </template>
 
-      <div v-if="calendars.length > 0" class="divide-y divide-gray-200">
         <div
-          v-for="calendar in calendars"
-          :key="calendar.id"
-          class="py-4 first:pt-0 last:pb-0"
+          v-if="calendars.length > 0"
+          class="divide-y divide-gray-200"
         >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="flex items-center space-x-2">
-                <h3 class="font-medium text-gray-900">{{ calendar.calendar_name }}</h3>
-                <UiBadge v-if="calendar.is_primary" variant="info" size="sm">Primary</UiBadge>
-                <UiBadge v-if="!calendar.is_active" variant="default" size="sm">Inactive</UiBadge>
+          <div
+            v-for="calendar in calendars"
+            :key="calendar.id"
+            class="py-4 first:pt-0 last:pb-0"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center space-x-2">
+                  <h3 class="font-medium text-gray-900">
+                    {{ calendar.calendar_name }}
+                  </h3>
+                  <UiBadge
+                    v-if="calendar.is_primary"
+                    variant="info"
+                    size="sm"
+                  >
+                    Primary
+                  </UiBadge>
+                  <UiBadge
+                    v-if="!calendar.is_active"
+                    variant="default"
+                    size="sm"
+                  >
+                    Inactive
+                  </UiBadge>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">
+                  {{ calendar.calendar_email }}
+                </p>
+                <p class="text-xs text-gray-400 mt-1">
+                  Timezone: {{ calendar.timezone }}
+                </p>
               </div>
-              <p class="text-sm text-gray-500 mt-1">{{ calendar.calendar_email }}</p>
-              <p class="text-xs text-gray-400 mt-1">Timezone: {{ calendar.timezone }}</p>
-            </div>
-            <div class="flex items-center space-x-2">
-              <UiButton
-                v-if="!calendar.is_primary"
-                variant="outline"
-                size="sm"
-                @click="setPrimaryCalendar(calendar.id)"
-              >
-                Set Primary
-              </UiButton>
-              <UiButton
-                variant="outline"
-                size="sm"
-                @click="toggleCalendarActive(calendar.id, !calendar.is_active)"
-              >
-                {{ calendar.is_active ? 'Deactivate' : 'Activate' }}
-              </UiButton>
-              <UiButton
-                variant="danger"
-                size="sm"
-                @click="deleteCalendar(calendar.id)"
-              >
-                Delete
-              </UiButton>
+              <div class="flex items-center space-x-2">
+                <UiButton
+                  v-if="!calendar.is_primary"
+                  variant="outline"
+                  size="sm"
+                  @click="setPrimaryCalendar(calendar.id)"
+                >
+                  Set Primary
+                </UiButton>
+                <UiButton
+                  variant="outline"
+                  size="sm"
+                  @click="toggleCalendarActive(calendar.id, !calendar.is_active)"
+                >
+                  {{ calendar.is_active ? 'Deactivate' : 'Activate' }}
+                </UiButton>
+                <UiButton
+                  variant="danger"
+                  size="sm"
+                  @click="deleteCalendar(calendar.id)"
+                >
+                  Delete
+                </UiButton>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div v-else class="text-center py-8">
-        <Calendar class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No calendars configured</h3>
-        <p class="mt-1 text-sm text-gray-500">Add a calendar to enable appointment booking.</p>
-      </div>
-    </UiCard></ClientOnly>
+        <div
+          v-else
+          class="text-center py-8"
+        >
+          <Calendar class="mx-auto h-12 w-12 text-gray-400" />
+          <h3 class="mt-2 text-sm font-medium text-gray-900">
+            No calendars configured
+          </h3>
+          <p class="mt-1 text-sm text-gray-500">
+            Add a calendar to enable appointment booking.
+          </p>
+        </div>
+      </UiCard>
+    </ClientOnly>
 
     <!-- Add Calendar Modal -->
-    <UiModal v-model="showAddCalendarModal" title="Add Google Calendar" size="md">
-      <form @submit.prevent="addCalendar" class="space-y-4">
+    <UiModal
+      v-model="showAddCalendarModal"
+      title="Add Google Calendar"
+      size="md"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="addCalendar"
+      >
         <UiInput
           v-model="calendarForm.calendarName"
           label="Calendar Name"
@@ -376,7 +554,9 @@
           placeholder="primary or email@gmail.com"
           required
         />
-        <p class="text-xs text-gray-500 -mt-2">Usually "primary" or your Google Calendar email</p>
+        <p class="text-xs text-gray-500 -mt-2">
+          Usually "primary" or your Google Calendar email
+        </p>
         <UiInput
           v-model="calendarForm.calendarEmail"
           label="Calendar Email"
@@ -384,30 +564,50 @@
           placeholder="your-email@gmail.com"
           required
         />
-        <UiSelect v-model="calendarForm.timezone" label="Timezone">
-          <option value="America/New_York">Eastern Time</option>
-          <option value="America/Chicago">Central Time</option>
-          <option value="America/Denver">Mountain Time</option>
-          <option value="America/Los_Angeles">Pacific Time</option>
+        <UiSelect
+          v-model="calendarForm.timezone"
+          label="Timezone"
+        >
+          <option value="America/New_York">
+            Eastern Time
+          </option>
+          <option value="America/Chicago">
+            Central Time
+          </option>
+          <option value="America/Denver">
+            Mountain Time
+          </option>
+          <option value="America/Los_Angeles">
+            Pacific Time
+          </option>
         </UiSelect>
         <div class="flex items-center">
           <input
+            id="isPrimary"
             v-model="calendarForm.isPrimary"
             type="checkbox"
-            id="isPrimary"
             class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
-          />
-          <label for="isPrimary" class="ml-2 text-sm text-gray-700">
+          >
+          <label
+            for="isPrimary"
+            class="ml-2 text-sm text-gray-700"
+          >
             Set as primary calendar for bookings
           </label>
         </div>
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showAddCalendarModal = false">
+        <UiButton
+          variant="outline"
+          @click="showAddCalendarModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="addCalendar" :is-loading="addingCalendar">
+        <UiButton
+          :is-loading="addingCalendar"
+          @click="addCalendar"
+        >
           Add Calendar
         </UiButton>
       </template>
@@ -479,7 +679,7 @@ const calendarForm = ref({
   calendarId: sessionData.value?.user?.email,
   calendarEmail: sessionData.value?.user?.email,
   timezone: 'America/Denver',
-  isPrimary: false,
+  isPrimary: false
 })
 
 // API Token state
@@ -533,7 +733,8 @@ onMounted(async () => {
   if (route.query.zoom === 'connected') {
     toast.success('Zoom connected successfully')
     await loadVideoConnections()
-  } else if (route.query.zoom === 'error') {
+  }
+  else if (route.query.zoom === 'error') {
     const reason = route.query.reason as string || 'Unknown error'
     toast.error(`Zoom connection failed: ${reason}`)
   }
@@ -559,9 +760,11 @@ const handleSave = async () => {
       body: profile.value
     })
     toast.success('Profile updated successfully')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to update profile')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -587,9 +790,11 @@ const handlePasswordChange = async () => {
       newPassword: '',
       confirmPassword: ''
     }
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to update password')
-  } finally {
+  }
+  finally {
     changingPassword.value = false
   }
 }
@@ -600,9 +805,11 @@ const savePreferences = async () => {
     // TODO: Implement preferences API
     await new Promise(resolve => setTimeout(resolve, 500))
     toast.success('Preferences saved successfully')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to save preferences')
-  } finally {
+  }
+  finally {
     savingPreferences.value = false
   }
 }
@@ -613,7 +820,8 @@ const loadApiTokenStatus = async () => {
     const data = await $fetch('/api/profile/api-token')
     apiToken.value.hasToken = data.hasToken
     apiToken.value.createdAt = data.createdAt
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to load API token status:', error)
   }
 }
@@ -631,9 +839,11 @@ const generateToken = async () => {
     apiToken.value.createdAt = new Date().toISOString()
     apiToken.value.copied = false
     toast.success('API token generated')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to generate API token')
-  } finally {
+  }
+  finally {
     apiToken.value.loading = false
   }
 }
@@ -648,9 +858,11 @@ const revokeToken = async () => {
     apiToken.value.revealed = false
     apiToken.value.plaintext = ''
     toast.success('API token revoked')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to revoke API token')
-  } finally {
+  }
+  finally {
     apiToken.value.revoking = false
   }
 }
@@ -660,7 +872,8 @@ const copyToken = async () => {
     await navigator.clipboard.writeText(apiToken.value.plaintext)
     apiToken.value.copied = true
     setTimeout(() => { apiToken.value.copied = false }, 2000)
-  } catch {
+  }
+  catch {
     toast.error('Failed to copy to clipboard')
   }
 }
@@ -675,9 +888,11 @@ const loadVideoConnections = async () => {
   videoConnectionsLoading.value = true
   try {
     videoConnections.value = await $fetch('/api/profile/video-connections')
-  } catch {
+  }
+  catch {
     // May not have video connections feature
-  } finally {
+  }
+  finally {
     videoConnectionsLoading.value = false
   }
 }
@@ -696,9 +911,11 @@ const disconnectZoom = async () => {
     await $fetch(`/api/profile/video-connections/${connection.id}`, { method: 'DELETE' })
     toast.success('Zoom disconnected')
     await loadVideoConnections()
-  } catch {
+  }
+  catch {
     toast.error('Failed to disconnect Zoom')
-  } finally {
+  }
+  finally {
     disconnectingZoom.value = false
   }
 }
@@ -708,7 +925,8 @@ const loadCalendars = async () => {
   try {
     const response = await $fetch('/api/attorney/calendars')
     calendars.value = response.calendars || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to load calendars:', error)
   }
 }
@@ -718,7 +936,7 @@ const addCalendar = async () => {
   try {
     await $fetch('/api/attorney/calendars', {
       method: 'POST',
-      body: calendarForm.value,
+      body: calendarForm.value
     })
     await loadCalendars()
     showAddCalendarModal.value = false
@@ -727,12 +945,14 @@ const addCalendar = async () => {
       calendarId: sessionData.value?.user?.email,
       calendarEmail: sessionData.value?.user?.email,
       timezone: 'America/Denver',
-      isPrimary: false,
+      isPrimary: false
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to add calendar:', error)
     toast.error('Failed to add calendar. Please try again.')
-  } finally {
+  }
+  finally {
     addingCalendar.value = false
   }
 }
@@ -745,7 +965,8 @@ const setPrimaryCalendar = async (calendarId: string) => {
     })
     toast.success('Primary calendar updated')
     await loadCalendars()
-  } catch {
+  }
+  catch {
     toast.error('Failed to set primary calendar')
   }
 }
@@ -755,16 +976,18 @@ const toggleCalendarActive = async (calendarId: string, activate: boolean) => {
     if (activate) {
       await $fetch(`/api/attorney/calendars/${calendarId}`, {
         method: 'PUT',
-        body: { isActive: true }  // Re-use PUT to reactivate
+        body: { isActive: true } // Re-use PUT to reactivate
       })
-    } else {
+    }
+    else {
       await $fetch(`/api/attorney/calendars/${calendarId}`, {
         method: 'DELETE'
       })
     }
     toast.success(activate ? 'Calendar activated' : 'Calendar deactivated')
     await loadCalendars()
-  } catch {
+  }
+  catch {
     toast.error('Failed to update calendar')
   }
 }
@@ -777,7 +1000,8 @@ const deleteCalendar = async (calendarId: string) => {
     })
     toast.success('Calendar removed')
     await loadCalendars()
-  } catch {
+  }
+  catch {
     toast.error('Failed to remove calendar')
   }
 }

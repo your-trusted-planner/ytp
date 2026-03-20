@@ -33,7 +33,7 @@ export interface BatchUpsertResult {
   created: number
   updated: number
   skipped: number
-  errors: Array<{ externalId: string; error: string }>
+  errors: Array<{ externalId: string, error: string }>
   results: UpsertResult[]
 }
 
@@ -125,7 +125,8 @@ function updateImportMetadataTimestamp(existingMetadata: string): string {
     const metadata = JSON.parse(existingMetadata) as ImportMetadata
     metadata.lastSyncedAt = new Date().toISOString()
     return JSON.stringify(metadata)
-  } catch {
+  }
+  catch {
     return existingMetadata
   }
 }
@@ -137,7 +138,8 @@ function parseExistingMetadata(raw: string | null | undefined): ImportMetadata |
   if (!raw) return null
   try {
     return JSON.parse(raw) as ImportMetadata
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -166,7 +168,7 @@ function canSyncUpdateRecord(existingMetadata: ImportMetadata | null, incomingSo
 function filterLocallyModifiedFields(
   updateData: Record<string, any>,
   existingMetadata: ImportMetadata | null
-): { filteredData: Record<string, any>; skippedFields: string[] } {
+): { filteredData: Record<string, any>, skippedFields: string[] } {
   const locallyModified = existingMetadata?.locallyModifiedFields || []
   if (locallyModified.length === 0) {
     return { filteredData: updateData, skippedFields: [] }
@@ -178,7 +180,8 @@ function filterLocallyModifiedFields(
   for (const [key, value] of Object.entries(updateData)) {
     if (locallyModified.includes(key)) {
       skippedFields.push(key)
-    } else {
+    }
+    else {
       filteredData[key] = value
     }
   }
@@ -244,7 +247,8 @@ export async function upsertUser(
         await db.update(schema.users)
           .set({ importMetadata: JSON.stringify(linkMetadata) })
           .where(eq(schema.users.id, existing.id))
-      } else {
+      }
+      else {
         await db.update(schema.users)
           .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
           .where(eq(schema.users.id, existing.id))
@@ -314,7 +318,8 @@ export async function batchUpsertUsers(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(user.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -368,7 +373,8 @@ export async function upsertClient(
         await db.update(schema.users)
           .set({ importMetadata: JSON.stringify(linkMetadata) })
           .where(eq(schema.users.id, existing.id))
-      } else {
+      }
+      else {
         await db.update(schema.users)
           .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
           .where(eq(schema.users.id, existing.id))
@@ -419,7 +425,8 @@ export async function upsertClient(
             updatedAt: new Date()
           })
           .where(eq(schema.clientProfiles.id, existingProfile.id))
-      } else {
+      }
+      else {
         await db.insert(schema.clientProfiles).values({
           id: transformed.profile.id,
           userId: existing.id,
@@ -491,7 +498,8 @@ export async function batchUpsertClients(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(client.user.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -546,7 +554,8 @@ export async function upsertPerson(
         await db.update(schema.people)
           .set({ importMetadata: JSON.stringify(linkMetadata) })
           .where(eq(schema.people.id, existing.id))
-      } else {
+      }
+      else {
         // Has metadata but owned by YTP — just update sync timestamp
         await db.update(schema.people)
           .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
@@ -642,7 +651,8 @@ export async function batchUpsertPeople(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(person.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -695,7 +705,8 @@ export async function upsertMatter(
         await db.update(schema.matters)
           .set({ importMetadata: JSON.stringify(linkMetadata) })
           .where(eq(schema.matters.id, existing.id))
-      } else {
+      }
+      else {
         await db.update(schema.matters)
           .set({ importMetadata: updateImportMetadataTimestamp(existingRecord!.importMetadata!) })
           .where(eq(schema.matters.id, existing.id))
@@ -765,7 +776,8 @@ export async function batchUpsertMatters(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(matter.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -846,7 +858,8 @@ export async function batchUpsertNotes(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(note.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -927,7 +940,8 @@ export async function batchUpsertActivities(
       if (upsertResult.action === 'created') result.created++
       else if (upsertResult.action === 'updated') result.updated++
       else result.skipped++
-    } catch (error) {
+    }
+    catch (error) {
       const metadata = JSON.parse(activity.importMetadata) as ImportMetadata
       result.errors.push({
         externalId: metadata.externalId,
@@ -963,7 +977,7 @@ export async function buildUserLookupMap(
 
   const map = new Map<string, string>()
   for (const user of users) {
-    const u = user as { id: string; external_id: string }
+    const u = user as { id: string, external_id: string }
     if (u.external_id) {
       map.set(u.external_id, u.id)
     }
@@ -992,7 +1006,7 @@ export async function buildClientLookupMap(
 
   const map = new Map<string, string>()
   for (const client of clients) {
-    const c = client as { id: string; external_id: string }
+    const c = client as { id: string, external_id: string }
     if (c.external_id) {
       map.set(c.external_id, c.id)
     }
@@ -1020,7 +1034,7 @@ export async function buildMatterLookupMap(
 
   const map = new Map<string, string>()
   for (const matter of matters) {
-    const m = matter as { id: string; external_id: string }
+    const m = matter as { id: string, external_id: string }
     if (m.external_id) {
       map.set(m.external_id, m.id)
     }
@@ -1048,7 +1062,7 @@ export async function buildPeopleLookupMap(
 
   const map = new Map<string, string>()
   for (const person of people) {
-    const p = person as { id: string; external_id: string }
+    const p = person as { id: string, external_id: string }
     if (p.external_id) {
       map.set(p.external_id, p.id)
     }
@@ -1065,7 +1079,7 @@ export async function buildPeopleLookupMap(
       AND existing_person_id IS NOT NULL
   `)
   for (const dup of duplicates) {
-    const d = dup as { external_id: string; existing_person_id: string }
+    const d = dup as { external_id: string, existing_person_id: string }
     if (d.external_id && !map.has(d.external_id)) {
       map.set(d.external_id, d.existing_person_id)
     }

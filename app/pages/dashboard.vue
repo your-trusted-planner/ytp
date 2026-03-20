@@ -19,4 +19,3 @@ const isLawyer = computed(() => {
   return role === 'LAWYER' || role === 'ADMIN'
 })
 </script>
-

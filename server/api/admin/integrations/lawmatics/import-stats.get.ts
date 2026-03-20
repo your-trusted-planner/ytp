@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.users = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting users:', e)
   }
 
@@ -36,7 +37,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.people = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting people:', e)
   }
 
@@ -47,7 +49,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.clients = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting clients:', e)
   }
 
@@ -58,7 +61,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.matters = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting matters:', e)
   }
 
@@ -69,7 +73,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.notes = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting notes:', e)
   }
 
@@ -80,7 +85,8 @@ export default defineEventHandler(async (event) => {
       .where(sql`import_metadata IS NOT NULL AND json_extract(import_metadata, '$.source') = 'LAWMATICS'`)
       .get()
     results.activities = r?.count ?? 0
-  } catch (e) {
+  }
+  catch (e) {
     console.error('[Import Stats] Error counting activities:', e)
   }
 

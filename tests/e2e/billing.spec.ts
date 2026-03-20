@@ -26,7 +26,6 @@ async function loginAsFirmMember(page: any) {
 }
 
 test.describe('Billing Module', () => {
-
   test.describe('Page Routing', () => {
     /**
      * CRITICAL: This test catches the routing bug where billing.vue
@@ -231,7 +230,8 @@ test.describe('Billing Module', () => {
         // Close modal
         await page.getByRole('button', { name: /cancel/i }).click()
         await expect(page.getByText(/account name/i)).not.toBeVisible()
-      } else {
+      }
+      else {
         // Trust account already exists, skip this test
         test.skip()
       }

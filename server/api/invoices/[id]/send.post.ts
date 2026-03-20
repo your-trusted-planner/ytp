@@ -197,19 +197,19 @@ export default defineEventHandler(async (event) => {
     currency: 'USD'
   }).format(invoice.balanceDue / 100)
 
-  const formattedDueDate = invoice.dueDate
-    ? new Date(invoice.dueDate).toLocaleDateString('en-US', {
+  const formattedDueDate = invoice.dueDate ?
+      new Date(invoice.dueDate).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      })
-    : 'Due upon receipt'
+      }) :
+    'Due upon receipt'
 
   // Get PDF for attachment
   const { blob } = await import('hub:blob')
   const pdfData = await blob.get(pdfBlobKey)
 
-  let attachments: { filename: string; content: string; type: string }[] = []
+  let attachments: { filename: string, content: string, type: string }[] = []
   if (pdfData) {
     const pdfBuffer = await pdfData.arrayBuffer()
     const base64Pdf = Buffer.from(pdfBuffer).toString('base64')
@@ -220,9 +220,9 @@ export default defineEventHandler(async (event) => {
     }]
   }
 
-  const customMessage = parsed.data.message
-    ? `<p style="margin-bottom: 20px;">${parsed.data.message}</p>`
-    : ''
+  const customMessage = parsed.data.message ?
+    `<p style="margin-bottom: 20px;">${parsed.data.message}</p>` :
+    ''
 
   await sendEmail({
     to: recipientEmail,

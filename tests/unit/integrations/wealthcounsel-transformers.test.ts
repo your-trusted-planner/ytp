@@ -760,7 +760,7 @@ describe('transformRoles', () => {
       // Lookup maps multiple name variations to same personId
       const mockLookup = new Map([
         ['Matt Christensen', 'person_matt'],
-        ['Matthew Christensen', 'person_matt']  // Same ID!
+        ['Matthew Christensen', 'person_matt'] // Same ID!
       ])
 
       const roles = transformRoles(

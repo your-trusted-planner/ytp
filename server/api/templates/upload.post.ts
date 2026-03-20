@@ -23,13 +23,17 @@ export default defineEventHandler(async (event) => {
   for (const item of form) {
     if (item.name === 'file') {
       fileData = item
-    } else if (item.name === 'name') {
+    }
+    else if (item.name === 'name') {
       name = item.data.toString()
-    } else if (item.name === 'description') {
+    }
+    else if (item.name === 'description') {
       description = item.data.toString()
-    } else if (item.name === 'category') {
+    }
+    else if (item.name === 'category') {
       category = item.data.toString()
-    } else if (item.name === 'folderId') {
+    }
+    else if (item.name === 'folderId') {
       folderId = item.data.toString()
     }
   }
@@ -84,7 +88,8 @@ export default defineEventHandler(async (event) => {
         originalFileName: result.originalFileName
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error processing template upload:', error)
     throw createError({
       statusCode: 500,

@@ -153,13 +153,13 @@ export async function generateSignatureCertificate(
       name: input.signer.name,
       ipAddress: input.signer.ipAddress,
       userAgent: input.signer.userAgent,
-      geolocation: (input.signer.country || input.signer.region || input.signer.city)
-        ? {
+      geolocation: (input.signer.country || input.signer.region || input.signer.city) ?
+          {
             country: input.signer.country,
             region: input.signer.region,
             city: input.signer.city
-          }
-        : null
+          } :
+        null
     },
     verification: {
       tier: input.verification.tier,

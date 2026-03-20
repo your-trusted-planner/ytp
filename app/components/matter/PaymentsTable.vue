@@ -1,29 +1,50 @@
 <template>
   <div class="space-y-4">
     <!-- Summary Card -->
-    <div v-if="payments.length > 0" class="bg-gray-50 rounded-lg p-4">
+    <div
+      v-if="payments.length > 0"
+      class="bg-gray-50 rounded-lg p-4"
+    >
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <div class="text-sm text-gray-600">Total Paid</div>
-          <div class="text-2xl font-bold text-green-600">{{ formatCurrency(totalPaid) }}</div>
+          <div class="text-sm text-gray-600">
+            Total Paid
+          </div>
+          <div class="text-2xl font-bold text-green-600">
+            {{ formatCurrency(totalPaid) }}
+          </div>
         </div>
         <div>
-          <div class="text-sm text-gray-600">Pending</div>
-          <div class="text-2xl font-bold text-yellow-600">{{ formatCurrency(totalPending) }}</div>
+          <div class="text-sm text-gray-600">
+            Pending
+          </div>
+          <div class="text-2xl font-bold text-yellow-600">
+            {{ formatCurrency(totalPending) }}
+          </div>
         </div>
         <div>
-          <div class="text-sm text-gray-600">Total</div>
-          <div class="text-2xl font-bold text-gray-900">{{ formatCurrency(totalAmount) }}</div>
+          <div class="text-sm text-gray-600">
+            Total
+          </div>
+          <div class="text-2xl font-bold text-gray-900">
+            {{ formatCurrency(totalAmount) }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Payment History -->
-    <div v-if="payments.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-if="payments.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       No payments recorded yet
     </div>
 
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -45,15 +66,25 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="payment in payments" :key="payment.id" class="hover:bg-gray-50">
+          <tr
+            v-for="payment in payments"
+            :key="payment.id"
+            class="hover:bg-gray-50"
+          >
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ formatPaymentType(payment.payment_type) }}</div>
+              <div class="text-sm font-medium text-gray-900">
+                {{ formatPaymentType(payment.payment_type) }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ formatCurrency(payment.amount) }}</div>
+              <div class="text-sm text-gray-900">
+                {{ formatCurrency(payment.amount) }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-500">{{ payment.payment_method || '-' }}</div>
+              <div class="text-sm text-gray-500">
+                {{ payment.payment_method || '-' }}
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <UiBadge :variant="getStatusVariant(payment.status)">

@@ -364,7 +364,6 @@ function seedTestData() {
   `).run(timeEntryId, lawyerId, matterId, '2.5', 'Drafted trust agreement', now, 1, 35000, 87500, 'DRAFT', now, now)
 }
 
-
 describe('Composite Matter Detail - Response Shape', () => {
   beforeEach(() => {
     setupTestDb()

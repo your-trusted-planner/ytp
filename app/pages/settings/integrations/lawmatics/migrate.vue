@@ -9,8 +9,12 @@
         <ArrowLeft class="w-5 h-5" />
       </NuxtLink>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Lawmatics Migration</h1>
-        <p class="text-gray-600 mt-1">Import data from Lawmatics into the system</p>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Lawmatics Migration
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Import data from Lawmatics into the system
+        </p>
       </div>
     </div>
 
@@ -25,25 +29,40 @@
     />
 
     <!-- New Migration Form (only show if no active run) -->
-    <UiCard v-if="!currentRun" title="Start New Migration">
+    <UiCard
+      v-if="!currentRun"
+      title="Start New Migration"
+    >
       <div class="space-y-6">
         <!-- Run Type Toggle -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-3">Migration Type</label>
           <div class="flex gap-4">
-            <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors"
+            <label
+              class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors"
               :class="runType === 'FULL' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-200 hover:border-gray-300'"
             >
-              <input type="radio" v-model="runType" value="FULL" class="text-burgundy-600 focus:ring-burgundy-500" />
+              <input
+                v-model="runType"
+                type="radio"
+                value="FULL"
+                class="text-burgundy-600 focus:ring-burgundy-500"
+              >
               <div>
                 <span class="font-medium text-gray-900">Full Import</span>
                 <p class="text-sm text-gray-500">Import all records from Lawmatics</p>
               </div>
             </label>
-            <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors"
+            <label
+              class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors"
               :class="runType === 'INCREMENTAL' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-200 hover:border-gray-300'"
             >
-              <input type="radio" v-model="runType" value="INCREMENTAL" class="text-burgundy-600 focus:ring-burgundy-500" />
+              <input
+                v-model="runType"
+                type="radio"
+                value="INCREMENTAL"
+                class="text-burgundy-600 focus:ring-burgundy-500"
+              >
               <div>
                 <span class="font-medium text-gray-900">Incremental</span>
                 <p class="text-sm text-gray-500">Only import records updated since last sync</p>
@@ -53,7 +72,10 @@
         </div>
 
         <!-- Incremental Date Override (only for incremental runs) -->
-        <div v-if="runType === 'INCREMENTAL'" class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <div
+          v-if="runType === 'INCREMENTAL'"
+          class="p-4 bg-gray-50 border border-gray-200 rounded-lg"
+        >
           <div class="flex items-end gap-3">
             <UiInput
               v-model="syncOverrideDate"
@@ -65,8 +87,8 @@
             <button
               v-if="syncOverrideDate"
               type="button"
-              @click="syncOverrideDate = ''"
               class="mb-1 text-xs text-gray-500 hover:text-gray-700"
+              @click="syncOverrideDate = ''"
             >
               Clear
             </button>
@@ -80,16 +102,16 @@
             <div class="flex gap-2">
               <button
                 type="button"
-                @click="selectAllEntities"
                 class="text-xs text-burgundy-600 hover:text-burgundy-700 font-medium"
+                @click="selectAllEntities"
               >
                 Select All
               </button>
               <span class="text-gray-300">|</span>
               <button
                 type="button"
-                @click="selectNoEntities"
                 class="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                @click="selectNoEntities"
               >
                 Clear
               </button>
@@ -103,14 +125,17 @@
               :class="selectedEntities.includes(entity.value) ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-200 hover:border-gray-300'"
             >
               <input
+                v-model="selectedEntities"
                 type="checkbox"
                 :value="entity.value"
-                v-model="selectedEntities"
                 class="text-burgundy-600 focus:ring-burgundy-500 rounded"
-              />
+              >
               <div>
                 <span class="text-sm font-medium text-gray-700">{{ entity.label }}</span>
-                <p v-if="entity.description" class="text-xs text-gray-500">{{ entity.description }}</p>
+                <p
+                  v-if="entity.description"
+                  class="text-xs text-gray-500"
+                >{{ entity.description }}</p>
               </div>
             </label>
           </div>
@@ -122,9 +147,9 @@
         <!-- Start Button -->
         <div class="flex gap-3">
           <UiButton
-            @click="startMigration"
             :is-loading="starting"
             :disabled="selectedEntities.length === 0"
+            @click="startMigration"
           >
             <Play class="w-4 h-4 mr-2" />
             Start Migration
@@ -132,8 +157,13 @@
         </div>
 
         <!-- Error Message -->
-        <div v-if="startError" class="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p class="text-sm text-red-700">{{ startError }}</p>
+        <div
+          v-if="startError"
+          class="p-4 bg-red-50 border border-red-200 rounded-lg"
+        >
+          <p class="text-sm text-red-700">
+            {{ startError }}
+          </p>
         </div>
       </div>
     </UiCard>
@@ -148,7 +178,10 @@
       />
 
       <!-- Pagination -->
-      <div v-if="pagination.totalPages > 1" class="flex items-center justify-between mt-4 pt-4 border-t">
+      <div
+        v-if="pagination.totalPages > 1"
+        class="flex items-center justify-between mt-4 pt-4 border-t"
+      >
         <p class="text-sm text-gray-500">
           Showing page {{ pagination.page }} of {{ pagination.totalPages }}
         </p>
@@ -251,12 +284,13 @@ const integrationId = ref<string | null>(null)
 onMounted(async () => {
   // Get integration ID
   try {
-    const { integrations } = await $fetch<{ integrations: { id: string; type: string }[] }>('/api/admin/integrations')
+    const { integrations } = await $fetch<{ integrations: { id: string, type: string }[] }>('/api/admin/integrations')
     const lawmatics = integrations.find(i => i.type === 'LAWMATICS')
     if (lawmatics) {
       integrationId.value = lawmatics.id
     }
-  } catch {
+  }
+  catch {
     // Handle error
   }
 
@@ -273,7 +307,7 @@ async function loadRuns(page = 1) {
   try {
     const result = await $fetch<{
       runs: MigrationRun[]
-      pagination: { page: number; totalPages: number }
+      pagination: { page: number, totalPages: number }
     }>('/api/admin/migrations', {
       query: { page, limit: 10 }
     })
@@ -285,15 +319,18 @@ async function loadRuns(page = 1) {
     if (activeRun) {
       currentRun.value = activeRun
       previousRuns.value = result.runs.filter(r => r.id !== activeRun.id)
-    } else {
+    }
+    else {
       currentRun.value = null
       previousRuns.value = result.runs
     }
 
     pagination.value = result.pagination
-  } catch {
+  }
+  catch {
     // Handle error
-  } finally {
+  }
+  finally {
     loadingRuns.value = false
   }
 }
@@ -320,9 +357,11 @@ async function startMigration() {
 
     // Reload to get the new run
     await loadRuns()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     startError.value = error.data?.message || 'Failed to start migration'
-  } finally {
+  }
+  finally {
     starting.value = false
   }
 }
@@ -332,7 +371,8 @@ async function pauseMigration() {
   try {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/pause`, { method: 'POST' })
     await refreshCurrentRun()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to pause migration')
   }
 }
@@ -342,7 +382,8 @@ async function resumeMigration() {
   try {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/resume`, { method: 'POST' })
     await refreshCurrentRun()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to resume migration')
   }
 }
@@ -354,7 +395,8 @@ async function cancelMigration() {
   try {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/cancel`, { method: 'POST' })
     await loadRuns()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to cancel migration')
   }
 }
@@ -363,7 +405,8 @@ async function resumeRun(run: MigrationRun) {
   try {
     await $fetch(`/api/admin/migrations/${run.id}/resume`, { method: 'POST' })
     await loadRuns()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to resume migration')
   }
 }
@@ -384,7 +427,8 @@ async function refreshCurrentRun() {
     if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(run.run.status)) {
       await loadRuns()
     }
-  } catch {
+  }
+  catch {
     // Run may have been deleted
     currentRun.value = null
   }

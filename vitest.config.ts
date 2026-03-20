@@ -33,10 +33,10 @@ export default defineConfig({
       // Thresholds - start low, increase as tests are added
       thresholds: {
         // Global thresholds (currently low, increase as coverage improves)
-        statements: 2,
-        branches: 20,
-        functions: 15,
-        lines: 2,
+        'statements': 2,
+        'branches': 20,
+        'functions': 15,
+        'lines': 2,
         // Per-file thresholds for fully-testable critical paths
         'server/utils/rbac.ts': {
           statements: 90,

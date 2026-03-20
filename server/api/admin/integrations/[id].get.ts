@@ -7,7 +7,6 @@ import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
-
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -49,20 +48,20 @@ export default defineEventHandler(async (event) => {
     type: integration.type,
     name: integration.name,
     status: integration.status,
-    lastTestedAt: integration.lastTestedAt instanceof Date
-      ? integration.lastTestedAt.toISOString()
-      : integration.lastTestedAt,
+    lastTestedAt: integration.lastTestedAt instanceof Date ?
+        integration.lastTestedAt.toISOString() :
+      integration.lastTestedAt,
     lastErrorMessage: integration.lastErrorMessage,
     settings: integration.settings ? JSON.parse(integration.settings) : null,
-    lastSyncTimestamps: integration.lastSyncTimestamps
-      ? JSON.parse(integration.lastSyncTimestamps)
-      : null,
-    createdAt: integration.createdAt instanceof Date
-      ? integration.createdAt.toISOString()
-      : integration.createdAt,
-    updatedAt: integration.updatedAt instanceof Date
-      ? integration.updatedAt.toISOString()
-      : integration.updatedAt,
+    lastSyncTimestamps: integration.lastSyncTimestamps ?
+        JSON.parse(integration.lastSyncTimestamps) :
+      null,
+    createdAt: integration.createdAt instanceof Date ?
+        integration.createdAt.toISOString() :
+      integration.createdAt,
+    updatedAt: integration.updatedAt instanceof Date ?
+        integration.updatedAt.toISOString() :
+      integration.updatedAt,
     // Indicate if credentials are configured (without exposing them)
     hasCredentials: true
   }

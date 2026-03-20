@@ -21,25 +21,29 @@ export default defineNitroPlugin((nitroApp) => {
     // Route to appropriate handler based on queue name
     if (queueName.includes('lawmatics-import')) {
       await lawmaticsImportHandler.queue(batch, env)
-    } else if (queueName.includes('drive-sync')) {
+    }
+    else if (queueName.includes('drive-sync')) {
       // Import and call drive sync handler
       const driveSyncHandler = await import('../queue/drive-sync')
       if (driveSyncHandler.default?.queue) {
         await driveSyncHandler.default.queue(batch, env)
       }
-    } else if (queueName.includes('document-generation')) {
+    }
+    else if (queueName.includes('document-generation')) {
       // Import and call document generation handler
       const docGenHandler = await import('../queue/document-processor')
       if (docGenHandler.default?.queue) {
         await docGenHandler.default.queue(batch, env)
       }
-    } else if (queueName.includes('document-template-processing')) {
+    }
+    else if (queueName.includes('document-template-processing')) {
       // Import and call template processing handler
       const templateHandler = await import('../queue/document-processor')
       if (templateHandler.default?.queue) {
         await templateHandler.default.queue(batch, env)
       }
-    } else {
+    }
+    else {
       console.warn(`[Queue Plugin] No handler registered for queue: ${queueName}`)
     }
   })

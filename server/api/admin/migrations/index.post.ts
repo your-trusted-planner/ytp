@@ -19,7 +19,6 @@ const startMigrationSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-
   const body = await readBody(event)
   const result = startMigrationSchema.safeParse(body)
 
@@ -108,7 +107,8 @@ export default defineEventHandler(async (event) => {
     if (overrideDate) {
       // Use the manually provided override date
       filter = { updatedSince: overrideDate }
-    } else if (integration.lastSyncTimestamps) {
+    }
+    else if (integration.lastSyncTimestamps) {
       const timestamps = JSON.parse(integration.lastSyncTimestamps) as Record<string, string>
       const firstPhase = entityTypes[0]
       if (firstPhase && timestamps[firstPhase]) {
@@ -144,8 +144,8 @@ export default defineEventHandler(async (event) => {
         updatedAt: now
       })
       .where(eq(schema.migrationRuns.id, runId))
-
-  } catch (error) {
+  }
+  catch (error) {
     // Update status to failed
     await db.update(schema.migrationRuns)
       .set({

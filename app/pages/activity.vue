@@ -3,12 +3,16 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Activity Log</h1>
-        <p class="text-gray-600 mt-1">View all system activity and audit trail</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Activity Log
+        </h1>
+        <p class="text-gray-600 mt-1">
+          View all system activity and audit trail
+        </p>
       </div>
       <button
-        @click="exportCsv"
         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
+        @click="exportCsv"
       >
         <Download class="w-4 h-4" />
         Export CSV
@@ -16,46 +20,90 @@
     </div>
 
     <!-- Filters -->
-    <UiCard title="Filters" :collapsible="true" :defaultOpen="false">
+    <UiCard
+      title="Filters"
+      :collapsible="true"
+      :default-open="false"
+    >
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
           <select
             v-model="filters.type"
-            @change="applyFilters"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500"
+            @change="applyFilters"
           >
-            <option value="">All Types</option>
+            <option value="">
+              All Types
+            </option>
             <optgroup label="User Events">
-              <option value="USER_LOGIN">Login</option>
-              <option value="USER_LOGOUT">Logout</option>
-              <option value="USER_CREATED">User Created</option>
+              <option value="USER_LOGIN">
+                Login
+              </option>
+              <option value="USER_LOGOUT">
+                Logout
+              </option>
+              <option value="USER_CREATED">
+                User Created
+              </option>
             </optgroup>
             <optgroup label="Client Events">
-              <option value="CLIENT_CREATED">Client Created</option>
-              <option value="CLIENT_UPDATED">Client Updated</option>
-              <option value="CLIENT_VIEWED">Client Viewed</option>
+              <option value="CLIENT_CREATED">
+                Client Created
+              </option>
+              <option value="CLIENT_UPDATED">
+                Client Updated
+              </option>
+              <option value="CLIENT_VIEWED">
+                Client Viewed
+              </option>
             </optgroup>
             <optgroup label="Document Events">
-              <option value="DOCUMENT_CREATED">Document Created</option>
-              <option value="DOCUMENT_VIEWED">Document Viewed</option>
-              <option value="DOCUMENT_SIGNED">Document Signed</option>
-              <option value="DOCUMENT_DOWNLOADED">Document Downloaded</option>
-              <option value="DOCUMENT_DELETED">Document Deleted</option>
+              <option value="DOCUMENT_CREATED">
+                Document Created
+              </option>
+              <option value="DOCUMENT_VIEWED">
+                Document Viewed
+              </option>
+              <option value="DOCUMENT_SIGNED">
+                Document Signed
+              </option>
+              <option value="DOCUMENT_DOWNLOADED">
+                Document Downloaded
+              </option>
+              <option value="DOCUMENT_DELETED">
+                Document Deleted
+              </option>
             </optgroup>
             <optgroup label="Journey Events">
-              <option value="JOURNEY_STARTED">Journey Started</option>
-              <option value="JOURNEY_STEP_COMPLETED">Step Completed</option>
-              <option value="JOURNEY_COMPLETED">Journey Completed</option>
+              <option value="JOURNEY_STARTED">
+                Journey Started
+              </option>
+              <option value="JOURNEY_STEP_COMPLETED">
+                Step Completed
+              </option>
+              <option value="JOURNEY_COMPLETED">
+                Journey Completed
+              </option>
             </optgroup>
             <optgroup label="Note Events">
-              <option value="NOTE_CREATED">Note Created</option>
-              <option value="NOTE_UPDATED">Note Updated</option>
-              <option value="NOTE_DELETED">Note Deleted</option>
+              <option value="NOTE_CREATED">
+                Note Created
+              </option>
+              <option value="NOTE_UPDATED">
+                Note Updated
+              </option>
+              <option value="NOTE_DELETED">
+                Note Deleted
+              </option>
             </optgroup>
             <optgroup label="Template Events">
-              <option value="TEMPLATE_CREATED">Template Created</option>
-              <option value="TEMPLATE_DELETED">Template Deleted</option>
+              <option value="TEMPLATE_CREATED">
+                Template Created
+              </option>
+              <option value="TEMPLATE_DELETED">
+                Template Deleted
+              </option>
             </optgroup>
           </select>
         </div>
@@ -64,46 +112,64 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Target Type</label>
           <select
             v-model="filters.targetType"
-            @change="applyFilters"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500"
+            @change="applyFilters"
           >
-            <option value="">All Targets</option>
-            <option value="user">Users</option>
-            <option value="client">Clients</option>
-            <option value="document">Documents</option>
-            <option value="matter">Matters</option>
-            <option value="journey">Journeys</option>
-            <option value="template">Templates</option>
-            <option value="note">Notes</option>
-            <option value="referral_partner">Referral Partners</option>
+            <option value="">
+              All Targets
+            </option>
+            <option value="user">
+              Users
+            </option>
+            <option value="client">
+              Clients
+            </option>
+            <option value="document">
+              Documents
+            </option>
+            <option value="matter">
+              Matters
+            </option>
+            <option value="journey">
+              Journeys
+            </option>
+            <option value="template">
+              Templates
+            </option>
+            <option value="note">
+              Notes
+            </option>
+            <option value="referral_partner">
+              Referral Partners
+            </option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
           <input
-            type="date"
             v-model="filters.startDate"
-            @change="applyFilters"
+            type="date"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500"
-          />
+            @change="applyFilters"
+          >
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
           <input
-            type="date"
             v-model="filters.endDate"
-            @change="applyFilters"
+            type="date"
             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500"
-          />
+            @change="applyFilters"
+          >
         </div>
       </div>
 
       <div class="mt-4 flex justify-end">
         <button
-          @click="clearFilters"
           class="text-sm text-gray-600 hover:text-gray-900"
+          @click="clearFilters"
         >
           Clear all filters
         </button>
@@ -112,18 +178,33 @@
 
     <!-- Activity Feed -->
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-burgundy-500 mx-auto"></div>
-        <p class="text-gray-500 mt-4">Loading activity...</p>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-burgundy-500 mx-auto" />
+        <p class="text-gray-500 mt-4">
+          Loading activity...
+        </p>
       </div>
 
-      <div v-else-if="activities.length === 0" class="text-center py-12">
+      <div
+        v-else-if="activities.length === 0"
+        class="text-center py-12"
+      >
         <Activity class="w-12 h-12 text-gray-400 mx-auto" />
-        <p class="text-gray-500 mt-4">No activity found</p>
-        <p class="text-sm text-gray-400">Try adjusting your filters</p>
+        <p class="text-gray-500 mt-4">
+          No activity found
+        </p>
+        <p class="text-sm text-gray-400">
+          Try adjusting your filters
+        </p>
       </div>
 
-      <div v-else class="divide-y divide-gray-100">
+      <div
+        v-else
+        class="divide-y divide-gray-100"
+      >
         <div
           v-for="activity in activities"
           :key="activity.id"
@@ -131,10 +212,12 @@
         >
           <div class="flex items-start gap-4">
             <!-- Icon -->
-            <div :class="[
-              'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
-              getActivityIconBg(activity.type)
-            ]">
+            <div
+              :class="[
+                'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
+                getActivityIconBg(activity.type)
+              ]"
+            >
               <component
                 :is="getActivityIcon(activity.type)"
                 :class="['w-5 h-5', getActivityIconColor(activity.type)]"
@@ -143,18 +226,29 @@
 
             <!-- Content -->
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900">{{ activity.description }}</p>
+              <p class="text-sm font-medium text-gray-900">
+                {{ activity.description }}
+              </p>
               <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                 <span class="text-xs text-gray-500">
                   {{ formatDateTime(activity.createdAt) }}
                 </span>
-                <span v-if="activity.user" class="text-xs text-gray-500">
+                <span
+                  v-if="activity.user"
+                  class="text-xs text-gray-500"
+                >
                   by {{ activity.user.firstName }} {{ activity.user.lastName }}
                 </span>
-                <span v-if="activity.ipAddress" class="text-xs text-gray-400">
+                <span
+                  v-if="activity.ipAddress"
+                  class="text-xs text-gray-400"
+                >
                   IP: {{ activity.ipAddress }}
                 </span>
-                <span v-if="activity.country" class="text-xs text-gray-400">
+                <span
+                  v-if="activity.country"
+                  class="text-xs text-gray-400"
+                >
                   {{ activity.city ? `${activity.city}, ` : '' }}{{ activity.country }}
                 </span>
               </div>
@@ -168,7 +262,10 @@
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-burgundy-50 text-burgundy-700 hover:bg-burgundy-100 transition-colors group"
                   :title="getNameDiffTooltip(activity.target)"
                 >
-                  <component :is="getEntityTypeIcon(activity.target.type)" class="w-3 h-3" />
+                  <component
+                    :is="getEntityTypeIcon(activity.target.type)"
+                    class="w-3 h-3"
+                  />
                   {{ formatEntityTypeLabel(activity.target.type) }}: {{ activity.target.currentName }}
                   <span
                     v-if="activity.target.snapshotName !== activity.target.currentName"
@@ -187,9 +284,15 @@
                     :class="{ 'pointer-events-none': !entity.link }"
                     :title="getNameDiffTooltip(entity)"
                   >
-                    <component :is="getEntityTypeIcon(entity.type)" class="w-3 h-3" />
+                    <component
+                      :is="getEntityTypeIcon(entity.type)"
+                      class="w-3 h-3"
+                    />
                     {{ formatEntityTypeLabel(entity.type) }}: {{ entity.currentName }}
-                    <ExternalLink v-if="entity.link" class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ExternalLink
+                      v-if="entity.link"
+                      class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
                   </NuxtLink>
                 </template>
 
@@ -205,7 +308,10 @@
               </div>
 
               <!-- Other metadata badges -->
-              <div v-if="activity.metadata && hasOtherMetadata(activity.metadata)" class="flex flex-wrap gap-2 mt-2">
+              <div
+                v-if="activity.metadata && hasOtherMetadata(activity.metadata)"
+                class="flex flex-wrap gap-2 mt-2"
+              >
                 <span
                   v-for="(value, key) in getDisplayMetadata(activity.metadata)"
                   :key="key"
@@ -229,23 +335,26 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="pagination.total > 0" class="mt-6 flex items-center justify-between border-t pt-4">
+      <div
+        v-if="pagination.total > 0"
+        class="mt-6 flex items-center justify-between border-t pt-4"
+      >
         <p class="text-sm text-gray-500">
           Showing {{ pagination.offset + 1 }} to {{ Math.min(pagination.offset + activities.length, pagination.total) }}
           of {{ pagination.total }} activities
         </p>
         <div class="flex gap-2">
           <button
-            @click="prevPage"
             :disabled="pagination.offset === 0"
             class="px-3 py-1 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            @click="prevPage"
           >
             Previous
           </button>
           <button
-            @click="nextPage"
             :disabled="!pagination.hasMore"
             class="px-3 py-1 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            @click="nextPage"
           >
             Next
           </button>
@@ -354,9 +463,11 @@ async function fetchActivities() {
     activities.value = response.activities
     pagination.total = response.pagination.total
     pagination.hasMore = response.pagination.hasMore
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch activities:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -610,7 +721,8 @@ async function exportCsv() {
     a.download = `activity-log-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to export CSV:', error)
   }
 }

@@ -20,7 +20,7 @@ export const estatePlans = sqliteTable('estate_plans', {
 
   // Plan identification
   planType: text('plan_type', { enum: ['TRUST_BASED', 'WILL_BASED'] }).notNull(),
-  planName: text('plan_name'),  // e.g., "Christensen Legacy Family Trust"
+  planName: text('plan_name'), // e.g., "Christensen Legacy Family Trust"
 
   // Version tracking
   currentVersion: integer('current_version').notNull().default(1),
@@ -28,13 +28,13 @@ export const estatePlans = sqliteTable('estate_plans', {
   // Status lifecycle - designed for full administration
   status: text('status', {
     enum: [
-      'DRAFT',           // Being created
-      'ACTIVE',          // Signed and in effect
-      'AMENDED',         // Has been amended (current version > 1)
-      'INCAPACITATED',   // Grantor incapacitated, successor trustee acting
-      'ADMINISTERED',    // Death occurred, in administration
-      'DISTRIBUTED',     // Assets distributed, pending close
-      'CLOSED'           // Fully administered and closed
+      'DRAFT', // Being created
+      'ACTIVE', // Signed and in effect
+      'AMENDED', // Has been amended (current version > 1)
+      'INCAPACITATED', // Grantor incapacitated, successor trustee acting
+      'ADMINISTERED', // Death occurred, in administration
+      'DISTRIBUTED', // Assets distributed, pending close
+      'CLOSED' // Fully administered and closed
     ]
   }).notNull().default('DRAFT'),
 
@@ -49,7 +49,7 @@ export const estatePlans = sqliteTable('estate_plans', {
 
   // External system references
   wealthCounselClientId: text('wealthcounsel_client_id'),
-  importMetadata: text('import_metadata'),  // JSON with source info
+  importMetadata: text('import_metadata'), // JSON with source info
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
@@ -67,18 +67,18 @@ export const planVersions = sqliteTable('plan_versions', {
     enum: ['CREATION', 'AMENDMENT', 'RESTATEMENT', 'CORRECTION', 'ADMIN_UPDATE']
   }).notNull(),
   changeDescription: text('change_description'),
-  changeSummary: text('change_summary'),  // Brief description of what changed
+  changeSummary: text('change_summary'), // Brief description of what changed
 
   // Effective date
   effectiveDate: integer('effective_date', { mode: 'timestamp' }),
 
   // Snapshot of key data at this version (for historical accuracy)
-  roleSnapshot: text('role_snapshot'),  // JSON array of roles at this version
+  roleSnapshot: text('role_snapshot'), // JSON array of roles at this version
 
   // Raw source data (preserves original import)
   sourceType: text('source_type', { enum: ['WEALTHCOUNSEL', 'MANUAL', 'OTHER'] }),
-  sourceXml: text('source_xml'),     // Original XML if from WealthCounsel
-  sourceData: text('source_data'),   // Parsed JSON of all fields
+  sourceXml: text('source_xml'), // Original XML if from WealthCounsel
+  sourceData: text('source_data'), // Parsed JSON of all fields
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   createdBy: text('created_by').references(() => users.id)
@@ -99,9 +99,9 @@ export const trusts = sqliteTable('trusts', {
       'SPECIAL_NEEDS',
       'CHARITABLE_REMAINDER',
       'CHARITABLE_LEAD',
-      'ILIT',           // Irrevocable Life Insurance Trust
-      'GRAT',           // Grantor Retained Annuity Trust
-      'QPRT',           // Qualified Personal Residence Trust
+      'ILIT', // Irrevocable Life Insurance Trust
+      'GRAT', // Grantor Retained Annuity Trust
+      'QPRT', // Qualified Personal Residence Trust
       'DYNASTY',
       'OTHER'
     ]
@@ -110,20 +110,20 @@ export const trusts = sqliteTable('trusts', {
   // Structure
   isJoint: integer('is_joint', { mode: 'boolean' }).default(false),
   isRevocable: integer('is_revocable', { mode: 'boolean' }).default(true),
-  jurisdiction: text('jurisdiction'),  // State
+  jurisdiction: text('jurisdiction'), // State
 
   // Key dates
   formationDate: integer('formation_date', { mode: 'timestamp' }),
   fundingDate: integer('funding_date', { mode: 'timestamp' }),
 
   // Administration-related
-  pourOverWillId: text('pour_over_will_id'),  // Forward reference to wills.id
+  pourOverWillId: text('pour_over_will_id'), // Forward reference to wills.id
 
   // External references
   wealthCounselTrustId: text('wealthcounsel_trust_id'),
 
   // Extended data from WealthCounsel (trust-specific settings)
-  trustSettings: text('trust_settings'),  // JSON for MC_ prefixed options
+  trustSettings: text('trust_settings'), // JSON for MC_ prefixed options
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
@@ -174,18 +174,18 @@ export const ancillaryDocuments = sqliteTable('ancillary_documents', {
   // Document type
   documentType: text('document_type', {
     enum: [
-      'FINANCIAL_POA',           // Durable Financial Power of Attorney
-      'HEALTHCARE_POA',          // Healthcare Power of Attorney / Healthcare Proxy
-      'ADVANCE_DIRECTIVE',       // Living Will / Advance Directive
-      'HIPAA_AUTHORIZATION',     // HIPAA Authorization
-      'NOMINATION_OF_GUARDIAN',  // Nomination of Guardian (for self if incapacitated)
+      'FINANCIAL_POA', // Durable Financial Power of Attorney
+      'HEALTHCARE_POA', // Healthcare Power of Attorney / Healthcare Proxy
+      'ADVANCE_DIRECTIVE', // Living Will / Advance Directive
+      'HIPAA_AUTHORIZATION', // HIPAA Authorization
+      'NOMINATION_OF_GUARDIAN', // Nomination of Guardian (for self if incapacitated)
       'DECLARATION_OF_GUARDIAN', // Declaration of Guardian for minor children
       'OTHER'
     ]
   }).notNull(),
 
   // Document details
-  title: text('title'),  // Optional custom title
+  title: text('title'), // Optional custom title
   executionDate: integer('execution_date', { mode: 'timestamp' }),
   jurisdiction: text('jurisdiction'),
 
@@ -223,7 +223,7 @@ export const planRoles = sqliteTable('plan_roles', {
   ancillaryDocumentId: text('ancillary_document_id').references(() => ancillaryDocuments.id),
 
   // Snapshot of person data at time of assignment (for historical accuracy)
-  personSnapshot: text('person_snapshot'),  // JSON: name, address, etc.
+  personSnapshot: text('person_snapshot'), // JSON: name, address, etc.
 
   // Role classification
   roleCategory: text('role_category', {
@@ -263,20 +263,20 @@ export const planRoles = sqliteTable('plan_roles', {
 
   // Ordering (for successors)
   isPrimary: integer('is_primary', { mode: 'boolean' }).default(false),
-  ordinal: integer('ordinal').default(0),  // 1st successor, 2nd successor, etc.
+  ordinal: integer('ordinal').default(0), // 1st successor, 2nd successor, etc.
 
   // Beneficiary-specific fields
-  sharePercentage: integer('share_percentage'),  // 0-100
+  sharePercentage: integer('share_percentage'), // 0-100
   shareType: text('share_type', {
     enum: ['PERCENTAGE', 'SPECIFIC_AMOUNT', 'SPECIFIC_PROPERTY', 'REMAINDER', 'PER_STIRPES', 'PER_CAPITA']
   }),
-  shareAmount: integer('share_amount'),  // In cents, for SPECIFIC_AMOUNT
-  shareDescription: text('share_description'),  // For SPECIFIC_PROPERTY
-  conditions: text('conditions'),  // e.g., "upon reaching age 25"
+  shareAmount: integer('share_amount'), // In cents, for SPECIFIC_AMOUNT
+  shareDescription: text('share_description'), // For SPECIFIC_PROPERTY
+  conditions: text('conditions'), // e.g., "upon reaching age 25"
 
   // Which trust/subtrust (for plans with multiple trusts)
   trustId: text('trust_id').references(() => trusts.id),
-  subtrustName: text('subtrust_name'),  // e.g., "Family Trust", "Marital Trust"
+  subtrustName: text('subtrust_name'), // e.g., "Family Trust", "Marital Trust"
 
   // Status
   status: text('status', {
@@ -327,12 +327,12 @@ export const planEvents = sqliteTable('plan_events', {
   notes: text('notes'),
 
   // Related entities
-  personId: text('person_id').references(() => people.id),  // Person involved
-  roleId: text('role_id').references(() => planRoles.id),   // Role affected
+  personId: text('person_id').references(() => people.id), // Person involved
+  roleId: text('role_id').references(() => planRoles.id), // Role affected
   matterId: text('matter_id').references(() => matters.id), // Related matter
 
   // For distributions
-  distributionAmount: integer('distribution_amount'),  // In cents
+  distributionAmount: integer('distribution_amount'), // In cents
   distributionDescription: text('distribution_description'),
 
   // Metadata

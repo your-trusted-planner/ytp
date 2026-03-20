@@ -3,7 +3,7 @@ import { isDatabaseAvailable } from '../../../db'
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const matterId = getRouterParam(event, 'id')
   if (!matterId) {
     throw createError({
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (!isDatabaseAvailable()) {
     return { services: [] } // Mock response
   }
-  
+
   const { useDrizzle, schema } = await import('../../../db')
   const db = useDrizzle()
 
@@ -43,5 +43,3 @@ export default defineEventHandler(async (event) => {
 
   return { services }
 })
-
-

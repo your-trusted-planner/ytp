@@ -97,13 +97,13 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    invoices: invoices.map(inv => {
+    invoices: invoices.map((inv) => {
       const clientName = inv.clientFullName ||
         `${inv.clientFirstName || ''} ${inv.clientLastName || ''}`.trim() ||
         'Unknown'
-      const daysPastDue = inv.dueDate
-        ? Math.floor((now.getTime() - new Date(inv.dueDate).getTime()) / (24 * 60 * 60 * 1000))
-        : 0
+      const daysPastDue = inv.dueDate ?
+          Math.floor((now.getTime() - new Date(inv.dueDate).getTime()) / (24 * 60 * 60 * 1000)) :
+        0
 
       return {
         ...inv,

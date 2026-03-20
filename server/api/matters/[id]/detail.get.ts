@@ -41,13 +41,13 @@ export default defineEventHandler(async (event) => {
     fetchClientInfo(db, schema, matter.clientId),
 
     // Lead attorney info
-    matter.leadAttorneyId
-      ? db.select({
+    matter.leadAttorneyId ?
+        db.select({
           firstName: schema.users.firstName,
           lastName: schema.users.lastName,
           email: schema.users.email
-        }).from(schema.users).where(eq(schema.users.id, matter.leadAttorneyId)).get()
-      : null,
+        }).from(schema.users).where(eq(schema.users.id, matter.leadAttorneyId)).get() :
+      null,
 
     // Engagement journey info
     fetchEngagementInfo(db, schema, matter.engagementJourneyId),
@@ -114,30 +114,36 @@ export default defineEventHandler(async (event) => {
       google_drive_folder_url: matter.googleDriveFolderUrl,
       google_drive_sync_status: matter.googleDriveSyncStatus,
       google_drive_sync_error: matter.googleDriveSyncError,
-      google_drive_last_sync_at: matter.googleDriveLastSyncAt instanceof Date
-        ? Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000)
-        : matter.googleDriveLastSyncAt,
+      google_drive_last_sync_at: matter.googleDriveLastSyncAt instanceof Date ?
+          Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000) :
+        matter.googleDriveLastSyncAt,
       google_drive_subfolder_ids: matter.googleDriveSubfolderIds,
       import_metadata: matter.importMetadata || null,
       created_at: matter.createdAt instanceof Date ? matter.createdAt.getTime() : matter.createdAt,
       updated_at: matter.updatedAt instanceof Date ? matter.updatedAt.getTime() : matter.updatedAt,
       // Inline client info
-      ...(clientInfo ? {
-        client_first_name: clientInfo.client_first_name,
-        client_last_name: clientInfo.client_last_name,
-        client_email: clientInfo.client_email,
-        client_table_id: clientInfo.client_table_id
-      } : {}),
+      ...(clientInfo ?
+          {
+            client_first_name: clientInfo.client_first_name,
+            client_last_name: clientInfo.client_last_name,
+            client_email: clientInfo.client_email,
+            client_table_id: clientInfo.client_table_id
+          } :
+          {}),
       // Inline attorney info
-      ...(attorneyInfo ? {
-        lead_attorney_first_name: attorneyInfo.firstName,
-        lead_attorney_last_name: attorneyInfo.lastName,
-        lead_attorney_email: attorneyInfo.email
-      } : {}),
+      ...(attorneyInfo ?
+          {
+            lead_attorney_first_name: attorneyInfo.firstName,
+            lead_attorney_last_name: attorneyInfo.lastName,
+            lead_attorney_email: attorneyInfo.email
+          } :
+          {}),
       // Inline engagement journey info
-      ...(engagementInfo ? {
-        engagement_journey_name: engagementInfo.name
-      } : {})
+      ...(engagementInfo ?
+          {
+            engagement_journey_name: engagementInfo.name
+          } :
+          {})
     },
     services,
     journeys: enrichedJourneys,
@@ -217,7 +223,8 @@ async function fetchTrustBalance(resolvedClientId: string | null): Promise<numbe
     const { getClientTrustBalances } = await import('../../../utils/trust-ledger')
     const balances = await getClientTrustBalances(resolvedClientId)
     return balances.reduce((sum, b) => sum + b.balance, 0)
-  } catch {
+  }
+  catch {
     // Trust ledger may not have any entries for this client
     return 0
   }
@@ -371,39 +378,39 @@ async function enrichMatterJourneys(db: any, schema: any, journeys: any[]) {
 
   // Batch fetch all related data in parallel
   const [journeyInfos, stepInfos, catalogInfos, clientInfos] = await Promise.all([
-    journeyIds.length > 0
-      ? db.select({
+    journeyIds.length > 0 ?
+        db.select({
           id: schema.journeys.id,
           name: schema.journeys.name,
           description: schema.journeys.description,
           estimatedDurationDays: schema.journeys.estimatedDurationDays
-        }).from(schema.journeys).where(inArray(schema.journeys.id, journeyIds)).all()
-      : [],
+        }).from(schema.journeys).where(inArray(schema.journeys.id, journeyIds)).all() :
+        [],
 
-    stepIds.length > 0
-      ? db.select({
+    stepIds.length > 0 ?
+        db.select({
           id: schema.journeySteps.id,
           name: schema.journeySteps.name,
           stepType: schema.journeySteps.stepType
-        }).from(schema.journeySteps).where(inArray(schema.journeySteps.id, stepIds)).all()
-      : [],
+        }).from(schema.journeySteps).where(inArray(schema.journeySteps.id, stepIds)).all() :
+        [],
 
-    catalogIds.length > 0
-      ? db.select({
+    catalogIds.length > 0 ?
+        db.select({
           id: schema.serviceCatalog.id,
           name: schema.serviceCatalog.name,
           category: schema.serviceCatalog.category
-        }).from(schema.serviceCatalog).where(inArray(schema.serviceCatalog.id, catalogIds)).all()
-      : [],
+        }).from(schema.serviceCatalog).where(inArray(schema.serviceCatalog.id, catalogIds)).all() :
+        [],
 
-    clientIds.length > 0
-      ? db.select({
+    clientIds.length > 0 ?
+        db.select({
           id: schema.users.id,
           firstName: schema.users.firstName,
           lastName: schema.users.lastName,
           email: schema.users.email
-        }).from(schema.users).where(inArray(schema.users.id, clientIds)).all()
-      : []
+        }).from(schema.users).where(inArray(schema.users.id, clientIds)).all() :
+        []
   ])
 
   // Build lookup maps
@@ -412,7 +419,7 @@ async function enrichMatterJourneys(db: any, schema: any, journeys: any[]) {
   const catalogMap = new Map(catalogInfos.map((c: any) => [c.id, c]))
   const clientMap = new Map(clientInfos.map((c: any) => [c.id, c]))
 
-  return journeys.map(cj => {
+  return journeys.map((cj) => {
     const journey = cj.journeyId ? journeyMap.get(cj.journeyId) : null
     const currentStep = cj.currentStepId ? stepMap.get(cj.currentStepId) : null
     const service = cj.catalogId ? catalogMap.get(cj.catalogId) : null

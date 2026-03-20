@@ -262,9 +262,11 @@ export async function createFolder(
   // Set parent folder - use provided parentId, or root folder, or Shared Drive root
   if (parentId) {
     metadata.parents = [parentId]
-  } else if (driveConfig.rootFolderId) {
+  }
+  else if (driveConfig.rootFolderId) {
     metadata.parents = [driveConfig.rootFolderId]
-  } else if (driveConfig.sharedDriveId) {
+  }
+  else if (driveConfig.sharedDriveId) {
     metadata.parents = [driveConfig.sharedDriveId]
   }
 
@@ -293,7 +295,7 @@ export async function createFolder(
     `${GOOGLE_DRIVE_API}/files/${folder.id}?fields=id,name,webViewLink&supportsAllDrives=true`,
     {
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       }
     }
   )
@@ -323,7 +325,7 @@ export async function findFolder(
   )
 
   const parent = parentId || driveConfig.rootFolderId || driveConfig.sharedDriveId
-  const query = `name='${name.replace(/'/g, "\\'")}' and '${parent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  const query = `name='${name.replace(/'/g, '\\\'')}' and '${parent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
 
   const params = new URLSearchParams({
     q: query,
@@ -336,7 +338,7 @@ export async function findFolder(
 
   const response = await fetch(`${GOOGLE_DRIVE_API}/files?${params}`, {
     headers: {
-      'Authorization': `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`
     }
   })
 
@@ -525,7 +527,7 @@ export async function deleteFile(
   const response = await fetch(`${GOOGLE_DRIVE_API}/files/${fileId}?${params}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`
     }
   })
 
@@ -558,7 +560,7 @@ export async function getFile(
 
   const response = await fetch(`${GOOGLE_DRIVE_API}/files/${fileId}?${params}`, {
     headers: {
-      'Authorization': `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`
     }
   })
 
@@ -616,7 +618,7 @@ export async function createMatterFolder(
   matterTitle: string,
   matterNumber: string,
   clientFolderId: string
-): Promise<{ folder: DriveFolder; subfolders: Record<string, DriveFolder> }> {
+): Promise<{ folder: DriveFolder, subfolders: Record<string, DriveFolder> }> {
   const config = await getDriveConfig()
   if (!config || !config.isEnabled) {
     throw new Error('Google Drive integration is not enabled')
@@ -700,9 +702,11 @@ export async function syncDocumentToDrive(documentId: string): Promise<SyncResul
     let targetFolderId: string
     if (doc.signedPdfBlobKey && config.syncSignedDocuments) {
       targetFolderId = subfolderIds['Signed Documents']
-    } else if (config.syncGeneratedDocuments) {
+    }
+    else if (config.syncGeneratedDocuments) {
       targetFolderId = subfolderIds['Generated Documents']
-    } else {
+    }
+    else {
       return { success: false, error: 'Document sync not enabled for this type' }
     }
 
@@ -723,15 +727,16 @@ export async function syncDocumentToDrive(documentId: string): Promise<SyncResul
 
     const content = await blobData.arrayBuffer()
     const fileName = blobKey.split('/').pop() || `${doc.title}.docx`
-    const mimeType = doc.signedPdfBlobKey
-      ? 'application/pdf'
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    const mimeType = doc.signedPdfBlobKey ?
+      'application/pdf' :
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
     // Upload to Drive (update if exists, create if not)
     let driveFile: DriveFile
     if (doc.googleDriveFileId) {
       driveFile = await updateFile(doc.googleDriveFileId, content, mimeType, config)
-    } else {
+    }
+    else {
       driveFile = await uploadFile(fileName, content, mimeType, targetFolderId, config)
     }
 
@@ -752,7 +757,8 @@ export async function syncDocumentToDrive(documentId: string): Promise<SyncResul
       fileId: driveFile.id,
       fileUrl: driveFile.webViewLink
     }
-  } catch (error) {
+  }
+  catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
     // Update document with error status
@@ -838,7 +844,8 @@ export async function syncUploadToDrive(uploadId: string): Promise<SyncResult> {
     let driveFile: DriveFile
     if (upload.googleDriveFileId) {
       driveFile = await updateFile(upload.googleDriveFileId, content, upload.mimeType, config)
-    } else {
+    }
+    else {
       driveFile = await uploadFile(upload.originalFileName, content, upload.mimeType, targetFolderId, config)
     }
 
@@ -859,7 +866,8 @@ export async function syncUploadToDrive(uploadId: string): Promise<SyncResult> {
       fileId: driveFile.id,
       fileUrl: driveFile.webViewLink
     }
-  } catch (error) {
+  }
+  catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
     // Update upload with error status
@@ -886,7 +894,7 @@ export async function listAccessibleSharedDrives(config: {
   serviceAccountEmail: string
   serviceAccountPrivateKey: string
   impersonateEmail?: string | null
-}): Promise<{ success: boolean; drives?: Array<{ id: string; name: string }>; error?: string }> {
+}): Promise<{ success: boolean, drives?: Array<{ id: string, name: string }>, error?: string }> {
   try {
     const accessToken = await getAccessToken(
       config.serviceAccountEmail,
@@ -903,7 +911,7 @@ export async function listAccessibleSharedDrives(config: {
       `${GOOGLE_DRIVE_API}/drives?${params}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       }
     )
@@ -915,7 +923,8 @@ export async function listAccessibleSharedDrives(config: {
 
     const data = await response.json()
     return { success: true, drives: data.drives || [] }
-  } catch (error) {
+  }
+  catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -931,7 +940,7 @@ export async function testDriveConnection(config: {
   serviceAccountPrivateKey: string
   sharedDriveId: string
   impersonateEmail?: string | null
-}): Promise<{ success: boolean; error?: string; driveName?: string; accessibleDrives?: Array<{ id: string; name: string }> }> {
+}): Promise<{ success: boolean, error?: string, driveName?: string, accessibleDrives?: Array<{ id: string, name: string }> }> {
   try {
     const accessToken = await getAccessToken(
       config.serviceAccountEmail,
@@ -949,12 +958,12 @@ export async function testDriveConnection(config: {
       `${GOOGLE_DRIVE_API}/drives?${listParams}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       }
     )
 
-    let accessibleDrives: Array<{ id: string; name: string }> = []
+    let accessibleDrives: Array<{ id: string, name: string }> = []
     if (listResponse.ok) {
       const listData = await listResponse.json()
       accessibleDrives = listData.drives || []
@@ -969,7 +978,7 @@ export async function testDriveConnection(config: {
       `${GOOGLE_DRIVE_API}/drives/${config.sharedDriveId}?${params}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       }
     )
@@ -981,11 +990,12 @@ export async function testDriveConnection(config: {
       let diagnosticMessage = `Failed to access Shared Drive: ${error}`
       if (accessibleDrives.length > 0) {
         diagnosticMessage += `\n\nThe service account CAN access these ${accessibleDrives.length} shared drive(s):\n`
-        accessibleDrives.forEach(d => {
+        accessibleDrives.forEach((d) => {
           diagnosticMessage += `  - "${d.name}" (ID: ${d.id})\n`
         })
         diagnosticMessage += `\nCheck if the Shared Drive ID "${config.sharedDriveId}" matches one of these.`
-      } else {
+      }
+      else {
         diagnosticMessage += `\n\nThe service account cannot access ANY shared drives. Please verify:\n`
         diagnosticMessage += `  1. The service account is added as a member (not just shared with) of the Shared Drive\n`
         diagnosticMessage += `  2. The service account has "Content Manager" or higher role\n`
@@ -997,7 +1007,8 @@ export async function testDriveConnection(config: {
 
     const drive = await response.json()
     return { success: true, driveName: drive.name, accessibleDrives }
-  } catch (error) {
+  }
+  catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

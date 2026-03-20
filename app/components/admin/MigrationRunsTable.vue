@@ -1,18 +1,31 @@
 <template>
   <div>
     <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading migration history...</p>
+    <div
+      v-if="loading"
+      class="text-center py-12"
+    >
+      <p class="text-gray-500">
+        Loading migration history...
+      </p>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="runs.length === 0" class="text-center py-12">
+    <div
+      v-else-if="runs.length === 0"
+      class="text-center py-12"
+    >
       <FileText class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-      <p class="text-gray-500">No previous migrations</p>
+      <p class="text-gray-500">
+        No previous migrations
+      </p>
     </div>
 
     <!-- Runs Table -->
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -43,7 +56,10 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <template v-for="run in runs" :key="run.id">
+          <template
+            v-for="run in runs"
+            :key="run.id"
+          >
             <tr
               class="hover:bg-gray-50 cursor-pointer"
               @click="toggleExpanded(run.id)"
@@ -52,7 +68,10 @@
                 {{ formatDate(run.createdAt) }}
               </td>
               <td class="px-4 py-4 whitespace-nowrap text-sm">
-                <UiBadge :variant="run.runType === 'FULL' ? 'info' : 'default'" size="sm">
+                <UiBadge
+                  :variant="run.runType === 'FULL' ? 'info' : 'default'"
+                  size="sm"
+                >
                   {{ run.runType }}
                 </UiBadge>
               </td>
@@ -63,7 +82,10 @@
                 <div class="flex items-center gap-2">
                   <span class="text-green-600">+{{ run.createdRecords }}</span>
                   <span class="text-blue-600">~{{ run.updatedRecords }}</span>
-                  <span v-if="run.skippedRecords > 0" class="text-gray-400">-{{ run.skippedRecords }}</span>
+                  <span
+                    v-if="run.skippedRecords > 0"
+                    class="text-gray-400"
+                  >-{{ run.skippedRecords }}</span>
                   <button
                     v-if="run.errorCount > 0"
                     class="text-red-600 hover:text-red-800 inline-flex items-center gap-0.5"
@@ -79,10 +101,15 @@
                 <template v-if="run.totalEntities">
                   {{ run.processedEntities }}/{{ run.totalEntities }}
                 </template>
-                <template v-else>-</template>
+                <template v-else>
+                  -
+                </template>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
-                <UiBadge :variant="statusVariant(run.status)" size="sm">
+                <UiBadge
+                  :variant="statusVariant(run.status)"
+                  size="sm"
+                >
                   {{ run.status }}
                 </UiBadge>
               </td>
@@ -90,20 +117,23 @@
                 {{ formatDuration(run) }}
               </td>
               <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
-                <div class="flex items-center justify-end gap-2" @click.stop>
+                <div
+                  class="flex items-center justify-end gap-2"
+                  @click.stop
+                >
                   <button
                     v-if="run.errorCount > 0"
-                    @click="$emit('view-errors', run)"
                     class="text-red-600 hover:text-red-800"
                     title="View errors"
+                    @click="$emit('view-errors', run)"
                   >
                     <AlertCircle class="w-4 h-4" />
                   </button>
                   <button
                     v-if="run.status === 'PAUSED'"
-                    @click="$emit('resume', run)"
                     class="text-blue-600 hover:text-blue-800"
                     title="Resume"
+                    @click="$emit('resume', run)"
                   >
                     <Play class="w-4 h-4" />
                   </button>
@@ -116,49 +146,93 @@
             </tr>
             <!-- Expanded Detail Row -->
             <tr v-if="expandedRunId === run.id">
-              <td colspan="8" class="px-4 py-4 bg-gray-50 border-b">
+              <td
+                colspan="8"
+                class="px-4 py-4 bg-gray-50 border-b"
+              >
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Processed</p>
-                    <p class="font-medium">{{ run.processedEntities ?? 0 }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Processed
+                    </p>
+                    <p class="font-medium">
+                      {{ run.processedEntities ?? 0 }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Created</p>
-                    <p class="font-medium text-green-600">{{ run.createdRecords }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Created
+                    </p>
+                    <p class="font-medium text-green-600">
+                      {{ run.createdRecords }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Updated</p>
-                    <p class="font-medium text-blue-600">{{ run.updatedRecords }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Updated
+                    </p>
+                    <p class="font-medium text-blue-600">
+                      {{ run.updatedRecords }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Skipped</p>
-                    <p class="font-medium text-gray-500">{{ run.skippedRecords ?? 0 }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Skipped
+                    </p>
+                    <p class="font-medium text-gray-500">
+                      {{ run.skippedRecords ?? 0 }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Duplicates Linked</p>
-                    <p class="font-medium text-amber-600">{{ run.duplicatesLinked ?? 0 }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Duplicates Linked
+                    </p>
+                    <p class="font-medium text-amber-600">
+                      {{ run.duplicatesLinked ?? 0 }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Errors</p>
-                    <p class="font-medium" :class="run.errorCount > 0 ? 'text-red-600' : 'text-gray-500'">
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Errors
+                    </p>
+                    <p
+                      class="font-medium"
+                      :class="run.errorCount > 0 ? 'text-red-600' : 'text-gray-500'"
+                    >
                       {{ run.errorCount }}
                     </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Started</p>
-                    <p class="font-medium">{{ run.startedAt ? formatDate(run.startedAt) : '-' }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Started
+                    </p>
+                    <p class="font-medium">
+                      {{ run.startedAt ? formatDate(run.startedAt) : '-' }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Completed</p>
-                    <p class="font-medium">{{ run.completedAt ? formatDate(run.completedAt) : '-' }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Completed
+                    </p>
+                    <p class="font-medium">
+                      {{ run.completedAt ? formatDate(run.completedAt) : '-' }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Duration</p>
-                    <p class="font-medium">{{ formatDuration(run) }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Duration
+                    </p>
+                    <p class="font-medium">
+                      {{ formatDuration(run) }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-gray-500 text-xs uppercase mb-1">Entity Types</p>
-                    <p class="font-medium">{{ run.entityTypes.map(t => entityFullLabels[t] || t).join(', ') }}</p>
+                    <p class="text-gray-500 text-xs uppercase mb-1">
+                      Entity Types
+                    </p>
+                    <p class="font-medium">
+                      {{ run.entityTypes.map(t => entityFullLabels[t] || t).join(', ') }}
+                    </p>
                   </div>
                 </div>
               </td>

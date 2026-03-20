@@ -40,7 +40,8 @@ export default defineEventHandler(async (event) => {
     if (status === 'outstanding') {
       // Outstanding = SENT, VIEWED, PARTIALLY_PAID, OVERDUE
       conditions.push(inArray(schema.invoices.status, ['SENT', 'VIEWED', 'PARTIALLY_PAID', 'OVERDUE']))
-    } else {
+    }
+    else {
       conditions.push(eq(schema.invoices.status, status as any))
     }
   }

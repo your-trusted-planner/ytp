@@ -6,7 +6,7 @@ export default defineNitroPlugin((nitroApp) => {
 
   // Auto-seed in development (idempotent - safe to run every time)
   // Use hookOnce on 'request' to ensure migrations have been applied first
-  if (process.dev) {
+  if (import.meta.dev) {
     nitroApp.hooks.hookOnce('request', async () => {
       try {
         console.log('🌱 Running idempotent seed...')
@@ -18,11 +18,11 @@ export default defineNitroPlugin((nitroApp) => {
         await seedDatabase(db, blob)
 
         console.log('✅ Seeding complete!')
-      } catch (error) {
+      }
+      catch (error) {
         console.error('⚠️ Auto-seed failed:', error)
         // Don't throw - let the server continue anyway
       }
     })
   }
 })
-

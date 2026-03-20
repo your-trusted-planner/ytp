@@ -24,24 +24,24 @@ export default defineEventHandler(async (event) => {
   const userIds = [...new Set(conversations.map(c => c.userId).filter(Boolean) as string[])]
 
   // Fetch users in batch
-  const users = userIds.length > 0
-    ? await db.select({
+  const users = userIds.length > 0 ?
+      await db.select({
         id: schema.users.id,
         first_name: schema.users.firstName,
         last_name: schema.users.lastName,
         role: schema.users.role,
         avatar: schema.users.avatar
       })
-      .from(schema.users)
-      .where(inArray(schema.users.id, userIds))
-      .all()
-    : []
+        .from(schema.users)
+        .where(inArray(schema.users.id, userIds))
+        .all() :
+      []
 
   // Create user lookup map
   const userMap = new Map(users.map(u => [u.id, u]))
 
   // Enrich messages with user info
-  const messages = conversations.map(bc => {
+  const messages = conversations.map((bc) => {
     const user = bc.userId ? userMap.get(bc.userId) : null
     return {
       ...bc,
@@ -56,6 +56,3 @@ export default defineEventHandler(async (event) => {
     messages
   }
 })
-
-
-

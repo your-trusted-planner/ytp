@@ -5,42 +5,67 @@
         <DollarSign class="w-5 h-5 mr-2 text-burgundy-600" />
         Billing Rates
       </h3>
-      <UiButton size="sm" variant="outline" @click="showEditModal = true">
+      <UiButton
+        size="sm"
+        variant="outline"
+        @click="showEditModal = true"
+      >
         <Edit class="w-4 h-4 mr-1" />
         Edit
       </UiButton>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-4">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex justify-center py-4"
+    >
+      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-burgundy-600" />
     </div>
 
     <!-- Content -->
-    <div v-else class="space-y-4">
+    <div
+      v-else
+      class="space-y-4"
+    >
       <!-- Role-Based Rates -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <div class="text-sm text-gray-600">Attorney Rate</div>
-          <div class="text-lg font-semibold" :class="rates?.attorneyRate ? 'text-gray-900' : 'text-gray-400'">
+          <div class="text-sm text-gray-600">
+            Attorney Rate
+          </div>
+          <div
+            class="text-lg font-semibold"
+            :class="rates?.attorneyRate ? 'text-gray-900' : 'text-gray-400'"
+          >
             {{ rates?.attorneyRate ? formatCurrency(rates.attorneyRate) + '/hr' : 'Not set' }}
           </div>
         </div>
         <div>
-          <div class="text-sm text-gray-600">Staff Rate</div>
-          <div class="text-lg font-semibold" :class="rates?.staffRate ? 'text-gray-900' : 'text-gray-400'">
+          <div class="text-sm text-gray-600">
+            Staff Rate
+          </div>
+          <div
+            class="text-lg font-semibold"
+            :class="rates?.staffRate ? 'text-gray-900' : 'text-gray-400'"
+          >
             {{ rates?.staffRate ? formatCurrency(rates.staffRate) + '/hr' : 'Not set' }}
           </div>
         </div>
       </div>
 
-      <p v-if="!rates?.attorneyRate && !rates?.staffRate" class="text-xs text-gray-500">
+      <p
+        v-if="!rates?.attorneyRate && !rates?.staffRate"
+        class="text-xs text-gray-500"
+      >
         Uses client or service catalog defaults
       </p>
 
       <!-- User-Specific Rates -->
       <div v-if="userRatesList.length > 0">
-        <div class="text-sm text-gray-600 mb-2">User-Specific Overrides</div>
+        <div class="text-sm text-gray-600 mb-2">
+          User-Specific Overrides
+        </div>
         <div class="space-y-2">
           <div
             v-for="userRate in userRatesList"
@@ -54,13 +79,23 @@
       </div>
 
       <!-- Notes -->
-      <div v-if="rates?.notes" class="pt-2 border-t border-gray-100">
-        <div class="text-xs text-gray-500">Notes</div>
-        <div class="text-sm text-gray-700 mt-1">{{ rates.notes }}</div>
+      <div
+        v-if="rates?.notes"
+        class="pt-2 border-t border-gray-100"
+      >
+        <div class="text-xs text-gray-500">
+          Notes
+        </div>
+        <div class="text-sm text-gray-700 mt-1">
+          {{ rates.notes }}
+        </div>
       </div>
 
       <!-- Effective Date -->
-      <div v-if="rates?.effectiveDate" class="text-xs text-gray-500">
+      <div
+        v-if="rates?.effectiveDate"
+        class="text-xs text-gray-500"
+      >
         Effective: {{ formatDate(rates.effectiveDate) }}
       </div>
     </div>
@@ -109,7 +144,7 @@ const emit = defineEmits<{
 const loading = ref(true)
 const showEditModal = ref(false)
 const rates = ref<BillingRates | null>(null)
-const users = ref<Array<{ id: string; firstName: string; lastName: string }>>([])
+const users = ref<Array<{ id: string, firstName: string, lastName: string }>>([])
 
 // Computed
 const userRatesList = computed<UserRate[]>(() => {
@@ -131,16 +166,18 @@ const userRatesList = computed<UserRate[]>(() => {
 async function fetchRates() {
   loading.value = true
   try {
-    const endpoint = props.entityType === 'client'
-      ? `/api/billing-rates/clients/${props.entityId}`
-      : `/api/billing-rates/matters/${props.entityId}`
+    const endpoint = props.entityType === 'client' ?
+      `/api/billing-rates/clients/${props.entityId}` :
+      `/api/billing-rates/matters/${props.entityId}`
 
     const response = await $fetch<BillingRates>(endpoint)
     rates.value = response
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch billing rates:', error)
     rates.value = null
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -148,11 +185,12 @@ async function fetchRates() {
 // Fetch users (for displaying names)
 async function fetchUsers() {
   try {
-    const response = await $fetch<{ users: Array<{ id: string; firstName: string; lastName: string }> }>('/api/users', {
+    const response = await $fetch<{ users: Array<{ id: string, firstName: string, lastName: string }> }>('/api/users', {
       query: { role: 'LAWYER,ADMIN,STAFF' }
     })
     users.value = response.users || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch users:', error)
     users.value = []
   }

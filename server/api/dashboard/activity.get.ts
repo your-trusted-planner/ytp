@@ -6,9 +6,9 @@ import type { EntityType, EntityRef } from '../../utils/activity-logger'
 interface ResolvedEntityRef {
   type: EntityType
   id: string
-  snapshotName: string    // Name at log time
-  currentName: string     // Current name (may differ)
-  link: string | null     // URL path to entity
+  snapshotName: string // Name at log time
+  currentName: string // Current name (may differ)
+  link: string | null // URL path to entity
 }
 
 export default defineEventHandler(async (event) => {
@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
   let currentNames: Map<string, string> | undefined
   if (resolveNames) {
     // Collect all entity refs that need resolution
-    const entityRefs: Array<{ type: EntityType; id: string }> = []
+    const entityRefs: Array<{ type: EntityType, id: string }> = []
 
     for (const activity of activities) {
       const metadata = activity.metadata ? JSON.parse(activity.metadata) : null
@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Transform activities for response
-  const transformedActivities = activities.map(activity => {
+  const transformedActivities = activities.map((activity) => {
     const metadata = activity.metadata ? JSON.parse(activity.metadata) : null
 
     // Build resolved entity references if resolveNames is true
@@ -160,7 +160,8 @@ export default defineEventHandler(async (event) => {
           currentName,
           link: getEntityLink(target.type, target.id)
         }
-      } else if (activity.targetType && activity.targetId) {
+      }
+      else if (activity.targetType && activity.targetId) {
         // Handle legacy targetType/targetId
         const type = activity.targetType as EntityType
         const id = activity.targetId
@@ -204,11 +205,13 @@ export default defineEventHandler(async (event) => {
       country: activity.country,
       city: activity.city,
       createdAt: activity.createdAt instanceof Date ? activity.createdAt.toISOString() : activity.createdAt,
-      user: activity.userFirstName ? {
-        firstName: activity.userFirstName,
-        lastName: activity.userLastName,
-        email: activity.userEmail
-      } : null,
+      user: activity.userFirstName ?
+          {
+            firstName: activity.userFirstName,
+            lastName: activity.userLastName,
+            email: activity.userEmail
+          } :
+        null,
       // New structured entity references (only included when resolveNames=true)
       ...(resolveNames && resolvedTarget ? { target: resolvedTarget } : {}),
       ...(resolveNames && resolvedRelatedEntities && resolvedRelatedEntities.length > 0 ? { relatedEntities: resolvedRelatedEntities } : {})

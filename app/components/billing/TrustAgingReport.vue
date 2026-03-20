@@ -1,20 +1,32 @@
 <template>
   <UiCard>
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
-    <div v-else-if="!report || report.clients.length === 0" class="text-center py-12">
+    <div
+      v-else-if="!report || report.clients.length === 0"
+      class="text-center py-12"
+    >
       <Clock class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">No aging data</h3>
-      <p class="text-gray-500 mt-1">Client trust balances will appear here after deposits are recorded.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        No aging data
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Client trust balances will appear here after deposits are recorded.
+      </p>
     </div>
 
     <div v-else>
       <!-- Summary Header -->
       <div class="mb-6 p-4 bg-gray-50 rounded-lg">
         <div class="flex justify-between items-center mb-2">
-          <h3 class="text-lg font-medium text-gray-900">Trust Balance Aging Report</h3>
+          <h3 class="text-lg font-medium text-gray-900">
+            Trust Balance Aging Report
+          </h3>
           <span class="text-sm text-gray-500">As of {{ formatDate(report.asOf || report.asOfDate) }}</span>
         </div>
         <p class="text-sm text-gray-600">
@@ -105,7 +117,10 @@
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
                 {{ formatCurrency(getTotalsValue('days60to90')) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-amber-50" :class="getTotalsValue('over90') > 0 ? 'text-amber-600' : 'text-gray-900'">
+              <td
+                class="px-6 py-4 whitespace-nowrap text-right font-bold bg-amber-50"
+                :class="getTotalsValue('over90') > 0 ? 'text-amber-600' : 'text-gray-900'"
+              >
                 {{ formatCurrency(getTotalsValue('over90')) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">
@@ -117,11 +132,16 @@
       </div>
 
       <!-- Aging Note -->
-      <div v-if="getTotalsValue('over90') > 0" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+      <div
+        v-if="getTotalsValue('over90') > 0"
+        class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
+      >
         <div class="flex items-start gap-2">
           <AlertTriangle class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p class="text-amber-800 font-medium">Funds held over 90 days</p>
+            <p class="text-amber-800 font-medium">
+              Funds held over 90 days
+            </p>
             <p class="text-amber-700 text-sm mt-1">
               {{ formatCurrency(getTotalsValue('over90')) }} in trust funds have been held for more than 90 days.
               Consider reviewing these balances and contacting clients about refunds or applying to outstanding invoices.
@@ -246,9 +266,11 @@ async function fetchReport() {
   try {
     const response = await $fetch<{ report: AgingReport }>('/api/trust/aging')
     report.value = response.report
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch aging report:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

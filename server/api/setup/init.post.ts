@@ -16,7 +16,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: 'Database seeded successfully. Note: Migrations must be applied via wrangler.'
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Database seed error:', error)
     throw createError({
       statusCode: 500,
@@ -24,4 +25,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-

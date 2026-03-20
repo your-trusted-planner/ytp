@@ -79,7 +79,8 @@ async function verifyPreferenceToken(token: string, secret: string): Promise<str
     if (!payload.exp) return null
     if (Math.floor(Date.now() / 1000) > payload.exp) return null
     return payload.personId
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -121,7 +122,7 @@ function simulateSetConsent(
   channelId: string,
   status: ConsentStatus,
   source: ConsentSource,
-  options: { userId?: string; note?: string } = {}
+  options: { userId?: string, note?: string } = {}
 ): void {
   const key = `${personId}:${channelId}`
   const existing = existingConsents.get(key)

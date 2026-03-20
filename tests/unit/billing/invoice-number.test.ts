@@ -117,11 +117,11 @@ describe('Invoice Number Utilities', () => {
       // Structurally invalid invoice numbers should not be parseable
       // Note: parseInvoiceNumber is more lenient on sequence length than isValidInvoiceNumber
       const structurallyInvalidNumbers = [
-        'INV-26-0001',      // 2-digit year
+        'INV-26-0001', // 2-digit year
         'INVOICE-2026-0001', // Wrong prefix
-        'invalid',           // No structure
-        'INV-2026',          // Missing sequence
-        '',                  // Empty
+        'invalid', // No structure
+        'INV-2026', // Missing sequence
+        '' // Empty
       ]
 
       for (const invoiceNumber of structurallyInvalidNumbers) {

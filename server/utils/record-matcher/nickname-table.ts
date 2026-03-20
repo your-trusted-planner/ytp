@@ -154,7 +154,7 @@ const CANONICAL: Record<string, string> = {
   // Pamela
   pam: 'pamela', pamela: 'pamela',
   // Kimberly
-  kim: 'kimberly', kimberly: 'kimberly',
+  kim: 'kimberly', kimberly: 'kimberly'
 }
 
 /**

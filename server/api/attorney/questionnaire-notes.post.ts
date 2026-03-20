@@ -4,7 +4,7 @@ import { requireRole } from '../../utils/rbac'
 
 const notesSchema = z.object({
   responseId: z.string(),
-  notes: z.string(),
+  notes: z.string()
 })
 
 export default defineEventHandler(async (event) => {
@@ -40,4 +40,3 @@ export default defineEventHandler(async (event) => {
     message: 'Attorney notes updated'
   }
 })
-

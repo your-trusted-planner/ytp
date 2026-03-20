@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
   // Convert to snake_case for API compatibility
   return {
-    actionItems: actionItems.map((item) => ({
+    actionItems: actionItems.map(item => ({
       id: item.id,
       step_id: item.stepId,
       client_journey_id: item.clientJourneyId,

@@ -117,7 +117,8 @@ export default defineEventHandler(async (event) => {
     const result = fetchResults[i]
     if (result.status === 'fulfilled') {
       googleEventsByEmail.set(result.value.email, result.value.events)
-    } else {
+    }
+    else {
       console.error(`Failed to fetch Google Calendar events for ${uniqueEmails[i]}:`, result.reason?.message || result.reason)
     }
   }
@@ -147,7 +148,8 @@ export default defineEventHandler(async (event) => {
         if (!existing.staffAttendees.some(a => a.userId === attendee.userId)) {
           existing.staffAttendees.push(attendee)
         }
-      } else {
+      }
+      else {
         eventMap.set(eventId, {
           id: eventId,
           source: 'google',
@@ -178,7 +180,7 @@ export default defineEventHandler(async (event) => {
   // Filter appointments by time range in JS (since we're comparing Date objects)
   const rangeStart = new Date(timeMin)
   const rangeEnd = new Date(timeMax)
-  const relevantAppointments = ytpAppointments.filter(a => {
+  const relevantAppointments = ytpAppointments.filter((a) => {
     const start = a.startTime instanceof Date ? a.startTime : new Date(a.startTime as any)
     return start >= rangeStart && start <= rangeEnd && a.status !== 'CANCELLED'
   })
@@ -196,7 +198,8 @@ export default defineEventHandler(async (event) => {
       existing.appointmentTypeId = appt.appointmentTypeId || undefined
       existing.status = appt.status
       if (appt.matterId) existing.matterId = appt.matterId
-    } else {
+    }
+    else {
       // YTP-only appointment
       const attendees: StaffAttendee[] = []
       if (appt.attendeeIds) {
@@ -214,7 +217,8 @@ export default defineEventHandler(async (event) => {
               })
             }
           }
-        } catch {}
+        }
+        catch {}
       }
       // If no attendees parsed, try createdById
       if (attendees.length === 0 && appt.createdById) {

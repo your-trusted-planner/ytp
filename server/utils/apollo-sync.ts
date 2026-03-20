@@ -8,21 +8,21 @@
 
 import { eq, isNotNull, and } from 'drizzle-orm'
 import { useDrizzle, schema } from '../db'
-import { ApolloClient, ApolloApiError, ApolloRateLimitError } from './apollo-client'
-import { generatePermanentPreferenceToken } from './marketing-consent'
-import { setGlobalUnsubscribe } from './marketing-consent'
+import type { ApolloClient } from './apollo-client'
+import { ApolloApiError, ApolloRateLimitError } from './apollo-client'
+import { generatePermanentPreferenceToken, setGlobalUnsubscribe } from './marketing-consent'
 
 export interface SyncResult {
   created: number
   updated: number
   skipped: number
-  errors: Array<{ personId: string; error: string }>
+  errors: Array<{ personId: string, error: string }>
 }
 
 export interface OptOutSyncResult {
   checked: number
   newUnsubscribes: number
-  errors: Array<{ personId: string; error: string }>
+  errors: Array<{ personId: string, error: string }>
 }
 
 /**
@@ -71,7 +71,7 @@ export async function syncContactsToApollo(
   const fieldId = await ensurePreferenceUrlField(client)
 
   // Get people to sync
-  let people: { id: string; email: string | null; firstName: string | null; lastName: string | null; phone: string | null; apolloContactId: string | null }[]
+  let people: { id: string, email: string | null, firstName: string | null, lastName: string | null, phone: string | null, apolloContactId: string | null }[]
 
   if (options.clientsOnly) {
     people = await db.select({
@@ -85,7 +85,8 @@ export async function syncContactsToApollo(
       .from(schema.people)
       .innerJoin(schema.clients, eq(schema.clients.personId, schema.people.id))
       .where(isNotNull(schema.people.email))
-  } else {
+  }
+  else {
     people = await db.select({
       id: schema.people.id,
       email: schema.people.email,
@@ -117,7 +118,8 @@ export async function syncContactsToApollo(
         // Update existing
         await client.updateContact(person.apolloContactId, contactData)
         result.updated++
-      } else {
+      }
+      else {
         // Search by email
         const existing = await client.searchContactByEmail(person.email)
 
@@ -128,7 +130,8 @@ export async function syncContactsToApollo(
             .set({ apolloContactId: existing.id, updatedAt: new Date() })
             .where(eq(schema.people.id, person.id))
           result.updated++
-        } else {
+        }
+        else {
           // Not in Apollo - create
           const created = await client.createContact(contactData)
           await db.update(schema.people)
@@ -137,7 +140,8 @@ export async function syncContactsToApollo(
           result.created++
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       result.errors.push({
         personId: person.id,
         error: error instanceof Error ? error.message : String(error)
@@ -184,7 +188,8 @@ export async function syncOptOutsFromApollo(
         await setGlobalUnsubscribe(person.id, 'APOLLO')
         result.newUnsubscribes++
       }
-    } catch (error) {
+    }
+    catch (error) {
       result.errors.push({
         personId: person.id,
         error: error instanceof Error ? error.message : String(error)

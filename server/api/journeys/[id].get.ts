@@ -81,6 +81,3 @@ export default defineEventHandler(async (event) => {
     steps: stepsWithSnakeCase
   }
 })
-
-
-

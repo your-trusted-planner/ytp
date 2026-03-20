@@ -54,9 +54,9 @@ export default defineEventHandler(async (event) => {
     entityType: note.entityType,
     entityId: note.entityId,
     createdBy: note.createdBy,
-    creatorName: note.creatorFirstName && note.creatorLastName
-      ? `${note.creatorFirstName} ${note.creatorLastName}`
-      : 'Unknown',
+    creatorName: note.creatorFirstName && note.creatorLastName ?
+      `${note.creatorFirstName} ${note.creatorLastName}` :
+      'Unknown',
     createdAt: note.createdAt,
     updatedAt: note.updatedAt
   }))

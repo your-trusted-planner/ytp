@@ -93,7 +93,8 @@ export default defineEventHandler(async (event) => {
       templatesDeleted,
       log: log.join('\n')
     }
-  } catch (error) {
+  }
+  catch (error) {
     log.push(`\n❌ Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     throw createError({
       statusCode: 500,

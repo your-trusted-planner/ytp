@@ -12,7 +12,7 @@ const loginSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  
+
   // Validate input
   const result = loginSchema.safeParse(body)
   if (!result.success) {
@@ -21,16 +21,16 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid input'
     })
   }
-  
+
   const { email, password } = result.data
-  
+
   // Use mock database for local testing
   if (!isDatabaseAvailable()) {
     console.log('🔧 Using mock database for login')
     await initMockDb()
     const user = mockDb.users.findByEmail(email)
     console.log('🔍 Looking for user:', email, 'Found:', !!user)
-    
+
     if (!user) {
       console.log('❌ User not found in mock database')
       throw createError({
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
         message: 'Invalid credentials'
       })
     }
-    
+
     const isValid = await verifyPassword(password, user.password)
     if (!isValid) {
       throw createError({
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
         message: 'Invalid credentials'
       })
     }
-    
+
     // Create session
     await setUserSession(event, {
       user: {
@@ -58,21 +58,21 @@ export default defineEventHandler(async (event) => {
       },
       loggedInAt: new Date()
     })
-    
+
     const { password: _, ...userWithoutPassword } = user
     return { user: userWithoutPassword }
   }
-  
+
   // Real database code (when deployed to Cloudflare)
   const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
-  
+
   const user = await db
     .select()
     .from(schema.users)
     .where(eq(schema.users.email, email))
     .get()
-  
+
   if (!user) {
     console.log('[Login] User not found:', email)
     throw createError({
@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid credentials'
     })
   }
-  
+
   // Fetch person data if user has a linked personId (Belly Button Principle)
   let personData = null
   if (user.personId) {
@@ -129,9 +129,9 @@ export default defineEventHandler(async (event) => {
   })
 
   // Log successful login
-  const userName = personData?.fullName
-    || [sessionFirstName, sessionLastName].filter(Boolean).join(' ')
-    || user.email
+  const userName = personData?.fullName ||
+    [sessionFirstName, sessionLastName].filter(Boolean).join(' ') ||
+    user.email
   await logActivity({
     type: 'USER_LOGIN',
     userId: user.id,
@@ -143,4 +143,3 @@ export default defineEventHandler(async (event) => {
   const { password: _, ...userWithoutPassword } = user
   return { user: userWithoutPassword }
 })
-

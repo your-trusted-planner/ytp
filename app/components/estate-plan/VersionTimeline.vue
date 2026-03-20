@@ -1,7 +1,13 @@
 <template>
   <div class="flow-root">
-    <ul role="list" class="-mb-8">
-      <li v-for="(version, index) in sortedVersions" :key="version.id">
+    <ul
+      role="list"
+      class="-mb-8"
+    >
+      <li
+        v-for="(version, index) in sortedVersions"
+        :key="version.id"
+      >
         <div class="relative pb-8">
           <!-- Connecting line -->
           <span
@@ -38,15 +44,24 @@
                 </time>
               </div>
 
-              <p v-if="version.changeSummary" class="mt-1 text-sm text-gray-600">
+              <p
+                v-if="version.changeSummary"
+                class="mt-1 text-sm text-gray-600"
+              >
                 {{ version.changeSummary }}
               </p>
 
-              <p v-if="version.changeDescription" class="mt-1 text-sm text-gray-500">
+              <p
+                v-if="version.changeDescription"
+                class="mt-1 text-sm text-gray-500"
+              >
                 {{ version.changeDescription }}
               </p>
 
-              <p v-if="version.createdBy" class="mt-2 text-xs text-gray-400">
+              <p
+                v-if="version.createdBy"
+                class="mt-2 text-xs text-gray-400"
+              >
                 By {{ version.createdBy }}
               </p>
             </div>
@@ -56,7 +71,10 @@
     </ul>
 
     <!-- Empty state -->
-    <div v-if="versions.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-if="versions.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       <History class="w-12 h-12 mx-auto mb-3 text-gray-300" />
       <p>No version history</p>
     </div>
@@ -94,7 +112,7 @@ const changeTypeLabels: Record<string, string> = {
   ADMIN_UPDATE: 'Admin Update'
 }
 
-const changeTypeStyles: Record<string, { bg: string; icon: any }> = {
+const changeTypeStyles: Record<string, { bg: string, icon: any }> = {
   CREATION: { bg: 'bg-green-500', icon: FilePlus },
   AMENDMENT: { bg: 'bg-blue-500', icon: Edit },
   RESTATEMENT: { bg: 'bg-purple-500', icon: RefreshCw },

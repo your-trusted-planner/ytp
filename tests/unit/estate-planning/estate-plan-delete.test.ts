@@ -101,7 +101,7 @@ describe('Estate Plan Delete API', () => {
         ancillaryDocsDeleted: 0,
         matterLinksDeleted: 0,
         peopleDeleted: 3,
-        peopleUnlinked: 2  // Some couldn't be deleted
+        peopleUnlinked: 2 // Some couldn't be deleted
       }
 
       const result = DeletionSummarySchema.safeParse(summary)
@@ -168,7 +168,7 @@ describe('People Deletion Logic', () => {
       const roles = [
         { personId: 'person_1' },
         { personId: 'person_2' },
-        { personId: 'person_1' },  // Duplicate
+        { personId: 'person_1' }, // Duplicate
         { personId: 'person_3' }
       ]
 
@@ -225,7 +225,8 @@ describe('People Deletion Logic', () => {
       for (const personId of personIds) {
         if (canDeletePredicate(personId)) {
           deletedCount++
-        } else {
+        }
+        else {
           errors.push(`Could not delete person ${personId}`)
         }
       }
@@ -332,7 +333,7 @@ describe('Delete Activity Logging', () => {
         ancillaryDocsDeleted: 4,
         matterLinksDeleted: 1,
         peopleDeleted: 5,
-        peopleUnlinked: 2  // Some couldn't be deleted
+        peopleUnlinked: 2 // Some couldn't be deleted
       }
 
       const result = ActivityDetailsSchema.safeParse(details)
@@ -357,14 +358,14 @@ describe('Delete Modal UI Logic', () => {
     })
 
     it('prevents delete when confirm text does not match', () => {
-      expect(canDelete('Smith Family Trust', 'smith family trust')).toBe(false)  // Case sensitive
-      expect(canDelete('Smith Family Trust', 'Smith Family')).toBe(false)  // Partial
-      expect(canDelete('Smith Family Trust', '')).toBe(false)  // Empty
+      expect(canDelete('Smith Family Trust', 'smith family trust')).toBe(false) // Case sensitive
+      expect(canDelete('Smith Family Trust', 'Smith Family')).toBe(false) // Partial
+      expect(canDelete('Smith Family Trust', '')).toBe(false) // Empty
     })
 
     it('uses "delete" as fallback when plan name is null', () => {
       expect(canDelete(null, 'delete')).toBe(true)
-      expect(canDelete(null, 'Delete')).toBe(false)  // Case sensitive
+      expect(canDelete(null, 'Delete')).toBe(false) // Case sensitive
     })
 
     it('uses "delete" as fallback when plan name is undefined', () => {
@@ -391,7 +392,7 @@ describe('Delete Modal UI Logic', () => {
       const roles = [
         { personId: 'p1' },
         { personId: 'p2' },
-        { personId: 'p1' },  // Duplicate
+        { personId: 'p1' }, // Duplicate
         { personId: 'p3' }
       ]
 

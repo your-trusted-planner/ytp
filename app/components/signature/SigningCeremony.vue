@@ -5,29 +5,62 @@
       <!-- Identity Verification Step (Enhanced tier only) -->
       <template v-if="requiresIdentityVerification">
         <div :class="stepClass(1)">
-          <div :class="stepCircleClass(1)">1</div>
-          <p class="text-xs mt-2">Verify</p>
+          <div :class="stepCircleClass(1)">
+            1
+          </div>
+          <p class="text-xs mt-2">
+            Verify
+          </p>
         </div>
-        <div class="h-0.5 w-12 bg-slate-300" :class="{ 'bg-[#C41E3A]': currentStep > 1 }"></div>
+        <div
+          class="h-0.5 w-12 bg-slate-300"
+          :class="{ 'bg-[#C41E3A]': currentStep > 1 }"
+        />
       </template>
 
       <div :class="stepClass(reviewStep)">
-        <div :class="stepCircleClass(reviewStep)">{{ reviewStep }}</div>
-        <p class="text-xs mt-2">Review</p>
+        <div :class="stepCircleClass(reviewStep)">
+          {{ reviewStep }}
+        </div>
+        <p class="text-xs mt-2">
+          Review
+        </p>
       </div>
-      <div class="h-0.5 w-12 bg-slate-300" :class="{ 'bg-[#C41E3A]': currentStep > reviewStep }"></div>
+      <div
+        class="h-0.5 w-12 bg-slate-300"
+        :class="{ 'bg-[#C41E3A]': currentStep > reviewStep }"
+      />
       <div :class="stepClass(signStep)">
-        <div :class="stepCircleClass(signStep)">{{ signStep }}</div>
-        <p class="text-xs mt-2">Sign</p>
+        <div :class="stepCircleClass(signStep)">
+          {{ signStep }}
+        </div>
+        <p class="text-xs mt-2">
+          Sign
+        </p>
       </div>
-      <div class="h-0.5 w-12 bg-slate-300" :class="{ 'bg-[#C41E3A]': currentStep > signStep }"></div>
+      <div
+        class="h-0.5 w-12 bg-slate-300"
+        :class="{ 'bg-[#C41E3A]': currentStep > signStep }"
+      />
       <div :class="stepClass(completeStep)">
         <div :class="stepCircleClass(completeStep)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
-        <p class="text-xs mt-2">Complete</p>
+        <p class="text-xs mt-2">
+          Complete
+        </p>
       </div>
     </div>
 
@@ -44,11 +77,19 @@
     </div>
 
     <!-- Step: Review Document -->
-    <div v-if="currentStep === reviewStep" class="space-y-6">
+    <div
+      v-if="currentStep === reviewStep"
+      class="space-y-6"
+    >
       <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
-          <h3 class="text-lg font-semibold text-slate-900">{{ document.title }}</h3>
-          <p v-if="document.description" class="text-sm text-slate-600 mt-1">
+          <h3 class="text-lg font-semibold text-slate-900">
+            {{ document.title }}
+          </h3>
+          <p
+            v-if="document.description"
+            class="text-sm text-slate-600 mt-1"
+          >
             {{ document.description }}
           </p>
         </div>
@@ -63,13 +104,28 @@
       </div>
 
       <!-- Identity Verified Badge (for Enhanced tier) -->
-      <div v-if="identityVerified" class="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div
+        v-if="identityVerified"
+        class="bg-green-50 border border-green-200 rounded-lg p-4"
+      >
         <div class="flex items-start">
-          <svg class="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          <svg
+            class="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            />
           </svg>
           <div>
-            <h4 class="font-medium text-green-800">Identity Verified</h4>
+            <h4 class="font-medium text-green-800">
+              Identity Verified
+            </h4>
             <p class="text-sm text-green-700 mt-1">
               Your identity has been verified via {{ verificationMethodDisplay }}.
             </p>
@@ -80,11 +136,23 @@
       <!-- Review Acknowledgment -->
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div class="flex items-start">
-          <svg class="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            class="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
           <div>
-            <h4 class="font-medium text-amber-800">Please review carefully</h4>
+            <h4 class="font-medium text-amber-800">
+              Please review carefully
+            </h4>
             <p class="text-sm text-amber-700 mt-1">
               Read the entire document before proceeding to sign. Your electronic signature will be legally binding.
             </p>
@@ -94,8 +162,8 @@
 
       <div class="flex justify-end">
         <button
-          @click="proceedToSign"
           class="px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors"
+          @click="proceedToSign"
         >
           I've Reviewed - Proceed to Sign
         </button>
@@ -103,9 +171,14 @@
     </div>
 
     <!-- Step: Sign Document -->
-    <div v-if="currentStep === signStep" class="space-y-6">
+    <div
+      v-if="currentStep === signStep"
+      class="space-y-6"
+    >
       <div class="bg-white rounded-lg shadow-lg p-6">
-        <h3 class="text-lg font-semibold text-slate-900 mb-2">Sign Document</h3>
+        <h3 class="text-lg font-semibold text-slate-900 mb-2">
+          Sign Document
+        </h3>
         <p class="text-slate-600 mb-6">
           {{ storedSignature ? 'Choose how you want to sign this document.' : 'Please sign below using your mouse or finger (on touch devices).' }}
         </p>
@@ -117,53 +190,89 @@
               {{ signerInitials }}
             </div>
             <div>
-              <p class="font-medium text-slate-900">{{ signer.name }}</p>
-              <p class="text-sm text-slate-600">{{ signer.email }}</p>
+              <p class="font-medium text-slate-900">
+                {{ signer.name }}
+              </p>
+              <p class="text-sm text-slate-600">
+                {{ signer.email }}
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Signature Method Toggle -->
         <div class="mb-6">
-          <p class="text-sm font-medium text-slate-700 mb-3">Choose how to sign:</p>
+          <p class="text-sm font-medium text-slate-700 mb-3">
+            Choose how to sign:
+          </p>
           <div class="flex rounded-lg border border-slate-200 overflow-hidden">
             <button
               type="button"
-              @click="signatureMethod = 'draw'"
               class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
               :class="signatureMethod === 'draw'
                 ? 'bg-[#0A2540] text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50'"
+              @click="signatureMethod = 'draw'"
             >
-              <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
               </svg>
               Draw
             </button>
             <button
               type="button"
-              @click="signatureMethod = 'upload'"
               class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
               :class="signatureMethod === 'upload'
                 ? 'bg-[#0A2540] text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50'"
+              @click="signatureMethod = 'upload'"
             >
-              <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               Upload
             </button>
             <button
               v-if="storedSignature"
               type="button"
-              @click="signatureMethod = 'stored'"
               class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
               :class="signatureMethod === 'stored'
                 ? 'bg-[#0A2540] text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50'"
+              @click="signatureMethod = 'stored'"
             >
-              <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                />
               </svg>
               Saved
             </button>
@@ -171,7 +280,10 @@
         </div>
 
         <!-- Draw Signature -->
-        <div v-if="signatureMethod === 'draw'" class="mb-6">
+        <div
+          v-if="signatureMethod === 'draw'"
+          class="mb-6"
+        >
           <SignatureCanvas
             ref="signatureCanvasRef"
             :has-error="signatureError && signatureMethod === 'draw'"
@@ -182,7 +294,10 @@
         </div>
 
         <!-- Upload Signature -->
-        <div v-else-if="signatureMethod === 'upload'" class="mb-6">
+        <div
+          v-else-if="signatureMethod === 'upload'"
+          class="mb-6"
+        >
           <div
             v-if="!uploadedSignature"
             class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all"
@@ -202,32 +317,53 @@
               accept="image/png,image/jpeg,image/svg+xml"
               class="hidden"
               @change="handleSignatureFileSelect"
-            />
+            >
             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              <svg
+                class="w-8 h-8 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
               </svg>
             </div>
-            <p class="text-slate-700 font-medium mb-1">Upload Your Signature</p>
-            <p class="text-sm text-slate-500">PNG, JPG, or SVG - Click or drag and drop</p>
-            <p class="text-xs text-slate-400 mt-2">Image should have a transparent or white background</p>
+            <p class="text-slate-700 font-medium mb-1">
+              Upload Your Signature
+            </p>
+            <p class="text-sm text-slate-500">
+              PNG, JPG, or SVG - Click or drag and drop
+            </p>
+            <p class="text-xs text-slate-400 mt-2">
+              Image should have a transparent or white background
+            </p>
           </div>
 
           <!-- Uploaded Signature Preview -->
-          <div v-else class="border-2 border-slate-200 rounded-lg p-6 bg-slate-50">
-            <p class="text-sm font-medium text-slate-700 mb-3 text-center">Your Uploaded Signature:</p>
+          <div
+            v-else
+            class="border-2 border-slate-200 rounded-lg p-6 bg-slate-50"
+          >
+            <p class="text-sm font-medium text-slate-700 mb-3 text-center">
+              Your Uploaded Signature:
+            </p>
             <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-center justify-center min-h-[120px]">
               <img
                 :src="uploadedSignature"
                 alt="Your uploaded signature"
                 class="max-h-24 max-w-full object-contain"
-              />
+              >
             </div>
             <div class="flex justify-center mt-4">
               <button
                 type="button"
-                @click="clearUploadedSignature"
                 class="text-sm text-slate-600 hover:text-red-600 font-medium"
+                @click="clearUploadedSignature"
               >
                 Remove and upload different image
               </button>
@@ -244,9 +380,17 @@
                 ? 'border-red-400 bg-red-50'
                 : 'border-amber-300 bg-amber-50'"
           >
-            <label class="flex items-start cursor-pointer" role="checkbox" :aria-checked="uploadedSignatureAdopted">
+            <label
+              class="flex items-start cursor-pointer"
+              role="checkbox"
+              :aria-checked="uploadedSignatureAdopted"
+            >
               <div class="relative flex-shrink-0 mt-0.5">
-                <input type="checkbox" v-model="uploadedSignatureAdopted" class="sr-only" />
+                <input
+                  v-model="uploadedSignatureAdopted"
+                  type="checkbox"
+                  class="sr-only"
+                >
                 <div
                   class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all"
                   :class="uploadedSignatureAdopted
@@ -255,35 +399,60 @@
                       ? 'bg-white border-red-500'
                       : 'bg-white border-slate-400'"
                 >
-                  <svg v-if="uploadedSignatureAdopted" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  <svg
+                    v-if="uploadedSignatureAdopted"
+                    class="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="3"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               </div>
-              <span class="ml-3 text-sm" :class="uploadedSignatureAdopted ? 'text-green-800' : 'text-slate-800'">
+              <span
+                class="ml-3 text-sm"
+                :class="uploadedSignatureAdopted ? 'text-green-800' : 'text-slate-800'"
+              >
                 <strong>I adopt this image as my signature</strong> for this document. I confirm this represents my signature and I intend it to be legally binding.
               </span>
             </label>
           </div>
 
-          <p v-if="signatureError && signatureMethod === 'upload' && !uploadedSignature" class="text-sm text-red-600 mt-2">
+          <p
+            v-if="signatureError && signatureMethod === 'upload' && !uploadedSignature"
+            class="text-sm text-red-600 mt-2"
+          >
             Please upload a signature image to continue.
           </p>
-          <p v-else-if="signatureError && signatureMethod === 'upload' && uploadedSignature && !uploadedSignatureAdopted" class="text-sm text-red-600 mt-2">
+          <p
+            v-else-if="signatureError && signatureMethod === 'upload' && uploadedSignature && !uploadedSignatureAdopted"
+            class="text-sm text-red-600 mt-2"
+          >
             Please adopt your signature to continue.
           </p>
         </div>
 
         <!-- Stored Signature with Adoption -->
-        <div v-else-if="signatureMethod === 'stored' && storedSignature" class="mb-6">
+        <div
+          v-else-if="signatureMethod === 'stored' && storedSignature"
+          class="mb-6"
+        >
           <div class="border-2 border-slate-200 rounded-lg p-6 bg-slate-50">
-            <p class="text-sm font-medium text-slate-700 mb-3 text-center">Your Saved Signature:</p>
+            <p class="text-sm font-medium text-slate-700 mb-3 text-center">
+              Your Saved Signature:
+            </p>
             <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-center justify-center min-h-[120px]">
               <img
                 :src="storedSignature"
                 alt="Your stored signature"
                 class="max-h-24 max-w-full object-contain"
-              />
+              >
             </div>
           </div>
 
@@ -296,9 +465,17 @@
                 ? 'border-red-400 bg-red-50'
                 : 'border-amber-300 bg-amber-50'"
           >
-            <label class="flex items-start cursor-pointer" role="checkbox" :aria-checked="storedSignatureAdopted">
+            <label
+              class="flex items-start cursor-pointer"
+              role="checkbox"
+              :aria-checked="storedSignatureAdopted"
+            >
               <div class="relative flex-shrink-0 mt-0.5">
-                <input type="checkbox" v-model="storedSignatureAdopted" class="sr-only" />
+                <input
+                  v-model="storedSignatureAdopted"
+                  type="checkbox"
+                  class="sr-only"
+                >
                 <div
                   class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all"
                   :class="storedSignatureAdopted
@@ -307,18 +484,35 @@
                       ? 'bg-white border-red-500'
                       : 'bg-white border-slate-400'"
                 >
-                  <svg v-if="storedSignatureAdopted" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  <svg
+                    v-if="storedSignatureAdopted"
+                    class="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="3"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               </div>
-              <span class="ml-3 text-sm" :class="storedSignatureAdopted ? 'text-green-800' : 'text-slate-800'">
+              <span
+                class="ml-3 text-sm"
+                :class="storedSignatureAdopted ? 'text-green-800' : 'text-slate-800'"
+              >
                 <strong>I adopt this signature</strong> as my own for this document. I confirm this is my signature and I intend it to be legally binding.
               </span>
             </label>
           </div>
 
-          <p v-if="signatureError && signatureMethod === 'stored' && !storedSignatureAdopted" class="text-sm text-red-600 mt-2">
+          <p
+            v-if="signatureError && signatureMethod === 'stored' && !storedSignatureAdopted"
+            class="text-sm text-red-600 mt-2"
+          >
             Please adopt your signature to continue.
           </p>
         </div>
@@ -338,11 +532,33 @@
               class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
               :class="termsAccepted ? 'bg-green-200' : 'bg-amber-200'"
             >
-              <svg v-if="termsAccepted" class="w-7 h-7 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <svg
+                v-if="termsAccepted"
+                class="w-7 h-7 text-green-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
               </svg>
-              <svg v-else class="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                v-else
+                class="w-7 h-7 text-amber-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <div>
@@ -352,7 +568,10 @@
               >
                 {{ termsAccepted ? 'Legal Agreement Accepted' : 'Legal Agreement Required' }}
               </h4>
-              <p class="text-sm" :class="termsAccepted ? 'text-green-700' : 'text-amber-700'">
+              <p
+                class="text-sm"
+                :class="termsAccepted ? 'text-green-700' : 'text-amber-700'"
+              >
                 This is a legally binding action
               </p>
             </div>
@@ -363,25 +582,58 @@
             class="rounded-lg p-4 mb-4"
             :class="termsAccepted ? 'bg-green-100' : 'bg-white border border-amber-300'"
           >
-            <p class="text-base leading-relaxed" :class="termsAccepted ? 'text-green-800' : 'text-slate-800'">
+            <p
+              class="text-base leading-relaxed"
+              :class="termsAccepted ? 'text-green-800' : 'text-slate-800'"
+            >
               <strong>By signing this document, you are:</strong>
             </p>
-            <ul class="mt-3 space-y-2 text-base" :class="termsAccepted ? 'text-green-700' : 'text-slate-700'">
+            <ul
+              class="mt-3 space-y-2 text-base"
+              :class="termsAccepted ? 'text-green-700' : 'text-slate-700'"
+            >
               <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" :class="termsAccepted ? 'text-green-600' : 'text-amber-600'" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                <svg
+                  class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+                  :class="termsAccepted ? 'text-green-600' : 'text-amber-600'"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
                 <span>Creating a <strong>legally binding signature</strong> equal to a handwritten signature</span>
               </li>
               <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" :class="termsAccepted ? 'text-green-600' : 'text-amber-600'" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                <svg
+                  class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+                  :class="termsAccepted ? 'text-green-600' : 'text-amber-600'"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
                 <span>Agreeing to the terms of the document you reviewed</span>
               </li>
               <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" :class="termsAccepted ? 'text-green-600' : 'text-amber-600'" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                <svg
+                  class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+                  :class="termsAccepted ? 'text-green-600' : 'text-amber-600'"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
                 <span>Acknowledging this action <strong>cannot be undone</strong></span>
               </li>
@@ -404,11 +656,11 @@
           >
             <div class="relative flex-shrink-0">
               <input
-                type="checkbox"
                 v-model="termsAccepted"
+                type="checkbox"
                 class="sr-only"
                 aria-describedby="terms-description"
-              />
+              >
               <div
                 class="w-8 h-8 rounded-md border-2 flex items-center justify-center transition-all"
                 :class="termsAccepted
@@ -417,18 +669,33 @@
                     ? 'bg-white border-red-500'
                     : 'bg-white border-slate-400'"
               >
-                <svg v-if="termsAccepted" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                <svg
+                  v-if="termsAccepted"
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
             </div>
-            <span id="terms-description" class="ml-4 text-base font-medium" :class="termsAccepted ? 'text-green-800' : 'text-slate-800'">
+            <span
+              id="terms-description"
+              class="ml-4 text-base font-medium"
+              :class="termsAccepted ? 'text-green-800' : 'text-slate-800'"
+            >
               I understand and agree that my electronic signature is legally binding.
               <button
                 type="button"
-                @click.stop="showTerms = true"
                 class="underline font-semibold ml-1"
                 :class="termsAccepted ? 'text-green-700 hover:text-green-900' : 'text-[#C41E3A] hover:text-[#a31830]'"
+                @click.stop="showTerms = true"
               >
                 View full consent terms
               </button>
@@ -436,9 +703,22 @@
           </label>
 
           <!-- Error Message -->
-          <div v-if="termsError" class="mt-4 flex items-center text-red-700 bg-red-100 rounded-lg p-3">
-            <svg class="w-6 h-6 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            v-if="termsError"
+            class="mt-4 flex items-center text-red-700 bg-red-100 rounded-lg p-3"
+          >
+            <svg
+              class="w-6 h-6 mr-2 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span class="font-medium">Please check the box above to confirm you understand this is a legal agreement.</span>
           </div>
@@ -447,20 +727,39 @@
 
       <div class="flex justify-between">
         <button
-          @click="currentStep = reviewStep"
           class="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+          @click="currentStep = reviewStep"
         >
           Back to Review
         </button>
         <button
-          @click="submitSignature"
           :disabled="isSubmitting || hasSigned"
           class="px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          @click="submitSignature"
         >
-          <span v-if="isSubmitting" class="mr-2">
-            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <span
+            v-if="isSubmitting"
+            class="mr-2"
+          >
+            <svg
+              class="animate-spin h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           </span>
           {{ isSubmitting ? 'Submitting...' : hasSigned ? 'Signature Submitted' : 'Submit Signature' }}
@@ -469,17 +768,32 @@
     </div>
 
     <!-- Step: Confirmation -->
-    <div v-if="currentStep === completeStep" class="text-center">
+    <div
+      v-if="currentStep === completeStep"
+      class="text-center"
+    >
       <div class="bg-white rounded-lg shadow-lg p-8">
         <!-- Already Signed Notice -->
         <template v-if="alreadySignedError">
           <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-12 h-12 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
 
-          <h2 class="text-2xl font-bold text-slate-900 mb-2">Document Already Signed</h2>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">
+            Document Already Signed
+          </h2>
           <p class="text-slate-600 mb-8">
             This document has already been signed. No further action is needed.
           </p>
@@ -488,20 +802,37 @@
         <!-- Normal Success -->
         <template v-else>
           <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <svg
+              class="w-12 h-12 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
 
-          <h2 class="text-2xl font-bold text-slate-900 mb-2">Document Signed Successfully!</h2>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">
+            Document Signed Successfully!
+          </h2>
           <p class="text-slate-600 mb-8">
             Your signature has been recorded and a confirmation has been sent to your email.
           </p>
         </template>
 
         <!-- Certificate Info (only show if we have the data) -->
-        <div v-if="certificateInfo || signedAt" class="bg-slate-50 rounded-lg p-6 text-left max-w-md mx-auto mb-6">
-          <h4 class="font-semibold text-slate-900 mb-4">Signature Certificate</h4>
+        <div
+          v-if="certificateInfo || signedAt"
+          class="bg-slate-50 rounded-lg p-6 text-left max-w-md mx-auto mb-6"
+        >
+          <h4 class="font-semibold text-slate-900 mb-4">
+            Signature Certificate
+          </h4>
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
               <span class="text-slate-600">Document:</span>
@@ -511,11 +842,17 @@
               <span class="text-slate-600">Signed by:</span>
               <span class="font-medium text-slate-900">{{ signer.name }}</span>
             </div>
-            <div v-if="signedAt" class="flex justify-between">
+            <div
+              v-if="signedAt"
+              class="flex justify-between"
+            >
               <span class="text-slate-600">Date:</span>
               <span class="font-medium text-slate-900">{{ signedAt }}</span>
             </div>
-            <div v-if="certificateInfo" class="pt-3 border-t border-slate-200">
+            <div
+              v-if="certificateInfo"
+              class="pt-3 border-t border-slate-200"
+            >
               <span class="text-slate-600">Certificate ID:</span>
               <p class="font-mono text-xs text-slate-700 mt-1 break-all">
                 {{ certificateInfo.id }}
@@ -527,16 +864,44 @@
         <!-- Download Button -->
         <div class="flex justify-center gap-4 mb-6">
           <button
-            @click="downloadSignedPdf"
             :disabled="isDownloading"
             class="px-6 py-3 bg-[#0A2540] text-white rounded-lg font-semibold hover:bg-[#0d3356] transition-colors flex items-center disabled:opacity-50"
+            @click="downloadSignedPdf"
           >
-            <svg v-if="!isDownloading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              v-if="!isDownloading"
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
-            <svg v-else class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              v-else
+              class="animate-spin h-5 w-5 mr-2"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
             {{ isDownloading ? 'Downloading...' : 'Download Signed PDF' }}
           </button>
@@ -557,7 +922,9 @@
       >
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
           <div class="p-6 border-b border-slate-200">
-            <h3 class="text-xl font-semibold text-slate-900">Electronic Signature Consent</h3>
+            <h3 class="text-xl font-semibold text-slate-900">
+              Electronic Signature Consent
+            </h3>
           </div>
           <div class="p-6 overflow-y-auto max-h-[50vh]">
             <div class="prose prose-sm prose-slate">
@@ -585,8 +952,8 @@
           </div>
           <div class="p-6 border-t border-slate-200 flex justify-end">
             <button
-              @click="showTerms = false"
               class="px-6 py-2 bg-[#0A2540] text-white rounded-lg font-medium hover:bg-[#0d3356] transition-colors"
+              @click="showTerms = false"
             >
               Close
             </button>
@@ -648,7 +1015,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'signed': [certificate: CertificateInfo]
   'error': [message: string]
-  'identity-verified': [data: { method: string; verifiedAt: string }]
+  'identity-verified': [data: { method: string, verifiedAt: string }]
   'pending-review': []
 }>()
 
@@ -726,9 +1093,9 @@ const stepClass = (step: number) => {
 
 const stepCircleClass = (step: number) => {
   const base = 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold'
-  return currentStep.value >= step
-    ? `${base} bg-[#C41E3A] text-white`
-    : `${base} bg-slate-200 text-slate-500`
+  return currentStep.value >= step ?
+    `${base} bg-[#C41E3A] text-white` :
+    `${base} bg-slate-200 text-slate-500`
 }
 
 const proceedToSign = () => {
@@ -736,7 +1103,7 @@ const proceedToSign = () => {
 }
 
 // Identity verification handlers
-const handleIdentityVerified = (data: { method: string; verifiedAt: string }) => {
+const handleIdentityVerified = (data: { method: string, verifiedAt: string }) => {
   localIdentityVerified.value = true
   localVerificationMethod.value = data.method
   currentStep.value = reviewStep.value // Move to review step
@@ -896,7 +1263,8 @@ const submitSignature = async () => {
       currentStep.value = completeStep.value
       emit('signed', response.data.certificate)
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     const statusCode = error.statusCode || error.data?.statusCode
     const message = error.data?.message || error.message || 'Failed to submit signature'
 
@@ -906,11 +1274,13 @@ const submitSignature = async () => {
       hasSigned.value = true
       // Move to confirmation step with a note that it was previously signed
       currentStep.value = completeStep.value
-    } else {
+    }
+    else {
       emit('error', message)
       toast.error(message)
     }
-  } finally {
+  }
+  finally {
     isSubmitting.value = false
   }
 }
@@ -932,10 +1302,12 @@ const downloadSignedPdf = async () => {
     link.click()
     window.document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Download error:', error)
     toast.error(`Failed to download: ${error.message || 'Unknown error'}`)
-  } finally {
+  }
+  finally {
     isDownloading.value = false
   }
 }

@@ -1,34 +1,55 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Integrations</h1>
-      <p class="text-gray-600 mt-1">Manage external service integrations and data imports</p>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Integrations
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Manage external service integrations and data imports
+      </p>
     </div>
 
     <div class="grid gap-6">
       <!-- Lawmatics Integration Card -->
-      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/lawmatics')">
+      <UiCard
+        class="cursor-pointer hover:border-burgundy-300 transition-colors"
+        @click="$router.push('/settings/integrations/lawmatics')"
+      >
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <Database class="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Lawmatics</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Lawmatics
+              </h3>
               <p class="text-sm text-gray-600 mt-1">
                 Import clients, matters, notes, and activities from Lawmatics CRM
               </p>
               <div class="flex items-center gap-4 mt-3">
-                <UiBadge v-if="lawmaticsStatus === 'connected'" variant="success">
+                <UiBadge
+                  v-if="lawmaticsStatus === 'connected'"
+                  variant="success"
+                >
                   Connected
                 </UiBadge>
-                <UiBadge v-else-if="lawmaticsStatus === 'error'" variant="danger">
+                <UiBadge
+                  v-else-if="lawmaticsStatus === 'error'"
+                  variant="danger"
+                >
                   Connection Error
                 </UiBadge>
-                <UiBadge v-else variant="default">
+                <UiBadge
+                  v-else
+                  variant="default"
+                >
                   Not Configured
                 </UiBadge>
-                <span v-if="lawmaticsLastSync" class="text-xs text-gray-500">
+                <span
+                  v-if="lawmaticsLastSync"
+                  class="text-xs text-gray-500"
+                >
                   Last sync: {{ formatDate(lawmaticsLastSync) }}
                 </span>
               </div>
@@ -45,39 +66,59 @@
       </UiCard>
 
       <!-- Resend Integration Card -->
-      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="showResendModal = true">
+      <UiCard
+        class="cursor-pointer hover:border-burgundy-300 transition-colors"
+        @click="showResendModal = true"
+      >
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
               <Mail class="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Resend</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Resend
+              </h3>
               <p class="text-sm text-gray-600 mt-1">
                 Email delivery service for password resets and notifications
               </p>
               <div class="flex items-center gap-4 mt-3">
-                <UiBadge v-if="resendStatus === 'connected'" variant="success">
+                <UiBadge
+                  v-if="resendStatus === 'connected'"
+                  variant="success"
+                >
                   Connected
                 </UiBadge>
-                <UiBadge v-else-if="resendStatus === 'configured'" variant="warning">
+                <UiBadge
+                  v-else-if="resendStatus === 'configured'"
+                  variant="warning"
+                >
                   Configured (Not Tested)
                 </UiBadge>
-                <UiBadge v-else-if="resendStatus === 'error'" variant="danger">
+                <UiBadge
+                  v-else-if="resendStatus === 'error'"
+                  variant="danger"
+                >
                   Connection Error
                 </UiBadge>
-                <UiBadge v-else variant="default">
+                <UiBadge
+                  v-else
+                  variant="default"
+                >
                   Not Configured
                 </UiBadge>
-                <span v-if="resendLastTested" class="text-xs text-gray-500">
+                <span
+                  v-if="resendLastTested"
+                  class="text-xs text-gray-500"
+                >
                   Last tested: {{ formatDate(resendLastTested) }}
                 </span>
               </div>
             </div>
           </div>
           <button
-            @click.stop="showResendModal = true"
             class="px-4 py-2 text-sm font-medium text-burgundy-600 hover:text-burgundy-700 hover:bg-burgundy-50 rounded-lg transition-colors"
+            @click.stop="showResendModal = true"
           >
             Configure
           </button>
@@ -85,14 +126,19 @@
       </UiCard>
 
       <!-- WealthCounsel Integration Card -->
-      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/wealthcounsel')">
+      <UiCard
+        class="cursor-pointer hover:border-burgundy-300 transition-colors"
+        @click="$router.push('/settings/integrations/wealthcounsel')"
+      >
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <FileCode class="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">WealthCounsel</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                WealthCounsel
+              </h3>
               <p class="text-sm text-gray-600 mt-1">
                 Import estate plans from WealthCounsel XML exports
               </p>
@@ -114,28 +160,45 @@
       </UiCard>
 
       <!-- Apollo Integration Card -->
-      <UiCard class="cursor-pointer hover:border-burgundy-300 transition-colors" @click="$router.push('/settings/integrations/apollo')">
+      <UiCard
+        class="cursor-pointer hover:border-burgundy-300 transition-colors"
+        @click="$router.push('/settings/integrations/apollo')"
+      >
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
               <Send class="w-6 h-6 text-orange-600" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Apollo</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Apollo
+              </h3>
               <p class="text-sm text-gray-600 mt-1">
                 Sync contacts and marketing preferences with Apollo.io
               </p>
               <div class="flex items-center gap-4 mt-3">
-                <UiBadge v-if="apolloStatus === 'connected'" variant="success">
+                <UiBadge
+                  v-if="apolloStatus === 'connected'"
+                  variant="success"
+                >
                   Connected
                 </UiBadge>
-                <UiBadge v-else-if="apolloStatus === 'error'" variant="danger">
+                <UiBadge
+                  v-else-if="apolloStatus === 'error'"
+                  variant="danger"
+                >
                   Connection Error
                 </UiBadge>
-                <UiBadge v-else variant="default">
+                <UiBadge
+                  v-else
+                  variant="default"
+                >
                   Not Configured
                 </UiBadge>
-                <span v-if="apolloLastSync" class="text-xs text-gray-500">
+                <span
+                  v-if="apolloLastSync"
+                  class="text-xs text-gray-500"
+                >
                   Last sync: {{ formatDate(apolloLastSync) }}
                 </span>
               </div>
@@ -159,7 +222,9 @@
               <Cloud class="w-6 h-6 text-gray-400" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-500">More Integrations</h3>
+              <h3 class="text-lg font-semibold text-gray-500">
+                More Integrations
+              </h3>
               <p class="text-sm text-gray-400 mt-1">
                 Additional integrations coming soon
               </p>
@@ -173,11 +238,18 @@
     </div>
 
     <!-- Resend Configuration Modal -->
-    <UiModal v-model="showResendModal" title="Configure Resend">
+    <UiModal
+      v-model="showResendModal"
+      title="Configure Resend"
+    >
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           Enter your Resend API key to enable email delivery. Get your API key from
-          <a href="https://resend.com/api-keys" target="_blank" class="text-burgundy-600 hover:underline">resend.com/api-keys</a>.
+          <a
+            href="https://resend.com/api-keys"
+            target="_blank"
+            class="text-burgundy-600 hover:underline"
+          >resend.com/api-keys</a>.
         </p>
 
         <div>
@@ -190,34 +262,58 @@
               :type="showResendApiKey ? 'text' : 'password'"
               placeholder="re_..."
               class="flex-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 sm:text-sm"
-            />
+            >
             <button
               type="button"
-              @click="showResendApiKey = !showResendApiKey"
               class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+              @click="showResendApiKey = !showResendApiKey"
             >
-              <Eye v-if="!showResendApiKey" class="w-5 h-5" />
-              <EyeOff v-else class="w-5 h-5" />
+              <Eye
+                v-if="!showResendApiKey"
+                class="w-5 h-5"
+              />
+              <EyeOff
+                v-else
+                class="w-5 h-5"
+              />
             </button>
           </div>
         </div>
 
         <!-- Test Result -->
-        <div v-if="resendTestResult" :class="[
-          'p-4 rounded-lg',
-          resendTestResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-        ]">
+        <div
+          v-if="resendTestResult"
+          :class="[
+            'p-4 rounded-lg',
+            resendTestResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          ]"
+        >
           <div class="flex items-start gap-3">
-            <CheckCircle v-if="resendTestResult.success" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <XCircle v-else class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle
+              v-if="resendTestResult.success"
+              class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+            />
+            <XCircle
+              v-else
+              class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+            />
             <div>
-              <p :class="resendTestResult.success ? 'text-green-800' : 'text-red-800'" class="font-medium">
+              <p
+                :class="resendTestResult.success ? 'text-green-800' : 'text-red-800'"
+                class="font-medium"
+              >
                 {{ resendTestResult.success ? 'Connection successful!' : 'Connection failed' }}
               </p>
-              <p v-if="resendTestResult.error" class="text-sm text-red-700 mt-1">
+              <p
+                v-if="resendTestResult.error"
+                class="text-sm text-red-700 mt-1"
+              >
                 {{ resendTestResult.error }}
               </p>
-              <p v-if="resendTestResult.details?.domainCount !== undefined" class="text-sm text-green-700 mt-1">
+              <p
+                v-if="resendTestResult.details?.domainCount !== undefined"
+                class="text-sm text-green-700 mt-1"
+              >
                 {{ resendTestResult.details.domainCount }} domain(s) configured
               </p>
             </div>
@@ -230,28 +326,31 @@
           <UiButton
             v-if="resendIntegration?.id"
             variant="danger"
-            @click="deleteResendIntegration"
             :is-loading="resendDeleting"
+            @click="deleteResendIntegration"
           >
             Delete
           </UiButton>
-          <div v-else></div>
+          <div v-else />
           <div class="flex gap-3">
-            <UiButton variant="outline" @click="showResendModal = false">
+            <UiButton
+              variant="outline"
+              @click="showResendModal = false"
+            >
               Cancel
             </UiButton>
             <UiButton
               v-if="resendIntegration?.id"
               variant="outline"
-              @click="testResendConnection"
               :is-loading="resendTesting"
+              @click="testResendConnection"
             >
               Test
             </UiButton>
             <UiButton
-              @click="saveResendCredentials"
               :is-loading="resendSaving"
               :disabled="!resendApiKey || resendApiKey.startsWith('•')"
+              @click="saveResendCredentials"
             >
               Save
             </UiButton>
@@ -298,7 +397,7 @@ const showResendApiKey = ref(false)
 const resendSaving = ref(false)
 const resendTesting = ref(false)
 const resendDeleting = ref(false)
-const resendTestResult = ref<{ success: boolean; error?: string; details?: { domainCount?: number } } | null>(null)
+const resendTestResult = ref<{ success: boolean, error?: string, details?: { domainCount?: number } } | null>(null)
 
 // Fetch integration status
 onMounted(async () => {
@@ -312,8 +411,9 @@ async function loadIntegrations() {
     // Lawmatics
     const lawmatics = integrations.find(i => i.type === 'LAWMATICS')
     if (lawmatics) {
-      lawmaticsStatus.value = lawmatics.status === 'CONNECTED' ? 'connected' :
-                              lawmatics.status === 'ERROR' ? 'error' : 'not_configured'
+      lawmaticsStatus.value = lawmatics.status === 'CONNECTED' ?
+        'connected' :
+        lawmatics.status === 'ERROR' ? 'error' : 'not_configured'
       if (lawmatics.lastSyncTimestamps) {
         // Server already parses lastSyncTimestamps from JSON
         const latest = Object.values(lawmatics.lastSyncTimestamps).sort().pop() as string | undefined
@@ -324,8 +424,9 @@ async function loadIntegrations() {
     // Apollo
     const apollo = integrations.find(i => i.type === 'APOLLO')
     if (apollo) {
-      apolloStatus.value = apollo.status === 'CONNECTED' ? 'connected' :
-                            apollo.status === 'ERROR' ? 'error' : 'not_configured'
+      apolloStatus.value = apollo.status === 'CONNECTED' ?
+        'connected' :
+        apollo.status === 'ERROR' ? 'error' : 'not_configured'
       if (apollo.lastSyncTimestamps) {
         // Server already parses lastSyncTimestamps from JSON
         const latest = Object.values(apollo.lastSyncTimestamps).sort().pop() as string | undefined
@@ -337,13 +438,16 @@ async function loadIntegrations() {
     const resend = integrations.find(i => i.type === 'RESEND')
     if (resend) {
       resendIntegration.value = resend
-      resendStatus.value = resend.status === 'CONNECTED' ? 'connected' :
-                           resend.status === 'CONFIGURED' ? 'configured' :
-                           resend.status === 'ERROR' ? 'error' : 'not_configured'
+      resendStatus.value = resend.status === 'CONNECTED' ?
+        'connected' :
+        resend.status === 'CONFIGURED' ?
+          'configured' :
+          resend.status === 'ERROR' ? 'error' : 'not_configured'
       resendLastTested.value = resend.lastTestedAt
       resendApiKey.value = '••••••••••••••••'
     }
-  } catch {
+  }
+  catch {
     // User may not have access or integrations not set up
   }
 }
@@ -361,7 +465,8 @@ async function saveResendCredentials() {
         method: 'PUT',
         body: { accessToken: resendApiKey.value }
       })
-    } else {
+    }
+    else {
       // Create new
       const result = await $fetch<{ integration: Integration }>('/api/admin/integrations', {
         method: 'POST',
@@ -377,13 +482,15 @@ async function saveResendCredentials() {
     resendApiKey.value = '••••••••••••••••'
     await loadIntegrations()
     toast.success('Resend credentials saved')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save credentials')
     resendTestResult.value = {
       success: false,
       error: error.data?.message || 'Failed to save credentials'
     }
-  } finally {
+  }
+  finally {
     resendSaving.value = false
   }
 }
@@ -395,7 +502,7 @@ async function testResendConnection() {
   resendTestResult.value = null
 
   try {
-    const result = await $fetch<{ success: boolean; error?: string; details?: { domainCount?: number } }>(
+    const result = await $fetch<{ success: boolean, error?: string, details?: { domainCount?: number } }>(
       `/api/admin/integrations/${resendIntegration.value.id}/test`,
       { method: 'POST' }
     )
@@ -403,16 +510,19 @@ async function testResendConnection() {
     await loadIntegrations()
     if (result.success) {
       toast.success('Resend connection verified!')
-    } else {
+    }
+    else {
       toast.error(result.error || 'Connection test failed')
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Test failed')
     resendTestResult.value = {
       success: false,
       error: error.data?.message || 'Test failed'
     }
-  } finally {
+  }
+  finally {
     resendTesting.value = false
   }
 }
@@ -433,9 +543,11 @@ async function deleteResendIntegration() {
     resendTestResult.value = null
     showResendModal.value = false
     toast.success('Integration deleted')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete integration')
-  } finally {
+  }
+  finally {
     resendDeleting.value = false
   }
 }

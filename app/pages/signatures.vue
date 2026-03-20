@@ -2,64 +2,84 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">E-Signatures</h1>
-        <p class="text-gray-600 mt-1">Track and manage document signature requests</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          E-Signatures
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Track and manage document signature requests
+        </p>
       </div>
     </div>
 
     <!-- Status Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div
-        @click="filterByStatus('PENDING,IDENTITY_REQUIRED')"
         class="bg-white rounded-lg border p-4 cursor-pointer transition-all"
         :class="currentFilter === 'PENDING,IDENTITY_REQUIRED' ? 'border-amber-500 ring-2 ring-amber-200' : 'border-gray-200 hover:border-gray-300'"
+        @click="filterByStatus('PENDING,IDENTITY_REQUIRED')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Pending</p>
-            <p class="text-2xl font-bold text-amber-600">{{ counts.pending + counts.identityRequired }}</p>
+            <p class="text-sm font-medium text-gray-500">
+              Pending
+            </p>
+            <p class="text-2xl font-bold text-amber-600">
+              {{ counts.pending + counts.identityRequired }}
+            </p>
           </div>
           <Clock class="w-8 h-8 text-amber-400" />
         </div>
       </div>
 
       <div
-        @click="filterByStatus('SIGNED')"
         class="bg-white rounded-lg border p-4 cursor-pointer transition-all"
         :class="currentFilter === 'SIGNED' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'"
+        @click="filterByStatus('SIGNED')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Signed</p>
-            <p class="text-2xl font-bold text-green-600">{{ counts.signed }}</p>
+            <p class="text-sm font-medium text-gray-500">
+              Signed
+            </p>
+            <p class="text-2xl font-bold text-green-600">
+              {{ counts.signed }}
+            </p>
           </div>
           <CheckCircle class="w-8 h-8 text-green-400" />
         </div>
       </div>
 
       <div
-        @click="filterByStatus('EXPIRED')"
         class="bg-white rounded-lg border p-4 cursor-pointer transition-all"
         :class="currentFilter === 'EXPIRED' ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-200 hover:border-gray-300'"
+        @click="filterByStatus('EXPIRED')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Expired</p>
-            <p class="text-2xl font-bold text-red-600">{{ counts.expired }}</p>
+            <p class="text-sm font-medium text-gray-500">
+              Expired
+            </p>
+            <p class="text-2xl font-bold text-red-600">
+              {{ counts.expired }}
+            </p>
           </div>
           <AlertCircle class="w-8 h-8 text-red-400" />
         </div>
       </div>
 
       <div
-        @click="filterByStatus('')"
         class="bg-white rounded-lg border p-4 cursor-pointer transition-all"
         :class="currentFilter === '' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'"
+        @click="filterByStatus('')"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">All</p>
-            <p class="text-2xl font-bold text-gray-700">{{ totalCount }}</p>
+            <p class="text-sm font-medium text-gray-500">
+              All
+            </p>
+            <p class="text-2xl font-bold text-gray-700">
+              {{ totalCount }}
+            </p>
           </div>
           <FileSignature class="w-8 h-8 text-gray-400" />
         </div>
@@ -68,34 +88,66 @@
 
     <!-- Sessions Table -->
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p class="text-gray-500 mt-4">Loading signature sessions...</p>
-      </div>
-
-      <div v-else-if="sessions.length === 0" class="text-center py-12">
-        <FileSignature class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p class="text-gray-500">No signature sessions found</p>
-        <p class="text-sm text-gray-400 mt-1">
-          {{ currentFilter ? 'Try a different filter or ' : '' }}
-          <NuxtLink to="/documents" class="text-accent-600 hover:underline">send a document for signature</NuxtLink>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+        <p class="text-gray-500 mt-4">
+          Loading signature sessions...
         </p>
       </div>
 
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else-if="sessions.length === 0"
+        class="text-center py-12"
+      >
+        <FileSignature class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <p class="text-gray-500">
+          No signature sessions found
+        </p>
+        <p class="text-sm text-gray-400 mt-1">
+          {{ currentFilter ? 'Try a different filter or ' : '' }}
+          <NuxtLink
+            to="/documents"
+            class="text-accent-600 hover:underline"
+          >send a document for signature</NuxtLink>
+        </p>
+      </div>
+
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signer</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Document
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Signer
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Expires
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="session in sessions" :key="session.id" class="hover:bg-gray-50">
+            <tr
+              v-for="session in sessions"
+              :key="session.id"
+              class="hover:bg-gray-50"
+            >
               <td class="px-6 py-4">
                 <NuxtLink
                   :to="`/documents/${session.documentId}`"
@@ -105,8 +157,12 @@
                 </NuxtLink>
               </td>
               <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ session.signerName }}</div>
-                <div class="text-xs text-gray-500">{{ session.signerEmail }}</div>
+                <div class="text-sm text-gray-900">
+                  {{ session.signerName }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ session.signerEmail }}
+                </div>
               </td>
               <td class="px-6 py-4">
                 <UiBadge :variant="session.signatureTier === 'ENHANCED' ? 'warning' : 'default'">
@@ -119,13 +175,22 @@
                 </UiBadge>
               </td>
               <td class="px-6 py-4">
-                <div v-if="session.status === 'SIGNED'" class="text-sm text-gray-500">
+                <div
+                  v-if="session.status === 'SIGNED'"
+                  class="text-sm text-gray-500"
+                >
                   Signed {{ formatDate(session.signedAt) }}
                 </div>
-                <div v-else-if="session.isExpired" class="text-sm text-red-600">
+                <div
+                  v-else-if="session.isExpired"
+                  class="text-sm text-red-600"
+                >
                   Expired {{ formatDate(session.tokenExpiresAt) }}
                 </div>
-                <div v-else class="text-sm text-gray-500">
+                <div
+                  v-else
+                  class="text-sm text-gray-500"
+                >
                   {{ formatDate(session.tokenExpiresAt) }}
                 </div>
               </td>
@@ -134,9 +199,9 @@
                   <!-- Copy Link -->
                   <button
                     v-if="session.status !== 'SIGNED' && session.status !== 'REVOKED'"
-                    @click="copySigningLink(session)"
                     class="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
                     title="Copy signing link"
+                    @click="copySigningLink(session)"
                   >
                     <Copy class="w-4 h-4" />
                   </button>
@@ -144,9 +209,9 @@
                   <!-- Resend Email -->
                   <button
                     v-if="canResend(session)"
-                    @click="openResendModal(session)"
                     class="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"
                     title="Send reminder email"
+                    @click="openResendModal(session)"
                   >
                     <Mail class="w-4 h-4" />
                   </button>
@@ -154,9 +219,9 @@
                   <!-- Revoke -->
                   <button
                     v-if="canRevoke(session)"
-                    @click="confirmRevoke(session)"
                     class="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
                     title="Revoke signing link"
+                    @click="confirmRevoke(session)"
                   >
                     <XCircle class="w-4 h-4" />
                   </button>
@@ -178,7 +243,11 @@
     </UiCard>
 
     <!-- Resend Modal -->
-    <UiModal v-model="showResendModal" title="Send Reminder" size="md">
+    <UiModal
+      v-model="showResendModal"
+      title="Send Reminder"
+      size="md"
+    >
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           Send a reminder email to <strong>{{ selectedSession?.signerName }}</strong> for document
@@ -187,10 +256,10 @@
 
         <label class="flex items-center">
           <input
-            type="checkbox"
             v-model="resendOptions.extendExpiration"
+            type="checkbox"
             class="rounded border-gray-300 text-accent-600 focus:ring-accent-500"
-          />
+          >
           <span class="ml-2 text-sm text-gray-700">Extend expiration by 48 hours</span>
         </label>
 
@@ -201,22 +270,32 @@
             rows="3"
             placeholder="Add a personal message to include in the reminder..."
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500 text-sm"
-          ></textarea>
+          />
         </div>
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showResendModal = false">
+        <UiButton
+          variant="outline"
+          @click="showResendModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="sendReminder" :is-loading="resending">
+        <UiButton
+          :is-loading="resending"
+          @click="sendReminder"
+        >
           Send Reminder
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Revoke Confirmation Modal -->
-    <UiModal v-model="showRevokeModal" title="Revoke Signing Link" size="sm">
+    <UiModal
+      v-model="showRevokeModal"
+      title="Revoke Signing Link"
+      size="sm"
+    >
       <div class="space-y-4">
         <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
           <AlertTriangle class="w-6 h-6 text-red-600" />
@@ -230,10 +309,17 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showRevokeModal = false">
+        <UiButton
+          variant="outline"
+          @click="showRevokeModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton variant="danger" @click="revokeSession" :is-loading="revoking">
+        <UiButton
+          variant="danger"
+          :is-loading="revoking"
+          @click="revokeSession"
+        >
           Revoke Link
         </UiButton>
       </template>
@@ -310,9 +396,11 @@ const fetchSessions = async (status?: string) => {
 
     sessions.value = response.sessions
     counts.value = response.counts
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch signature sessions:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -365,7 +453,8 @@ const copySigningLink = async (session: SignatureSession) => {
   try {
     await navigator.clipboard.writeText(link)
     toast.success('Signing link copied to clipboard')
-  } catch (err) {
+  }
+  catch (err) {
     // Fallback
     prompt('Copy this link:', link)
   }
@@ -393,9 +482,11 @@ const sendReminder = async () => {
     showResendModal.value = false
     await fetchSessions(currentFilter.value)
     toast.success('Reminder sent successfully')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to send reminder')
-  } finally {
+  }
+  finally {
     resending.value = false
   }
 }
@@ -416,9 +507,11 @@ const revokeSession = async () => {
 
     showRevokeModal.value = false
     await fetchSessions(currentFilter.value)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to revoke session')
-  } finally {
+  }
+  finally {
     revoking.value = false
   }
 }

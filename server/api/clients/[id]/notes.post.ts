@@ -59,9 +59,9 @@ export default defineEventHandler(async (event) => {
       id: createdNote.id,
       content: createdNote.content,
       createdBy: createdNote.createdBy,
-      creatorName: createdNote.creatorFirstName && createdNote.creatorLastName
-        ? `${createdNote.creatorFirstName} ${createdNote.creatorLastName}`
-        : 'Unknown',
+      creatorName: createdNote.creatorFirstName && createdNote.creatorLastName ?
+        `${createdNote.creatorFirstName} ${createdNote.creatorLastName}` :
+        'Unknown',
       createdAt: createdNote.createdAt,
       updatedAt: createdNote.updatedAt
     }

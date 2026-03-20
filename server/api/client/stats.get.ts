@@ -5,22 +5,22 @@ export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
   const db = useDrizzle()
   const now = new Date()
-  
+
   // Get all documents for this client
   const documents = await db
     .select()
     .from(schema.documents)
     .where(eq(schema.documents.clientId, user.id))
     .all()
-  
-  const pendingDocuments = documents.filter(d => 
+
+  const pendingDocuments = documents.filter(d =>
     d.status === 'SENT' || d.status === 'VIEWED'
   ).length
-  
-  const signedDocuments = documents.filter(d => 
+
+  const signedDocuments = documents.filter(d =>
     d.status === 'SIGNED' || d.status === 'COMPLETED'
   ).length
-  
+
   // Get upcoming appointments
   const upcomingAppointments = await db
     .select()
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       )
     )
     .all()
-  
+
   return {
     totalDocuments: documents.length,
     pendingDocuments,
@@ -40,4 +40,3 @@ export default defineEventHandler(async (event) => {
     upcomingAppointments: upcomingAppointments.length
   }
 })
-

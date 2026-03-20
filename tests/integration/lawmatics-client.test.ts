@@ -138,7 +138,7 @@ describe('LawmaticsClient', () => {
   describe('fetchAllContacts with pagination', () => {
     it('fetches paginated contacts with progress callback', async () => {
       const client = new LawmaticsClient(VALID_TOKEN)
-      const progressCalls: Array<{ page: number; total: number }> = []
+      const progressCalls: Array<{ page: number, total: number }> = []
 
       // Use small page size to trigger pagination
       const contacts = await client.fetchAllContacts({
@@ -349,7 +349,8 @@ describe('LawmaticsClient', () => {
       try {
         await client.fetchUsers()
         expect.fail('Should have thrown RateLimitError')
-      } catch (error) {
+      }
+      catch (error) {
         expect(error).toBeInstanceOf(RateLimitError)
         expect((error as RateLimitError).retryAfter).toBe(60)
       }
@@ -367,7 +368,8 @@ describe('LawmaticsClient', () => {
       try {
         await client.fetchUsers()
         expect.fail('Should have thrown LawmaticsApiError')
-      } catch (error) {
+      }
+      catch (error) {
         expect(error).toBeInstanceOf(LawmaticsApiError)
         expect((error as LawmaticsApiError).statusCode).toBe(401)
       }

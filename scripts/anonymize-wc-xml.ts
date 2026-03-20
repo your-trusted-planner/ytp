@@ -51,7 +51,7 @@ const nameReplacements: Record<string, string> = {
   // SSNs - replace with zeros
   '586-33-8806': '000-00-0001',
   '585-98-2606': '000-00-0002',
-  '639-30-1989': '000-00-0003',
+  '639-30-1989': '000-00-0003'
 }
 
 // Dates to replace (keep dates but can randomize if needed)
@@ -60,7 +60,7 @@ const dateReplacements: Record<string, string> = {
   '07/09/1990': '03/20/1987',
   '08/08/2023': '06/01/2022',
   '19/10/1961': '08/25/1960',
-  '23/12/2025': '15/03/2025',
+  '23/12/2025': '15/03/2025'
 }
 
 function anonymizeXml(xmlContent: string): string {

@@ -16,7 +16,8 @@ export default defineEventHandler(async () => {
 
       const userCount = result?.count || 0
       dbInfo = { userCount }
-    } catch (e: any) {
+    }
+    catch (e: any) {
       dbInfo = { error: e.message }
     }
   }

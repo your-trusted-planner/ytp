@@ -1,16 +1,29 @@
 <template>
   <UiCard>
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
-    <div v-else-if="clients.length === 0" class="text-center py-12">
+    <div
+      v-else-if="clients.length === 0"
+      class="text-center py-12"
+    >
       <Users class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">No client balances</h3>
-      <p class="text-gray-500 mt-1">Record a deposit to see client trust balances here.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        No client balances
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Record a deposit to see client trust balances here.
+      </p>
     </div>
 
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -50,7 +63,10 @@
               >
                 {{ client.matterTitle || client.matter_title }}
               </NuxtLink>
-              <span v-else class="text-sm text-gray-400">General</span>
+              <span
+                v-else
+                class="text-sm text-gray-400"
+              >General</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
               <span class="text-sm font-medium text-gray-900">
@@ -59,8 +75,8 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
               <button
-                @click="viewLedger(client)"
                 class="text-sm text-burgundy-600 hover:text-burgundy-800"
+                @click="viewLedger(client)"
               >
                 View Ledger
               </button>
@@ -122,14 +138,15 @@ async function fetchClients() {
 
     for (const clientId of clientIds) {
       try {
-        const balanceResponse = await $fetch<{ balances: any[]; clientName: string }>(`/api/trust/clients/${clientId}/balance`)
+        const balanceResponse = await $fetch<{ balances: any[], clientName: string }>(`/api/trust/clients/${clientId}/balance`)
 
         for (const balance of balanceResponse.balances) {
           const key = `${balance.clientId || balance.client_id}-${balance.matterId || balance.matter_id || ''}`
           if (clientMap.has(key)) {
             clientMap.get(key).balance = balance.balance
             clientMap.get(key).clientName = balanceResponse.clientName || balance.clientName || balance.client_name
-          } else if (balance.balance > 0) {
+          }
+          else if (balance.balance > 0) {
             clientMap.set(key, {
               clientId: balance.clientId || balance.client_id,
               clientName: balanceResponse.clientName || balance.clientName || balance.client_name,
@@ -139,7 +156,8 @@ async function fetchClients() {
             })
           }
         }
-      } catch (e) {
+      }
+      catch (e) {
         // Client balance fetch failed, skip
       }
     }
@@ -148,9 +166,11 @@ async function fetchClients() {
     clients.value = Array.from(clientMap.values())
       .filter(c => c.balance > 0)
       .sort((a, b) => b.balance - a.balance)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch client balances:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

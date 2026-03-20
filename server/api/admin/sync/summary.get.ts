@@ -89,7 +89,8 @@ export default defineEventHandler(async (event) => {
   if (integration.settings) {
     try {
       settings = JSON.parse(integration.settings)
-    } catch { /* ignore */ }
+    }
+    catch { /* ignore */ }
   }
 
   const entityCounts = {
@@ -113,18 +114,20 @@ export default defineEventHandler(async (event) => {
     integrationStatus: integration.status,
     syncEnabled: !!settings.syncEnabled,
     lastAutoSyncAt: settings.lastAutoSyncAt || null,
-    lastSync: lastRun ? {
-      id: lastRun.id,
-      status: lastRun.status,
-      runType: lastRun.runType,
-      startedAt: lastRun.startedAt instanceof Date ? lastRun.startedAt.toISOString() : lastRun.startedAt,
-      completedAt: lastRun.completedAt instanceof Date ? lastRun.completedAt.toISOString() : lastRun.completedAt,
-      processedEntities: lastRun.processedEntities,
-      createdRecords: lastRun.createdRecords,
-      updatedRecords: lastRun.updatedRecords,
-      skippedRecords: lastRun.skippedRecords,
-      errorCount: lastRun.errorCount
-    } : null,
+    lastSync: lastRun ?
+        {
+          id: lastRun.id,
+          status: lastRun.status,
+          runType: lastRun.runType,
+          startedAt: lastRun.startedAt instanceof Date ? lastRun.startedAt.toISOString() : lastRun.startedAt,
+          completedAt: lastRun.completedAt instanceof Date ? lastRun.completedAt.toISOString() : lastRun.completedAt,
+          processedEntities: lastRun.processedEntities,
+          createdRecords: lastRun.createdRecords,
+          updatedRecords: lastRun.updatedRecords,
+          skippedRecords: lastRun.skippedRecords,
+          errorCount: lastRun.errorCount
+        } :
+      null,
     entityCounts,
     localEditCounts,
     totalImportedRecords: totalImported,

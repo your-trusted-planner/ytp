@@ -30,25 +30,25 @@ export default defineEventHandler(async (event) => {
 
   // Fetch clients and templates in parallel
   const [clients, templates] = await Promise.all([
-    clientIds.length > 0
-      ? db.select({
+    clientIds.length > 0 ?
+        db.select({
           id: schema.users.id,
           firstName: schema.users.firstName,
           lastName: schema.users.lastName
         })
-        .from(schema.users)
-        .where(inArray(schema.users.id, clientIds))
-        .all()
-      : [],
-    templateIds.length > 0
-      ? db.select({
+          .from(schema.users)
+          .where(inArray(schema.users.id, clientIds))
+          .all() :
+        [],
+    templateIds.length > 0 ?
+        db.select({
           id: schema.documentTemplates.id,
           name: schema.documentTemplates.name
         })
-        .from(schema.documentTemplates)
-        .where(inArray(schema.documentTemplates.id, templateIds))
-        .all()
-      : []
+          .from(schema.documentTemplates)
+          .where(inArray(schema.documentTemplates.id, templateIds))
+          .all() :
+        []
   ])
 
   // Create lookup maps
@@ -87,4 +87,3 @@ export default defineEventHandler(async (event) => {
 
   return documents
 })
-

@@ -13,9 +13,9 @@ import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../db'
 
 export interface ResolvedClientIds {
-  clientTableId: string | null  // clients.id (null if no clients record)
-  userIds: string[]             // users.id[] (for legacy FK queries)
-  personId: string              // people.id
+  clientTableId: string | null // clients.id (null if no clients record)
+  userIds: string[] // users.id[] (for legacy FK queries)
+  personId: string // people.id
 }
 
 /**

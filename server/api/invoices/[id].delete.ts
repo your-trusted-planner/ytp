@@ -71,7 +71,8 @@ export default defineEventHandler(async (event) => {
       message: 'Invoice deleted',
       action: 'deleted'
     }
-  } else {
+  }
+  else {
     // Void non-DRAFT invoices
     await db.update(schema.invoices)
       .set({

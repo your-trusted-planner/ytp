@@ -9,7 +9,7 @@ import { parseQuantity } from '../../utils/billing-rates'
 const bulkBillSchema = z.object({
   timeEntryIds: z.array(z.string()).min(1),
   invoiceId: z.string().min(1).optional(),
-  matterId: z.string().min(1).optional()  // Required when creating new invoice
+  matterId: z.string().min(1).optional() // Required when creating new invoice
 })
 
 export default defineEventHandler(async (event) => {
@@ -56,7 +56,8 @@ export default defineEventHandler(async (event) => {
     }
 
     invoice = existingInvoice
-  } else {
+  }
+  else {
     // Create new invoice - matterId is required
     if (!matterId) {
       throw createError({
@@ -174,9 +175,9 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.invoiceLineItems.invoiceId, invoice.id))
     .all()
 
-  let nextLineNumber = existingLineItems.length > 0
-    ? Math.max(...existingLineItems.map(li => li.lineNumber)) + 1
-    : 1
+  let nextLineNumber = existingLineItems.length > 0 ?
+    Math.max(...existingLineItems.map(li => li.lineNumber)) + 1 :
+    1
 
   // Create line items for each time entry
   const lineItems = []
@@ -192,13 +193,13 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.users.id, entry.userId))
       .limit(1)
 
-    const userName = entryUser
-      ? [entryUser.firstName, entryUser.lastName].filter(Boolean).join(' ')
-      : 'Unknown'
+    const userName = entryUser ?
+        [entryUser.firstName, entryUser.lastName].filter(Boolean).join(' ') :
+      'Unknown'
 
-    const workDateStr = entry.workDate
-      ? new Date(entry.workDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : ''
+    const workDateStr = entry.workDate ?
+        new Date(entry.workDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) :
+      ''
 
     // Create line item
     const lineItem = {

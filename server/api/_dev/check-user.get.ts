@@ -32,7 +32,8 @@ export default defineEventHandler(async (event) => {
       isBcryptHash: isBcrypt,
       passwordLength: user.password?.length
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     return { error: error.message }
   }
 })

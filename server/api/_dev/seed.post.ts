@@ -3,7 +3,7 @@ import { schema } from '../../db'
 
 export default defineEventHandler(async (event) => {
   // Only allow in development
-  if (!process.dev) {
+  if (!import.meta.dev) {
     throw createError({
       statusCode: 403,
       message: 'Seeding is only allowed in development mode'
@@ -61,7 +61,8 @@ export default defineEventHandler(async (event) => {
         documents: 4
       }
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     throw createError({
       statusCode: 500,
       message: `Failed to seed database: ${error.message}`

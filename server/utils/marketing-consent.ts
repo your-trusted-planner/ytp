@@ -81,7 +81,7 @@ export async function getPersonConsent(personId: string): Promise<PersonConsent>
   const consentMap = new Map(consents.map(c => [c.channelId, c]))
 
   // Merge channels with consent records
-  const channelConsents: ChannelConsent[] = channels.map(ch => {
+  const channelConsents: ChannelConsent[] = channels.map((ch) => {
     const consent = consentMap.get(ch.id)
     return {
       channelId: ch.id,
@@ -144,7 +144,8 @@ export async function setConsent(
         updatedAt: now
       })
       .where(eq(schema.marketingConsent.id, existing.id))
-  } else {
+  }
+  else {
     // Insert new record
     await db.insert(schema.marketingConsent).values({
       id: generateId(),
@@ -222,7 +223,8 @@ export async function setGlobalUnsubscribe(
           updatedAt: now
         })
         .where(eq(schema.marketingConsent.id, existing.id))
-    } else {
+    }
+    else {
       await db.insert(schema.marketingConsent).values({
         id: generateId(),
         personId,
@@ -324,7 +326,8 @@ export async function verifyPreferenceToken(token: string): Promise<string | nul
     if (!payload.exp) return null
     if (Math.floor(Date.now() / 1000) > payload.exp) return null
     return payload.personId
-  } catch {
+  }
+  catch {
     return null
   }
 }

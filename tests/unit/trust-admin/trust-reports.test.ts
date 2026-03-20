@@ -144,7 +144,7 @@ describe('Trust Reports - Aging Logic', () => {
         { current: 100000, days30to60: 0, days60to90: 0, over90: 0, total: 100000 },
         { current: 0, days30to60: 50000, days60to90: 0, over90: 0, total: 50000 },
         { current: 0, days30to60: 0, days60to90: 30000, over90: 0, total: 30000 },
-        { current: 0, days30to60: 0, days60to90: 0, over90: 20000, total: 20000 },
+        { current: 0, days30to60: 0, days60to90: 0, over90: 20000, total: 20000 }
       ]
 
       const totals = calculateTotals(clientData)
@@ -171,7 +171,7 @@ describe('Trust Reports - Aging Logic', () => {
       // But this tests the summing logic
       const clientData: AgingBucket[] = [
         { current: 50000, days30to60: 0, days60to90: 0, over90: 0, total: 50000 },
-        { current: 75000, days30to60: 0, days60to90: 0, over90: 0, total: 75000 },
+        { current: 75000, days30to60: 0, days60to90: 0, over90: 0, total: 75000 }
       ]
 
       const totals = calculateTotals(clientData)
@@ -199,7 +199,7 @@ describe('Trust Reports - Reconciliation Logic', () => {
         ledgerVsClientsVariance: ledgerVsClients,
         isBalanced: bankVsLedger === 0 && ledgerVsClients === 0,
         hasOutstandingChecks: bankVsLedger < 0, // Bank lower = checks not cleared
-        hasDepositsInTransit: bankVsLedger > 0, // Bank higher = deposits not posted
+        hasDepositsInTransit: bankVsLedger > 0 // Bank higher = deposits not posted
       }
     }
 
@@ -297,7 +297,8 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
       for (const tx of inPeriod) {
         if (tx.amount > 0) {
           totalDeposits += tx.amount
-        } else {
+        }
+        else {
           totalDisbursements += Math.abs(tx.amount)
         }
       }
@@ -314,7 +315,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
         { amount: -200000, date: new Date('2026-01-10') }, // Disbursement
         { amount: 100000, date: new Date('2026-01-15') }, // Deposit
         { amount: -50000, date: new Date('2026-01-20') }, // Disbursement
-        { amount: 200000, date: new Date('2026-02-05') }, // Outside period
+        { amount: 200000, date: new Date('2026-02-05') } // Outside period
       ]
 
       const result = calculatePeriodTotals(transactions, periodStart, periodEnd)
@@ -329,7 +330,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
 
       const transactions: Transaction[] = [
         { amount: 500000, date: new Date('2026-01-15') }, // Before period
-        { amount: 200000, date: new Date('2026-02-15') }, // In period
+        { amount: 200000, date: new Date('2026-02-15') } // In period
       ]
 
       const result = calculatePeriodTotals(transactions, periodStart, periodEnd)
@@ -342,7 +343,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
       const periodEnd = new Date('2026-02-01')
 
       const transactions: Transaction[] = [
-        { amount: 100000, date: new Date('2026-01-01') }, // Exactly on start
+        { amount: 100000, date: new Date('2026-01-01') } // Exactly on start
       ]
 
       const result = calculatePeriodTotals(transactions, periodStart, periodEnd)
@@ -355,7 +356,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
       const periodEnd = new Date('2026-02-01')
 
       const transactions: Transaction[] = [
-        { amount: 100000, date: new Date('2026-02-01') }, // Exactly on end
+        { amount: 100000, date: new Date('2026-02-01') } // Exactly on end
       ]
 
       const result = calculatePeriodTotals(transactions, periodStart, periodEnd)
@@ -428,7 +429,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
     ): LedgerEntry[] {
       let balance = openingBalance
 
-      return entries.map(entry => {
+      return entries.map((entry) => {
         balance += entry.amount
         return { ...entry, runningBalance: balance }
       })
@@ -439,7 +440,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
         { amount: 500000 },
         { amount: -200000 },
         { amount: 100000 },
-        { amount: -50000 },
+        { amount: -50000 }
       ]
 
       const withBalances = calculateRunningBalances(0, entries)
@@ -453,7 +454,7 @@ describe('Trust Reports - Client Ledger Statement Logic', () => {
     it('should start from opening balance', () => {
       const entries: LedgerEntry[] = [
         { amount: 100000 },
-        { amount: -50000 },
+        { amount: -50000 }
       ]
 
       const withBalances = calculateRunningBalances(500000, entries)
@@ -483,7 +484,7 @@ describe('Trust Reports - Sorting and Filtering', () => {
       const clients: ClientAging[] = [
         { clientName: 'Client C', oldestDeposit: new Date('2026-01-15') },
         { clientName: 'Client A', oldestDeposit: new Date('2025-10-01') },
-        { clientName: 'Client B', oldestDeposit: new Date('2025-12-01') },
+        { clientName: 'Client B', oldestDeposit: new Date('2025-12-01') }
       ]
 
       const sorted = sortByOldestDeposit(clients)
@@ -497,7 +498,7 @@ describe('Trust Reports - Sorting and Filtering', () => {
       const clients: ClientAging[] = [
         { clientName: 'Client B', oldestDeposit: new Date('2025-12-01') },
         { clientName: 'Client A', oldestDeposit: null },
-        { clientName: 'Client C', oldestDeposit: new Date('2026-01-15') },
+        { clientName: 'Client C', oldestDeposit: new Date('2026-01-15') }
       ]
 
       const sorted = sortByOldestDeposit(clients)
@@ -519,7 +520,7 @@ describe('Trust Reports - Sorting and Filtering', () => {
         { clientId: '1', balance: 100000 },
         { clientId: '2', balance: 0 },
         { clientId: '3', balance: 50000 },
-        { clientId: '4', balance: 0 },
+        { clientId: '4', balance: 0 }
       ]
 
       const withBalance = clients.filter(c => c.balance > 0)
@@ -531,7 +532,7 @@ describe('Trust Reports - Sorting and Filtering', () => {
     it('should include clients with any positive balance', () => {
       const clients: ClientBalance[] = [
         { clientId: '1', balance: 1 }, // 1 cent
-        { clientId: '2', balance: 0 },
+        { clientId: '2', balance: 0 }
       ]
 
       const withBalance = clients.filter(c => c.balance > 0)

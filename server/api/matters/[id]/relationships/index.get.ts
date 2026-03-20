@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const personMap = new Map(people.map(p => [p.id, p]))
 
   // Enrich relationships with person details and convert to snake_case
-  const enrichedRelationships = matterRelationships.map(mr => {
+  const enrichedRelationships = matterRelationships.map((mr) => {
     const person = personMap.get(mr.personId)
     return {
       id: mr.id,
@@ -50,14 +50,16 @@ export default defineEventHandler(async (event) => {
       notes: mr.notes,
       created_at: mr.createdAt instanceof Date ? mr.createdAt.getTime() : mr.createdAt,
       updated_at: mr.updatedAt instanceof Date ? mr.updatedAt.getTime() : mr.updatedAt,
-      person: person ? {
-        id: person.id,
-        first_name: person.firstName,
-        last_name: person.lastName,
-        full_name: person.fullName,
-        email: person.email,
-        phone: person.phone
-      } : null
+      person: person ?
+          {
+            id: person.id,
+            first_name: person.firstName,
+            last_name: person.lastName,
+            full_name: person.fullName,
+            email: person.email,
+            phone: person.phone
+          } :
+        null
     }
   })
 

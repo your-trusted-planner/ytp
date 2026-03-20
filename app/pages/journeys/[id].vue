@@ -3,12 +3,22 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="text-gray-600 hover:text-gray-900">
+        <button
+          class="text-gray-600 hover:text-gray-900"
+          @click="$router.back()"
+        >
           <IconArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">{{ journey?.name || 'Journey Builder' }}</h1>
-          <p v-if="journey?.description" class="text-gray-600 mt-1">{{ journey.description }}</p>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {{ journey?.name || 'Journey Builder' }}
+          </h1>
+          <p
+            v-if="journey?.description"
+            class="text-gray-600 mt-1"
+          >
+            {{ journey.description }}
+          </p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -18,7 +28,10 @@
           Preview
         </UiButton>
         -->
-        <UiButton variant="outline" @click="showEditModal = true">
+        <UiButton
+          variant="outline"
+          @click="showEditModal = true"
+        >
           <IconEdit class="w-4 h-4 mr-2" />
           Edit Journey
         </UiButton>
@@ -30,11 +43,16 @@
     </div>
 
     <!-- Engagement Journey Banner -->
-    <div v-if="!loading && journey?.journey_type === 'ENGAGEMENT'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div
+      v-if="!loading && journey?.journey_type === 'ENGAGEMENT'"
+      class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+    >
       <div class="flex items-center">
         <IconInfo class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
         <div>
-          <h3 class="font-semibold text-blue-900">Engagement Journey</h3>
+          <h3 class="font-semibold text-blue-900">
+            Engagement Journey
+          </h3>
           <p class="text-sm text-blue-800 mt-1">
             This journey is for client onboarding. Only certain action types are available.
           </p>
@@ -43,21 +61,34 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center py-12"
+    >
       <IconLoader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
     <!-- Validation Warning -->
-    <div v-if="!loading && validationWarnings.length > 0" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+    <div
+      v-if="!loading && validationWarnings.length > 0"
+      class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6"
+    >
       <div class="flex">
         <div class="flex-shrink-0">
           <IconAlertTriangle class="h-5 w-5 text-yellow-400" />
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-yellow-800">Journey Validation Warnings</h3>
+          <h3 class="text-sm font-medium text-yellow-800">
+            Journey Validation Warnings
+          </h3>
           <div class="mt-2 text-sm text-yellow-700">
             <ul class="list-disc list-inside space-y-1">
-              <li v-for="warning in validationWarnings" :key="warning">{{ warning }}</li>
+              <li
+                v-for="warning in validationWarnings"
+                :key="warning"
+              >
+                {{ warning }}
+              </li>
             </ul>
           </div>
         </div>
@@ -65,30 +96,45 @@
     </div>
 
     <!-- Journey Builder -->
-    <div v-if="!loading" class="bg-white rounded-lg border border-gray-200 p-8">
+    <div
+      v-if="!loading"
+      class="bg-white rounded-lg border border-gray-200 p-8"
+    >
       <!-- Empty State -->
-      <div v-if="steps.length === 0" class="text-center py-12">
+      <div
+        v-if="steps.length === 0"
+        class="text-center py-12"
+      >
         <IconGitBranch class="w-16 h-16 mx-auto text-gray-400 mb-4" />
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No steps yet</h3>
-        <p class="text-gray-600 mb-4">Add your first step to start building this journey</p>
-        <UiButton @click="addStep">Add First Step</UiButton>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          No steps yet
+        </h3>
+        <p class="text-gray-600 mb-4">
+          Add your first step to start building this journey
+        </p>
+        <UiButton @click="addStep">
+          Add First Step
+        </UiButton>
       </div>
 
       <!-- Journey Steps -->
-      <div v-else class="space-y-4">
+      <div
+        v-else
+        class="space-y-4"
+      >
         <draggable
           v-model="steps"
           item-key="id"
           handle=".drag-handle"
-          @end="reorderSteps"
           class="space-y-4"
+          @end="reorderSteps"
         >
           <template #item="{ element: step, index }">
             <div
               :class="[
                 'border-2 rounded-lg p-6 transition-all',
-                step.step_type === 'BRIDGE' 
-                  ? 'border-blue-300 bg-blue-50' 
+                step.step_type === 'BRIDGE'
+                  ? 'border-blue-300 bg-blue-50'
                   : 'border-gray-200 bg-white',
                 'hover:shadow-md'
               ]"
@@ -108,16 +154,29 @@
                       : 'bg-burgundy-600 text-white'
                   ]"
                 >
-                  <IconCircleDot v-if="step.step_type === 'MILESTONE'" class="w-5 h-5" />
-                  <IconRepeat v-else class="w-5 h-5" />
+                  <IconCircleDot
+                    v-if="step.step_type === 'MILESTONE'"
+                    class="w-5 h-5"
+                  />
+                  <IconRepeat
+                    v-else
+                    class="w-5 h-5"
+                  />
                 </div>
 
                 <!-- Step Content -->
                 <div class="flex-1">
                   <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
-                      <h3 class="text-lg font-semibold text-gray-900">{{ step.name }}</h3>
-                      <p v-if="step.description" class="text-sm text-gray-600 mt-1">{{ step.description }}</p>
+                      <h3 class="text-lg font-semibold text-gray-900">
+                        {{ step.name }}
+                      </h3>
+                      <p
+                        v-if="step.description"
+                        class="text-sm text-gray-600 mt-1"
+                      >
+                        {{ step.description }}
+                      </p>
                     </div>
                     <div class="flex items-center space-x-2 ml-4">
                       <UiBadge
@@ -158,7 +217,10 @@
                   </div>
 
                   <!-- Help Content Preview -->
-                  <div v-if="step.help_content" class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                  <div
+                    v-if="step.help_content"
+                    class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800"
+                  >
                     <IconHelpCircle class="w-4 h-4 inline mr-1" />
                     Help content available
                   </div>
@@ -166,8 +228,8 @@
                   <!-- Action Items Section -->
                   <div class="mt-4 border-t border-gray-200 pt-4">
                     <button
-                      @click="toggleActionItems(step.id)"
                       class="flex items-center justify-between w-full text-left"
+                      @click="toggleActionItems(step.id)"
                     >
                       <div class="flex items-center space-x-2">
                         <IconCheckSquare class="w-5 h-5 text-gray-600" />
@@ -192,7 +254,10 @@
                     </button>
 
                     <!-- Expanded Action Items List -->
-                    <div v-if="expandedSteps.has(step.id)" class="mt-3 space-y-2">
+                    <div
+                      v-if="expandedSteps.has(step.id)"
+                      class="mt-3 space-y-2"
+                    >
                       <!-- Action Items List -->
                       <div
                         v-for="actionItem in getActionItemsForStep(step.id)"
@@ -211,7 +276,10 @@
                                 {{ formatActionType(actionItem.actionType) }}
                               </span>
                             </div>
-                            <p v-if="actionItem.description" class="text-sm text-gray-600 ml-6">
+                            <p
+                              v-if="actionItem.description"
+                              class="text-sm text-gray-600 ml-6"
+                            >
                               {{ actionItem.description }}
                             </p>
                             <div class="flex items-center space-x-3 ml-6 mt-1 text-xs text-gray-500">
@@ -221,16 +289,16 @@
                           </div>
                           <div class="flex items-center space-x-1 ml-2">
                             <button
-                              @click="editActionItem(step, actionItem)"
                               class="p-1 text-gray-400 hover:text-gray-600"
                               title="Edit"
+                              @click="editActionItem(step, actionItem)"
                             >
                               <IconEdit class="w-4 h-4" />
                             </button>
                             <button
-                              @click="deleteActionItem(actionItem.id, step.id)"
                               class="p-1 text-gray-400 hover:text-red-600"
                               title="Delete"
+                              @click="deleteActionItem(actionItem.id, step.id)"
                             >
                               <IconTrash class="w-4 h-4" />
                             </button>
@@ -248,8 +316,8 @@
 
                       <!-- Add Action Item Button -->
                       <button
-                        @click="addActionItem(step)"
                         class="w-full py-2 px-3 border-2 border-dashed border-gray-300 rounded text-sm text-gray-600 hover:border-burgundy-500 hover:text-burgundy-600 transition-colors flex items-center justify-center space-x-2"
+                        @click="addActionItem(step)"
                       >
                         <IconPlus class="w-4 h-4" />
                         <span>Add Action Item</span>
@@ -260,20 +328,20 @@
                   <!-- Step Actions -->
                   <div class="mt-4 flex items-center space-x-3">
                     <button
-                      @click="editStep(step)"
                       class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+                      @click="editStep(step)"
                     >
                       Edit Step
                     </button>
                     <button
-                      @click="duplicateStep(step)"
                       class="text-sm text-gray-600 hover:text-gray-700 font-medium"
+                      @click="duplicateStep(step)"
                     >
                       Duplicate
                     </button>
                     <button
-                      @click="deleteStep(step.id)"
                       class="text-sm text-red-600 hover:text-red-700 font-medium"
+                      @click="deleteStep(step.id)"
                     >
                       Delete
                     </button>
@@ -282,7 +350,10 @@
               </div>
 
               <!-- Arrow to Next Step -->
-              <div v-if="index < steps.length - 1" class="flex justify-center my-4">
+              <div
+                v-if="index < steps.length - 1"
+                class="flex justify-center my-4"
+              >
                 <IconArrowDown class="w-6 h-6 text-gray-400" />
               </div>
             </div>
@@ -292,39 +363,60 @@
     </div>
 
     <!-- Add/Edit Step Modal -->
-    <UiModal v-model="showStepModal" :title="editingStep ? 'Edit Step' : 'Add Step'" size="xl">
-      <form @submit.prevent="saveStep" class="space-y-4">
+    <UiModal
+      v-model="showStepModal"
+      :title="editingStep ? 'Edit Step' : 'Add Step'"
+      size="xl"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="saveStep"
+      >
         <!-- Step Type -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Step Type</label>
           <div class="grid grid-cols-2 gap-4">
             <button
               type="button"
-              @click="stepForm.stepType = 'MILESTONE'"
               :class="[
                 'p-4 border-2 rounded-lg text-left transition-all',
                 stepForm.stepType === 'MILESTONE'
                   ? 'border-burgundy-600 bg-burgundy-50'
                   : 'border-gray-200 hover:border-gray-300'
               ]"
+              @click="stepForm.stepType = 'MILESTONE'"
             >
-              <IconCircleDot class="w-6 h-6 mb-2" :class="stepForm.stepType === 'MILESTONE' ? 'text-burgundy-600' : 'text-gray-400'" />
-              <div class="font-semibold mb-1">Milestone</div>
-              <div class="text-xs text-gray-600">A binary destination point in the journey</div>
+              <IconCircleDot
+                class="w-6 h-6 mb-2"
+                :class="stepForm.stepType === 'MILESTONE' ? 'text-burgundy-600' : 'text-gray-400'"
+              />
+              <div class="font-semibold mb-1">
+                Milestone
+              </div>
+              <div class="text-xs text-gray-600">
+                A binary destination point in the journey
+              </div>
             </button>
             <button
               type="button"
-              @click="stepForm.stepType = 'BRIDGE'"
               :class="[
                 'p-4 border-2 rounded-lg text-left transition-all',
                 stepForm.stepType === 'BRIDGE'
                   ? 'border-blue-600 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               ]"
+              @click="stepForm.stepType = 'BRIDGE'"
             >
-              <IconRepeat class="w-6 h-6 mb-2" :class="stepForm.stepType === 'BRIDGE' ? 'text-blue-600' : 'text-gray-400'" />
-              <div class="font-semibold mb-1">Bridge Step</div>
-              <div class="text-xs text-gray-600">A circular feedback loop requiring approval from both parties</div>
+              <IconRepeat
+                class="w-6 h-6 mb-2"
+                :class="stepForm.stepType === 'BRIDGE' ? 'text-blue-600' : 'text-gray-400'"
+              />
+              <div class="font-semibold mb-1">
+                Bridge Step
+              </div>
+              <div class="text-xs text-gray-600">
+                A circular feedback loop requiring approval from both parties
+              </div>
             </button>
           </div>
         </div>
@@ -348,10 +440,18 @@
           label="Responsible Party"
           required
         >
-          <option value="CLIENT">Client</option>
-          <option value="COUNSEL">Attorney</option>
-          <option value="STAFF">Staff</option>
-          <option value="BOTH">Both (Client & Attorney)</option>
+          <option value="CLIENT">
+            Client
+          </option>
+          <option value="COUNSEL">
+            Attorney
+          </option>
+          <option value="STAFF">
+            Staff
+          </option>
+          <option value="BOTH">
+            Both (Client & Attorney)
+          </option>
         </UiSelect>
 
         <UiInput
@@ -377,7 +477,9 @@
 
         <!-- Step Completion Settings -->
         <div class="border-t pt-4 space-y-4">
-          <h3 class="text-sm font-medium text-gray-900">Step Completion Settings</h3>
+          <h3 class="text-sm font-medium text-gray-900">
+            Step Completion Settings
+          </h3>
 
           <UiToggle
             v-model="stepForm.isFinalStep"
@@ -392,10 +494,17 @@
         </div>
 
         <div class="flex justify-end space-x-3 pt-4 border-t">
-          <UiButton type="button" variant="ghost" @click="showStepModal = false">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="showStepModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :loading="savingStep">
+          <UiButton
+            type="submit"
+            :loading="savingStep"
+          >
             {{ editingStep ? 'Update Step' : 'Add Step' }}
           </UiButton>
         </div>
@@ -483,9 +592,11 @@ async function fetchJourney() {
 
     // Validate journey after fetching
     await validateJourney()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching journey:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -509,7 +620,8 @@ async function validateJourney() {
     }
 
     validationWarnings.value = warnings
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error validating journey:', error)
   }
 }
@@ -572,7 +684,8 @@ async function saveStep() {
           stepOrder: editingStep.value.step_order
         }
       })
-    } else {
+    }
+    else {
       // Check if there's already a final step when creating a new step
       const existingFinalStep = steps.value.find(s => s.is_final_step)
       if (existingFinalStep) {
@@ -593,9 +706,11 @@ async function saveStep() {
     }
     showStepModal.value = false
     await fetchJourney()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error saving step:', error)
-  } finally {
+  }
+  finally {
     savingStep.value = false
   }
 }
@@ -603,11 +718,12 @@ async function saveStep() {
 // Delete step
 async function deleteStep(stepId: string) {
   if (!confirm('Are you sure you want to delete this step?')) return
-  
+
   try {
     await $fetch(`/api/journey-steps/${stepId}`, { method: 'DELETE' })
     await fetchJourney()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error deleting step:', error)
   }
 }
@@ -635,13 +751,14 @@ async function reorderSteps() {
     id: step.id,
     order: index
   }))
-  
+
   try {
     await $fetch('/api/journey-steps/reorder', {
       method: 'POST',
       body: { steps: updates }
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error reordering steps:', error)
   }
 }
@@ -662,7 +779,8 @@ async function fetchServiceCatalog() {
   try {
     const { catalog: data } = await $fetch('/api/service-catalog')
     serviceCatalog.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching service catalog:', error)
   }
 }
@@ -677,7 +795,8 @@ async function handleJourneySaved() {
 function toggleActionItems(stepId: string) {
   if (expandedSteps.value.has(stepId)) {
     expandedSteps.value.delete(stepId)
-  } else {
+  }
+  else {
     expandedSteps.value.add(stepId)
     // Fetch action items if not already loaded
     if (!actionItemsByStep.value.has(stepId)) {
@@ -690,7 +809,8 @@ async function fetchActionItemsForStep(stepId: string) {
   try {
     const { actionItems } = await $fetch(`/api/action-items/step/${stepId}`)
     actionItemsByStep.value.set(stepId, actionItems || [])
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching action items:', error)
     actionItemsByStep.value.set(stepId, [])
   }
@@ -720,7 +840,8 @@ async function deleteActionItem(actionItemId: string, stepId: string) {
     await fetchActionItemsForStep(stepId)
     // Revalidate after deleting action item
     await validateJourney()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error deleting action item:', error)
     toast.error('Failed to delete action item')
   }

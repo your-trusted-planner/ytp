@@ -145,8 +145,8 @@ export default defineEventHandler(async (event) => {
       message: `Estate plan "${planName}" has been deleted`,
       summary: deletionSummary
     }
-
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Error deleting estate plan:', error)
     throw createError({
       statusCode: 500,

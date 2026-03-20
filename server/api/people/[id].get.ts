@@ -59,8 +59,8 @@ export default defineEventHandler(async (event) => {
     r.fromPersonId === personId ? r.toPersonId : r.fromPersonId
   ).filter((id, i, arr) => arr.indexOf(id) === i)
 
-  const otherPeople = otherPersonIds.length > 0
-    ? await db.select({
+  const otherPeople = otherPersonIds.length > 0 ?
+      await db.select({
         id: schema.people.id,
         fullName: schema.people.fullName,
         firstName: schema.people.firstName,
@@ -68,12 +68,12 @@ export default defineEventHandler(async (event) => {
       })
         .from(schema.people)
         .where(or(...otherPersonIds.map(id => eq(schema.people.id, id))))
-        .all()
-    : []
+        .all() :
+      []
 
   const peopleMap = new Map(otherPeople.map(p => [p.id, p]))
 
-  const relationships = rawRelationships.map(r => {
+  const relationships = rawRelationships.map((r) => {
     const otherPersonId = r.fromPersonId === personId ? r.toPersonId : r.fromPersonId
     const otherPerson = peopleMap.get(otherPersonId)
     return {
@@ -84,9 +84,9 @@ export default defineEventHandler(async (event) => {
       ordinal: r.ordinal,
       notes: r.notes,
       otherPersonId,
-      otherPersonName: otherPerson?.fullName || otherPerson?.firstName && otherPerson?.lastName
-        ? `${otherPerson.firstName} ${otherPerson.lastName}`
-        : 'Unknown',
+      otherPersonName: otherPerson?.fullName || otherPerson?.firstName && otherPerson?.lastName ?
+        `${otherPerson.firstName} ${otherPerson.lastName}` :
+        'Unknown',
       direction: r.fromPersonId === personId ? 'outgoing' : 'incoming'
     }
   })

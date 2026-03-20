@@ -1,8 +1,13 @@
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-900">Notes</h3>
-      <span v-if="notes.length > 0" class="text-sm text-gray-500">
+      <h3 class="text-lg font-semibold text-gray-900">
+        Notes
+      </h3>
+      <span
+        v-if="notes.length > 0"
+        class="text-sm text-gray-500"
+      >
         {{ notes.length }} note{{ notes.length === 1 ? '' : 's' }}
       </span>
     </div>
@@ -29,16 +34,29 @@
     </div>
 
     <!-- Notes List -->
-    <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500 text-sm">Loading notes...</p>
+    <div
+      v-if="loading"
+      class="text-center py-8"
+    >
+      <p class="text-gray-500 text-sm">
+        Loading notes...
+      </p>
     </div>
 
-    <div v-else-if="notes.length === 0" class="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+    <div
+      v-else-if="notes.length === 0"
+      class="text-center py-8 border border-dashed border-gray-200 rounded-lg"
+    >
       <MessageSquare class="w-8 h-8 text-gray-300 mx-auto mb-2" />
-      <p class="text-gray-500 text-sm">No notes yet</p>
+      <p class="text-gray-500 text-sm">
+        No notes yet
+      </p>
     </div>
 
-    <div v-else class="space-y-3">
+    <div
+      v-else
+      class="space-y-3"
+    >
       <div
         v-for="note in notes"
         :key="note.id"
@@ -54,17 +72,17 @@
           />
           <div class="flex justify-end gap-2 mt-2">
             <button
-              @click="cancelEdit"
               :disabled="editSaving"
               class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              @click="cancelEdit"
             >
               <X class="w-4 h-4" />
               Cancel
             </button>
             <button
-              @click="saveEdit(note.id)"
               :disabled="!editContent.trim() || editSaving"
               class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-burgundy-600 text-white rounded-lg hover:bg-burgundy-700 disabled:opacity-50"
+              @click="saveEdit(note.id)"
             >
               <Check class="w-4 h-4" />
               {{ editSaving ? 'Saving...' : 'Save' }}
@@ -75,21 +93,23 @@
         <!-- View Mode -->
         <template v-else>
           <div class="flex justify-between items-start gap-4">
-            <p class="text-sm text-gray-700 whitespace-pre-wrap flex-1">{{ note.content }}</p>
+            <p class="text-sm text-gray-700 whitespace-pre-wrap flex-1">
+              {{ note.content }}
+            </p>
             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 v-if="canEdit(note)"
-                @click="startEdit(note)"
                 class="p-1 text-gray-400 hover:text-burgundy-600"
                 title="Edit note"
+                @click="startEdit(note)"
               >
                 <Pencil class="w-4 h-4" />
               </button>
               <button
                 v-if="canDelete(note)"
-                @click="deleteNote(note.id)"
                 class="p-1 text-gray-400 hover:text-red-500"
                 title="Delete note"
+                @click="deleteNote(note.id)"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -157,9 +177,11 @@ async function fetchNotes() {
       }
     })
     notes.value = response.notes || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch notes:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -182,9 +204,11 @@ async function addNote() {
     notes.value.unshift(response.note)
     newNote.value = ''
     emit('note-added', response.note)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to add note:', error)
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -198,7 +222,8 @@ async function deleteNote(noteId: string) {
     })
     notes.value = notes.value.filter(n => n.id !== noteId)
     emit('note-deleted', noteId)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to delete note:', error)
   }
 }
@@ -234,9 +259,11 @@ async function saveEdit(noteId: string) {
     editingNoteId.value = null
     editContent.value = ''
     emit('note-updated', response.note)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to update note:', error)
-  } finally {
+  }
+  finally {
     editSaving.value = false
   }
 }

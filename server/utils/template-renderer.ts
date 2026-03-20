@@ -118,7 +118,8 @@ export class TemplateRenderer {
         noEscape: true,
         strict: false
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error precompiling template:', error)
       throw new Error(`Template precompilation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
@@ -139,7 +140,8 @@ export class TemplateRenderer {
           const templateSpec = eval(`(${precompiledTemplate})`)
           const compiledFn = this.runtime.template(templateSpec)
           return compiledFn(context)
-        } catch (evalError) {
+        }
+        catch (evalError) {
           console.error('Error using precompiled template, falling back to runtime compilation:', evalError)
           // Fall through to runtime compilation
         }
@@ -152,7 +154,8 @@ export class TemplateRenderer {
         strict: false
       })
       return compiledTemplate(context)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error rendering template:', error)
 
       // Provide helpful error message
@@ -217,7 +220,8 @@ export class TemplateRenderer {
       }
 
       traverse(ast)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error parsing template for variables:', error)
       // Fallback to regex if AST parsing fails
       const varPattern = /\{\{\s*([^}#/]+?)\s*\}\}/g
@@ -264,6 +268,3 @@ export function useTemplateRenderer() {
 }
 
 export default TemplateRenderer
-
-
-

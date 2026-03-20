@@ -98,9 +98,9 @@ export default defineEventHandler(async (event) => {
     const personLookup = new Map<string, string>()
 
     // Build decision lookup from personDecisions using utility
-    const decisionLookup = decisions.personDecisions
-      ? buildDecisionLookup(decisions.personDecisions as PersonMatchDecision[])
-      : new Map()
+    const decisionLookup = decisions.personDecisions ?
+        buildDecisionLookup(decisions.personDecisions as PersonMatchDecision[]) :
+        new Map()
 
     // Apply legacy clientPersonId/spousePersonId for backward compatibility
     if (decisions.clientPersonId) {
@@ -136,7 +136,8 @@ export default defineEventHandler(async (event) => {
       if (usePersonDecisions) {
         // New mode: use shouldCreatePerson utility (defaults to create if no decision)
         shouldCreate = shouldCreatePerson(fullName, decisionLookup, true)
-      } else {
+      }
+      else {
         // Legacy mode: use createPeopleRecords flag
         shouldCreate = decisions.createPeopleRecords
       }
@@ -194,11 +195,12 @@ export default defineEventHandler(async (event) => {
       // Fallback: find in extracted people by import metadata role
       // This works even if fullName differs between parsedData and transformed person
       if (!spousePersonId) {
-        spousePersonId = peopleToCreate.find(p => {
+        spousePersonId = peopleToCreate.find((p) => {
           try {
             const metadata = p.importMetadata ? JSON.parse(p.importMetadata) : {}
             return metadata.role === 'spouse'
-          } catch {
+          }
+          catch {
             return false
           }
         })?.id
@@ -287,8 +289,8 @@ export default defineEventHandler(async (event) => {
           updatedAt: new Date()
         })
         .where(eq(schema.estatePlans.id, planId))
-
-    } else {
+    }
+    else {
       // Create new plan
       const { plan, trust, will, version } = transformToEstatePlan(
         parsedData,
@@ -390,7 +392,8 @@ export default defineEventHandler(async (event) => {
           status: role.status
         })
         result.rolesCreated++
-      } catch (error: any) {
+      }
+      catch (error: any) {
         // Log role creation errors but continue
         result.errors?.push(`Failed to create role: ${error.message}`)
       }
@@ -419,9 +422,9 @@ export default defineEventHandler(async (event) => {
       (parsedData.client.fullName ? `${parsedData.client.fullName} Estate Plan` : 'Estate Plan')
 
     // Count people linked vs created
-    const peopleLinked = decisions.personDecisions
-      ? decisions.personDecisions.filter(d => d.action === 'use_existing').length
-      : (decisions.clientPersonId ? 1 : 0) + (decisions.spousePersonId ? 1 : 0)
+    const peopleLinked = decisions.personDecisions ?
+      decisions.personDecisions.filter(d => d.action === 'use_existing').length :
+        (decisions.clientPersonId ? 1 : 0) + (decisions.spousePersonId ? 1 : 0)
 
     // Log activity
     await logActivity({
@@ -443,8 +446,8 @@ export default defineEventHandler(async (event) => {
     })
 
     return result
-
-  } catch (error: any) {
+  }
+  catch (error: any) {
     result.errors?.push(error.message)
     throw createError({
       statusCode: 500,

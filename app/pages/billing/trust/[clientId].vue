@@ -1,8 +1,11 @@
 <template>
   <div class="space-y-6">
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <template v-else-if="client">
@@ -10,9 +13,15 @@
       <div class="flex justify-between items-start">
         <div>
           <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <NuxtLink to="/billing" class="hover:text-gray-700">Billing</NuxtLink>
+            <NuxtLink
+              to="/billing"
+              class="hover:text-gray-700"
+            >Billing</NuxtLink>
             <span>/</span>
-            <NuxtLink to="/billing/trust" class="hover:text-gray-700">Trust</NuxtLink>
+            <NuxtLink
+              to="/billing/trust"
+              class="hover:text-gray-700"
+            >Trust</NuxtLink>
             <span>/</span>
             <span>{{ client.firstName || client.first_name }} {{ client.lastName || client.last_name }}</span>
           </div>
@@ -24,13 +33,22 @@
           </p>
         </div>
         <div class="flex gap-2">
-          <UiButton variant="secondary" @click="showDepositModal = true">
+          <UiButton
+            variant="secondary"
+            @click="showDepositModal = true"
+          >
             Record Deposit
           </UiButton>
-          <UiButton variant="secondary" @click="showDisbursementModal = true">
+          <UiButton
+            variant="secondary"
+            @click="showDisbursementModal = true"
+          >
             Record Disbursement
           </UiButton>
-          <UiButton variant="secondary" @click="printLedger">
+          <UiButton
+            variant="secondary"
+            @click="printLedger"
+          >
             <Printer class="w-4 h-4 mr-2" />
             Print Statement
           </UiButton>
@@ -41,8 +59,13 @@
       <UiCard>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Current Trust Balance</p>
-            <p class="text-4xl font-bold" :class="totalBalance >= 0 ? 'text-green-600' : 'text-red-600'">
+            <p class="text-sm font-medium text-gray-500">
+              Current Trust Balance
+            </p>
+            <p
+              class="text-4xl font-bold"
+              :class="totalBalance >= 0 ? 'text-green-600' : 'text-red-600'"
+            >
               {{ formatCurrency(totalBalance) }}
             </p>
             <p class="text-sm text-gray-500 mt-1">
@@ -55,8 +78,13 @@
         </div>
 
         <!-- Balance Breakdown by Matter -->
-        <div v-if="balances.length > 1" class="mt-6 pt-4 border-t">
-          <h3 class="text-sm font-medium text-gray-700 mb-3">Balance by Matter</h3>
+        <div
+          v-if="balances.length > 1"
+          class="mt-6 pt-4 border-t"
+        >
+          <h3 class="text-sm font-medium text-gray-700 mb-3">
+            Balance by Matter
+          </h3>
           <div class="space-y-2">
             <div
               v-for="balance in balances"
@@ -75,28 +103,50 @@
       <!-- Transaction History -->
       <UiCard>
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-medium text-gray-900">Transaction History</h2>
+          <h2 class="text-lg font-medium text-gray-900">
+            Transaction History
+          </h2>
           <div class="flex gap-2">
             <select
               v-model="filterType"
               class="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-burgundy-500"
             >
-              <option value="">All Types</option>
-              <option value="DEPOSIT">Deposits</option>
-              <option value="DISBURSEMENT">Disbursements</option>
-              <option value="EXPENSE">Expenses</option>
-              <option value="REFUND">Refunds</option>
+              <option value="">
+                All Types
+              </option>
+              <option value="DEPOSIT">
+                Deposits
+              </option>
+              <option value="DISBURSEMENT">
+                Disbursements
+              </option>
+              <option value="EXPENSE">
+                Expenses
+              </option>
+              <option value="REFUND">
+                Refunds
+              </option>
             </select>
           </div>
         </div>
 
-        <div v-if="filteredTransactions.length === 0" class="text-center py-8">
+        <div
+          v-if="filteredTransactions.length === 0"
+          class="text-center py-8"
+        >
           <ArrowLeftRight class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-gray-900">No transactions</h3>
-          <p class="text-gray-500 mt-1">Record a deposit to see transactions here.</p>
+          <h3 class="text-lg font-medium text-gray-900">
+            No transactions
+          </h3>
+          <p class="text-gray-500 mt-1">
+            Record a deposit to see transactions here.
+          </p>
         </div>
 
-        <div v-else class="overflow-x-auto">
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -133,7 +183,10 @@
                   <div class="text-sm text-gray-900">
                     {{ formatDate(tx.transactionDate || tx.transaction_date) }}
                   </div>
-                  <div v-if="tx.referenceNumber || tx.reference_number" class="text-xs text-gray-500">
+                  <div
+                    v-if="tx.referenceNumber || tx.reference_number"
+                    class="text-xs text-gray-500"
+                  >
                     Ref: {{ tx.referenceNumber || tx.reference_number }}
                   </div>
                 </td>
@@ -149,7 +202,10 @@
                   <div class="text-sm text-gray-900 max-w-[250px]">
                     {{ tx.description }}
                   </div>
-                  <div v-if="tx.checkNumber || tx.check_number" class="text-xs text-gray-500">
+                  <div
+                    v-if="tx.checkNumber || tx.check_number"
+                    class="text-xs text-gray-500"
+                  >
                     Check #{{ tx.checkNumber || tx.check_number }}
                   </div>
                 </td>
@@ -157,16 +213,28 @@
                   {{ tx.matterTitle || tx.matter_title || 'General' }}
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right">
-                  <span v-if="tx.amount > 0" class="text-sm font-medium text-green-600">
+                  <span
+                    v-if="tx.amount > 0"
+                    class="text-sm font-medium text-green-600"
+                  >
                     {{ formatCurrency(tx.amount) }}
                   </span>
-                  <span v-else class="text-sm text-gray-400">-</span>
+                  <span
+                    v-else
+                    class="text-sm text-gray-400"
+                  >-</span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right">
-                  <span v-if="tx.amount < 0" class="text-sm font-medium text-red-600">
+                  <span
+                    v-if="tx.amount < 0"
+                    class="text-sm font-medium text-red-600"
+                  >
                     {{ formatCurrency(Math.abs(tx.amount)) }}
                   </span>
-                  <span v-else class="text-sm text-gray-400">-</span>
+                  <span
+                    v-else
+                    class="text-sm text-gray-400"
+                  >-</span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-right">
                   <span class="text-sm font-medium text-gray-900">
@@ -177,7 +245,10 @@
             </tbody>
             <tfoot class="bg-gray-100">
               <tr>
-                <td colspan="4" class="px-4 py-3 text-sm font-bold text-gray-900">
+                <td
+                  colspan="4"
+                  class="px-4 py-3 text-sm font-bold text-gray-900"
+                >
                   TOTALS
                 </td>
                 <td class="px-4 py-3 text-right text-sm font-bold text-green-600">
@@ -197,7 +268,9 @@
 
       <!-- Quick Links -->
       <UiCard>
-        <h3 class="text-sm font-medium text-gray-700 mb-3">Related</h3>
+        <h3 class="text-sm font-medium text-gray-700 mb-3">
+          Related
+        </h3>
         <div class="flex gap-4">
           <NuxtLink
             :to="`/clients/${route.params.clientId}`"
@@ -222,11 +295,21 @@
     </template>
 
     <!-- Not Found -->
-    <div v-else class="text-center py-12">
+    <div
+      v-else
+      class="text-center py-12"
+    >
       <Users class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">Client not found</h3>
-      <p class="text-gray-500 mt-1">The client you're looking for doesn't exist.</p>
-      <NuxtLink to="/billing/trust" class="text-burgundy-600 hover:text-burgundy-800 mt-4 inline-block">
+      <h3 class="text-lg font-medium text-gray-900">
+        Client not found
+      </h3>
+      <p class="text-gray-500 mt-1">
+        The client you're looking for doesn't exist.
+      </p>
+      <NuxtLink
+        to="/billing/trust"
+        class="text-burgundy-600 hover:text-burgundy-800 mt-4 inline-block"
+      >
         Back to Trust Accounts
       </NuxtLink>
     </div>
@@ -330,16 +413,18 @@ async function fetchData() {
     client.value = clientResponse.client
 
     // Fetch trust balance
-    const balanceResponse = await $fetch<{ balances: any[]; totalBalance: number }>(`/api/trust/clients/${route.params.clientId}/balance`)
+    const balanceResponse = await $fetch<{ balances: any[], totalBalance: number }>(`/api/trust/clients/${route.params.clientId}/balance`)
     balances.value = balanceResponse.balances || []
 
     // Fetch ledger/transactions
     const ledgerResponse = await $fetch<{ transactions: any[] }>(`/api/trust/clients/${route.params.clientId}/ledger`)
     transactions.value = ledgerResponse.transactions || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch data:', error)
     client.value = null
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

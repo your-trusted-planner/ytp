@@ -51,7 +51,7 @@ export const ALL_ROLES: UserRole[] = ['ADMIN', 'LAWYER', 'STAFF', 'CLIENT', 'ADV
 export const PUBLIC_ROUTES: RouteConfig[] = [
   { path: '/login', name: 'Login', requiresAuth: false, allowedRoles: 'ANY' },
   { path: '/book', name: 'Public Booking', requiresAuth: false, allowedRoles: 'ANY' },
-  { path: '/sign/:token', name: 'E-Signature', requiresAuth: false, allowedRoles: 'ANY' },
+  { path: '/sign/:token', name: 'E-Signature', requiresAuth: false, allowedRoles: 'ANY' }
 ]
 
 /**
@@ -63,7 +63,7 @@ export const COMMON_ROUTES: RouteConfig[] = [
   { path: '/help', name: 'Help', requiresAuth: true, allowedRoles: 'ANY' },
   { path: '/appointments', name: 'Appointments', requiresAuth: true, allowedRoles: 'ANY' },
   { path: '/schedule', name: 'Schedule', requiresAuth: true, allowedRoles: 'ANY' },
-  { path: '/activity', name: 'Activity', requiresAuth: true, allowedRoles: 'ANY' },
+  { path: '/activity', name: 'Activity', requiresAuth: true, allowedRoles: 'ANY' }
 ]
 
 /**
@@ -140,7 +140,7 @@ export const FIRM_ROUTES: RouteConfig[] = [
     requiresAuth: true,
     allowedRoles: 'FIRM',
     apiEndpoint: '/api/signature-sessions'
-  },
+  }
 ]
 
 /**
@@ -184,7 +184,7 @@ export const ADMIN_ROUTES: RouteConfig[] = [
     requiresAuth: true,
     allowedRoles: ['ADMIN'],
     minAdminLevel: 2
-  },
+  }
 ]
 
 /**
@@ -205,7 +205,7 @@ export const CLIENT_ROUTES: RouteConfig[] = [
     requiresAuth: true,
     allowedRoles: ['CLIENT'],
     apiEndpoint: '/api/my-journeys'
-  },
+  }
 ]
 
 /**
@@ -215,7 +215,7 @@ export const PROTECTED_ROUTES: RouteConfig[] = [
   ...COMMON_ROUTES,
   ...FIRM_ROUTES,
   ...ADMIN_ROUTES,
-  ...CLIENT_ROUTES,
+  ...CLIENT_ROUTES
 ]
 
 /**
@@ -223,7 +223,7 @@ export const PROTECTED_ROUTES: RouteConfig[] = [
  */
 export const ALL_ROUTES: RouteConfig[] = [
   ...PUBLIC_ROUTES,
-  ...PROTECTED_ROUTES,
+  ...PROTECTED_ROUTES
 ]
 
 /**
@@ -239,7 +239,7 @@ export const API_ACCESS_CONTROL = {
     '/api/auth/firebase',
     '/api/oauth-providers/enabled',
     '/api/public/*',
-    '/api/signature/*', // E-signature public endpoints (token-based access)
+    '/api/signature/*' // E-signature public endpoints (token-based access)
   ],
 
   // Firm-only APIs (lawyer, staff, admin)
@@ -255,7 +255,7 @@ export const API_ACCESS_CONTROL = {
     '/api/client-journeys',
     '/api/client-journeys/*',
     '/api/services',
-    '/api/services/*',
+    '/api/services/*'
   ],
 
   // Admin-only APIs
@@ -264,7 +264,7 @@ export const API_ACCESS_CONTROL = {
     '/api/users/*',
     '/api/oauth-providers',
     '/api/oauth-providers/*',
-    '/api/seed/*',
+    '/api/seed/*'
   ],
 
   // Client-specific APIs (clients access their own data)
@@ -277,8 +277,8 @@ export const API_ACCESS_CONTROL = {
     '/api/my-documents/*',
     '/api/client/stats',
     '/api/client/documents',
-    '/api/client/appointments',
-  ],
+    '/api/client/appointments'
+  ]
 } as const
 
 /**

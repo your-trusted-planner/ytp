@@ -16,16 +16,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     // Handle fetch errors or invalid session
     if (error.value || !data.value?.user) {
       // Clear any client-side state
-      if (process.client) {
+      if (import.meta.client) {
         // Could clear localStorage/sessionStorage here if needed
       }
 
       return navigateTo('/login?reason=invalid')
     }
-  } catch (err) {
+  }
+  catch (err) {
     // Handle any unexpected errors
     console.error('Session check failed:', err)
     return navigateTo('/login?reason=invalid')
   }
 })
-

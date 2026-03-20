@@ -1,19 +1,32 @@
 <template>
   <UiCard>
     <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="invoices.length === 0" class="text-center py-12">
+    <div
+      v-else-if="invoices.length === 0"
+      class="text-center py-12"
+    >
       <FileText class="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 class="text-lg font-medium text-gray-900">No invoices found</h3>
-      <p class="text-gray-500 mt-1">Create your first invoice to get started.</p>
+      <h3 class="text-lg font-medium text-gray-900">
+        No invoices found
+      </h3>
+      <p class="text-gray-500 mt-1">
+        Create your first invoice to get started.
+      </p>
     </div>
 
     <!-- Table -->
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -72,7 +85,10 @@
               >
                 {{ formatStatus(invoice.status) }}
               </span>
-              <div v-if="invoice.isOverdue || invoice.is_overdue" class="text-xs text-red-600 mt-1">
+              <div
+                v-if="invoice.isOverdue || invoice.is_overdue"
+                class="text-xs text-red-600 mt-1"
+              >
                 {{ invoice.daysPastDue || invoice.days_past_due }} days overdue
               </div>
             </td>
@@ -80,27 +96,33 @@
               <div class="text-sm font-medium text-gray-900">
                 {{ formatCurrency(invoice.totalAmount || invoice.total_amount) }}
               </div>
-              <div v-if="(invoice.balanceDue || invoice.balance_due) < (invoice.totalAmount || invoice.total_amount)" class="text-sm text-gray-500">
+              <div
+                v-if="(invoice.balanceDue || invoice.balance_due) < (invoice.totalAmount || invoice.total_amount)"
+                class="text-sm text-gray-500"
+              >
                 Due: {{ formatCurrency(invoice.balanceDue || invoice.balance_due) }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
               {{ formatDate(invoice.dueDate || invoice.due_date) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right" @click.stop>
+            <td
+              class="px-6 py-4 whitespace-nowrap text-right"
+              @click.stop
+            >
               <div class="flex justify-end gap-2">
                 <button
-                  @click="downloadPdf(invoice)"
                   class="text-gray-400 hover:text-gray-600"
                   title="Download PDF"
+                  @click="downloadPdf(invoice)"
                 >
                   <Download class="w-4 h-4" />
                 </button>
                 <button
                   v-if="invoice.status === 'DRAFT'"
-                  @click="sendInvoice(invoice)"
                   class="text-blue-400 hover:text-blue-600"
                   title="Send Invoice"
+                  @click="sendInvoice(invoice)"
                 >
                   <Send class="w-4 h-4" />
                 </button>
@@ -192,7 +214,8 @@ function statusClass(status: string): string {
 async function downloadPdf(invoice: Invoice) {
   try {
     window.open(`/api/invoices/${invoice.id}/pdf`, '_blank')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to download PDF')
   }
 }
@@ -202,7 +225,8 @@ async function sendInvoice(invoice: Invoice) {
     await $fetch(`/api/invoices/${invoice.id}/send`, { method: 'POST' })
     toast.success('Invoice sent successfully')
     emit('refresh')
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to send invoice')
   }
 }

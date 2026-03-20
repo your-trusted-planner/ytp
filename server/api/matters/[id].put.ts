@@ -7,12 +7,12 @@ const updateMatterSchema = z.object({
   matterNumber: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(['OPEN', 'CLOSED', 'PENDING']).optional(),
-  leadAttorneyId: z.string().optional(),
+  leadAttorneyId: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
-  
+
   const id = getRouterParam(event, 'id')
   if (!id) {
     throw createError({
@@ -20,17 +20,17 @@ export default defineEventHandler(async (event) => {
       message: 'Matter ID required'
     })
   }
-  
+
   const body = await readBody(event)
   const result = updateMatterSchema.safeParse(body)
-  
+
   if (!result.success) {
     throw createError({
       statusCode: 400,
       message: 'Invalid input'
     })
   }
-  
+
   const updateData: any = {
     ...result.data,
     updatedAt: new Date()
@@ -40,20 +40,18 @@ export default defineEventHandler(async (event) => {
   if (result.data.leadAttorneyId !== undefined) {
     updateData.leadAttorneyId = result.data.leadAttorneyId || null
   }
-  
+
   if (!isDatabaseAvailable()) {
     return { success: true } // Mock response
   }
-  
+
   const { useDrizzle, schema } = await import('../../db')
   const db = useDrizzle()
-  
+
   await db
     .update(schema.matters)
     .set(updateData)
     .where(eq(schema.matters.id, id))
-  
+
   return { success: true }
 })
-
-

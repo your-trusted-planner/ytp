@@ -35,7 +35,8 @@ export default defineEventHandler(async (event) => {
   let parsedData
   try {
     parsedData = parseWealthCounselXml(xmlString)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     throw createError({
       statusCode: 400,
       message: `Failed to parse XML: ${error.message}`
@@ -111,21 +112,24 @@ export default defineEventHandler(async (event) => {
   for (const t of parsedData.fiduciaries.trustees) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Trustee'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Trustee')
     }
   }
   for (const t of parsedData.fiduciaries.successorTrustees) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Successor Trustee'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Successor Trustee')
     }
   }
   for (const t of parsedData.fiduciaries.trustProtectors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Trust Protector'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Trust Protector')
     }
   }
@@ -134,42 +138,48 @@ export default defineEventHandler(async (event) => {
   for (const t of parsedData.fiduciaries.client.financialAgents) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Financial Agent (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Financial Agent (Client)')
     }
   }
   for (const t of parsedData.fiduciaries.client.financialAgentSuccessors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Successor Financial Agent (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Successor Financial Agent (Client)')
     }
   }
   for (const t of parsedData.fiduciaries.client.healthcareAgents) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Healthcare Agent (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Healthcare Agent (Client)')
     }
   }
   for (const t of parsedData.fiduciaries.client.healthcareAgentSuccessors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Successor Healthcare Agent (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Successor Healthcare Agent (Client)')
     }
   }
   for (const t of parsedData.fiduciaries.client.executors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Executor (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Executor (Client)')
     }
   }
   for (const t of parsedData.fiduciaries.client.guardians) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Guardian (Client)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Guardian (Client)')
     }
   }
@@ -178,42 +188,48 @@ export default defineEventHandler(async (event) => {
   for (const t of parsedData.fiduciaries.spouse.financialAgents) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Financial Agent (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Financial Agent (Spouse)')
     }
   }
   for (const t of parsedData.fiduciaries.spouse.financialAgentSuccessors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Successor Financial Agent (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Successor Financial Agent (Spouse)')
     }
   }
   for (const t of parsedData.fiduciaries.spouse.healthcareAgents) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Healthcare Agent (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Healthcare Agent (Spouse)')
     }
   }
   for (const t of parsedData.fiduciaries.spouse.healthcareAgentSuccessors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Successor Healthcare Agent (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Successor Healthcare Agent (Spouse)')
     }
   }
   for (const t of parsedData.fiduciaries.spouse.executors) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Executor (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Executor (Spouse)')
     }
   }
   for (const t of parsedData.fiduciaries.spouse.guardians) {
     if (!extractor.has(t.personName)) {
       extractor.add(t.personName, 'fiduciary', ['Guardian (Spouse)'], undefined, undefined)
-    } else {
+    }
+    else {
       extractor.addRole(t.personName, 'Guardian (Spouse)')
     }
   }
@@ -281,28 +297,34 @@ export default defineEventHandler(async (event) => {
         zipCode: parsedData.client.zipCode,
         dateOfBirth: parsedData.client.dateOfBirth
       },
-      spouse: parsedData.spouse ? {
-        fullName: parsedData.spouse.fullName || '',
-        firstName: parsedData.spouse.firstName,
-        lastName: parsedData.spouse.lastName,
-        email: parsedData.spouse.email,
-        phone: parsedData.spouse.phone,
-        dateOfBirth: parsedData.spouse.dateOfBirth
-      } : undefined,
+      spouse: parsedData.spouse ?
+          {
+            fullName: parsedData.spouse.fullName || '',
+            firstName: parsedData.spouse.firstName,
+            lastName: parsedData.spouse.lastName,
+            email: parsedData.spouse.email,
+            phone: parsedData.spouse.phone,
+            dateOfBirth: parsedData.spouse.dateOfBirth
+          } :
+        undefined,
       children: parsedData.children.map(c => ({
         name: c.fullName || '',
         dateOfBirth: c.dateOfBirth
       })),
       planType: parsedData.planType,
-      trust: parsedData.trust ? {
-        name: parsedData.trust.name,
-        type: parsedData.trust.type,
-        isJoint: parsedData.trust.isJoint,
-        signDate: parsedData.trust.signDate
-      } : undefined,
-      will: parsedData.will ? {
-        executionDate: parsedData.will.executionDate
-      } : undefined,
+      trust: parsedData.trust ?
+          {
+            name: parsedData.trust.name,
+            type: parsedData.trust.type,
+            isJoint: parsedData.trust.isJoint,
+            signDate: parsedData.trust.signDate
+          } :
+        undefined,
+      will: parsedData.will ?
+          {
+            executionDate: parsedData.will.executionDate
+          } :
+        undefined,
       fiduciaries: [
         // Trust-level fiduciaries
         ...parsedData.fiduciaries.trustees.map(t => ({ name: t.personName, role: 'Trustee', forPerson: 'TRUST' })),

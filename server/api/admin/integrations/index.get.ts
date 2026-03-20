@@ -7,7 +7,6 @@ import { desc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
-
   const db = useDrizzle()
 
   const integrations = await db
@@ -35,19 +34,19 @@ export default defineEventHandler(async (event) => {
       name: integration.name,
       status: integration.status,
       settings: integration.settings ? JSON.parse(integration.settings) : null,
-      lastTestedAt: integration.lastTestedAt instanceof Date
-        ? integration.lastTestedAt.toISOString()
-        : integration.lastTestedAt,
+      lastTestedAt: integration.lastTestedAt instanceof Date ?
+          integration.lastTestedAt.toISOString() :
+        integration.lastTestedAt,
       lastErrorMessage: integration.lastErrorMessage,
-      lastSyncTimestamps: integration.lastSyncTimestamps
-        ? JSON.parse(integration.lastSyncTimestamps)
-        : null,
-      createdAt: integration.createdAt instanceof Date
-        ? integration.createdAt.toISOString()
-        : integration.createdAt,
-      updatedAt: integration.updatedAt instanceof Date
-        ? integration.updatedAt.toISOString()
-        : integration.updatedAt
+      lastSyncTimestamps: integration.lastSyncTimestamps ?
+          JSON.parse(integration.lastSyncTimestamps) :
+        null,
+      createdAt: integration.createdAt instanceof Date ?
+          integration.createdAt.toISOString() :
+        integration.createdAt,
+      updatedAt: integration.updatedAt instanceof Date ?
+          integration.updatedAt.toISOString() :
+        integration.updatedAt
     }))
   }
 })

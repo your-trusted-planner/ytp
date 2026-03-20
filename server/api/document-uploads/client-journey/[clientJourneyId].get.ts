@@ -42,22 +42,22 @@ export default defineEventHandler(async (event) => {
   const allUserIds = [...new Set([...uploaderIds, ...reviewerIds])]
 
   // Fetch all users in one query
-  const users = allUserIds.length > 0
-    ? await db.select({
+  const users = allUserIds.length > 0 ?
+      await db.select({
         id: schema.users.id,
         firstName: schema.users.firstName,
         lastName: schema.users.lastName
       })
-      .from(schema.users)
-      .where(inArray(schema.users.id, allUserIds))
-      .all()
-    : []
+        .from(schema.users)
+        .where(inArray(schema.users.id, allUserIds))
+        .all() :
+      []
 
   // Create user lookup map
   const userMap = new Map(users.map(u => [u.id, u]))
 
   // Enrich uploads with user info
-  const enrichedUploads = uploads.map(upload => {
+  const enrichedUploads = uploads.map((upload) => {
     const uploader = userMap.get(upload.uploadedByUserId)
     const reviewer = upload.reviewedByUserId ? userMap.get(upload.reviewedByUserId) : null
 
@@ -74,6 +74,3 @@ export default defineEventHandler(async (event) => {
     uploads: enrichedUploads
   }
 })
-
-
-

@@ -34,13 +34,13 @@ interface SyncResult {
   created: number
   updated: number
   skipped: number
-  errors: Array<{ personId: string; error: string }>
+  errors: Array<{ personId: string, error: string }>
 }
 
 interface OptOutSyncResult {
   checked: number
   newUnsubscribes: number
-  errors: Array<{ personId: string; error: string }>
+  errors: Array<{ personId: string, error: string }>
 }
 
 // ===================================
@@ -49,7 +49,7 @@ interface OptOutSyncResult {
 
 class MockApolloClient {
   contacts: Map<string, ApolloContact> = new Map()
-  customFields: Array<{ id: string; name: string; field_type: string }> = []
+  customFields: Array<{ id: string, name: string, field_type: string }> = []
   errorOnIds: Set<string> = new Set() // Person IDs that should trigger errors
 
   async searchContactByEmail(email: string): Promise<ApolloContact | null> {
@@ -142,19 +142,22 @@ async function simulateSyncContacts(
       if (person.apolloContactId) {
         await client.updateContact(person.apolloContactId, contactData)
         result.updated++
-      } else {
+      }
+      else {
         const existing = await client.searchContactByEmail(person.email)
         if (existing) {
           await client.updateContact(existing.id, contactData)
           dbUpdates.set(person.id, existing.id)
           result.updated++
-        } else {
+        }
+        else {
           const created = await client.createContact(contactData)
           dbUpdates.set(person.id, created.id)
           result.created++
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       result.errors.push({
         personId: person.id,
         error: error instanceof Error ? error.message : String(error)
@@ -187,7 +190,8 @@ async function simulateSyncOptOuts(
         unsubscribes.push(person.id)
         result.newUnsubscribes++
       }
-    } catch (error) {
+    }
+    catch (error) {
       result.errors.push({
         personId: person.id,
         error: error instanceof Error ? error.message : String(error)

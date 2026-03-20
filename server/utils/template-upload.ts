@@ -45,9 +45,9 @@ export function extractVariables(text: string): Set<string> {
     const varName = match[1].trim()
     // Don't include Jinja control statements
     if (!varName.includes('%') &&
-        !varName.startsWith('if ') &&
-        !varName.startsWith('for ') &&
-        !varName.startsWith('end')) {
+      !varName.startsWith('if ') &&
+      !varName.startsWith('for ') &&
+      !varName.startsWith('end')) {
       variables.add(varName)
     }
   }
@@ -180,7 +180,8 @@ export async function processTemplateUpload(
   let compiledTemplate: string | null = null
   try {
     compiledTemplate = renderer.precompile(html)
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('Failed to precompile template, will fall back to runtime compilation:', error)
     // Continue without precompilation - will work in dev but may fail in Workers
   }

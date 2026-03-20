@@ -13,7 +13,10 @@
       :title="disabled ? '' : 'Click to edit'"
       @click="!disabled && startEditing()"
     >
-      <slot name="display" :value="modelValue">
+      <slot
+        name="display"
+        :value="modelValue"
+      >
         {{ displayValue }}
       </slot>
     </component>
@@ -30,7 +33,7 @@
       @blur="handleBlur"
       @keydown.enter="save"
       @keydown.escape="cancel"
-    />
+    >
   </div>
 </template>
 
@@ -151,7 +154,8 @@ function cancel() {
 function handleBlur() {
   if (props.autoSave) {
     save()
-  } else {
+  }
+  else {
     cancel()
   }
 }

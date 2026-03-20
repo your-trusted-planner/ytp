@@ -14,7 +14,6 @@ import { LawmaticsClient, LawmaticsApiError, RateLimitError } from '../../../../
 import { ApolloClient, ApolloApiError, ApolloRateLimitError } from '../../../../utils/apollo-client'
 
 export default defineEventHandler(async (event) => {
-
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -68,9 +67,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // KV may return parsed object or JSON string depending on how it was stored
-  const credentials: { accessToken: string } = typeof credentialsData === 'string'
-    ? JSON.parse(credentialsData)
-    : credentialsData as { accessToken: string }
+  const credentials: { accessToken: string } = typeof credentialsData === 'string' ?
+      JSON.parse(credentialsData) :
+    credentialsData as { accessToken: string }
 
   if (!credentials.accessToken) {
     await db.update(schema.integrations)
@@ -92,7 +91,8 @@ export default defineEventHandler(async (event) => {
   let decryptedToken: string
   try {
     decryptedToken = await decrypt(event, credentials.accessToken)
-  } catch (decryptError) {
+  }
+  catch (decryptError) {
     await db.update(schema.integrations)
       .set({
         status: 'ERROR',
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Test connection based on integration type
-  let testResult: { success: boolean; error?: string; details?: Record<string, any> }
+  let testResult: { success: boolean, error?: string, details?: Record<string, any> }
 
   switch (integration.type) {
     case 'LAWMATICS':
@@ -153,7 +153,8 @@ export default defineEventHandler(async (event) => {
       message: 'Connection successful',
       details: testResult.details
     }
-  } else {
+  }
+  else {
     return {
       success: false,
       error: testResult.error
@@ -166,10 +167,10 @@ export default defineEventHandler(async (event) => {
  */
 async function testResendConnection(
   apiKey: string
-): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+): Promise<{ success: boolean, error?: string, details?: Record<string, any> }> {
   try {
     const response = await fetch('https://api.resend.com/domains', {
-      headers: { 'Authorization': `Bearer ${apiKey}` }
+      headers: { Authorization: `Bearer ${apiKey}` }
     })
 
     if (!response.ok) {
@@ -186,7 +187,7 @@ async function testResendConnection(
       }
     }
 
-    const data = await response.json() as { data?: Array<{ id: string; name: string }> }
+    const data = await response.json() as { data?: Array<{ id: string, name: string }> }
     return {
       success: true,
       details: {
@@ -195,7 +196,8 @@ async function testResendConnection(
         domains: data.data?.map(d => d.name) || []
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     return {
       success: false,
       error: `Connection failed: ${error instanceof Error ? error.message : String(error)}`
@@ -208,7 +210,7 @@ async function testResendConnection(
  */
 async function testApolloConnection(
   apiKey: string
-): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+): Promise<{ success: boolean, error?: string, details?: Record<string, any> }> {
   try {
     const client = new ApolloClient(apiKey)
     const result = await client.testConnection()
@@ -220,13 +222,15 @@ async function testApolloConnection(
           message: 'Successfully connected to Apollo API'
         }
       }
-    } else {
+    }
+    else {
       return {
         success: false,
         error: result.error || 'Connection test failed'
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     if (error instanceof ApolloRateLimitError) {
       return {
         success: false,
@@ -259,7 +263,7 @@ async function testApolloConnection(
  */
 async function testLawmaticsConnection(
   accessToken: string
-): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+): Promise<{ success: boolean, error?: string, details?: Record<string, any> }> {
   try {
     const client = new LawmaticsClient(accessToken)
     const result = await client.testConnection()
@@ -275,7 +279,8 @@ async function testLawmaticsConnection(
             entityCounts: counts
           }
         }
-      } catch {
+      }
+      catch {
         // Counts failed but connection worked
         return {
           success: true,
@@ -284,13 +289,15 @@ async function testLawmaticsConnection(
           }
         }
       }
-    } else {
+    }
+    else {
       return {
         success: false,
         error: result.error || 'Connection test failed'
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     if (error instanceof RateLimitError) {
       return {
         success: false,

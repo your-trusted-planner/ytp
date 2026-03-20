@@ -3,25 +3,43 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="text-gray-600 hover:text-gray-900">
+        <button
+          class="text-gray-600 hover:text-gray-900"
+          @click="$router.back()"
+        >
           <IconArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">{{ journey?.name || 'Journey Kanban' }}</h1>
-          <p class="text-gray-600 mt-1">Manage all clients in this journey</p>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {{ journey?.name || 'Journey Kanban' }}
+          </h1>
+          <p class="text-gray-600 mt-1">
+            Manage all clients in this journey
+          </p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <UiSelect v-model="filterStatus" @change="fetchKanbanData">
-          <option value="">All Statuses</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="PAUSED">Paused</option>
-          <option value="COMPLETED">Completed</option>
+        <UiSelect
+          v-model="filterStatus"
+          @change="fetchKanbanData"
+        >
+          <option value="">
+            All Statuses
+          </option>
+          <option value="IN_PROGRESS">
+            In Progress
+          </option>
+          <option value="PAUSED">
+            Paused
+          </option>
+          <option value="COMPLETED">
+            Completed
+          </option>
         </UiSelect>
         <button
-          @click="refreshData"
           class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
           :class="{ 'animate-spin': refreshing }"
+          @click="refreshData"
         >
           <IconRefreshCw class="w-5 h-5" />
         </button>
@@ -29,12 +47,18 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center py-12"
+    >
       <IconLoader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
     <!-- Kanban Board -->
-    <div v-else class="overflow-x-auto pb-4">
+    <div
+      v-else
+      class="overflow-x-auto pb-4"
+    >
       <div class="flex space-x-4 min-w-max">
         <!-- Step Columns -->
         <div
@@ -57,9 +81,17 @@
             >
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center space-x-2">
-                  <IconCircleDot v-if="step.step_type === 'MILESTONE'" class="w-5 h-5 text-burgundy-600" />
-                  <IconRepeat v-else class="w-5 h-5 text-blue-600" />
-                  <h3 class="text-gray-900">{{ step.name }}</h3>
+                  <IconCircleDot
+                    v-if="step.step_type === 'MILESTONE'"
+                    class="w-5 h-5 text-burgundy-600"
+                  />
+                  <IconRepeat
+                    v-else
+                    class="w-5 h-5 text-blue-600"
+                  />
+                  <h3 class="text-gray-900">
+                    {{ step.name }}
+                  </h3>
                 </div>
                 <span
                   :class="[
@@ -70,7 +102,10 @@
                   {{ getClientsInStep(step.id).length }}
                 </span>
               </div>
-              <div v-if="getTotalValue(step.id) > 0" class="text-sm text-gray-600">
+              <div
+                v-if="getTotalValue(step.id) > 0"
+                class="text-sm text-gray-600"
+              >
                 Total: ${{ formatCurrency(getTotalValue(step.id)) }}
               </div>
             </div>
@@ -81,8 +116,8 @@
                 :list="getClientsInStep(step.id)"
                 group="clients"
                 item-key="id"
-                @end="onDragEnd($event, step.id)"
                 class="space-y-2"
+                @end="onDragEnd($event, step.id)"
               >
                 <template #item="{ element: clientJourney }">
                   <div
@@ -95,15 +130,17 @@
                         <h4 class="font-semibold text-gray-900 mb-1">
                           {{ clientJourney.client_first_name }} {{ clientJourney.client_last_name }}
                         </h4>
-                        <p class="text-xs text-gray-600">{{ clientJourney.client_email }}</p>
+                        <p class="text-xs text-gray-600">
+                          {{ clientJourney.client_email }}
+                        </p>
                       </div>
                       <span
                         :class="[
                           'px-2 py-1 rounded text-xs font-medium',
-                          clientJourney.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                          clientJourney.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                          clientJourney.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-600'
+                          clientJourney.priority === 'URGENT' ? 'bg-red-100 text-red-700'
+                          : clientJourney.priority === 'HIGH' ? 'bg-orange-100 text-orange-700'
+                            : clientJourney.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-gray-100 text-gray-600'
                         ]"
                       >
                         {{ clientJourney.priority }}
@@ -112,15 +149,24 @@
 
                     <!-- Progress Info -->
                     <div class="space-y-2 text-xs text-gray-600">
-                      <div v-if="clientJourney.matter_name" class="flex items-center">
+                      <div
+                        v-if="clientJourney.matter_name"
+                        class="flex items-center"
+                      >
                         <IconFolder class="w-3 h-3 mr-1" />
                         {{ clientJourney.matter_name }}
                       </div>
-                      <div v-if="clientJourney.step_started_at" class="flex items-center">
+                      <div
+                        v-if="clientJourney.step_started_at"
+                        class="flex items-center"
+                      >
                         <IconClock class="w-3 h-3 mr-1" />
                         {{ formatTimeInStep(clientJourney.step_started_at) }}
                       </div>
-                      <div v-if="clientJourney.step_progress_status === 'WAITING_CLIENT'" class="flex items-center text-yellow-600">
+                      <div
+                        v-if="clientJourney.step_progress_status === 'WAITING_CLIENT'"
+                        class="flex items-center text-yellow-600"
+                      >
                         <IconAlertCircle class="w-3 h-3 mr-1" />
                         Waiting on client
                       </div>
@@ -129,14 +175,14 @@
                     <!-- Quick Actions -->
                     <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                       <button
-                        @click.stop="sendReminder(clientJourney)"
                         class="text-xs text-burgundy-600 hover:text-burgundy-700 font-medium"
+                        @click.stop="sendReminder(clientJourney)"
                       >
                         Send Reminder
                       </button>
                       <button
-                        @click.stop="viewProgress(clientJourney.id)"
                         class="text-xs text-gray-600 hover:text-gray-700 font-medium"
+                        @click.stop="viewProgress(clientJourney.id)"
                       >
                         View Details →
                       </button>
@@ -153,27 +199,43 @@
     <!-- Summary Stats -->
     <div class="grid grid-cols-4 gap-4 mt-6">
       <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <div class="text-2xl font-bold text-gray-900">{{ totalClients }}</div>
-        <div class="text-sm text-gray-600">Total Clients</div>
+        <div class="text-2xl font-bold text-gray-900">
+          {{ totalClients }}
+        </div>
+        <div class="text-sm text-gray-600">
+          Total Clients
+        </div>
       </div>
       <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <div class="text-2xl font-bold text-burgundy-600">{{ inProgressClients }}</div>
-        <div class="text-sm text-gray-600">In Progress</div>
+        <div class="text-2xl font-bold text-burgundy-600">
+          {{ inProgressClients }}
+        </div>
+        <div class="text-sm text-gray-600">
+          In Progress
+        </div>
       </div>
       <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <div class="text-2xl font-bold text-green-600">{{ completedClients }}</div>
-        <div class="text-sm text-gray-600">Completed</div>
+        <div class="text-2xl font-bold text-green-600">
+          {{ completedClients }}
+        </div>
+        <div class="text-sm text-gray-600">
+          Completed
+        </div>
       </div>
       <div class="bg-white rounded-lg border border-gray-200 p-4">
-        <div class="text-2xl font-bold text-gray-900">${{ formatCurrency(totalRevenue) }}</div>
-        <div class="text-sm text-gray-600">Total Revenue</div>
+        <div class="text-2xl font-bold text-gray-900">
+          ${{ formatCurrency(totalRevenue) }}
+        </div>
+        <div class="text-sm text-gray-600">
+          Total Revenue
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { 
+import {
   ArrowLeft as IconArrowLeft, Loader as IconLoader, CircleDot as IconCircleDot, Repeat as IconRepeat, RefreshCw as IconRefreshCw,
   Folder as IconFolder, Clock as IconClock, AlertCircle as IconAlertCircle
 } from 'lucide-vue-next'
@@ -198,10 +260,10 @@ const clientJourneys = ref([])
 
 // Computed stats
 const totalClients = computed(() => clientJourneys.value.length)
-const inProgressClients = computed(() => 
+const inProgressClients = computed(() =>
   clientJourneys.value.filter(cj => cj.status === 'IN_PROGRESS').length
 )
-const completedClients = computed(() => 
+const completedClients = computed(() =>
   clientJourneys.value.filter(cj => cj.status === 'COMPLETED').length
 )
 const totalRevenue = computed(() => {
@@ -234,11 +296,13 @@ async function fetchKanbanData() {
     const { journeys: clientJourneysData } = await $fetch(`/api/journeys/${route.params.id}/clients`, {
       query: { status: filterStatus.value || undefined }
     })
-    
+
     clientJourneys.value = clientJourneysData || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching kanban data:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -262,7 +326,8 @@ async function onDragEnd(event: any, newStepId: string) {
       body: { stepId: newStepId }
     })
     await fetchKanbanData()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error moving client:', error)
     // Revert on error
     await fetchKanbanData()
@@ -287,7 +352,8 @@ async function sendReminder(clientJourney: any) {
     })
     // Show success message
     toast.success('Reminder sent successfully')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error sending reminder:', error)
   }
 }
@@ -311,4 +377,3 @@ onMounted(() => {
   fetchKanbanData()
 })
 </script>
-

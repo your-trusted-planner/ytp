@@ -479,7 +479,6 @@ function seedFullTestData() {
   `).run(invoiceId, matterId, clientId, 'INV-2024-001', 'SENT', 175000, 175000, now, now)
 }
 
-
 describe('Composite Client Detail - Response Shape', () => {
   beforeEach(() => {
     setupTestDb()

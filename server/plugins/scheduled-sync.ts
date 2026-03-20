@@ -14,12 +14,13 @@
 import { nanoid } from 'nanoid'
 
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook('cloudflare:scheduled' as any, async ({ event, env }: { event: any; env: any }) => {
+  nitroApp.hooks.hook('cloudflare:scheduled' as any, async ({ event, env }: { event: any, env: any }) => {
     console.log('[Scheduled Sync] Cron trigger fired')
 
     try {
       await handleScheduledSync(env)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('[Scheduled Sync] Error:', error)
     }
   })
@@ -49,7 +50,8 @@ export async function handleScheduledSync(env: any, options?: { updatedSince?: s
   for (const integration of integrations) {
     try {
       await processIntegrationSync(db, schema, integration, env, options)
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`[Scheduled Sync] Error processing integration ${integration.id}:`, error)
     }
   }
@@ -69,7 +71,8 @@ async function processIntegrationSync(
   if (integration.settings) {
     try {
       settings = JSON.parse(integration.settings)
-    } catch {
+    }
+    catch {
       console.warn(`[Scheduled Sync] Invalid settings JSON for integration ${integration.id}`)
     }
   }
@@ -109,16 +112,17 @@ async function processIntegrationSync(
         })
         .where(eq(schema.migrationRuns.id, activeRun.id))
       // Fall through to start a new run
-    } else {
+    }
+    else {
       console.log(`[Scheduled Sync] Skipping integration ${integration.id} — active run ${activeRun.id} (${activeRun.status})`)
       return
     }
   }
 
   // Determine entity types to sync
-  const entityTypes = settings.syncEntityTypes?.length
-    ? settings.syncEntityTypes
-    : ['users', 'contacts', 'prospects', 'notes', 'activities']
+  const entityTypes = settings.syncEntityTypes?.length ?
+    settings.syncEntityTypes :
+      ['users', 'contacts', 'prospects', 'notes', 'activities']
 
   // Get filter for incremental sync.
   // A custom updatedSince override (from manual trigger) takes priority
@@ -126,14 +130,16 @@ async function processIntegrationSync(
   let filter: { updatedSince?: string } | undefined
   if (options?.updatedSince) {
     filter = { updatedSince: options.updatedSince }
-  } else if (integration.lastSyncTimestamps) {
+  }
+  else if (integration.lastSyncTimestamps) {
     try {
       const timestamps = JSON.parse(integration.lastSyncTimestamps)
       const firstPhase = entityTypes[0]
       if (firstPhase && timestamps[firstPhase]) {
         filter = { updatedSince: timestamps[firstPhase] }
       }
-    } catch {
+    }
+    catch {
       // No valid timestamps, do full incremental without filter
     }
   }

@@ -56,7 +56,8 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.integrations.id, existing.id))
 
     return { success: true, id: existing.id }
-  } else {
+  }
+  else {
     // Create new integration
     const id = generateId()
     const credentialsKey = `integration:${id}:credentials`

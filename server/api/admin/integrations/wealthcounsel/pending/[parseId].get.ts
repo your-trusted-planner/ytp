@@ -215,7 +215,8 @@ export default defineEventHandler(async (event) => {
       if (t.personName) {
         if (!extractor.has(t.personName)) {
           extractor.add(t.personName, 'fiduciary', [category.role], undefined, undefined)
-        } else {
+        }
+        else {
           extractor.addRole(t.personName, category.role)
         }
       }
@@ -259,28 +260,34 @@ export default defineEventHandler(async (event) => {
         zipCode: parsedData.client?.zipCode,
         dateOfBirth: parsedData.client?.dateOfBirth
       },
-      spouse: parsedData.spouse ? {
-        fullName: parsedData.spouse.fullName || '',
-        firstName: parsedData.spouse.firstName,
-        lastName: parsedData.spouse.lastName,
-        email: parsedData.spouse.email,
-        phone: parsedData.spouse.phone,
-        dateOfBirth: parsedData.spouse.dateOfBirth
-      } : undefined,
+      spouse: parsedData.spouse ?
+          {
+            fullName: parsedData.spouse.fullName || '',
+            firstName: parsedData.spouse.firstName,
+            lastName: parsedData.spouse.lastName,
+            email: parsedData.spouse.email,
+            phone: parsedData.spouse.phone,
+            dateOfBirth: parsedData.spouse.dateOfBirth
+          } :
+        undefined,
       children: (parsedData.children || []).map((c: any) => ({
         name: c.fullName || '',
         dateOfBirth: c.dateOfBirth
       })),
       planType: parsedData.planType,
-      trust: parsedData.trust ? {
-        name: parsedData.trust.name,
-        type: parsedData.trust.type,
-        isJoint: parsedData.trust.isJoint,
-        signDate: parsedData.trust.signDate
-      } : undefined,
-      will: parsedData.will ? {
-        executionDate: parsedData.will.executionDate
-      } : undefined,
+      trust: parsedData.trust ?
+          {
+            name: parsedData.trust.name,
+            type: parsedData.trust.type,
+            isJoint: parsedData.trust.isJoint,
+            signDate: parsedData.trust.signDate
+          } :
+        undefined,
+      will: parsedData.will ?
+          {
+            executionDate: parsedData.will.executionDate
+          } :
+        undefined,
       fiduciaries: [
         // Trust-level fiduciaries
         ...(parsedData.fiduciaries?.trustees || []).map((t: any) => ({ name: t.personName, role: 'Trustee', forPerson: 'TRUST' })),

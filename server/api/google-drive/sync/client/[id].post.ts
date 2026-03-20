@@ -70,7 +70,8 @@ export default defineEventHandler(async (event) => {
         folderUrl: existingFolder.webViewLink || client.googleDriveFolderUrl,
         alreadyExists: true
       }
-    } catch (error) {
+    }
+    catch (error) {
       // Folder is not accessible - it may have been deleted or is in a different drive
       // We'll fall through to create a new one
       console.warn(`Existing folder ${client.googleDriveFolderId} not accessible, will create new folder:`, error)
@@ -111,7 +112,8 @@ export default defineEventHandler(async (event) => {
       folderId: folder.id,
       folderUrl: folder.webViewLink
     }
-  } catch (error) {
+  }
+  catch (error) {
     // Update status to ERROR
     await db.update(schema.clientProfiles)
       .set({

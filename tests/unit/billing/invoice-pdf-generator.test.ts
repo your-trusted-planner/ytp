@@ -69,7 +69,7 @@ describe('Invoice PDF Generator', () => {
       const months = [
         { date: new Date(2026, 1, 1), expected: 'February 1, 2026' },
         { date: new Date(2026, 5, 15), expected: 'June 15, 2026' },
-        { date: new Date(2026, 8, 20), expected: 'September 20, 2026' },
+        { date: new Date(2026, 8, 20), expected: 'September 20, 2026' }
       ]
 
       for (const { date, expected } of months) {
@@ -103,7 +103,7 @@ describe('Invoice PDF Generator', () => {
       const items: InvoiceLineItem[] = [
         { description: 'Service A', quantity: 1, unitPrice: 50000, amount: 50000, itemType: 'SERVICE' },
         { description: 'Service B', quantity: 2, unitPrice: 25000, amount: 50000, itemType: 'SERVICE' },
-        { description: 'Filing Fee', quantity: 1, unitPrice: 15000, amount: 15000, itemType: 'FILING_FEE' },
+        { description: 'Filing Fee', quantity: 1, unitPrice: 15000, amount: 15000, itemType: 'FILING_FEE' }
       ]
 
       expect(calculateSubtotal(items)).toBe(115000)
@@ -119,7 +119,7 @@ describe('Invoice PDF Generator', () => {
       subtotal: number,
       taxRate: number,
       discountAmount: number
-    ): { taxAmount: number; totalAmount: number } {
+    ): { taxAmount: number, totalAmount: number } {
       // Tax rate is in basis points (825 = 8.25%)
       const taxAmount = Math.round((subtotal * taxRate) / 10000)
       const totalAmount = subtotal + taxAmount - discountAmount

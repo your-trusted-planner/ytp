@@ -90,7 +90,8 @@ export default defineEventHandler(async (event) => {
 
         return new Uint8Array(pdfBytes)
       }
-    } catch (e) {
+    }
+    catch (e) {
       // PDF not found in blob, will regenerate
     }
   }

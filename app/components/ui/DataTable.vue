@@ -1,17 +1,28 @@
 <template>
   <div>
     <!-- Loading State -->
-    <UiLoadingState v-if="loading" :message="loadingText" />
+    <UiLoadingState
+      v-if="loading"
+      :message="loadingText"
+    />
 
     <!-- Empty State -->
-    <div v-else-if="!data || data.length === 0" class="text-center py-12">
+    <div
+      v-else-if="!data || data.length === 0"
+      class="text-center py-12"
+    >
       <slot name="empty">
-        <p class="text-gray-500">{{ emptyText }}</p>
+        <p class="text-gray-500">
+          {{ emptyText }}
+        </p>
       </slot>
     </div>
 
     <!-- Table -->
-    <div v-else class="overflow-x-auto">
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -29,9 +40,18 @@
               <div class="flex items-center gap-2">
                 <span>{{ col.label }}</span>
                 <template v-if="col.sortable">
-                  <ChevronUp v-if="sortKey === col.key && sortDirection === 'asc'" class="w-4 h-4" />
-                  <ChevronDown v-else-if="sortKey === col.key && sortDirection === 'desc'" class="w-4 h-4" />
-                  <ChevronsUpDown v-else class="w-4 h-4 opacity-30" />
+                  <ChevronUp
+                    v-if="sortKey === col.key && sortDirection === 'asc'"
+                    class="w-4 h-4"
+                  />
+                  <ChevronDown
+                    v-else-if="sortKey === col.key && sortDirection === 'desc'"
+                    class="w-4 h-4"
+                  />
+                  <ChevronsUpDown
+                    v-else
+                    class="w-4 h-4 opacity-30"
+                  />
                 </template>
               </div>
             </th>
@@ -54,7 +74,12 @@
               @click="col.stopPropagation ? $event.stopPropagation() : undefined"
             >
               <!-- Named slot for custom cell rendering -->
-              <slot :name="`cell-${col.key}`" :row="row" :value="getNestedValue(row, col.key)" :index="index">
+              <slot
+                :name="`cell-${col.key}`"
+                :row="row"
+                :value="getNestedValue(row, col.key)"
+                :index="index"
+              >
                 <!-- Default rendering -->
                 <div :class="col.textClass || 'text-sm text-gray-900'">
                   {{ formatCellValue(row, col) }}
@@ -67,7 +92,10 @@
     </div>
 
     <!-- Pagination Footer (when pagination prop is provided) -->
-    <div v-if="pagination" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+    <div
+      v-if="pagination"
+      class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between"
+    >
       <!-- Page info -->
       <div class="text-sm text-gray-700">
         Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
@@ -76,14 +104,21 @@
       <div class="flex items-center gap-4">
         <!-- Page size selector -->
         <div class="flex items-center gap-2">
-          <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+          <label
+            for="page-size"
+            class="text-sm text-gray-700"
+          >Per page:</label>
           <select
             id="page-size"
             :value="pagination.limit"
             class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
             @change="handlePageSizeChange"
           >
-            <option v-for="size in effectivePageSizeOptions" :key="size" :value="size">
+            <option
+              v-for="size in effectivePageSizeOptions"
+              :key="size"
+              :value="size"
+            >
               {{ size }}
             </option>
           </select>
@@ -115,7 +150,10 @@
     </div>
 
     <!-- Footer slot for summaries, custom pagination, etc. -->
-    <slot name="footer" :data="sortedData"></slot>
+    <slot
+      name="footer"
+      :data="sortedData"
+    />
   </div>
 </template>
 
@@ -229,7 +267,8 @@ const formatCellValue = (row: any, col: Column): string => {
 const handleSort = (key: string) => {
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
+  }
+  else {
     sortKey.value = key
     sortDirection.value = 'asc'
   }
@@ -266,9 +305,11 @@ const sortedData = computed(() => {
     let comparison = 0
     if (typeof aVal === 'string' && typeof bVal === 'string') {
       comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' })
-    } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+    }
+    else if (typeof aVal === 'number' && typeof bVal === 'number') {
       comparison = aVal - bVal
-    } else {
+    }
+    else {
       comparison = String(aVal).localeCompare(String(bVal))
     }
 

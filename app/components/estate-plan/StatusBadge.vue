@@ -1,6 +1,13 @@
 <template>
-  <UiBadge :variant="badgeVariant" :class="props.class">
-    <component v-if="showIcon" :is="statusIcon" class="w-3 h-3 mr-1" />
+  <UiBadge
+    :variant="badgeVariant"
+    :class="props.class"
+  >
+    <component
+      :is="statusIcon"
+      v-if="showIcon"
+      class="w-3 h-3 mr-1"
+    />
     {{ statusLabel }}
   </UiBadge>
 </template>

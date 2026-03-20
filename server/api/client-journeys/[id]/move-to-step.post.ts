@@ -73,7 +73,8 @@ export default defineEventHandler(async (event) => {
         updatedAt: now
       })
       .where(eq(schema.journeyStepProgress.id, existingProgress.id))
-  } else {
+  }
+  else {
     // Create new progress record
     await db.insert(schema.journeyStepProgress).values({
       id: nanoid(),
@@ -91,6 +92,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true }
 })
-
-
-

@@ -42,4 +42,3 @@ export async function sha256(input: string): Promise<string> {
 }
 
 // Note: requireRole is in rbac.ts - use that instead
-

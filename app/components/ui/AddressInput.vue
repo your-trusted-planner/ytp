@@ -1,10 +1,19 @@
 <template>
   <div class="space-y-3">
     <!-- Street Address with autocomplete -->
-    <div class="relative" ref="containerRef">
-      <label v-if="label" class="block text-sm font-medium text-gray-700 mb-1">
+    <div
+      ref="containerRef"
+      class="relative"
+    >
+      <label
+        v-if="label"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
         {{ label }}
-        <span v-if="required" class="text-red-500">*</span>
+        <span
+          v-if="required"
+          class="text-red-500"
+        >*</span>
       </label>
       <div class="relative">
         <input
@@ -22,10 +31,13 @@
           @focus="handleFocus"
           @blur="handleBlur"
           @keydown="handleKeydown"
-        />
+        >
         <!-- Loading indicator -->
-        <div v-if="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600"></div>
+        <div
+          v-if="loading"
+          class="absolute right-3 top-1/2 -translate-y-1/2"
+        >
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
         </div>
       </div>
 
@@ -53,7 +65,9 @@
               @mousedown.prevent="selectSuggestion(suggestion)"
               @mouseenter="highlightedIndex = index"
             >
-              <div class="font-medium">{{ suggestion.street }}</div>
+              <div class="font-medium">
+                {{ suggestion.street }}
+              </div>
               <div class="text-xs text-gray-500">
                 {{ suggestion.city }}, {{ suggestion.state }} {{ suggestion.zipCode }}
                 <template v-if="suggestion.countryCode && suggestion.countryCode !== 'US'">
@@ -82,7 +96,7 @@
           'border-gray-300'
         ]"
         @input="emitUpdate"
-      />
+      >
     </div>
 
     <!-- City, State, ZIP, Country row -->
@@ -99,7 +113,7 @@
             'border-gray-300'
           ]"
           @input="emitUpdate"
-        />
+        >
       </div>
       <div class="col-span-1">
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ stateLabel }}</label>
@@ -115,8 +129,12 @@
           ]"
           @change="emitUpdate"
         >
-          <option value=""></option>
-          <option v-for="state in US_STATES" :key="state.code" :value="state.code">
+          <option value="" />
+          <option
+            v-for="state in US_STATES"
+            :key="state.code"
+            :value="state.code"
+          >
             {{ state.code }}
           </option>
         </select>
@@ -133,7 +151,7 @@
             'border-gray-300'
           ]"
           @input="emitUpdate"
-        />
+        >
       </div>
       <div class="col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ zipLabel }}</label>
@@ -148,7 +166,7 @@
             'border-gray-300'
           ]"
           @input="emitUpdate"
-        />
+        >
       </div>
     </div>
 
@@ -166,14 +184,25 @@
           ]"
           @change="handleCountryChange"
         >
-          <option value="">-- Select Country --</option>
-          <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
+          <option value="">
+            -- Select Country --
+          </option>
+          <option
+            v-for="c in COUNTRIES"
+            :key="c.code"
+            :value="c.code"
+          >
             {{ c.name }}
           </option>
-          <option value="OTHER">Other</option>
+          <option value="OTHER">
+            Other
+          </option>
         </select>
       </div>
-      <div v-if="localCountry === 'OTHER'" class="col-span-3">
+      <div
+        v-if="localCountry === 'OTHER'"
+        class="col-span-3"
+      >
         <label class="block text-sm font-medium text-gray-700 mb-1">Country Name</label>
         <input
           v-model="customCountry"
@@ -186,26 +215,42 @@
             'border-gray-300'
           ]"
           @input="emitUpdate"
-        />
+        >
       </div>
     </div>
 
     <!-- Manual entry checkbox -->
-    <div v-if="allowManualEntry" class="flex items-center">
+    <div
+      v-if="allowManualEntry"
+      class="flex items-center"
+    >
       <input
         id="manual-entry"
         v-model="manualEntry"
         type="checkbox"
         class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
         @change="handleManualEntryChange"
-      />
-      <label for="manual-entry" class="ml-2 text-sm text-gray-600">
+      >
+      <label
+        for="manual-entry"
+        class="ml-2 text-sm text-gray-600"
+      >
         Enter address manually
       </label>
     </div>
 
-    <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-    <p v-else-if="hint" class="text-sm text-gray-500">{{ hint }}</p>
+    <p
+      v-if="error"
+      class="text-sm text-red-600"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="hint"
+      class="text-sm text-gray-500"
+    >
+      {{ hint }}
+    </p>
   </div>
 </template>
 
@@ -306,7 +351,8 @@ watch(() => props.modelValue, (newVal) => {
     if (country && country !== 'OTHER' && !COUNTRIES.find(c => c.code === country)) {
       customCountry.value = country
       localCountry.value = 'OTHER'
-    } else {
+    }
+    else {
       localCountry.value = country
     }
   }
@@ -353,7 +399,8 @@ function handleInput() {
       await fetchSuggestions()
       loading.value = false
     }, 300)
-  } else {
+  }
+  else {
     suggestions.value = []
     showDropdown.value = false
   }
@@ -371,7 +418,8 @@ async function fetchSuggestions() {
     })
     suggestions.value = response.suggestions
     showDropdown.value = suggestions.value.length > 0
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch address suggestions:', error)
     suggestions.value = []
   }
@@ -385,7 +433,8 @@ function handleKeydown(event: KeyboardEvent) {
       event.preventDefault()
       if (!showDropdown.value && suggestions.value.length > 0) {
         showDropdown.value = true
-      } else if (highlightedIndex.value < suggestions.value.length - 1) {
+      }
+      else if (highlightedIndex.value < suggestions.value.length - 1) {
         highlightedIndex.value++
       }
       break
@@ -420,7 +469,8 @@ function selectSuggestion(suggestion: AddressSuggestion) {
     if (knownCountry) {
       localCountry.value = suggestion.countryCode
       customCountry.value = ''
-    } else {
+    }
+    else {
       localCountry.value = 'OTHER'
       customCountry.value = suggestion.country || suggestion.countryCode
     }

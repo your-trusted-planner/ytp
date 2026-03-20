@@ -107,19 +107,21 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.planToMatters.planId, planId))
 
   // Format person helper
-  const formatPerson = (person: any) => person ? {
-    id: person.id,
-    fullName: person.fullName,
-    firstName: person.firstName,
-    lastName: person.lastName,
-    email: person.email,
-    phone: person.phone,
-    address: person.address,
-    city: person.city,
-    state: person.state,
-    zipCode: person.zipCode,
-    dateOfBirth: person.dateOfBirth
-  } : null
+  const formatPerson = (person: any) => person ?
+      {
+        id: person.id,
+        fullName: person.fullName,
+        firstName: person.firstName,
+        lastName: person.lastName,
+        email: person.email,
+        phone: person.phone,
+        address: person.address,
+        city: person.city,
+        state: person.state,
+        zipCode: person.zipCode,
+        dateOfBirth: person.dateOfBirth
+      } :
+    null
 
   return {
     id: planRow.id,
@@ -137,25 +139,29 @@ export default defineEventHandler(async (event) => {
 
     grantor1: formatPerson(grantor1),
 
-    grantor2: grantor2 ? {
-      id: grantor2.id,
-      fullName: grantor2.fullName,
-      firstName: grantor2.firstName,
-      lastName: grantor2.lastName,
-      email: grantor2.email,
-      phone: grantor2.phone
-    } : null,
+    grantor2: grantor2 ?
+        {
+          id: grantor2.id,
+          fullName: grantor2.fullName,
+          firstName: grantor2.firstName,
+          lastName: grantor2.lastName,
+          email: grantor2.email,
+          phone: grantor2.phone
+        } :
+      null,
 
-    trust: trust ? {
-      id: trust.id,
-      trustName: trust.trustName,
-      trustType: trust.trustType,
-      isJoint: trust.isJoint,
-      isRevocable: trust.isRevocable,
-      jurisdiction: trust.jurisdiction,
-      formationDate: trust.formationDate,
-      fundingDate: trust.fundingDate
-    } : null,
+    trust: trust ?
+        {
+          id: trust.id,
+          trustName: trust.trustName,
+          trustType: trust.trustType,
+          isJoint: trust.isJoint,
+          isRevocable: trust.isRevocable,
+          jurisdiction: trust.jurisdiction,
+          formationDate: trust.formationDate,
+          fundingDate: trust.fundingDate
+        } :
+      null,
 
     // Array of wills (for joint plans)
     wills: wills.map(w => ({
@@ -185,21 +191,25 @@ export default defineEventHandler(async (event) => {
       return {
         id: role.id,
         personId: role.personId,
-        person: person ? {
-          id: person.id,
-          fullName: person.fullName,
-          firstName: person.firstName,
-          lastName: person.lastName,
-          email: person.email
-        } : null,
+        person: person ?
+            {
+              id: person.id,
+              fullName: person.fullName,
+              firstName: person.firstName,
+              lastName: person.lastName,
+              email: person.email
+            } :
+          null,
         // Joint plan support
         forPersonId: role.forPersonId,
-        forPerson: forPerson ? {
-          id: forPerson.id,
-          fullName: forPerson.fullName,
-          firstName: forPerson.firstName,
-          lastName: forPerson.lastName
-        } : null,
+        forPerson: forPerson ?
+            {
+              id: forPerson.id,
+              fullName: forPerson.fullName,
+              firstName: forPerson.firstName,
+              lastName: forPerson.lastName
+            } :
+          null,
         willId: role.willId,
         ancillaryDocumentId: role.ancillaryDocumentId,
         // Standard fields
@@ -242,12 +252,14 @@ export default defineEventHandler(async (event) => {
     linkedMatters: matterLinks.map(({ link, matter }) => ({
       linkId: link.id,
       relationshipType: link.relationshipType,
-      matter: matter ? {
-        id: matter.id,
-        title: matter.title,
-        matterNumber: matter.matterNumber,
-        status: matter.status
-      } : null
+      matter: matter ?
+          {
+            id: matter.id,
+            title: matter.title,
+            matterNumber: matter.matterNumber,
+            status: matter.status
+          } :
+        null
     }))
   }
 })

@@ -51,9 +51,9 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    message: cleanedUpItems.length > 0
-      ? `Person deleted along with ${cleanedUpItems.join(', ')}`
-      : 'Person deleted successfully',
+    message: cleanedUpItems.length > 0 ?
+      `Person deleted along with ${cleanedUpItems.join(', ')}` :
+      'Person deleted successfully',
     cleanedUp: result.cleanedUp
   }
 })

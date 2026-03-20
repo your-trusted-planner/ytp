@@ -1,8 +1,15 @@
 <template>
   <div class="w-full">
-    <label v-if="label" :for="inputId" class="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      v-if="label"
+      :for="inputId"
+      class="block text-sm font-medium text-gray-700 mb-1"
+    >
       {{ label }}
-      <span v-if="required" class="text-red-500">*</span>
+      <span
+        v-if="required"
+        class="text-red-500"
+      >*</span>
     </label>
     <input
       :id="inputId"
@@ -16,9 +23,19 @@
       @input="handleInput"
       @blur="emit('blur', $event)"
       @focus="emit('focus', $event)"
-    />
-    <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
-    <p v-else-if="hint" class="mt-1 text-sm text-gray-500">{{ hint }}</p>
+    >
+    <p
+      v-if="error"
+      class="mt-1 text-sm text-red-600"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="hint"
+      class="mt-1 text-sm text-gray-500"
+    >
+      {{ hint }}
+    </p>
   </div>
 </template>
 
@@ -47,8 +64,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  blur: [event: Event]
-  focus: [event: Event]
+  'blur': [event: Event]
+  'focus': [event: Event]
 }>()
 
 const inputId = `input-${useId()}`
@@ -67,4 +84,3 @@ const handleInput = (event: Event) => {
   emit('update:modelValue', target.value)
 }
 </script>
-

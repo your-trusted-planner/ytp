@@ -5,6 +5,10 @@
  */
 
 // Minimal valid WealthCounsel XML for a single client will-based plan
+// Helper to load real anonymized XML files
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+
 export const singleClientWillXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <wc:set xmlns:wc="http://counsel.com">
 <wc:data key="Client_id"><wc:repeat><wc:string>11111111111111111111</wc:string></wc:repeat></wc:data>
@@ -123,10 +127,6 @@ export const emptyXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <wc:set xmlns:wc="http://counsel.com">
 </wc:set>`
 
-// Helper to load real anonymized XML files
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
-
 /**
  * Load real anonymized WealthCounsel XML files from the fixtures directory.
  * These files have the full complexity of real exports including:
@@ -144,7 +144,8 @@ export function loadRealXmlFixture(name: 'joint-trust-plan' | 'single-will-plan'
 export const realJointTrustXml = (() => {
   try {
     return loadRealXmlFixture('joint-trust-plan')
-  } catch {
+  }
+  catch {
     // Return empty string if file not found (for CI environments)
     return ''
   }
@@ -153,7 +154,8 @@ export const realJointTrustXml = (() => {
 export const realSingleWillXml = (() => {
   try {
     return loadRealXmlFixture('single-will-plan')
-  } catch {
+  }
+  catch {
     // Return empty string if file not found (for CI environments)
     return ''
   }

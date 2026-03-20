@@ -44,11 +44,12 @@ export function generateDocx(options: DocxGenerationOptions): ArrayBuffer {
     // Get the output as ArrayBuffer
     const output = doc.getZip().generate({
       type: 'arraybuffer',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     })
 
     return output
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error generating DOCX:', error)
 
     // Provide helpful error messages
@@ -95,8 +96,8 @@ export function extractDocxVariables(templateBuffer: ArrayBuffer): Set<string> {
 
       // Skip Handlebars helpers and control structures
       if (!varName.startsWith('#') &&
-          !varName.startsWith('/') &&
-          !varName.startsWith('!')) {
+        !varName.startsWith('/') &&
+        !varName.startsWith('!')) {
         // Get the base variable name (before any dots or spaces)
         const baseName = varName.split(/[\s.]/)[0]
         if (baseName) {
@@ -104,7 +105,8 @@ export function extractDocxVariables(templateBuffer: ArrayBuffer): Set<string> {
         }
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error extracting variables from DOCX:', error)
   }
 

@@ -4,10 +4,17 @@
     <div class="flex justify-between items-center">
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-bold text-gray-900">Client Journeys</h1>
-          <UiHelpLink topic="journeys-workflows" title="Learn about journeys and workflows" />
+          <h1 class="text-2xl font-bold text-gray-900">
+            Client Journeys
+          </h1>
+          <UiHelpLink
+            topic="journeys-workflows"
+            title="Learn about journeys and workflows"
+          />
         </div>
-        <p class="text-gray-600 mt-1">Manage workflows and client experiences</p>
+        <p class="text-gray-600 mt-1">
+          Manage workflows and client experiences
+        </p>
       </div>
       <UiButton @click="openCreateModal">
         <IconPlus class="w-4 h-4 mr-2" />
@@ -19,35 +26,35 @@
     <div class="border-b border-gray-200 mb-6">
       <nav class="-mb-px flex space-x-8">
         <button
-          @click="activeFilter = 'all'"
           :class="[
             activeFilter === 'all'
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
           ]"
+          @click="activeFilter = 'all'"
         >
           All Journeys
         </button>
         <button
-          @click="activeFilter = 'SERVICE'"
           :class="[
             activeFilter === 'SERVICE'
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
           ]"
+          @click="activeFilter = 'SERVICE'"
         >
           Service Journeys
         </button>
         <button
-          @click="activeFilter = 'ENGAGEMENT'"
           :class="[
             activeFilter === 'ENGAGEMENT'
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
           ]"
+          @click="activeFilter = 'ENGAGEMENT'"
         >
           Engagement Journeys
         </button>
@@ -55,18 +62,33 @@
     </div>
 
     <!-- Journeys Grid -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center py-12"
+    >
       <IconLoader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
-    <div v-else-if="journeys.length === 0" class="text-center py-12">
+    <div
+      v-else-if="journeys.length === 0"
+      class="text-center py-12"
+    >
       <IconMap class="w-16 h-16 mx-auto text-gray-400 mb-4" />
-      <h3 class="text-lg font-medium text-gray-900 mb-2">No journeys yet</h3>
-      <p class="text-gray-600 mb-4">Create your first client journey to get started</p>
-      <UiButton @click="openCreateModal">Create Journey</UiButton>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">
+        No journeys yet
+      </h3>
+      <p class="text-gray-600 mb-4">
+        Create your first client journey to get started
+      </p>
+      <UiButton @click="openCreateModal">
+        Create Journey
+      </UiButton>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
       <div
         v-for="journey in journeys"
         :key="journey.id"
@@ -87,17 +109,28 @@
                 @save="saveJourneyName(journey, $event)"
                 @click.stop
               />
-              <UiBadge v-if="journey.journey_type === 'ENGAGEMENT'" variant="primary">
+              <UiBadge
+                v-if="journey.journey_type === 'ENGAGEMENT'"
+                variant="primary"
+              >
                 Engagement
               </UiBadge>
             </div>
-            <p v-if="journey.description" class="text-sm text-gray-600">{{ journey.description }}</p>
+            <p
+              v-if="journey.description"
+              class="text-sm text-gray-600"
+            >
+              {{ journey.description }}
+            </p>
           </div>
         </div>
 
         <div class="space-y-2 text-sm">
           <!-- Show catalog items -->
-          <div v-if="journey.catalog_items?.length > 0" class="flex items-start text-gray-600">
+          <div
+            v-if="journey.catalog_items?.length > 0"
+            class="flex items-start text-gray-600"
+          >
             <IconFolder class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
             <div>
               <span v-if="journey.catalog_items.length === 1">
@@ -119,7 +152,10 @@
             <IconUsers class="w-4 h-4 mr-2" />
             {{ journey.active_clients || 0 }} active clients
           </div>
-          <div v-if="journey.estimated_duration_days" class="flex items-center text-gray-600">
+          <div
+            v-if="journey.estimated_duration_days"
+            class="flex items-center text-gray-600"
+          >
             <IconClock class="w-4 h-4 mr-2" />
             {{ journey.estimated_duration_days }} days estimated
           </div>
@@ -127,14 +163,14 @@
 
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
           <button
-            @click.stop="editJourney(journey)"
             class="text-sm text-gray-600 hover:text-burgundy-600"
+            @click.stop="editJourney(journey)"
           >
             Edit
           </button>
           <button
-            @click.stop="duplicateJourney(journey)"
             class="text-sm text-gray-600 hover:text-burgundy-600"
+            @click.stop="duplicateJourney(journey)"
           >
             Duplicate
           </button>
@@ -143,8 +179,15 @@
     </div>
 
     <!-- Create Journey Modal -->
-    <UiModal v-model="showCreateModal" title="Create Journey" size="lg">
-      <form @submit.prevent="createJourney" class="space-y-4">
+    <UiModal
+      v-model="showCreateModal"
+      title="Create Journey"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="createJourney"
+      >
         <UiInput
           v-model="form.name"
           label="Journey Name"
@@ -177,21 +220,30 @@
               :class="{ 'bg-burgundy-50': form.catalogIds.includes(service.id) }"
             >
               <input
+                v-model="form.catalogIds"
                 type="checkbox"
                 :value="service.id"
-                v-model="form.catalogIds"
                 class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-              />
+              >
               <div class="ml-3">
                 <div class="text-sm font-medium text-gray-900">{{ service.name }}</div>
-                <div v-if="service.category" class="text-xs text-gray-500">{{ service.category }}</div>
+                <div
+                  v-if="service.category"
+                  class="text-xs text-gray-500"
+                >{{ service.category }}</div>
               </div>
             </label>
-            <div v-if="serviceCatalog.length === 0" class="p-3 text-sm text-gray-500 text-center">
+            <div
+              v-if="serviceCatalog.length === 0"
+              class="p-3 text-sm text-gray-500 text-center"
+            >
               No services in catalog
             </div>
           </div>
-          <p v-if="form.catalogIds.length > 0" class="mt-2 text-sm text-gray-600">
+          <p
+            v-if="form.catalogIds.length > 0"
+            class="mt-2 text-sm text-gray-600"
+          >
             {{ form.catalogIds.length }} service{{ form.catalogIds.length === 1 ? '' : 's' }} selected
           </p>
         </div>
@@ -207,14 +259,16 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Journey Type</label>
           <div class="space-y-3">
-            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                   :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+            <label
+              class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'"
+            >
               <input
-                type="radio"
                 v-model="form.journeyType"
+                type="radio"
                 value="SERVICE"
                 class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
-              />
+              >
               <div class="ml-3">
                 <div class="font-medium text-gray-900">Service Journey</div>
                 <div class="text-sm text-gray-600">
@@ -223,14 +277,16 @@
               </div>
             </label>
 
-            <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                   :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+            <label
+              class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'"
+            >
               <input
-                type="radio"
                 v-model="form.journeyType"
+                type="radio"
                 value="ENGAGEMENT"
                 class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
-              />
+              >
               <div class="ml-3">
                 <div class="font-medium text-gray-900">Engagement Journey</div>
                 <div class="text-sm text-gray-600">
@@ -241,7 +297,10 @@
           </div>
 
           <!-- Warning for ENGAGEMENT type -->
-          <div v-if="form.journeyType === 'ENGAGEMENT'" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div
+            v-if="form.journeyType === 'ENGAGEMENT'"
+            class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+          >
             <p class="text-sm text-blue-800">
               <strong>Note:</strong> Engagement journeys can only use these action types:
               Draft Document, E-Sign, Payment, Meeting, Review, Upload, Decision
@@ -250,10 +309,17 @@
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="showCreateModal = false">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="showCreateModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :loading="saving">
+          <UiButton
+            type="submit"
+            :loading="saving"
+          >
             Create Journey
           </UiButton>
         </div>
@@ -307,14 +373,16 @@ const form = ref({
 async function fetchJourneys() {
   loading.value = true
   try {
-    const params = activeFilter.value !== 'all'
-      ? { type: activeFilter.value }
-      : {}
+    const params = activeFilter.value !== 'all' ?
+        { type: activeFilter.value } :
+        {}
     const { journeys: data } = await $fetch('/api/journeys', { params })
     journeys.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching journeys:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -329,7 +397,8 @@ async function fetchServiceCatalog() {
   try {
     const { catalog: data } = await $fetch('/api/service-catalog')
     serviceCatalog.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching service catalog:', error)
   }
 }
@@ -357,9 +426,11 @@ async function createJourney() {
     showCreateModal.value = false
     // Navigate to journey builder
     router.push(`/journeys/${journey.id}`)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error creating journey:', error)
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -413,7 +484,8 @@ async function saveJourneyName(journey: any, newName: string | number) {
         estimatedDurationDays: journey.estimated_duration_days
       }
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error updating journey name:', error)
     // Revert to old name on error
     journey.name = journey.name

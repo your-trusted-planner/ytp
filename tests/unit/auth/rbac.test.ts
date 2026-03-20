@@ -96,7 +96,8 @@ describe('RBAC Utilities', () => {
       expect(() => getAuthUser(event)).toThrow()
       try {
         getAuthUser(event)
-      } catch (error: any) {
+      }
+      catch (error: any) {
         expect(error.statusCode).toBe(401)
         expect(error.message).toBe('Authentication required')
       }
@@ -131,7 +132,8 @@ describe('RBAC Utilities', () => {
       expect(() => requireRole(event, ['ADMIN'])).toThrow()
       try {
         requireRole(event, ['ADMIN'])
-      } catch (error: any) {
+      }
+      catch (error: any) {
         expect(error.statusCode).toBe(403)
         expect(error.message).toBe('Insufficient permissions')
       }
@@ -210,7 +212,8 @@ describe('RBAC Utilities', () => {
       expect(() => requireAdminLevel(event, 2)).toThrow()
       try {
         requireAdminLevel(event, 2)
-      } catch (error: any) {
+      }
+      catch (error: any) {
         expect(error.statusCode).toBe(403)
         expect(error.message).toBe('Insufficient admin privileges')
       }
@@ -312,7 +315,8 @@ describe('RBAC Utilities', () => {
       expect(() => requireClientAccess(event, 'other-client')).toThrow()
       try {
         requireClientAccess(event, 'other-client')
-      } catch (error: any) {
+      }
+      catch (error: any) {
         expect(error.statusCode).toBe(403)
         expect(error.message).toBe('Access denied')
       }

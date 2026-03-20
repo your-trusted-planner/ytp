@@ -95,9 +95,9 @@ export default defineEventHandler(async (event) => {
       google_drive_folder_url: clientRecord.googleDriveFolderUrl,
       google_drive_sync_status: clientRecord.googleDriveSyncStatus,
       google_drive_sync_error: clientRecord.googleDriveSyncError,
-      google_drive_last_sync_at: clientRecord.googleDriveLastSyncAt instanceof Date
-        ? Math.floor(clientRecord.googleDriveLastSyncAt.getTime() / 1000)
-        : clientRecord.googleDriveLastSyncAt
+      google_drive_last_sync_at: clientRecord.googleDriveLastSyncAt instanceof Date ?
+          Math.floor(clientRecord.googleDriveLastSyncAt.getTime() / 1000) :
+        clientRecord.googleDriveLastSyncAt
     }
   }
 })

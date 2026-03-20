@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Rooms & Locations</h1>
-        <p class="text-gray-600 mt-1">Manage conference rooms and meeting spaces with optional Google Calendar resource integration</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Rooms & Locations
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage conference rooms and meeting spaces with optional Google Calendar resource integration
+        </p>
       </div>
       <UiButton @click="openAddModal">
         Add Room
@@ -11,10 +15,18 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading rooms...</div>
+    <div
+      v-if="loading"
+      class="text-center py-12 text-gray-500"
+    >
+      Loading rooms...
+    </div>
 
     <!-- Rooms Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
       <UiCard
         v-for="room in roomList"
         :key="room.id"
@@ -24,29 +36,60 @@
         <div class="p-6">
           <div class="flex justify-between items-start mb-3">
             <div>
-              <h3 class="font-semibold text-gray-900 text-lg">{{ room.name }}</h3>
-              <p v-if="room.building" class="text-sm text-gray-500">{{ room.building }}</p>
+              <h3 class="font-semibold text-gray-900 text-lg">
+                {{ room.name }}
+              </h3>
+              <p
+                v-if="room.building"
+                class="text-sm text-gray-500"
+              >
+                {{ room.building }}
+              </p>
             </div>
             <div class="flex gap-1">
-              <UiBadge v-if="room.calendarEmail" variant="success" size="sm">Calendar</UiBadge>
-              <UiBadge v-if="!room.isActive" variant="danger" size="sm">Inactive</UiBadge>
+              <UiBadge
+                v-if="room.calendarEmail"
+                variant="success"
+                size="sm"
+              >
+                Calendar
+              </UiBadge>
+              <UiBadge
+                v-if="!room.isActive"
+                variant="danger"
+                size="sm"
+              >
+                Inactive
+              </UiBadge>
             </div>
           </div>
 
-          <p v-if="room.description" class="text-sm text-gray-600 mb-4 line-clamp-2">
+          <p
+            v-if="room.description"
+            class="text-sm text-gray-600 mb-4 line-clamp-2"
+          >
             {{ room.description }}
           </p>
 
           <div class="space-y-2 border-t border-gray-200 pt-4">
-            <div v-if="room.capacity" class="flex justify-between text-sm">
+            <div
+              v-if="room.capacity"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Capacity:</span>
               <span class="font-medium text-gray-900">{{ room.capacity }} people</span>
             </div>
-            <div v-if="room.address" class="flex justify-between text-sm">
+            <div
+              v-if="room.address"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Address:</span>
               <span class="font-medium text-gray-900 truncate ml-2">{{ room.address }}</span>
             </div>
-            <div v-if="room.calendarEmail" class="flex justify-between text-sm">
+            <div
+              v-if="room.calendarEmail"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Calendar:</span>
               <span class="font-medium text-gray-900 truncate ml-2 text-xs">{{ room.calendarEmail }}</span>
             </div>
@@ -54,21 +97,21 @@
 
           <div class="mt-4 flex space-x-2">
             <button
-              @click="editRoom(room)"
               class="flex-1 text-sm text-accent-600 hover:text-accent-900 font-medium"
+              @click="editRoom(room)"
             >
               Edit
             </button>
             <button
               v-if="room.calendarEmail"
-              @click="testCalendar(room)"
               class="flex-1 text-sm text-blue-600 hover:text-blue-900 font-medium"
+              @click="testCalendar(room)"
             >
               {{ testingRoomId === room.id ? 'Testing...' : 'Test Calendar' }}
             </button>
             <button
-              @click="toggleStatus(room)"
               class="flex-1 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              @click="toggleStatus(room)"
             >
               {{ room.isActive ? 'Deactivate' : 'Activate' }}
             </button>
@@ -78,14 +121,31 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="!loading && roomList.length === 0" class="text-center py-12">
-      <p class="text-gray-500">No rooms configured yet.</p>
-      <UiButton class="mt-4" @click="openAddModal">Create Your First Room</UiButton>
+    <div
+      v-if="!loading && roomList.length === 0"
+      class="text-center py-12"
+    >
+      <p class="text-gray-500">
+        No rooms configured yet.
+      </p>
+      <UiButton
+        class="mt-4"
+        @click="openAddModal"
+      >
+        Create Your First Room
+      </UiButton>
     </div>
 
     <!-- Add/Edit Modal -->
-    <UiModal v-model="showModal" :title="editing ? 'Edit Room' : 'Add Room'" size="lg">
-      <form @submit.prevent="handleSave" class="space-y-4">
+    <UiModal
+      v-model="showModal"
+      :title="editing ? 'Edit Room' : 'Add Room'"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSave"
+      >
         <UiInput
           v-model="form.name"
           label="Room Name"
@@ -123,7 +183,9 @@
 
         <!-- Calendar Integration -->
         <div class="border rounded-lg p-4 space-y-3">
-          <h4 class="font-medium text-gray-900 text-sm">Calendar Resource (Optional)</h4>
+          <h4 class="font-medium text-gray-900 text-sm">
+            Calendar Resource (Optional)
+          </h4>
           <p class="text-xs text-gray-500">
             Link to a Google Workspace resource calendar to track room availability and prevent double-bookings.
           </p>
@@ -137,8 +199,16 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="closeModal">Cancel</UiButton>
-        <UiButton @click="handleSave" :is-loading="saving">
+        <UiButton
+          variant="outline"
+          @click="closeModal"
+        >
+          Cancel
+        </UiButton>
+        <UiButton
+          :is-loading="saving"
+          @click="handleSave"
+        >
           {{ editing ? 'Update' : 'Create' }}
         </UiButton>
       </template>
@@ -189,9 +259,11 @@ async function fetchRooms() {
   loading.value = true
   try {
     roomList.value = await $fetch<Room[]>('/api/admin/rooms')
-  } catch {
+  }
+  catch {
     toast.error('Failed to load rooms')
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -240,7 +312,8 @@ async function handleSave() {
         body: payload
       })
       toast.success('Room updated')
-    } else {
+    }
+    else {
       await $fetch('/api/admin/rooms', {
         method: 'POST',
         body: payload
@@ -250,9 +323,11 @@ async function handleSave() {
 
     closeModal()
     await fetchRooms()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save room')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -262,7 +337,8 @@ async function toggleStatus(room: Room) {
     if (room.isActive) {
       await $fetch(`/api/admin/rooms/${room.id}`, { method: 'DELETE' })
       toast.success(`${room.name} deactivated`)
-    } else {
+    }
+    else {
       await $fetch(`/api/admin/rooms/${room.id}`, {
         method: 'PUT',
         body: { isActive: true }
@@ -270,7 +346,8 @@ async function toggleStatus(room: Room) {
       toast.success(`${room.name} activated`)
     }
     await fetchRooms()
-  } catch {
+  }
+  catch {
     toast.error('Failed to update status')
   }
 }
@@ -295,9 +372,11 @@ async function testCalendar(room: Room) {
       }
     })
     toast.success(result.message)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Calendar test failed')
-  } finally {
+  }
+  finally {
     testingRoomId.value = null
   }
 }

@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const forceHardDelete = query.forceHardDelete === 'true'
 
   let deletionMethod: 'soft' | 'hard'
-  let blobsDeleted: string[] = []
+  const blobsDeleted: string[] = []
 
   if (referencingDocuments > 0) {
     // Template is referenced - must soft delete
@@ -60,7 +60,8 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.documentTemplates.id, id))
 
     deletionMethod = 'soft'
-  } else {
+  }
+  else {
     // Template not referenced - can hard delete if requested
     if (forceHardDelete) {
       // Clean up blob storage before hard delete
@@ -70,7 +71,8 @@ export default defineEventHandler(async (event) => {
           await blob.delete(template.docxBlobKey)
           blobsDeleted.push('docx')
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.warn('Failed to delete template blob:', error)
       }
 
@@ -79,7 +81,8 @@ export default defineEventHandler(async (event) => {
         .where(eq(schema.documentTemplates.id, id))
 
       deletionMethod = 'hard'
-    } else {
+    }
+    else {
       // Default to soft delete even when not referenced (safer)
       await db.update(schema.documentTemplates)
         .set({ isActive: false, updatedAt: new Date() })
@@ -108,9 +111,9 @@ export default defineEventHandler(async (event) => {
   if (deletionMethod === 'soft') {
     return {
       success: true,
-      message: referencingDocuments > 0
-        ? 'Template soft deleted (referenced by documents)'
-        : 'Template soft deleted (can be reactivated)',
+      message: referencingDocuments > 0 ?
+        'Template soft deleted (referenced by documents)' :
+        'Template soft deleted (can be reactivated)',
       deleted: {
         template: { id: template.id, name: template.name },
         method: 'soft',
@@ -118,7 +121,8 @@ export default defineEventHandler(async (event) => {
         canReactivate: true
       }
     }
-  } else {
+  }
+  else {
     return {
       success: true,
       message: 'Template permanently deleted',

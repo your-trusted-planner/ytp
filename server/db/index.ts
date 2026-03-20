@@ -13,7 +13,8 @@ export function isDatabaseAvailable() {
   try {
     // If db is defined, database is available
     return !!db
-  } catch (e: any) {
+  }
+  catch (e: any) {
     console.log('[isDatabaseAvailable] Error:', e.message)
     return false
   }
@@ -33,4 +34,3 @@ export type Note = typeof schema.notes.$inferSelect
 export type NewNote = typeof schema.notes.$inferInsert
 export type Activity = typeof schema.activities.$inferSelect
 export type NewActivity = typeof schema.activities.$inferInsert
-

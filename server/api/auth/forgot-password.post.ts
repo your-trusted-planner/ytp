@@ -89,16 +89,20 @@ export default defineEventHandler(async (event) => {
 
       if (!emailResult.success) {
         console.error('[ForgotPassword] Failed to send email:', emailResult.error)
-      } else {
+      }
+      else {
         console.log('[ForgotPassword] Reset email sent to:', user.email)
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('[ForgotPassword] Error processing request:', error)
       // Don't expose error to client
     }
-  } else if (user?.status === 'INACTIVE') {
+  }
+  else if (user?.status === 'INACTIVE') {
     console.log('[ForgotPassword] Ignored reset request for inactive user:', email)
-  } else {
+  }
+  else {
     console.log('[ForgotPassword] No user found with email:', email)
   }
 

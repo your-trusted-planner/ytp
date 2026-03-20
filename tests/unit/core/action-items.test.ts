@@ -7,9 +7,9 @@ import { describe, it, expect } from 'vitest'
 
 // Action types (from schema)
 type ActionType =
-  | 'QUESTIONNAIRE' | 'DECISION' | 'UPLOAD' | 'REVIEW' | 'ESIGN'
-  | 'NOTARY' | 'PAYMENT' | 'MEETING' | 'KYC'
-  | 'AUTOMATION' | 'THIRD_PARTY' | 'OFFLINE_TASK' | 'EXPENSE' | 'FORM' | 'DRAFT_DOCUMENT'
+  | 'QUESTIONNAIRE' | 'DECISION' | 'UPLOAD' | 'REVIEW' | 'ESIGN' |
+  'NOTARY' | 'PAYMENT' | 'MEETING' | 'KYC' |
+  'AUTOMATION' | 'THIRD_PARTY' | 'OFFLINE_TASK' | 'EXPENSE' | 'FORM' | 'DRAFT_DOCUMENT'
 
 // Action status
 type ActionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETE' | 'SKIPPED'
@@ -40,7 +40,7 @@ const ALL_ACTION_TYPES: ActionType[] = [
 function validateActionTypeForJourney(
   actionType: ActionType,
   journeyType: JourneyType
-): { valid: boolean; error?: string } {
+): { valid: boolean, error?: string } {
   if (journeyType === 'ENGAGEMENT' && !ALLOWED_ENGAGEMENT_ACTIONS.includes(actionType)) {
     return {
       valid: false,
@@ -131,7 +131,7 @@ describe('Action Item Type Validation', () => {
 
   describe('SERVICE Journey Permissions', () => {
     it('should allow all action types for SERVICE journeys', () => {
-      ALL_ACTION_TYPES.forEach(actionType => {
+      ALL_ACTION_TYPES.forEach((actionType) => {
         const result = validateActionTypeForJourney(actionType, 'SERVICE')
         expect(result.valid).toBe(true)
       })

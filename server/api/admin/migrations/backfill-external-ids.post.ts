@@ -46,7 +46,8 @@ export default defineEventHandler(async (event) => {
       })
 
       migrated++
-    } catch (err) {
+    }
+    catch (err) {
       errors++
       console.error(`[Backfill] Error processing person ${person.id}:`, err)
     }

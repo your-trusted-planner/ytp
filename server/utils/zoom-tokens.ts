@@ -60,7 +60,8 @@ export async function getZoomConfig(event: H3Event): Promise<ZoomConfig> {
     }
 
     return { clientId, clientSecret, redirectUri }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     if (err.statusCode) throw err
     throw createError({
       statusCode: 500,
@@ -104,7 +105,8 @@ export async function getZoomAccessToken(userId: string, event?: H3Event): Promi
       if (cached && typeof cached === 'string') {
         return cached
       }
-    } catch {
+    }
+    catch {
       // KV not available, fall through to refresh
     }
   }
@@ -129,7 +131,8 @@ async function refreshZoomToken(
     const config = await getZoomConfig(event)
     zoomClientId = config.clientId
     zoomClientSecret = config.clientSecret
-  } else {
+  }
+  else {
     throw new Error('Zoom token refresh requires request context for credential decryption')
   }
 
@@ -172,7 +175,8 @@ async function refreshZoomToken(
   try {
     const { kv } = await import('@nuxthub/kv')
     await kv.set(kvKey, access_token, { ttl })
-  } catch {
+  }
+  catch {
     // KV not available — token still works
   }
 
@@ -218,7 +222,8 @@ export async function storeZoomConnection(
   try {
     const { kv } = await import('@nuxthub/kv')
     await kv.set(kvKey, accessToken, { ttl: Math.max(expiresIn - 300, 60) })
-  } catch {
+  }
+  catch {
     // KV not available
   }
 
@@ -306,7 +311,8 @@ export async function revokeZoomConnection(connectionId: string): Promise<void> 
     try {
       const { kv } = await import('@nuxthub/kv')
       await kv.del(connection.accessTokenKey)
-    } catch { /* KV not available */ }
+    }
+    catch { /* KV not available */ }
   }
 
   await updateConnectionStatus(connectionId, 'REVOKED')

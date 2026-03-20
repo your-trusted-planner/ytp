@@ -15,7 +15,9 @@
         <FileCode class="w-8 h-8 text-white" />
       </div>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">WealthCounsel Integration</h1>
+        <h1 class="text-2xl font-bold text-gray-900">
+          WealthCounsel Integration
+        </h1>
         <p class="text-gray-600 mt-1">
           Import estate plans from WealthCounsel XML exports
         </p>
@@ -24,7 +26,9 @@
 
     <!-- Overview Card -->
     <UiCard>
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">About This Integration</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        About This Integration
+      </h2>
       <div class="prose prose-sm text-gray-600">
         <p>
           WealthCounsel is estate planning document drafting software used by many law firms.
@@ -48,7 +52,9 @@
     <UiCard>
       <div class="flex items-start justify-between">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">Import Estate Plans</h2>
+          <h2 class="text-lg font-semibold text-gray-900">
+            Import Estate Plans
+          </h2>
           <p class="text-gray-600 mt-1">
             Upload one or more WealthCounsel XML export files to import estate plans
           </p>
@@ -62,7 +68,10 @@
       </div>
 
       <!-- Pending Imports (not yet completed) -->
-      <div v-if="pendingImports.length > 0" class="mt-6 pt-6 border-t border-gray-200">
+      <div
+        v-if="pendingImports.length > 0"
+        class="mt-6 pt-6 border-t border-gray-200"
+      >
         <h3 class="text-sm font-semibold text-amber-700 uppercase tracking-wide mb-4 flex items-center gap-2">
           <Clock class="w-4 h-4" />
           Pending Imports (Not Yet Saved)
@@ -79,11 +88,16 @@
             <div class="flex items-center gap-3">
               <Pause class="w-5 h-5 text-amber-500" />
               <div>
-                <p class="font-medium text-gray-900">{{ pending.clientName }}</p>
+                <p class="font-medium text-gray-900">
+                  {{ pending.clientName }}
+                </p>
                 <p class="text-sm text-gray-500">
                   {{ pending.planName || (pending.planType === 'TRUST_BASED' ? 'Trust-Based Plan' : 'Will-Based Plan') }}
                 </p>
-                <p class="text-xs text-amber-600" v-if="pending.expiresIn">
+                <p
+                  v-if="pending.expiresIn"
+                  class="text-xs text-amber-600"
+                >
                   Expires in {{ pending.expiresIn }}
                 </p>
               </div>
@@ -96,9 +110,9 @@
                 Resume
               </NuxtLink>
               <button
-                @click="discardPending(pending.parseId)"
                 class="text-sm text-red-600 hover:underline"
                 :disabled="discarding === pending.parseId"
+                @click="discardPending(pending.parseId)"
               >
                 {{ discarding === pending.parseId ? 'Discarding...' : 'Discard' }}
               </button>
@@ -108,7 +122,10 @@
       </div>
 
       <!-- Recent Completed Imports -->
-      <div v-if="recentImports.length > 0" class="mt-6 pt-6 border-t border-gray-200">
+      <div
+        v-if="recentImports.length > 0"
+        class="mt-6 pt-6 border-t border-gray-200"
+      >
         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
           Recent Imports
         </h3>
@@ -121,8 +138,12 @@
             <div class="flex items-center gap-3">
               <CheckCircle class="w-5 h-5 text-green-500" />
               <div>
-                <p class="font-medium text-gray-900">{{ importRecord.planName }}</p>
-                <p class="text-sm text-gray-500">{{ formatDate(importRecord.importedAt) }}</p>
+                <p class="font-medium text-gray-900">
+                  {{ importRecord.planName }}
+                </p>
+                <p class="text-sm text-gray-500">
+                  {{ formatDate(importRecord.importedAt) }}
+                </p>
               </div>
             </div>
             <NuxtLink
@@ -137,43 +158,66 @@
       </div>
 
       <!-- Empty state for no imports -->
-      <div v-else-if="pendingImports.length === 0" class="mt-6 pt-6 border-t border-gray-200 text-center py-8 text-gray-500">
+      <div
+        v-else-if="pendingImports.length === 0"
+        class="mt-6 pt-6 border-t border-gray-200 text-center py-8 text-gray-500"
+      >
         <FileText class="w-12 h-12 mx-auto mb-3 text-gray-300" />
         <p>No imports yet</p>
-        <p class="text-sm mt-2">Import your first estate plan from WealthCounsel</p>
+        <p class="text-sm mt-2">
+          Import your first estate plan from WealthCounsel
+        </p>
       </div>
     </UiCard>
 
     <!-- How to Export from WealthCounsel -->
     <UiCard>
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">How to Export from WealthCounsel</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        How to Export from WealthCounsel
+      </h2>
       <ol class="space-y-4 text-gray-600">
         <li class="flex gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-burgundy-100 text-burgundy-700 rounded-full flex items-center justify-center text-sm font-medium">1</span>
           <div>
-            <p class="font-medium text-gray-900">Open the client file</p>
-            <p class="text-sm">In WealthCounsel, open the client matter you want to export</p>
+            <p class="font-medium text-gray-900">
+              Open the client file
+            </p>
+            <p class="text-sm">
+              In WealthCounsel, open the client matter you want to export
+            </p>
           </div>
         </li>
         <li class="flex gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-burgundy-100 text-burgundy-700 rounded-full flex items-center justify-center text-sm font-medium">2</span>
           <div>
-            <p class="font-medium text-gray-900">Export the data</p>
-            <p class="text-sm">Go to File &rarr; Export &rarr; Export Data (XML format)</p>
+            <p class="font-medium text-gray-900">
+              Export the data
+            </p>
+            <p class="text-sm">
+              Go to File &rarr; Export &rarr; Export Data (XML format)
+            </p>
           </div>
         </li>
         <li class="flex gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-burgundy-100 text-burgundy-700 rounded-full flex items-center justify-center text-sm font-medium">3</span>
           <div>
-            <p class="font-medium text-gray-900">Save the XML file</p>
-            <p class="text-sm">Save the file to your computer. You can export multiple clients.</p>
+            <p class="font-medium text-gray-900">
+              Save the XML file
+            </p>
+            <p class="text-sm">
+              Save the file to your computer. You can export multiple clients.
+            </p>
           </div>
         </li>
         <li class="flex gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-burgundy-100 text-burgundy-700 rounded-full flex items-center justify-center text-sm font-medium">4</span>
           <div>
-            <p class="font-medium text-gray-900">Import here</p>
-            <p class="text-sm">Click "Start Import" above and upload your XML file(s)</p>
+            <p class="font-medium text-gray-900">
+              Import here
+            </p>
+            <p class="text-sm">
+              Click "Start Import" above and upload your XML file(s)
+            </p>
           </div>
         </li>
       </ol>
@@ -228,9 +272,11 @@ async function fetchData() {
       '/api/admin/integrations/wealthcounsel/recent'
     )
     recentImports.value = recentResponse.imports || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch import data:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -247,9 +293,11 @@ async function discardPending(parseId: string) {
     })
     // Remove from list
     pendingImports.value = pendingImports.value.filter(p => p.parseId !== parseId)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(`Failed to discard: ${error.data?.message || error.message || 'Unknown error'}`)
-  } finally {
+  }
+  finally {
     discarding.value = null
   }
 }

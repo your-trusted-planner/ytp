@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Client Matters</h1>
-        <p class="text-gray-600 mt-1">Manage client engagements and matters</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Client Matters
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage client engagements and matters
+        </p>
       </div>
       <UiButton @click="showAddModal = true">
         Add New Matter
@@ -17,8 +21,14 @@
       :class="driveStatus.success ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'"
     >
       <div class="flex items-start space-x-3">
-        <CheckCircle v-if="driveStatus.success" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-        <AlertTriangle v-else class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <CheckCircle
+          v-if="driveStatus.success"
+          class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+        />
+        <AlertTriangle
+          v-else
+          class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"
+        />
         <div>
           <p :class="driveStatus.success ? 'text-green-800' : 'text-yellow-800'">
             {{ driveStatus.message }}
@@ -33,15 +43,18 @@
             <IconsGoogleDrive :size="14" />
             Open in Google Drive
           </a>
-          <p v-if="!driveStatus.success" class="text-sm text-yellow-700 mt-1">
+          <p
+            v-if="!driveStatus.success"
+            class="text-sm text-yellow-700 mt-1"
+          >
             You can manually create the folder later from the matter details page or Settings &rarr; Google Drive.
           </p>
         </div>
       </div>
       <button
-        @click="driveStatus.show = false"
         class="flex-shrink-0 ml-4"
         :class="driveStatus.success ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800'"
+        @click="driveStatus.show = false"
       >
         <X class="w-5 h-5" />
       </button>
@@ -58,7 +71,7 @@
             type="text"
             placeholder="Search by title, matter #, or client..."
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
 
         <!-- Status Filter -->
@@ -68,10 +81,18 @@
             v-model="statusFilter"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
           >
-            <option value="">All Statuses</option>
-            <option value="OPEN">Open</option>
-            <option value="PENDING">Pending</option>
-            <option value="CLOSED">Closed</option>
+            <option value="">
+              All Statuses
+            </option>
+            <option value="OPEN">
+              Open
+            </option>
+            <option value="PENDING">
+              Pending
+            </option>
+            <option value="CLOSED">
+              Closed
+            </option>
           </select>
         </div>
 
@@ -82,8 +103,14 @@
             v-model="clientFilter"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
           >
-            <option value="">All Clients</option>
-            <option v-for="name in uniqueClientNames" :key="name" :value="name">
+            <option value="">
+              All Clients
+            </option>
+            <option
+              v-for="name in uniqueClientNames"
+              :key="name"
+              :value="name"
+            >
               {{ name }}
             </option>
           </select>
@@ -92,8 +119,8 @@
         <!-- Clear Filters -->
         <button
           v-if="hasActiveFilters"
-          @click="clearFilters"
           class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+          @click="clearFilters"
         >
           Clear filters
         </button>
@@ -102,21 +129,40 @@
 
     <!-- Matters List -->
     <UiCard>
-      <UiLoadingState v-if="loading" message="Loading matters..." />
-      <div v-else-if="filteredMatters.length === 0" class="text-center py-12">
+      <UiLoadingState
+        v-if="loading"
+        message="Loading matters..."
+      />
+      <div
+        v-else-if="filteredMatters.length === 0"
+        class="text-center py-12"
+      >
         <p class="text-gray-500">
           {{ matters.length === 0 ? 'No matters found' : 'No matters match your filters' }}
         </p>
       </div>
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matter Title</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Matter Title
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Client
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Contract Date
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -127,11 +173,17 @@
               @click="viewMatter(matter.id)"
             >
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ matter.title }}</div>
-                <div class="text-xs text-gray-500">{{ matter.matter_number || 'No # assigned' }}</div>
+                <div class="text-sm font-medium text-gray-900">
+                  {{ matter.title }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ matter.matter_number || 'No # assigned' }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ matter.client_name || matter.clientName || 'Unknown Client' }}</div>
+                <div class="text-sm text-gray-900">
+                  {{ matter.client_name || matter.clientName || 'Unknown Client' }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getStatusVariant(matter.status)">
@@ -145,8 +197,8 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <button
-                  @click.stop="editMatter(matter)"
                   class="text-burgundy-600 hover:text-burgundy-900"
+                  @click.stop="editMatter(matter)"
                 >
                   Edit
                 </button>
@@ -157,7 +209,10 @@
       </div>
 
       <!-- Pagination Controls -->
-      <div v-if="pagination && !hasActiveFilters" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+      <div
+        v-if="pagination && !hasActiveFilters"
+        class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between"
+      >
         <!-- Page info -->
         <div class="text-sm text-gray-700">
           Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
@@ -166,14 +221,21 @@
         <div class="flex items-center gap-4">
           <!-- Page size selector -->
           <div class="flex items-center gap-2">
-            <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+            <label
+              for="page-size"
+              class="text-sm text-gray-700"
+            >Per page:</label>
             <select
               id="page-size"
               :value="currentLimit"
               class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
               @change="setPageSize(Number(($event.target as HTMLSelectElement).value))"
             >
-              <option v-for="size in pageSizeOptions" :key="size" :value="size">
+              <option
+                v-for="size in pageSizeOptions"
+                :key="size"
+                :value="size"
+              >
                 {{ size }}
               </option>
             </select>
@@ -304,7 +366,7 @@ const filteredMatters = computed(() => {
   // Filter by search query
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(m => {
+    result = result.filter((m) => {
       const clientName = (m.client_name || m.clientName || '').toLowerCase()
       const title = (m.title || '').toLowerCase()
       const matterNumber = (m.matter_number || '').toLowerCase()
@@ -335,13 +397,16 @@ const fetchMatters = async () => {
     if (response.matters) {
       matters.value = response.matters
       pagination.value = response.pagination || null
-    } else if (Array.isArray(response)) {
+    }
+    else if (Array.isArray(response)) {
       matters.value = response
       pagination.value = null
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch matters:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -378,7 +443,8 @@ const fetchClients = async () => {
   try {
     const response = await $fetch<{ clients: any[] }>('/api/clients')
     clients.value = response.clients || response
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch clients:', error)
   }
 }
@@ -387,7 +453,8 @@ const fetchCatalog = async () => {
   try {
     const response = await $fetch<any>('/api/catalog')
     catalog.value = response.services || response || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch catalog:', error)
   }
 }
@@ -408,12 +475,11 @@ const getStatusVariant = (status: string) => {
 
 const formatDate = (dateInput: string | Date | number) => {
   // Handle Unix timestamp (number), ISO string, or Date object
-  const date = typeof dateInput === 'number'
-    ? new Date(dateInput * 1000)  // Convert Unix timestamp to ms
-    : new Date(dateInput)
+  const date = typeof dateInput === 'number' ?
+      new Date(dateInput * 1000) : // Convert Unix timestamp to ms
+      new Date(dateInput)
   return date.toLocaleDateString()
 }
-
 
 const editMatter = async (matter: any) => {
   // Transform to camelCase for the modal
@@ -456,13 +522,15 @@ const handleMatterSaved = async (matterId?: string, googleDrive?: GoogleDriveSta
       setTimeout(() => {
         driveStatus.value.show = false
       }, 10000)
-    } else if (!googleDrive.clientHasFolder) {
+    }
+    else if (!googleDrive.clientHasFolder) {
       driveStatus.value = {
         show: true,
         success: false,
         message: 'Matter created, but Google Drive folder was not created because the client does not have a Drive folder yet. Create the client folder first.'
       }
-    } else {
+    }
+    else {
       driveStatus.value = {
         show: true,
         success: false,
@@ -483,7 +551,8 @@ const fetchLawyers = async () => {
   try {
     const response = await $api<{ lawyers: any[] }>('/api/matters/lawyers')
     lawyers.value = response.lawyers || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch lawyers:', error)
   }
 }
@@ -493,7 +562,8 @@ const fetchEngagementJourneys = async () => {
   try {
     const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
     engagementJourneys.value = response.engagementJourneys || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch engagement journeys:', error)
   }
 }
@@ -515,5 +585,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-

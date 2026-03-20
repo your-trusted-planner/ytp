@@ -4,7 +4,10 @@
     :title="editingMatter ? 'Edit Matter' : 'Add New Matter'"
     size="xl"
   >
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Matter Details -->
       <UiInput
         v-model="form.title"
@@ -19,8 +22,14 @@
         required
         :disabled="!!editingMatter"
       >
-        <option value="">Select Client</option>
-        <option v-for="client in clients" :key="client.id" :value="client.id">
+        <option value="">
+          Select Client
+        </option>
+        <option
+          v-for="client in clients"
+          :key="client.id"
+          :value="client.id"
+        >
           {{ client.firstName }} {{ client.lastName }}
         </option>
       </UiSelect>
@@ -37,22 +46,36 @@
         label="Status"
         required
       >
-        <option value="PENDING">Pending</option>
-        <option value="OPEN">Open</option>
-        <option value="CLOSED">Closed</option>
+        <option value="PENDING">
+          Pending
+        </option>
+        <option value="OPEN">
+          Open
+        </option>
+        <option value="CLOSED">
+          Closed
+        </option>
       </UiSelect>
 
       <!-- Engagement Details Section -->
       <div class="border-t pt-4 mt-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Engagement Details</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+          Engagement Details
+        </h3>
 
         <div class="grid grid-cols-1 gap-4">
           <UiSelect
             v-model="form.leadAttorneyId"
             label="Lead Attorney (Optional)"
           >
-            <option value="">-- Select Lead Attorney --</option>
-            <option v-for="lawyer in lawyers" :key="lawyer.id" :value="lawyer.id">
+            <option value="">
+              -- Select Lead Attorney --
+            </option>
+            <option
+              v-for="lawyer in lawyers"
+              :key="lawyer.id"
+              :value="lawyer.id"
+            >
               {{ lawyer.firstName }} {{ lawyer.lastName }}
             </option>
           </UiSelect>
@@ -61,8 +84,14 @@
             v-model="form.engagementJourneyTemplateId"
             label="Engagement Journey (Optional)"
           >
-            <option value="">-- Select Engagement Journey --</option>
-            <option v-for="journey in engagementJourneys" :key="journey.id" :value="journey.id">
+            <option value="">
+              -- Select Engagement Journey --
+            </option>
+            <option
+              v-for="journey in engagementJourneys"
+              :key="journey.id"
+              :value="journey.id"
+            >
               {{ journey.name }}
               <span v-if="journey.step_count">({{ journey.step_count }} steps)</span>
             </option>
@@ -75,9 +104,14 @@
       </div>
 
       <!-- Services Section (only for new matters) -->
-      <div v-if="!editingMatter" class="border-t pt-4 mt-6">
+      <div
+        v-if="!editingMatter"
+        class="border-t pt-4 mt-6"
+      >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-medium text-gray-900">Services</h3>
+          <h3 class="text-lg font-medium text-gray-900">
+            Services
+          </h3>
           <span class="text-sm text-gray-500">(Optional)</span>
         </div>
 
@@ -89,11 +123,11 @@
             class="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
           >
             <input
+              v-model="selectedServices"
               type="checkbox"
               :value="item.id"
-              v-model="selectedServices"
               class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
+            >
             <div class="flex-1">
               <div class="text-sm font-medium text-gray-900">{{ item.name }}</div>
               <div class="text-xs text-gray-500">{{ formatCurrency(item.price) }}</div>
@@ -116,14 +150,21 @@
             Delete Matter
           </button>
         </div>
-        <div v-else></div>
+        <div v-else />
 
         <!-- Action buttons (right side) -->
         <div class="flex space-x-3">
-          <UiButton type="button" variant="outline" @click="handleCancel">
+          <UiButton
+            type="button"
+            variant="outline"
+            @click="handleCancel"
+          >
             Cancel
           </UiButton>
-          <UiButton @click="handleSubmit" :is-loading="saving">
+          <UiButton
+            :is-loading="saving"
+            @click="handleSubmit"
+          >
             {{ editingMatter ? 'Update Matter' : 'Create Matter' }}
           </UiButton>
         </div>
@@ -178,7 +219,7 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value)
 })
 
 const saving = ref(false)
@@ -204,7 +245,8 @@ watch(() => props.editingMatter, (matter) => {
       leadAttorneyId: matter.leadAttorneyId || '',
       engagementJourneyTemplateId: matter.engagementJourneyId || ''
     }
-  } else {
+  }
+  else {
     // Reset form for new matter, using defaultClientId if provided
     form.value = {
       title: '',
@@ -247,7 +289,8 @@ async function handleSubmit() {
           engagementJourneyTemplateId: form.value.engagementJourneyTemplateId || null
         }
       })
-    } else {
+    }
+    else {
       // Create new matter
       const response = await $fetch<{
         success: boolean
@@ -270,10 +313,12 @@ async function handleSubmit() {
 
     emit('save', props.editingMatter?.id, googleDriveStatus)
     isOpen.value = false
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Error saving matter:', error)
     toast.error(error.data?.message || 'Failed to save matter')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }

@@ -11,9 +11,15 @@
     ]"
     :title="tooltipText"
   >
-    <component :is="icon" class="w-3.5 h-3.5" />
+    <component
+      :is="icon"
+      class="w-3.5 h-3.5"
+    />
     <span v-if="showLabel">{{ labelText }}</span>
-    <ExternalLink v-if="folderUrl && status === 'SYNCED'" class="w-3 h-3" />
+    <ExternalLink
+      v-if="folderUrl && status === 'SYNCED'"
+      class="w-3 h-3"
+    />
   </component>
 </template>
 

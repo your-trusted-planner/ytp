@@ -2,20 +2,40 @@
   <div class="space-y-6">
     <div>
       <div class="flex items-center gap-2">
-        <h1 class="text-3xl font-bold text-gray-900">Documents</h1>
-        <UiHelpLink :topic="isLawyer ? 'documents' : 'client-documents'" title="Learn about documents" />
+        <h1 class="text-3xl font-bold text-gray-900">
+          Documents
+        </h1>
+        <UiHelpLink
+          :topic="isLawyer ? 'documents' : 'client-documents'"
+          title="Learn about documents"
+        />
       </div>
-      <p class="text-gray-600 mt-1">View and manage your documents</p>
+      <p class="text-gray-600 mt-1">
+        View and manage your documents
+      </p>
     </div>
 
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading documents...</p>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          Loading documents...
+        </p>
       </div>
-      <div v-else-if="documents.length === 0" class="text-center py-12">
-        <p class="text-gray-500">No documents yet</p>
+      <div
+        v-else-if="documents.length === 0"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          No documents yet
+        </p>
       </div>
-      <div v-else class="space-y-3">
+      <div
+        v-else
+        class="space-y-3"
+      >
         <div
           v-for="doc in documents"
           :key="doc.id"
@@ -23,8 +43,13 @@
         >
           <div class="flex justify-between items-center">
             <div class="flex-1">
-              <h3 class="font-semibold text-gray-900">{{ doc.title }}</h3>
-              <p v-if="doc.description" class="text-sm text-gray-600 mt-1">
+              <h3 class="font-semibold text-gray-900">
+                {{ doc.title }}
+              </h3>
+              <p
+                v-if="doc.description"
+                class="text-sm text-gray-600 mt-1"
+              >
                 {{ doc.description }}
               </p>
               <p class="text-sm text-gray-500 mt-1">
@@ -34,9 +59,9 @@
             <div class="flex items-center space-x-3">
               <UiBadge
                 :variant="
-                  doc.status === 'SIGNED' || doc.status === 'COMPLETED' ? 'success' :
-                  doc.status === 'SENT' || doc.status === 'VIEWED' ? 'warning' :
-                  'default'
+                  doc.status === 'SIGNED' || doc.status === 'COMPLETED' ? 'success'
+                  : doc.status === 'SENT' || doc.status === 'VIEWED' ? 'warning'
+                    : 'default'
                 "
               >
                 {{ doc.status }}
@@ -76,11 +101,12 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     documents.value = await $fetch('/api/client/documents')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch documents:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 })
 </script>
-

@@ -1,12 +1,24 @@
 <template>
-  <div class="border rounded-lg overflow-hidden" :class="cardBorderClass">
+  <div
+    class="border rounded-lg overflow-hidden"
+    :class="cardBorderClass"
+  >
     <!-- Header: Extracted Person Info -->
-    <div class="px-4 py-3" :class="cardHeaderClass">
+    <div
+      class="px-4 py-3"
+      :class="cardHeaderClass"
+    >
       <div class="flex items-start justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <component :is="roleIcon" class="w-4 h-4" :class="roleIconClass" />
-            <h4 class="font-medium text-gray-900">{{ person.extractedName }}</h4>
+            <component
+              :is="roleIcon"
+              class="w-4 h-4"
+              :class="roleIconClass"
+            />
+            <h4 class="font-medium text-gray-900">
+              {{ person.extractedName }}
+            </h4>
           </div>
           <div class="mt-1 flex flex-wrap gap-1">
             <span
@@ -19,9 +31,22 @@
             </span>
           </div>
         </div>
-        <div v-if="person.extractedEmail || person.extractedDateOfBirth" class="text-right text-sm">
-          <p v-if="person.extractedEmail" class="text-gray-600">{{ person.extractedEmail }}</p>
-          <p v-if="person.extractedDateOfBirth" class="text-gray-500">DOB: {{ person.extractedDateOfBirth }}</p>
+        <div
+          v-if="person.extractedEmail || person.extractedDateOfBirth"
+          class="text-right text-sm"
+        >
+          <p
+            v-if="person.extractedEmail"
+            class="text-gray-600"
+          >
+            {{ person.extractedEmail }}
+          </p>
+          <p
+            v-if="person.extractedDateOfBirth"
+            class="text-gray-500"
+          >
+            DOB: {{ person.extractedDateOfBirth }}
+          </p>
         </div>
       </div>
     </div>
@@ -29,7 +54,10 @@
     <!-- Decision Section -->
     <div class="px-4 py-3 bg-white">
       <!-- Has matches -->
-      <div v-if="person.matches.length > 0" class="space-y-2">
+      <div
+        v-if="person.matches.length > 0"
+        class="space-y-2"
+      >
         <p class="text-sm text-gray-600 mb-2">
           {{ person.matches.length }} potential match{{ person.matches.length > 1 ? 'es' : '' }} found:
         </p>
@@ -48,17 +76,23 @@
             :name="`match-${person.extractedName}`"
             :value="match.personId"
             :checked="selectedValue === match.personId"
-            @change="selectMatch(match.personId)"
             class="mt-1 text-burgundy-600 focus:ring-burgundy-500"
-          />
+            @change="selectMatch(match.personId)"
+          >
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
               <span class="font-medium text-gray-900">{{ match.personName }}</span>
-              <ConfidenceBadge :confidence="match.confidence" show-icon />
+              <ConfidenceBadge
+                :confidence="match.confidence"
+                show-icon
+              />
             </div>
             <div class="mt-1 text-sm text-gray-500">
               <span class="capitalize">{{ formatMatchType(match.matchType) }}</span>
-              <span v-if="match.email" class="ml-2">{{ match.email }}</span>
+              <span
+                v-if="match.email"
+                class="ml-2"
+              >{{ match.email }}</span>
             </div>
           </div>
         </label>
@@ -66,8 +100,8 @@
         <!-- Show more matches -->
         <button
           v-if="person.matches.length > 3 && !showAllMatches"
-          @click="showAllMatches = true"
           class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+          @click="showAllMatches = true"
         >
           Show {{ person.matches.length - 3 }} more match{{ person.matches.length - 3 > 1 ? 'es' : '' }}...
         </button>
@@ -84,9 +118,9 @@
             :name="`match-${person.extractedName}`"
             value="create_new"
             :checked="selectedValue === 'create_new'"
-            @change="selectMatch('create_new')"
             class="mt-1 text-burgundy-600 focus:ring-burgundy-500"
-          />
+            @change="selectMatch('create_new')"
+          >
           <div>
             <span class="font-medium text-gray-900">Create New Person</span>
             <p class="text-sm text-gray-500">Don't link to any existing record</p>
@@ -95,20 +129,30 @@
       </div>
 
       <!-- No matches found -->
-      <div v-else class="text-center py-2">
-        <p class="text-sm text-gray-500">No existing matches found</p>
-        <p class="text-xs text-gray-400 mt-1">A new person record will be created</p>
+      <div
+        v-else
+        class="text-center py-2"
+      >
+        <p class="text-sm text-gray-500">
+          No existing matches found
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+          A new person record will be created
+        </p>
       </div>
 
       <!-- Create as Client option (only for client/spouse roles) -->
-      <div v-if="showClientOption" class="mt-3 pt-3 border-t border-gray-200">
+      <div
+        v-if="showClientOption"
+        class="mt-3 pt-3 border-t border-gray-200"
+      >
         <label class="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             :checked="createAsClientValue"
-            @change="toggleCreateAsClient"
             class="mt-0.5 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-          />
+            @change="toggleCreateAsClient"
+          >
           <div>
             <span class="font-medium text-gray-900">Create as Client</span>
             <p class="text-sm text-gray-500">Creates user account + client record with portal access</p>

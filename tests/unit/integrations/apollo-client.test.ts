@@ -95,11 +95,12 @@ class SimulatedApolloClient {
     return await response.json() as T
   }
 
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<{ success: boolean, error?: string }> {
     try {
       await this.request<any>('POST', '/contacts/search', { per_page: 1, page: 1 })
       return { success: true }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof ApolloApiError) return { success: false, error: error.message }
       if (error instanceof ApolloRateLimitError) return { success: false, error: 'Rate limited - try again later' }
       return { success: false, error: String(error) }
@@ -359,7 +360,8 @@ describe('ApolloClient', () => {
       try {
         await client.getContact('apo-1')
         expect.fail('Should have thrown')
-      } catch (error) {
+      }
+      catch (error) {
         expect(error).toBeInstanceOf(ApolloRateLimitError)
         expect((error as ApolloRateLimitError).retryAfter).toBe(30)
       }

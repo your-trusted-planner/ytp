@@ -2,34 +2,67 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">My Matters</h1>
-        <p class="text-gray-600 mt-1">View your active legal matters</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          My Matters
+        </h1>
+        <p class="text-gray-600 mt-1">
+          View your active legal matters
+        </p>
       </div>
     </div>
 
     <!-- Matters List -->
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading matters...</p>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          Loading matters...
+        </p>
       </div>
-      <div v-else-if="matters.length === 0" class="text-center py-12">
-        <p class="text-gray-500">No matters found</p>
+      <div
+        v-else-if="matters.length === 0"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          No matters found
+        </p>
       </div>
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matter Title</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Started</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Matter Title
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date Started
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Description
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="matter in matters" :key="matter.id" class="hover:bg-gray-50">
+            <tr
+              v-for="matter in matters"
+              :key="matter.id"
+              class="hover:bg-gray-50"
+            >
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ matter.title }}</div>
-                <div class="text-xs text-gray-500">{{ matter.matterNumber }}</div>
+                <div class="text-sm font-medium text-gray-900">
+                  {{ matter.title }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ matter.matterNumber }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getStatusVariant(matter.status)">
@@ -42,7 +75,9 @@
                 </div>
               </td>
               <td class="px-6 py-4">
-                <div class="text-sm text-gray-500 max-w-xs truncate">{{ matter.description }}</div>
+                <div class="text-sm text-gray-500 max-w-xs truncate">
+                  {{ matter.description }}
+                </div>
               </td>
             </tr>
           </tbody>
@@ -68,9 +103,11 @@ const fetchMatters = async () => {
   try {
     const response = await $fetch<{ matters: any[] }>('/api/my-matters')
     matters.value = response.matters || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch matters:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -92,5 +129,3 @@ onMounted(() => {
   fetchMatters()
 })
 </script>
-
-

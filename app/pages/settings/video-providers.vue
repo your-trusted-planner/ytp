@@ -1,129 +1,194 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Video Meeting Providers</h1>
-      <p class="text-gray-600 mt-1">Configure video meeting integrations for appointments</p>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Video Meeting Providers
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Configure video meeting integrations for appointments
+      </p>
     </div>
 
     <ClientOnly>
-    <div>
-    <!-- Loading -->
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading providers...</div>
+      <div>
+        <!-- Loading -->
+        <div
+          v-if="loading"
+          class="text-center py-12 text-gray-500"
+        >
+          Loading providers...
+        </div>
 
-    <!-- Providers List -->
-    <div v-else class="space-y-4">
-      <!-- Zoom -->
-      <UiCard>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
+        <!-- Providers List -->
+        <div
+          v-else
+          class="space-y-4"
+        >
+          <!-- Zoom -->
+          <UiCard>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-12 h-12 rounded-lg flex items-center justify-center"
+                  :class="zoomProvider?.configured ? 'bg-green-100' : 'bg-gray-100'"
+                >
+                  <Video
+                    class="w-6 h-6"
+                    :class="zoomProvider?.configured ? 'text-green-600' : 'text-gray-400'"
+                  />
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900">
+                    Zoom
+                  </h3>
+                  <p class="text-sm text-gray-500">
+                    Create Zoom meetings automatically when scheduling appointments
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <UiBadge
+                  v-if="zoomProvider?.status === 'CONNECTED'"
+                  variant="success"
+                >
+                  Connected
+                </UiBadge>
+                <UiBadge
+                  v-else-if="zoomProvider?.configured"
+                  variant="info"
+                >
+                  Configured
+                </UiBadge>
+                <UiBadge
+                  v-else
+                  variant="default"
+                >
+                  Not Configured
+                </UiBadge>
+                <UiButton
+                  v-if="!showZoomForm"
+                  variant="outline"
+                  size="sm"
+                  @click="showZoomForm = true"
+                >
+                  {{ zoomProvider?.configured ? 'Update' : 'Configure' }}
+                </UiButton>
+              </div>
+            </div>
+
+            <!-- Zoom Configuration Form -->
             <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center"
-              :class="zoomProvider?.configured ? 'bg-green-100' : 'bg-gray-100'"
+              v-if="showZoomForm"
+              class="mt-4 border-t border-gray-200 pt-4 space-y-4"
             >
-              <Video
-                class="w-6 h-6"
-                :class="zoomProvider?.configured ? 'text-green-600' : 'text-gray-400'"
+              <p class="text-sm text-gray-600">
+                Enter your Zoom OAuth app credentials. These are encrypted and stored securely.
+                Create a Zoom OAuth app at
+                <a
+                  href="https://marketplace.zoom.us"
+                  target="_blank"
+                  rel="noopener"
+                  class="text-accent-600 underline"
+                >marketplace.zoom.us</a>.
+              </p>
+
+              <UiInput
+                v-model="zoomForm.clientId"
+                label="Client ID"
+                placeholder="Your Zoom OAuth Client ID"
+                required
               />
+              <UiInput
+                v-model="zoomForm.clientSecret"
+                label="Client Secret"
+                type="password"
+                placeholder="Your Zoom OAuth Client Secret"
+                required
+              />
+              <UiInput
+                v-model="zoomForm.redirectUri"
+                label="Redirect URI"
+                :placeholder="defaultRedirectUri"
+                required
+              />
+              <p class="text-xs text-gray-400 -mt-2">
+                Set this same URI in your Zoom app's OAuth redirect settings.
+              </p>
+
+              <div class="flex items-center gap-2">
+                <UiButton
+                  :is-loading="savingZoom"
+                  @click="saveZoomConfig"
+                >
+                  Save Credentials
+                </UiButton>
+                <UiButton
+                  v-if="zoomProvider?.configured"
+                  variant="outline"
+                  :is-loading="testingZoom"
+                  @click="testZoom"
+                >
+                  Test Connection
+                </UiButton>
+                <UiButton
+                  variant="outline"
+                  @click="showZoomForm = false"
+                >
+                  Cancel
+                </UiButton>
+              </div>
             </div>
-            <div>
-              <h3 class="font-semibold text-gray-900">Zoom</h3>
-              <p class="text-sm text-gray-500">Create Zoom meetings automatically when scheduling appointments</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <UiBadge v-if="zoomProvider?.status === 'CONNECTED'" variant="success">Connected</UiBadge>
-            <UiBadge v-else-if="zoomProvider?.configured" variant="info">Configured</UiBadge>
-            <UiBadge v-else variant="default">Not Configured</UiBadge>
-            <UiButton
-              v-if="!showZoomForm"
-              variant="outline"
-              size="sm"
-              @click="showZoomForm = true"
+
+            <!-- Status info when not editing -->
+            <div
+              v-else-if="zoomProvider?.configured"
+              class="mt-4 border-t border-gray-200 pt-4"
             >
-              {{ zoomProvider?.configured ? 'Update' : 'Configure' }}
-            </UiButton>
-          </div>
-        </div>
-
-        <!-- Zoom Configuration Form -->
-        <div v-if="showZoomForm" class="mt-4 border-t border-gray-200 pt-4 space-y-4">
-          <p class="text-sm text-gray-600">
-            Enter your Zoom OAuth app credentials. These are encrypted and stored securely.
-            Create a Zoom OAuth app at
-            <a href="https://marketplace.zoom.us" target="_blank" rel="noopener" class="text-accent-600 underline">marketplace.zoom.us</a>.
-          </p>
-
-          <UiInput
-            v-model="zoomForm.clientId"
-            label="Client ID"
-            placeholder="Your Zoom OAuth Client ID"
-            required
-          />
-          <UiInput
-            v-model="zoomForm.clientSecret"
-            label="Client Secret"
-            type="password"
-            placeholder="Your Zoom OAuth Client Secret"
-            required
-          />
-          <UiInput
-            v-model="zoomForm.redirectUri"
-            label="Redirect URI"
-            :placeholder="defaultRedirectUri"
-            required
-          />
-          <p class="text-xs text-gray-400 -mt-2">
-            Set this same URI in your Zoom app's OAuth redirect settings.
-          </p>
-
-          <div class="flex items-center gap-2">
-            <UiButton @click="saveZoomConfig" :is-loading="savingZoom">
-              Save Credentials
-            </UiButton>
-            <UiButton
-              v-if="zoomProvider?.configured"
-              variant="outline"
-              @click="testZoom"
-              :is-loading="testingZoom"
-            >
-              Test Connection
-            </UiButton>
-            <UiButton variant="outline" @click="showZoomForm = false">Cancel</UiButton>
-          </div>
-        </div>
-
-        <!-- Status info when not editing -->
-        <div v-else-if="zoomProvider?.configured" class="mt-4 border-t border-gray-200 pt-4">
-          <p class="text-sm text-gray-600">
-            Zoom integration is active. Staff members can connect their individual Zoom accounts from their
-            <NuxtLink to="/profile" class="text-accent-600 underline">Profile page</NuxtLink>.
-          </p>
-          <p v-if="zoomProvider?.lastTestedAt" class="text-xs text-gray-400 mt-2">
-            Last tested: {{ new Date(zoomProvider.lastTestedAt).toLocaleDateString() }}
-            <span v-if="zoomProvider.lastErrorMessage" class="text-red-500 ml-1">
-              ({{ zoomProvider.lastErrorMessage }})
-            </span>
-          </p>
-        </div>
-      </UiCard>
-
-      <!-- Google Meet (coming soon) -->
-      <UiCard>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Video class="w-6 h-6 text-gray-400" />
+              <p class="text-sm text-gray-600">
+                Zoom integration is active. Staff members can connect their individual Zoom accounts from their
+                <NuxtLink
+                  to="/profile"
+                  class="text-accent-600 underline"
+                >Profile page</NuxtLink>.
+              </p>
+              <p
+                v-if="zoomProvider?.lastTestedAt"
+                class="text-xs text-gray-400 mt-2"
+              >
+                Last tested: {{ new Date(zoomProvider.lastTestedAt).toLocaleDateString() }}
+                <span
+                  v-if="zoomProvider.lastErrorMessage"
+                  class="text-red-500 ml-1"
+                >
+                  ({{ zoomProvider.lastErrorMessage }})
+                </span>
+              </p>
             </div>
-            <div>
-              <h3 class="font-semibold text-gray-900">Google Meet</h3>
-              <p class="text-sm text-gray-500">Google Meet integration (coming soon)</p>
+          </UiCard>
+
+          <!-- Google Meet (coming soon) -->
+          <UiCard>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Video class="w-6 h-6 text-gray-400" />
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900">
+                    Google Meet
+                  </h3>
+                  <p class="text-sm text-gray-500">
+                    Google Meet integration (coming soon)
+                  </p>
+                </div>
+              </div>
+              <UiBadge variant="default">
+                Coming Soon
+              </UiBadge>
             </div>
-          </div>
-          <UiBadge variant="default">Coming Soon</UiBadge>
+          </UiCard>
         </div>
-      </UiCard>
-    </div>
-    </div>
+      </div>
     </ClientOnly>
 
     <!-- Info -->
@@ -134,7 +199,10 @@
           <p>
             Video meeting providers allow automatic meeting creation when scheduling appointments.
             Each staff member connects their own account via their
-            <NuxtLink to="/profile" class="text-accent-600 underline">Profile page</NuxtLink>
+            <NuxtLink
+              to="/profile"
+              class="text-accent-600 underline"
+            >Profile page</NuxtLink>
             to act as the meeting host. Credentials are encrypted at rest using AES-256-GCM.
           </p>
         </div>
@@ -187,9 +255,11 @@ async function fetchProviders() {
   loading.value = true
   try {
     providers.value = await $fetch('/api/admin/video-providers')
-  } catch {
+  }
+  catch {
     providers.value = []
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -209,9 +279,11 @@ async function saveZoomConfig() {
     showZoomForm.value = false
     zoomForm.value = { clientId: '', clientSecret: '', redirectUri: '' }
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save Zoom credentials')
-  } finally {
+  }
+  finally {
     savingZoom.value = false
   }
 }
@@ -224,10 +296,12 @@ async function testZoom() {
     })
     toast.success(result.message)
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Zoom test failed')
     await fetchProviders()
-  } finally {
+  }
+  finally {
     testingZoom.value = false
   }
 }

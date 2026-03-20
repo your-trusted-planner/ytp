@@ -39,7 +39,7 @@ export interface LawmaticsEntity {
   type: string
   attributes: Record<string, any>
   relationships?: Record<string, {
-    data: { id: string; type: string } | { id: string; type: string }[] | null
+    data: { id: string, type: string } | { id: string, type: string }[] | null
   }>
 }
 
@@ -78,7 +78,7 @@ export interface LawmaticsContact extends LawmaticsEntity {
     gender?: string
     marital_status?: string
     contact_type?: string
-    custom_fields?: Array<{ name: string; formatted_value: any; value?: any }>
+    custom_fields?: Array<{ name: string, formatted_value: any, value?: any }>
     created_at: string
     updated_at: string
     [key: string]: any
@@ -100,7 +100,7 @@ export interface LawmaticsProspect extends LawmaticsEntity {
     stage?: string
     estimated_value_cents?: number
     actual_value_cents?: number
-    custom_fields?: Array<{ name: string; formatted_value: any; value?: any }>
+    custom_fields?: Array<{ name: string, formatted_value: any, value?: any }>
     created_at: string
     updated_at: string
     [key: string]: any
@@ -417,7 +417,7 @@ export class LawmaticsClient {
    */
   async fetchAll<T extends LawmaticsEntity>(
     endpoint: string,
-    options: PaginationOptions & { fields?: string; onProgress?: (page: number, total: number) => void; maxPages?: number } = {}
+    options: PaginationOptions & { fields?: string, onProgress?: (page: number, total: number) => void, maxPages?: number } = {}
   ): Promise<T[]> {
     const allData: T[] = []
     let page = options.page ?? 1
@@ -446,7 +446,8 @@ export class LawmaticsClient {
           this.log(`Breaking due to ${consecutiveEmptyPages} consecutive empty pages`)
           break
         }
-      } else {
+      }
+      else {
         consecutiveEmptyPages = 0
       }
 
@@ -666,11 +667,12 @@ export class LawmaticsClient {
    * Test the API connection
    * Fetches a single user to verify credentials work
    */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<{ success: boolean, error?: string }> {
     try {
       await this.fetchPage<LawmaticsUser>('/users', { perPage: 1 })
       return { success: true }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof LawmaticsApiError) {
         return { success: false, error: error.message }
       }
@@ -729,9 +731,9 @@ export async function createLawmaticsClientFromIntegration(
   }
 
   // KV may return parsed object or JSON string depending on how it was stored
-  const credentials: { accessToken: string } = typeof credentialsData === 'string'
-    ? JSON.parse(credentialsData)
-    : credentialsData as { accessToken: string }
+  const credentials: { accessToken: string } = typeof credentialsData === 'string' ?
+      JSON.parse(credentialsData) :
+    credentialsData as { accessToken: string }
 
   if (!credentials.accessToken) {
     throw new Error('Invalid credentials: missing accessToken')

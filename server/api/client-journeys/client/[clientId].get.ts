@@ -44,16 +44,16 @@ export default defineEventHandler(async (event) => {
         .get()
 
       // Get current step info
-      const currentStep = cj.currentStepId
-        ? await db.select({
+      const currentStep = cj.currentStepId ?
+          await db.select({
             name: schema.journeySteps.name,
             stepType: schema.journeySteps.stepType,
             stepOrder: schema.journeySteps.stepOrder
           })
-          .from(schema.journeySteps)
-          .where(eq(schema.journeySteps.id, cj.currentStepId))
-          .get()
-        : null
+            .from(schema.journeySteps)
+            .where(eq(schema.journeySteps.id, cj.currentStepId))
+            .get() :
+        null
 
       // Get total steps count
       const totalStepsResult = await db.select({ count: sql<number>`count(*)` })
@@ -64,23 +64,23 @@ export default defineEventHandler(async (event) => {
       // Get service catalog info from client journey's catalogId (for SERVICE journeys)
       // or from selectedCatalogId (for completed ENGAGEMENT journeys)
       const serviceCatalogId = cj.catalogId || cj.selectedCatalogId
-      const service = serviceCatalogId
-        ? await db.select({ name: schema.serviceCatalog.name })
-          .from(schema.serviceCatalog)
-          .where(eq(schema.serviceCatalog.id, serviceCatalogId))
-          .get()
-        : null
+      const service = serviceCatalogId ?
+          await db.select({ name: schema.serviceCatalog.name })
+            .from(schema.serviceCatalog)
+            .where(eq(schema.serviceCatalog.id, serviceCatalogId))
+            .get() :
+        null
 
       // Get matter info
-      const matter = cj.matterId
-        ? await db.select({
+      const matter = cj.matterId ?
+          await db.select({
             title: schema.matters.title,
             matterNumber: schema.matters.matterNumber
           })
-          .from(schema.matters)
-          .where(eq(schema.matters.id, cj.matterId))
-          .get()
-        : null
+            .from(schema.matters)
+            .where(eq(schema.matters.id, cj.matterId))
+            .get() :
+        null
 
       // Convert to snake_case for API compatibility
       return {
@@ -116,6 +116,3 @@ export default defineEventHandler(async (event) => {
     journeys: enrichedJourneys
   }
 })
-
-
-

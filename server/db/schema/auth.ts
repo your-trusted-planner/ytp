@@ -46,7 +46,7 @@ export const users = sqliteTable('users', {
   importMetadata: text('import_metadata'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   personIdIdx: index('idx_users_person_id').on(table.personId),
   roleIdx: index('idx_users_role').on(table.role),
   statusIdx: index('idx_users_status').on(table.status)

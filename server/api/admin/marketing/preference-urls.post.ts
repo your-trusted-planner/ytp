@@ -19,21 +19,22 @@ export default defineEventHandler(async (event) => {
   const protocol = host.includes('localhost') ? 'http' : 'https'
   const baseUrl = `${protocol}://${host}`
 
-  let people: { id: string; email: string | null }[]
+  let people: { id: string, email: string | null }[]
 
   if (personIds && personIds.length > 0) {
     // Fetch specific people
     people = await db.select({ id: schema.people.id, email: schema.people.email })
       .from(schema.people)
       .where(inArray(schema.people.id, personIds))
-  } else {
+  }
+  else {
     // Fetch all people with email addresses
     people = await db.select({ id: schema.people.id, email: schema.people.email })
       .from(schema.people)
       .where(isNotNull(schema.people.email))
   }
 
-  const urls: { personId: string; email: string | null; url: string }[] = []
+  const urls: { personId: string, email: string | null, url: string }[] = []
 
   for (const person of people) {
     const token = await generatePermanentPreferenceToken(person.id)

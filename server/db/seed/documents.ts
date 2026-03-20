@@ -79,7 +79,8 @@ export async function seedDocuments(
     sarahEngagementContent = engagementHtml ? renderer.render(engagementHtml, sarahEngagementVars) : '<h1>Engagement Agreement</h1><p>Client: Sarah Williams</p>'
     sarahTrustContent = trustHtml ? renderer.render(trustHtml, sarahTrustVars) : '<h1>Declaration of Trust</h1><p>Trust Name: Williams Family Asset Protection Trust</p>'
     console.log('  Rendered document content from templates')
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('  Template rendering failed, using simple content:', error)
     janeEngagementContent = '<h1>Engagement Agreement</h1><p>Client: Jane Doe</p><p>Service: Wyoming Asset Protection Trust</p><p>Fee: $18,500</p>'
     janeTrustContent = '<h1>Declaration of Trust</h1><p>Trust Name: Doe Family Asset Protection Trust</p><p>Grantor: Jane Doe</p><p>Trustee: Jane Doe and Robert Doe</p>'

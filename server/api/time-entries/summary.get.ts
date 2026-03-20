@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     .all()
 
   // Convert to map for easy access
-  const byStatus: Record<string, { count: number; hours: string; amount: number }> = {}
+  const byStatus: Record<string, { count: number, hours: string, amount: number }> = {}
   for (const row of statusStats) {
     byStatus[row.status] = {
       count: Number(row.count),

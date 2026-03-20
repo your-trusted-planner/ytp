@@ -16,13 +16,13 @@ export const DEFAULT_MATCH_CONFIG: MatchConfig = {
     address: 0.05
   },
   thresholds: {
-    high: 0.85,     // Auto-link candidate
-    medium: 0.60    // Human review queue
+    high: 0.85, // Auto-link candidate
+    medium: 0.60 // Human review queue
   },
   antiSignalPenalties: {
     shared_email_different_name: 0.40,
-    known_spouse: 1.0,       // Definitive non-match
+    known_spouse: 1.0, // Definitive non-match
     different_dob: 0.30,
-    different_ssn: 1.0       // Definitive non-match
+    different_ssn: 1.0 // Definitive non-match
   }
 }

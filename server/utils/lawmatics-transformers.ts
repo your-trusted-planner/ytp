@@ -47,11 +47,11 @@ export interface ImportMetadata {
  * Flags for data quality issues
  */
 export type ImportFlag =
-  | 'REVIEW_NEEDED'
-  | 'DUPLICATE_EMAIL'
-  | 'POSSIBLY_NOT_PERSON'
-  | 'MISSING_EMAIL'
-  | 'MISSING_NAME'
+  | 'REVIEW_NEEDED' |
+  'DUPLICATE_EMAIL' |
+  'POSSIBLY_NOT_PERSON' |
+  'MISSING_EMAIL' |
+  'MISSING_NAME'
 
 /**
  * Transformed user record ready for database insert
@@ -252,15 +252,15 @@ function looksLikeFinancialProduct(text: string): boolean {
 
   // Retirement account types
   const retirementPatterns = [
-    /\bira\b/,           // IRA (word boundary to avoid matching "Brian")
-    /\broth\b/,          // Roth
-    /\b401\s*[\(\[]?\s*k\s*[\)\]]?\b/i,  // 401k, 401(k), 401 k
-    /\b403\s*[\(\[]?\s*b\s*[\)\]]?\b/i,  // 403b, 403(b)
-    /\bsep\s+ira\b/,     // SEP IRA
-    /\bsimple\s+ira\b/,  // SIMPLE IRA
-    /\bkeogh\b/,         // Keogh plan
-    /\bpension\b/,       // Pension
-    /\b457\s*[\(\[]?\s*b?\s*[\)\]]?\b/i  // 457, 457(b)
+    /\bira\b/, // IRA (word boundary to avoid matching "Brian")
+    /\broth\b/, // Roth
+    /\b401\s*[\(\[]?\s*k\s*[\)\]]?\b/i, // 401k, 401(k), 401 k
+    /\b403\s*[\(\[]?\s*b\s*[\)\]]?\b/i, // 403b, 403(b)
+    /\bsep\s+ira\b/, // SEP IRA
+    /\bsimple\s+ira\b/, // SIMPLE IRA
+    /\bkeogh\b/, // Keogh plan
+    /\bpension\b/, // Pension
+    /\b457\s*[\(\[]?\s*b?\s*[\)\]]?\b/i // 457, 457(b)
   ]
   if (retirementPatterns.some(pattern => pattern.test(lower))) {
     return true
@@ -282,7 +282,7 @@ function looksLikeFinancialProduct(text: string): boolean {
   const investmentTerms = [
     'brokerage', 'trading account', 'investment account',
     'mutual fund', 'index fund', 'money market',
-    'cd ', 'certificate of deposit',  // note space after cd to avoid matching names
+    'cd ', 'certificate of deposit', // note space after cd to avoid matching names
     'savings bond', 'treasury'
   ]
   if (investmentTerms.some(term => lower.includes(term))) {
@@ -420,7 +420,8 @@ export function parseDate(dateStr: string | undefined | null): Date | null {
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return null
     return date
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -543,7 +544,7 @@ const COUNTRY_CODES: Record<string, string> = {
   'iceland': 'IS',
   'romania': 'RO',
   'hungary': 'HU',
-  'croatia': 'HR',
+  'croatia': 'HR'
 }
 
 /**
@@ -578,7 +579,7 @@ function normalizeState(state: string, country?: string | null): string {
 
 export function parseAddress(
   contact: LawmaticsContact,
-  addressData?: { street?: string; street2?: string; city?: string; state?: string; zipcode?: string; country?: string; [key: string]: any } | null
+  addressData?: { street?: string, street2?: string, city?: string, state?: string, zipcode?: string, country?: string, [key: string]: any } | null
 ): {
   address: string | null
   address2: string | null
@@ -627,7 +628,7 @@ export function parseAddress(
  * Extract custom fields into a key-value object
  */
 export function extractCustomFields(
-  customFields: Array<{ name: string; formatted_value: any; value?: any }> | undefined
+  customFields: Array<{ name: string, formatted_value: any, value?: any }> | undefined
 ): Record<string, any> {
   if (!customFields || !Array.isArray(customFields)) {
     return {}
@@ -653,7 +654,7 @@ export function extractCustomFields(
  * Admins should manually set appropriate roles and permissions after import.
  * The original Lawmatics role is preserved in importMetadata for reference.
  */
-function mapUserRole(_lawmaticsRole: string | undefined): { role: 'ADMIN' | 'LAWYER' | 'STAFF'; adminLevel: number } {
+function mapUserRole(_lawmaticsRole: string | undefined): { role: 'ADMIN' | 'LAWYER' | 'STAFF', adminLevel: number } {
   return { role: 'STAFF', adminLevel: 0 }
 }
 
@@ -704,7 +705,7 @@ export function transformContact(
   options: {
     importRunId?: string
     existingEmails?: Set<string> // For duplicate detection
-    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
+    addressData?: { street?: string, city?: string, state?: string, zipcode?: string } | null
   } = {}
 ): TransformedClient {
   const flags: ImportFlag[] = []
@@ -721,7 +722,8 @@ export function transformContact(
   if (!email) {
     flags.push('MISSING_EMAIL')
     email = generateMissingEmailPlaceholder(contact.id)
-  } else if (options.existingEmails?.has(email.toLowerCase())) {
+  }
+  else if (options.existingEmails?.has(email.toLowerCase())) {
     // Duplicate email detected
     flags.push('DUPLICATE_EMAIL')
     flags.push('REVIEW_NEEDED')
@@ -779,17 +781,19 @@ export function transformContact(
   const hasProfileData = dateOfBirth || addressData.address || addressData.city ||
     addressData.state || addressData.zipCode
 
-  const profile = hasProfileData ? {
-    id: nanoid(),
-    userId,
-    dateOfBirth,
-    address: addressData.address,
-    city: addressData.city,
-    state: addressData.state,
-    zipCode: addressData.zipCode,
-    createdAt,
-    updatedAt
-  } : null
+  const profile = hasProfileData ?
+      {
+        id: nanoid(),
+        userId,
+        dateOfBirth,
+        address: addressData.address,
+        city: addressData.city,
+        state: addressData.state,
+        zipCode: addressData.zipCode,
+        createdAt,
+        updatedAt
+      } :
+    null
 
   return { user, profile, flags }
 }
@@ -802,7 +806,7 @@ export function transformContactToPerson(
   contact: LawmaticsContact,
   options: {
     importRunId?: string
-    addressData?: { street?: string; city?: string; state?: string; zipcode?: string } | null
+    addressData?: { street?: string, city?: string, state?: string, zipcode?: string } | null
   } = {}
 ): TransformedPerson | null {
   // Skip non-person records (businesses, trusts, etc.)
@@ -910,9 +914,9 @@ export function transformProspect(
 ): TransformedMatter | null {
   // Get the contact ID from relationships
   const contactRelation = prospect.relationships?.contact?.data
-  const contactExternalId = Array.isArray(contactRelation)
-    ? contactRelation[0]?.id
-    : contactRelation?.id
+  const contactExternalId = Array.isArray(contactRelation) ?
+    contactRelation[0]?.id :
+    contactRelation?.id
 
   if (!contactExternalId) {
     // Can't import matter without a client
@@ -931,9 +935,9 @@ export function transformProspect(
   let leadAttorneyId: string | null = null
   if (options.userLookup) {
     const attorneyRelation = prospect.relationships?.lead_attorney?.data
-    const attorneyExternalId = Array.isArray(attorneyRelation)
-      ? attorneyRelation[0]?.id
-      : attorneyRelation?.id
+    const attorneyExternalId = Array.isArray(attorneyRelation) ?
+      attorneyRelation[0]?.id :
+      attorneyRelation?.id
 
     if (attorneyExternalId) {
       leadAttorneyId = options.userLookup(attorneyExternalId)
@@ -1004,9 +1008,9 @@ export function transformNote(
   // Lawmatics uses a polymorphic "notable" relationship
   // The type field indicates whether it's a "contact" or "prospect"
   const notableRelation = note.relationships?.notable?.data
-  const notableData = Array.isArray(notableRelation)
-    ? notableRelation[0]
-    : notableRelation
+  const notableData = Array.isArray(notableRelation) ?
+    notableRelation[0] :
+    notableRelation
 
   if (notableData?.id && notableData?.type) {
     if (notableData.type === 'contact') {
@@ -1015,7 +1019,8 @@ export function transformNote(
         entityType = 'person'
         entityId = personId
       }
-    } else if (notableData.type === 'prospect') {
+    }
+    else if (notableData.type === 'prospect') {
       const matterId = options.prospectLookup(notableData.id)
       if (matterId) {
         entityType = 'matter'
@@ -1027,9 +1032,9 @@ export function transformNote(
   // Fallback: Check for explicit contact relationship (legacy/alternative format)
   if (!entityId) {
     const contactRelation = note.relationships?.contact?.data
-    const contactExternalId = Array.isArray(contactRelation)
-      ? contactRelation[0]?.id
-      : contactRelation?.id
+    const contactExternalId = Array.isArray(contactRelation) ?
+      contactRelation[0]?.id :
+      contactRelation?.id
 
     if (contactExternalId) {
       const personId = options.contactLookup(contactExternalId)
@@ -1044,9 +1049,9 @@ export function transformNote(
   if (!entityId) {
     const prospectRelation = note.relationships?.prospect?.data ||
       note.relationships?.matter?.data
-    const prospectExternalId = Array.isArray(prospectRelation)
-      ? prospectRelation[0]?.id
-      : prospectRelation?.id
+    const prospectExternalId = Array.isArray(prospectRelation) ?
+      prospectRelation[0]?.id :
+      prospectRelation?.id
 
     if (prospectExternalId) {
       const matterId = options.prospectLookup(prospectExternalId)
@@ -1065,9 +1070,9 @@ export function transformNote(
   // Resolve creator
   const creatorRelation = note.relationships?.created_by?.data ||
     note.relationships?.user?.data
-  const creatorExternalId = Array.isArray(creatorRelation)
-    ? creatorRelation[0]?.id
-    : creatorRelation?.id
+  const creatorExternalId = Array.isArray(creatorRelation) ?
+    creatorRelation[0]?.id :
+    creatorRelation?.id
 
   let createdBy = options.defaultUserId
   if (creatorExternalId) {
@@ -1091,9 +1096,9 @@ export function transformNote(
   // Also include the name as a prefix if it exists
   const noteTitle = note.attributes.name
   const noteBody = note.attributes.body || note.attributes.content || ''
-  const content = noteTitle && noteBody
-    ? `**${noteTitle}**\n\n${noteBody}`
-    : noteBody || noteTitle || ''
+  const content = noteTitle && noteBody ?
+    `**${noteTitle}**\n\n${noteBody}` :
+    noteBody || noteTitle || ''
 
   return {
     id: nanoid(),
@@ -1119,25 +1124,25 @@ function mapActivityType(lawmaticsType: string | undefined): string {
 
   // Map common Lawmatics activity types
   const typeMap: Record<string, string> = {
-    'email_sent': 'EMAIL_SENT',
-    'email_received': 'EMAIL_RECEIVED',
-    'email_opened': 'EMAIL_OPENED',
-    'email_clicked': 'EMAIL_CLICKED',
-    'call': 'CALL_LOGGED',
-    'call_logged': 'CALL_LOGGED',
-    'sms_sent': 'SMS_SENT',
-    'sms_received': 'SMS_RECEIVED',
-    'note_added': 'NOTE_CREATED',
-    'note': 'NOTE_CREATED',
-    'status_changed': 'STATUS_CHANGED',
-    'stage_changed': 'STAGE_CHANGED',
-    'document_uploaded': 'DOCUMENT_UPLOADED',
-    'document_signed': 'DOCUMENT_SIGNED',
-    'form_submitted': 'FORM_SUBMITTED',
-    'appointment_scheduled': 'APPOINTMENT_SCHEDULED',
-    'appointment_completed': 'APPOINTMENT_COMPLETED',
-    'payment_received': 'PAYMENT_RECEIVED',
-    'task_completed': 'TASK_COMPLETED'
+    email_sent: 'EMAIL_SENT',
+    email_received: 'EMAIL_RECEIVED',
+    email_opened: 'EMAIL_OPENED',
+    email_clicked: 'EMAIL_CLICKED',
+    call: 'CALL_LOGGED',
+    call_logged: 'CALL_LOGGED',
+    sms_sent: 'SMS_SENT',
+    sms_received: 'SMS_RECEIVED',
+    note_added: 'NOTE_CREATED',
+    note: 'NOTE_CREATED',
+    status_changed: 'STATUS_CHANGED',
+    stage_changed: 'STAGE_CHANGED',
+    document_uploaded: 'DOCUMENT_UPLOADED',
+    document_signed: 'DOCUMENT_SIGNED',
+    form_submitted: 'FORM_SUBMITTED',
+    appointment_scheduled: 'APPOINTMENT_SCHEDULED',
+    appointment_completed: 'APPOINTMENT_COMPLETED',
+    payment_received: 'PAYMENT_RECEIVED',
+    task_completed: 'TASK_COMPLETED'
   }
 
   return typeMap[type] || `IMPORTED_${type.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`
@@ -1162,9 +1167,9 @@ export function transformActivity(
 
   // Check for contact
   const contactRelation = activity.relationships?.contact?.data
-  const contactExternalId = Array.isArray(contactRelation)
-    ? contactRelation[0]?.id
-    : contactRelation?.id
+  const contactExternalId = Array.isArray(contactRelation) ?
+    contactRelation[0]?.id :
+    contactRelation?.id
 
   if (contactExternalId) {
     const personId = options.contactLookup(contactExternalId)
@@ -1178,9 +1183,9 @@ export function transformActivity(
   if (!targetId) {
     const prospectRelation = activity.relationships?.prospect?.data ||
       activity.relationships?.matter?.data
-    const prospectExternalId = Array.isArray(prospectRelation)
-      ? prospectRelation[0]?.id
-      : prospectRelation?.id
+    const prospectExternalId = Array.isArray(prospectRelation) ?
+      prospectRelation[0]?.id :
+      prospectRelation?.id
 
     if (prospectExternalId) {
       const matterId = options.prospectLookup(prospectExternalId)
@@ -1194,9 +1199,9 @@ export function transformActivity(
   // Resolve actor (user who performed the action)
   const userRelation = activity.relationships?.user?.data ||
     activity.relationships?.created_by?.data
-  const userExternalId = Array.isArray(userRelation)
-    ? userRelation[0]?.id
-    : userRelation?.id
+  const userExternalId = Array.isArray(userRelation) ?
+    userRelation[0]?.id :
+    userRelation?.id
 
   let userId = options.defaultUserId
   if (userExternalId) {
@@ -1238,7 +1243,7 @@ export function transformActivity(
  * Maps externalId -> internalId
  */
 export function createLookupMap(
-  records: Array<{ id: string; importMetadata: string }>
+  records: Array<{ id: string, importMetadata: string }>
 ): Map<string, string> {
   const map = new Map<string, string>()
 
@@ -1248,7 +1253,8 @@ export function createLookupMap(
       if (metadata.externalId) {
         map.set(metadata.externalId, record.id)
       }
-    } catch {
+    }
+    catch {
       // Skip records with invalid metadata
     }
   }

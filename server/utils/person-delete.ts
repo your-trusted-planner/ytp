@@ -129,8 +129,8 @@ export async function safeDeletePerson(personId: string): Promise<PersonDeleteRe
 
     result.deleted = true
     return result
-
-  } catch (error: any) {
+  }
+  catch (error: any) {
     result.error = error.message
     return result
   }

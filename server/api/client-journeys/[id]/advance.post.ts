@@ -92,7 +92,8 @@ export default defineEventHandler(async (event) => {
     })
 
     return { success: true, nextStep }
-  } else {
+  }
+  else {
     // Journey is complete
     await db.update(schema.clientJourneys)
       .set({
@@ -117,7 +118,7 @@ async function autoStartServiceJourneys(
   db: ReturnType<typeof import('../../../db').useDrizzle>,
   schema: typeof import('../../../db').schema,
   clientJourneyId: string,
-  clientJourney: { clientId: string; journeyId: string; matterId: string | null },
+  clientJourney: { clientId: string, journeyId: string, matterId: string | null },
   now: Date
 ) {
   const { eq, and, ne } = await import('drizzle-orm')
@@ -152,7 +153,7 @@ async function autoStartServiceJourneys(
     return [] // No services engaged
   }
 
-  const startedJourneys: Array<{ id: string; serviceName: string; journeyName: string }> = []
+  const startedJourneys: Array<{ id: string, serviceName: string, journeyName: string }> = []
 
   for (const engagement of engagedServices) {
     // Find the SERVICE journey template for this catalog item via junction table
@@ -168,12 +169,12 @@ async function autoStartServiceJourneys(
       ))
       .get()
 
-    const serviceJourney = journeyLink
-      ? await db.select()
+    const serviceJourney = journeyLink ?
+        await db.select()
           .from(schema.journeys)
           .where(eq(schema.journeys.id, journeyLink.journeyId))
-          .get()
-      : null
+          .get() :
+      null
 
     if (!serviceJourney) {
       continue // No service journey defined for this service
@@ -249,6 +250,3 @@ async function autoStartServiceJourneys(
 
   return startedJourneys
 }
-
-
-

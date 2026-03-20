@@ -80,7 +80,7 @@ export class MockRepository {
     if (trust.planId !== planId) throw new EstatePlanViolationError(`${context}: trust ${trustId} belongs to different plan`)
   }
 
-  private stamp<T>(data: T, id?: string): T & { id: string; createdAt: Date; updatedAt: Date } {
+  private stamp<T>(data: T, id?: string): T & { id: string, createdAt: Date, updatedAt: Date } {
     const now = new Date()
     return { ...data, id: id || nanoid(), createdAt: now, updatedAt: now }
   }
@@ -328,10 +328,12 @@ export class MockRepository {
 
     const grantors: Person[] = []
     const g1 = this.people.get(plan.grantorPersonId1)
-    if (g1) grantors.push(g1); else errors.push(`Grantor1 ${plan.grantorPersonId1} does not exist`)
+    if (g1) grantors.push(g1)
+    else errors.push(`Grantor1 ${plan.grantorPersonId1} does not exist`)
     if (plan.grantorPersonId2) {
       const g2 = this.people.get(plan.grantorPersonId2)
-      if (g2) grantors.push(g2); else errors.push(`Grantor2 ${plan.grantorPersonId2} does not exist`)
+      if (g2) grantors.push(g2)
+      else errors.push(`Grantor2 ${plan.grantorPersonId2} does not exist`)
     }
 
     const trusts = this.getTrustsByPlanId(planId)

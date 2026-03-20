@@ -16,7 +16,7 @@ interface EmailOptions {
   text?: string
   from?: string
   replyTo?: string
-  tags?: Array<{ name: string; value: string }>
+  tags?: Array<{ name: string, value: string }>
   event?: H3Event // Optional H3 event for accessing encrypted credentials
 }
 
@@ -60,7 +60,8 @@ async function getResendApiKey(event?: H3Event): Promise<string | null> {
           }
         }
       }
-    } catch (err) {
+    }
+    catch (err) {
       console.log('[Email] Could not load API key from database, falling back to env var:', err)
     }
   }
@@ -78,7 +79,7 @@ async function getResendApiKey(event?: H3Event): Promise<string | null> {
 /**
  * Send an email using Resend API
  */
-export async function sendEmail(options: EmailOptions): Promise<{ success: true; id: string } | { success: false; error: string }> {
+export async function sendEmail(options: EmailOptions): Promise<{ success: true, id: string } | { success: false, error: string }> {
   const config = useRuntimeConfig()
   const apiKey = await getResendApiKey(options.event)
 
@@ -116,7 +117,8 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: true;
     const data = await response.json() as ResendResponse
     console.log('[Email] Sent successfully:', data.id)
     return { success: true, id: data.id }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('[Email] Failed to send:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
@@ -185,14 +187,16 @@ export const emailTemplates = {
                 </p>
               </div>
 
-              ${message ? `
+              ${message ?
+                `
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0;">
                 <p style="margin: 0; color: #92400e; font-size: 14px;">
                   <strong>Message from ${senderName}:</strong><br>
                   ${message}
                 </p>
               </div>
-              ` : ''}
+              ` :
+                ''}
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">

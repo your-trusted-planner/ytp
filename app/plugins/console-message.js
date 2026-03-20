@@ -25,7 +25,7 @@ to connect with someone who speaks both law and code...
     'color: #059669; font-size: 14px; font-weight: bold;',
     'color: #374151; font-size: 13px;',
     'color: #2563eb; font-size: 13px; text-decoration: underline;',
-    'color: #64748b; font-size: 11px; font-style: italic;',
+    'color: #64748b; font-size: 11px; font-style: italic;'
     )
   }
 })

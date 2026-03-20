@@ -1,27 +1,30 @@
 <template>
   <div class="space-y-6">
     <!-- View Mode Toggle for Joint Plans -->
-    <div v-if="hasPersonSpecificRoles" class="flex items-center gap-4 pb-4 border-b border-gray-200">
+    <div
+      v-if="hasPersonSpecificRoles"
+      class="flex items-center gap-4 pb-4 border-b border-gray-200"
+    >
       <span class="text-sm text-gray-500">View:</span>
       <button
-        @click="viewMode = 'category'"
         :class="[
           'px-3 py-1 text-sm rounded-lg transition-colors',
           viewMode === 'category'
             ? 'bg-burgundy-100 text-burgundy-700'
             : 'text-gray-600 hover:bg-gray-100'
         ]"
+        @click="viewMode = 'category'"
       >
         By Category
       </button>
       <button
-        @click="viewMode = 'person'"
         :class="[
           'px-3 py-1 text-sm rounded-lg transition-colors',
           viewMode === 'person'
             ? 'bg-burgundy-100 text-burgundy-700'
             : 'text-gray-600 hover:bg-gray-100'
         ]"
+        @click="viewMode = 'person'"
       >
         By Person
       </button>
@@ -29,9 +32,15 @@
 
     <!-- Category View -->
     <template v-if="viewMode === 'category'">
-      <div v-for="category in categorizedRoles" :key="category.key">
+      <div
+        v-for="category in categorizedRoles"
+        :key="category.key"
+      >
         <div class="flex items-center gap-2 mb-3">
-          <component :is="category.icon" class="w-5 h-5 text-gray-500" />
+          <component
+            :is="category.icon"
+            class="w-5 h-5 text-gray-500"
+          />
           <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
             {{ category.label }}
           </h3>
@@ -54,7 +63,10 @@
     <!-- Person View (for joint plans) -->
     <template v-else>
       <!-- Plan-Level Roles -->
-      <div v-if="planLevelRoles.length > 0" class="mb-6">
+      <div
+        v-if="planLevelRoles.length > 0"
+        class="mb-6"
+      >
         <div class="flex items-center gap-2 mb-3">
           <Landmark class="w-5 h-5 text-blue-500" />
           <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -74,12 +86,18 @@
       </div>
 
       <!-- Roles by Person -->
-      <div v-for="personGroup in rolesByPerson" :key="personGroup.personId" class="mb-6">
+      <div
+        v-for="personGroup in rolesByPerson"
+        :key="personGroup.personId"
+        class="mb-6"
+      >
         <div class="flex items-center gap-2 mb-3">
-          <div :class="[
-            'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold',
-            personGroup.colorClass
-          ]">
+          <div
+            :class="[
+              'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold',
+              personGroup.colorClass
+            ]"
+          >
             {{ personGroup.initials }}
           </div>
           <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -101,7 +119,10 @@
     </template>
 
     <!-- Empty state -->
-    <div v-if="roles.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-if="roles.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       <Users class="w-12 h-12 mx-auto mb-3 text-gray-300" />
       <p>No roles assigned yet</p>
     </div>

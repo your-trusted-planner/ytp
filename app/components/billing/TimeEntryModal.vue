@@ -1,6 +1,14 @@
 <template>
-  <UiModal :modelValue="true" :title="editingEntry ? 'Edit Time Entry' : 'Create Time Entry'" size="md" @update:modelValue="$emit('close')">
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+  <UiModal
+    :model-value="true"
+    :title="editingEntry ? 'Edit Time Entry' : 'Create Time Entry'"
+    size="md"
+    @update:model-value="$emit('close')"
+  >
+    <form
+      class="space-y-6"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Matter Selection -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -16,7 +24,10 @@
           :loading="loadingMatters"
           @select="handleMatterSelect"
         />
-        <p v-if="matters.length === 0 && !loadingMatters" class="text-xs text-amber-600 mt-1">
+        <p
+          v-if="matters.length === 0 && !loadingMatters"
+          class="text-xs text-amber-600 mt-1"
+        >
           No matters found. Create a matter first before logging time.
         </p>
       </div>
@@ -31,7 +42,7 @@
           type="date"
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-        />
+        >
       </div>
 
       <!-- Hours -->
@@ -47,8 +58,10 @@
           required
           placeholder="0.00"
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-        />
-        <p class="text-xs text-gray-500 mt-1">Enter time in increments of 0.25 hours (15 minutes)</p>
+        >
+        <p class="text-xs text-gray-500 mt-1">
+          Enter time in increments of 0.25 hours (15 minutes)
+        </p>
       </div>
 
       <!-- Description -->
@@ -62,20 +75,25 @@
           required
           placeholder="Describe the work performed..."
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 resize-none"
-        ></textarea>
+        />
       </div>
 
       <!-- Billable Toggle -->
       <div class="flex items-center justify-between">
         <div>
           <label class="text-sm font-medium text-gray-700">Billable</label>
-          <p class="text-xs text-gray-500">Mark as non-billable for internal work</p>
+          <p class="text-xs text-gray-500">
+            Mark as non-billable for internal work
+          </p>
         </div>
         <UiToggle v-model="form.isBillable" />
       </div>
 
       <!-- Rate Preview Section -->
-      <div v-if="form.matterId && ratePreview" class="bg-gray-50 rounded-lg p-4 space-y-2">
+      <div
+        v-if="form.matterId && ratePreview"
+        class="bg-gray-50 rounded-lg p-4 space-y-2"
+      >
         <div class="flex justify-between text-sm">
           <span class="text-gray-600">Hourly Rate:</span>
           <span class="font-medium">{{ ratePreview.rateFormatted }}</span>
@@ -84,19 +102,28 @@
           <span class="text-gray-500">Rate Source:</span>
           <span class="text-gray-500">{{ ratePreview.sourceLabel }}</span>
         </div>
-        <div v-if="form.isBillable && form.hours" class="flex justify-between text-sm font-medium pt-2 border-t border-gray-200">
+        <div
+          v-if="form.isBillable && form.hours"
+          class="flex justify-between text-sm font-medium pt-2 border-t border-gray-200"
+        >
           <span class="text-gray-700">Estimated Amount:</span>
           <span class="text-burgundy-600">{{ formatCurrency(estimatedAmount) }}</span>
         </div>
-        <div v-if="!form.isBillable" class="text-xs text-gray-500 pt-2 border-t border-gray-200">
+        <div
+          v-if="!form.isBillable"
+          class="text-xs text-gray-500 pt-2 border-t border-gray-200"
+        >
           Non-billable time will not generate charges
         </div>
       </div>
 
       <!-- Loading rate -->
-      <div v-else-if="form.matterId && loadingRate" class="bg-gray-50 rounded-lg p-4">
+      <div
+        v-else-if="form.matterId && loadingRate"
+        class="bg-gray-50 rounded-lg p-4"
+      >
         <div class="flex items-center justify-center gap-2 text-gray-500">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600"></div>
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
           <span class="text-sm">Loading rate information...</span>
         </div>
       </div>
@@ -104,7 +131,11 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <UiButton type="button" variant="outline" @click="$emit('close')">
+        <UiButton
+          type="button"
+          variant="outline"
+          @click="$emit('close')"
+        >
           Cancel
         </UiButton>
         <UiButton
@@ -204,7 +235,8 @@ if (props.editingEntry) {
   form.hours = props.editingEntry.hours
   form.description = props.editingEntry.description
   form.isBillable = props.editingEntry.isBillable
-} else if (props.defaultMatterId) {
+}
+else if (props.defaultMatterId) {
   form.matterId = props.defaultMatterId
 }
 
@@ -214,10 +246,12 @@ async function fetchMatters() {
   try {
     const response = await $fetch<{ matters: Matter[] }>('/api/matters')
     matters.value = response.matters || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch matters:', error)
     matters.value = []
-  } finally {
+  }
+  finally {
     loadingMatters.value = false
   }
 }
@@ -239,10 +273,12 @@ async function resolveRate() {
       }
     })
     ratePreview.value = response
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to resolve rate:', error)
     ratePreview.value = null
-  } finally {
+  }
+  finally {
     loadingRate.value = false
   }
 }
@@ -267,7 +303,8 @@ function handleMatterSelect(matter: Matter) {
 watch(() => form.matterId, (newMatterId) => {
   if (newMatterId) {
     resolveRate()
-  } else {
+  }
+  else {
     ratePreview.value = null
   }
 })
@@ -292,7 +329,8 @@ async function handleSubmit() {
       })
       toast.success('Time entry updated')
       emit('updated', response.timeEntry)
-    } else {
+    }
+    else {
       // Create new entry
       const response = await $fetch<{ timeEntry: any }>('/api/time-entries', {
         method: 'POST',
@@ -308,10 +346,12 @@ async function handleSubmit() {
       emit('created', response.timeEntry)
     }
     emit('close')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save time entry:', error)
     toast.error(error.data?.message || 'Failed to save time entry')
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

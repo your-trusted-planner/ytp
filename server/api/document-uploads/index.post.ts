@@ -26,11 +26,14 @@ export default defineEventHandler(async (event) => {
   for (const part of form) {
     if (part.name === 'clientJourneyId') {
       clientJourneyId = part.data.toString()
-    } else if (part.name === 'actionItemId') {
+    }
+    else if (part.name === 'actionItemId') {
       actionItemId = part.data.toString()
-    } else if (part.name === 'documentCategory') {
+    }
+    else if (part.name === 'documentCategory') {
       documentCategory = part.data.toString()
-    } else if (part.name === 'file') {
+    }
+    else if (part.name === 'file') {
       file = part
     }
   }
@@ -91,11 +94,12 @@ export default defineEventHandler(async (event) => {
           .where(eq(schema.documentUploads.id, uploadId))
 
         // Queue the sync (async, non-blocking)
-        syncUploadToDrive(uploadId).catch(error => {
+        syncUploadToDrive(uploadId).catch((error) => {
           console.error('Failed to sync upload to Google Drive:', error)
         })
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error checking Drive sync status:', error)
     }
   }
@@ -124,6 +128,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-
-
-

@@ -61,9 +61,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Merge existing variable values with new ones
-  const existingVariables = document.variableValues
-    ? JSON.parse(document.variableValues)
-    : {}
+  const existingVariables = document.variableValues ?
+      JSON.parse(document.variableValues) :
+      {}
   const updatedVariables = { ...existingVariables, ...body.variables }
 
   console.log('[Variables] Existing variables:', existingVariables)
@@ -93,7 +93,8 @@ export default defineEventHandler(async (event) => {
           current = current[parts[i]]
         }
         current[parts[parts.length - 1]] = obj[key]
-      } else {
+      }
+      else {
         result[key] = obj[key]
       }
     }
@@ -150,10 +151,12 @@ export default defineEventHandler(async (event) => {
         // Save the regenerated DOCX to blob storage
         await blob.put(docxBlobKey, generatedDocx)
         console.log('[Variables] Successfully saved regenerated DOCX to:', docxBlobKey)
-      } else {
+      }
+      else {
         console.warn('[Variables] Template blob not found in storage')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('[Variables] Error regenerating DOCX:', error)
       if (error instanceof Error) {
         console.error('[Variables] Error message:', error.message)
@@ -161,7 +164,8 @@ export default defineEventHandler(async (event) => {
       }
       // Continue even if DOCX regeneration fails
     }
-  } else {
+  }
+  else {
     console.log('[Variables] Template has no DOCX blob key, skipping DOCX regeneration')
   }
 
@@ -184,6 +188,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-
-
-

@@ -193,13 +193,13 @@ export default defineEventHandler(async (event) => {
       termsVersion,
       ipAddress: requestContext.ipAddress,
       userAgent: requestContext.userAgent,
-      geolocation: requestContext.country
-        ? JSON.stringify({
+      geolocation: requestContext.country ?
+          JSON.stringify({
             country: requestContext.country,
             region: requestContext.region,
             city: requestContext.city
-          })
-        : null,
+          }) :
+        null,
       updatedAt: now
     })
     .where(eq(schema.signatureSessions.id, session.id))
@@ -244,7 +244,8 @@ export default defineEventHandler(async (event) => {
     })
 
     console.log('[Signature] Generated and stored signed PDF:', signedPdfBlobKey)
-  } catch (pdfError) {
+  }
+  catch (pdfError) {
     // Log error but don't fail the signature - PDF is a nice-to-have
     console.error('[Signature] Failed to generate signed PDF:', pdfError)
   }
@@ -328,7 +329,8 @@ export default defineEventHandler(async (event) => {
           }
         })
       }
-    } catch (actionErr) {
+    }
+    catch (actionErr) {
       // Log but don't fail - signature is the critical operation
       console.error('[Signature] Failed to auto-complete action item:', actionErr)
     }

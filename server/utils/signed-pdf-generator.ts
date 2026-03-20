@@ -53,7 +53,7 @@ function htmlToPlainText(html: string): string {
   text = text.replace(/&lt;/g, '<')
   text = text.replace(/&gt;/g, '>')
   text = text.replace(/&quot;/g, '"')
-  text = text.replace(/&#39;/g, "'")
+  text = text.replace(/&#39;/g, '\'')
 
   // Clean up whitespace
   text = text.replace(/\n\s*\n/g, '\n\n') // Multiple newlines to double
@@ -85,7 +85,8 @@ function wrapText(text: string, font: any, fontSize: number, maxWidth: number): 
 
       if (width <= maxWidth) {
         currentLine = testLine
-      } else {
+      }
+      else {
         if (currentLine) {
           lines.push(currentLine)
         }
@@ -237,7 +238,8 @@ export async function generateSignedPdf(options: SignedPdfOptions): Promise<Uint
       height: sigHeight
     })
     currentY -= sigHeight + 15
-  } catch (error) {
+  }
+  catch (error) {
     // If signature image fails, draw placeholder text
     page.drawText('[Signature Image]', {
       x: margin,

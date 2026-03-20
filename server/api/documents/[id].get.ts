@@ -62,7 +62,8 @@ export default defineEventHandler(async (event) => {
   if (template?.variables) {
     try {
       templateVariables = JSON.parse(template.variables)
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Error parsing template variables:', e)
     }
   }
@@ -139,6 +140,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-
-
-

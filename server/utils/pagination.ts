@@ -37,7 +37,8 @@ export function parsePaginationParams(query: Record<string, any>): PaginationPar
   let limit = parseInt(query.limit as string, 10)
   if (isNaN(limit) || limit < 1) {
     limit = DEFAULT_LIMIT
-  } else if (limit > MAX_LIMIT) {
+  }
+  else if (limit > MAX_LIMIT) {
     limit = MAX_LIMIT
   }
 
@@ -46,7 +47,8 @@ export function parsePaginationParams(query: Record<string, any>): PaginationPar
   let sortDirection: 'asc' | 'desc' | undefined
   if (query.sortDirection === 'asc' || query.sortDirection === 'desc') {
     sortDirection = query.sortDirection
-  } else if (sortBy) {
+  }
+  else if (sortBy) {
     // Default to ascending if sortBy is provided but no direction
     sortDirection = 'asc'
   }

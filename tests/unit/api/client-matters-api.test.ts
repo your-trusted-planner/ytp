@@ -186,7 +186,7 @@ function setupTestDb() {
 // Seed helpers
 const now = Math.floor(Date.now() / 1000)
 
-function createPerson(overrides: Partial<{ id: string; firstName: string; lastName: string; email: string }> = {}) {
+function createPerson(overrides: Partial<{ id: string, firstName: string, lastName: string, email: string }> = {}) {
   const id = overrides.id || nanoid()
   sqliteDb.prepare(`INSERT INTO people (id, person_type, first_name, last_name, full_name, email, created_at, updated_at)
     VALUES (?, 'individual', ?, ?, ?, ?, ?, ?)`).run(
@@ -200,7 +200,7 @@ function createPerson(overrides: Partial<{ id: string; firstName: string; lastNa
   return id
 }
 
-function createUser(personId: string, role: string, overrides: Partial<{ id: string; email: string }> = {}) {
+function createUser(personId: string, role: string, overrides: Partial<{ id: string, email: string }> = {}) {
   const id = overrides.id || nanoid()
   sqliteDb.prepare(`INSERT INTO users (id, person_id, email, role, admin_level, first_name, last_name, status, created_at, updated_at)
     VALUES (?, ?, ?, ?, 0, 'Test', 'User', 'ACTIVE', ?, ?)`).run(
@@ -217,7 +217,7 @@ function createClient(personId: string, overrides: Partial<{ id: string }> = {})
   return id
 }
 
-function createMatter(clientUserId: string, title: string, status: string = 'OPEN', overrides: Partial<{ id: string; createdAt: number }> = {}) {
+function createMatter(clientUserId: string, title: string, status: string = 'OPEN', overrides: Partial<{ id: string, createdAt: number }> = {}) {
   const id = overrides.id || nanoid()
   sqliteDb.prepare(`INSERT INTO matters (id, client_id, title, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).run(
     id, clientUserId, title, status, overrides.createdAt || now, now
@@ -225,7 +225,7 @@ function createMatter(clientUserId: string, title: string, status: string = 'OPE
   return id
 }
 
-function createService(name: string, price: number, overrides: Partial<{ id: string; category: string }> = {}) {
+function createService(name: string, price: number, overrides: Partial<{ id: string, category: string }> = {}) {
   const id = overrides.id || nanoid()
   sqliteDb.prepare(`INSERT INTO service_catalog (id, name, category, price, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).run(
     id, name, overrides.category || 'General', price, now, now
@@ -279,7 +279,7 @@ describe('Client Matters API - Aggregated Stats Query', () => {
     createJourney(userId, matterId, 'COMPLETED') // should NOT count
     createPayment(matterId, 250000, 'COMPLETED') // $2500
     createPayment(matterId, 100000, 'COMPLETED') // $1000
-    createPayment(matterId, 50000, 'PENDING')     // should NOT count
+    createPayment(matterId, 50000, 'PENDING') // should NOT count
 
     // Run the aggregated query (this is the SQL we'll use in the endpoint)
     const matters = sqliteDb.prepare(`
@@ -294,7 +294,7 @@ describe('Client Matters API - Aggregated Stats Query', () => {
     expect(matters).toHaveLength(1)
     expect(matters[0].services_count).toBe(2)
     expect(matters[0].active_journeys_count).toBe(1) // only IN_PROGRESS
-    expect(matters[0].total_paid).toBe(350000)        // only COMPLETED payments
+    expect(matters[0].total_paid).toBe(350000) // only COMPLETED payments
   })
 
   it('should return zero stats for a matter with no related data', () => {
@@ -439,10 +439,10 @@ describe('Client Matters API - Status Sorting', () => {
     createMatter(userId, 'Pending', 'PENDING', { createdAt: now - 500 })
 
     const statusPriority: Record<string, number> = {
-      'OPEN': 1,
-      'IN_PROGRESS': 2,
-      'PENDING': 3,
-      'CLOSED': 4
+      OPEN: 1,
+      IN_PROGRESS: 2,
+      PENDING: 3,
+      CLOSED: 4
     }
 
     const matters = sqliteDb.prepare(`

@@ -73,7 +73,8 @@ export default defineEventHandler(async (event) => {
         client3: { email: 'sarah.williams@test.com', password: 'password123', note: 'Completed' }
       }
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     throw createError({
       statusCode: 500,
       message: `Failed to seed database: ${error.message}`,

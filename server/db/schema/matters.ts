@@ -30,7 +30,7 @@ export const matters = sqliteTable('matters', {
 
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   clientIdIdx: index('idx_matters_client_id').on(table.clientId),
   statusIdx: index('idx_matters_status').on(table.status),
   createdAtIdx: index('idx_matters_created_at').on(table.createdAt)
@@ -45,7 +45,7 @@ export const mattersToServices = sqliteTable('matters_to_services', {
   status: text('status', { enum: ['PENDING', 'ACTIVE', 'COMPLETED', 'CANCELLED'] }).notNull().default('PENDING'),
   startDate: integer('start_date', { mode: 'timestamp' }),
   endDate: integer('end_date', { mode: 'timestamp' })
-}, (table) => ({
+}, table => ({
   pk: primaryKey({ columns: [table.matterId, table.catalogId] })
 }))
 

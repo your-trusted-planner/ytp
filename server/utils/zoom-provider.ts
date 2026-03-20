@@ -98,7 +98,7 @@ export class ZoomProvider implements VideoMeetingProvider {
     const response = await fetch(`${ZOOM_API}/meetings/${providerMeetingId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       }
     })
 

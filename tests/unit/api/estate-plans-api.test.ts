@@ -183,7 +183,7 @@ describe('Estate Plans API Validation', () => {
         description: 'Quarterly distribution to beneficiaries',
         notes: 'Distribution per Section 4.2 of trust agreement',
         personId: 'person_123',
-        distributionAmount: 5000000  // $50,000 in cents
+        distributionAmount: 5000000 // $50,000 in cents
       })
 
       expect(result.success).toBe(true)
@@ -249,7 +249,7 @@ describe('Estate Plans API Validation', () => {
       const result = CreateEventSchema.safeParse({
         eventType: 'DISTRIBUTION_MADE',
         eventDate: '2024-01-01',
-        distributionAmount: 1000.50  // Not an integer
+        distributionAmount: 1000.50 // Not an integer
       })
 
       expect(result.success).toBe(false)
@@ -535,13 +535,13 @@ describe('Estate Plans API Response Structures', () => {
 describe('Estate Plans Business Logic', () => {
   describe('Plan Status Transitions', () => {
     const validTransitions: Record<string, string[]> = {
-      'DRAFT': ['ACTIVE'],
-      'ACTIVE': ['AMENDED', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
-      'AMENDED': ['ACTIVE', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
-      'INCAPACITATED': ['ACTIVE', 'ADMINISTERED'],
-      'ADMINISTERED': ['DISTRIBUTED', 'CLOSED'],
-      'DISTRIBUTED': ['CLOSED'],
-      'CLOSED': []
+      DRAFT: ['ACTIVE'],
+      ACTIVE: ['AMENDED', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
+      AMENDED: ['ACTIVE', 'INCAPACITATED', 'ADMINISTERED', 'CLOSED'],
+      INCAPACITATED: ['ACTIVE', 'ADMINISTERED'],
+      ADMINISTERED: ['DISTRIBUTED', 'CLOSED'],
+      DISTRIBUTED: ['CLOSED'],
+      CLOSED: []
     }
 
     it('validates allowed status transitions', () => {
@@ -568,20 +568,20 @@ describe('Estate Plans Business Logic', () => {
 
   describe('Role Categories', () => {
     const roleTypeToCategory: Record<string, string> = {
-      'GRANTOR': 'GRANTOR',
-      'TESTATOR': 'GRANTOR',
-      'TRUSTEE': 'FIDUCIARY',
-      'CO_TRUSTEE': 'FIDUCIARY',
-      'SUCCESSOR_TRUSTEE': 'FIDUCIARY',
-      'EXECUTOR': 'FIDUCIARY',
-      'CO_EXECUTOR': 'FIDUCIARY',
-      'FINANCIAL_AGENT': 'FIDUCIARY',
-      'HEALTHCARE_AGENT': 'FIDUCIARY',
-      'PRIMARY_BENEFICIARY': 'BENEFICIARY',
-      'CONTINGENT_BENEFICIARY': 'BENEFICIARY',
-      'REMAINDER_BENEFICIARY': 'BENEFICIARY',
-      'GUARDIAN_OF_PERSON': 'GUARDIAN',
-      'GUARDIAN_OF_ESTATE': 'GUARDIAN'
+      GRANTOR: 'GRANTOR',
+      TESTATOR: 'GRANTOR',
+      TRUSTEE: 'FIDUCIARY',
+      CO_TRUSTEE: 'FIDUCIARY',
+      SUCCESSOR_TRUSTEE: 'FIDUCIARY',
+      EXECUTOR: 'FIDUCIARY',
+      CO_EXECUTOR: 'FIDUCIARY',
+      FINANCIAL_AGENT: 'FIDUCIARY',
+      HEALTHCARE_AGENT: 'FIDUCIARY',
+      PRIMARY_BENEFICIARY: 'BENEFICIARY',
+      CONTINGENT_BENEFICIARY: 'BENEFICIARY',
+      REMAINDER_BENEFICIARY: 'BENEFICIARY',
+      GUARDIAN_OF_PERSON: 'GUARDIAN',
+      GUARDIAN_OF_ESTATE: 'GUARDIAN'
     }
 
     it('maps role types to correct categories', () => {
@@ -628,9 +628,9 @@ describe('Estate Plans Business Logic', () => {
     })
 
     it('includes advanced trust types', () => {
-      expect(validTrustTypes).toContain('ILIT')  // Irrevocable Life Insurance Trust
-      expect(validTrustTypes).toContain('GRAT')  // Grantor Retained Annuity Trust
-      expect(validTrustTypes).toContain('QPRT')  // Qualified Personal Residence Trust
+      expect(validTrustTypes).toContain('ILIT') // Irrevocable Life Insurance Trust
+      expect(validTrustTypes).toContain('GRAT') // Grantor Retained Annuity Trust
+      expect(validTrustTypes).toContain('QPRT') // Qualified Personal Residence Trust
       expect(validTrustTypes).toContain('DYNASTY')
     })
 

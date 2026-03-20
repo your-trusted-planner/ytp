@@ -1,6 +1,14 @@
 <template>
-  <UiModal :modelValue="true" :title="`Edit Billing Rates - ${entityName}`" size="md" @update:modelValue="$emit('close')">
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+  <UiModal
+    :model-value="true"
+    :title="`Edit Billing Rates - ${entityName}`"
+    size="md"
+    @update:model-value="$emit('close')"
+  >
+    <form
+      class="space-y-6"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Attorney Rate -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -15,7 +23,7 @@
             step="0.01"
             placeholder="0.00"
             class="w-full pl-7 pr-16 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-          />
+          >
           <span class="absolute right-3 top-2 text-gray-500 text-sm">/hour</span>
         </div>
         <p class="text-xs text-gray-500 mt-1">
@@ -37,7 +45,7 @@
             step="0.01"
             placeholder="0.00"
             class="w-full pl-7 pr-16 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-          />
+          >
           <span class="absolute right-3 top-2 text-gray-500 text-sm">/hour</span>
         </div>
         <p class="text-xs text-gray-500 mt-1">
@@ -53,21 +61,31 @@
           </label>
           <button
             type="button"
-            @click="addUserRate"
             class="text-sm text-burgundy-600 hover:text-burgundy-700"
+            @click="addUserRate"
           >
             + Add Override
           </button>
         </div>
 
-        <p v-if="form.userRates.length === 0" class="text-sm text-gray-500 py-4 text-center bg-gray-50 rounded-lg">
+        <p
+          v-if="form.userRates.length === 0"
+          class="text-sm text-gray-500 py-4 text-center bg-gray-50 rounded-lg"
+        >
           No user-specific overrides configured.
-          <button type="button" @click="addUserRate" class="text-burgundy-600 hover:underline ml-1">
+          <button
+            type="button"
+            class="text-burgundy-600 hover:underline ml-1"
+            @click="addUserRate"
+          >
             Add one
           </button>
         </p>
 
-        <div v-else class="space-y-2">
+        <div
+          v-else
+          class="space-y-2"
+        >
           <div
             v-for="(userRate, index) in form.userRates"
             :key="index"
@@ -79,7 +97,9 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 bg-white"
                 required
               >
-                <option value="">Select user...</option>
+                <option value="">
+                  Select user...
+                </option>
                 <option
                   v-for="user in availableUsers"
                   :key="user.id"
@@ -101,13 +121,13 @@
                   placeholder="0.00"
                   required
                   class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-                />
+                >
               </div>
             </div>
             <button
               type="button"
-              @click="removeUserRate(index)"
               class="p-2 text-gray-400 hover:text-red-600"
+              @click="removeUserRate(index)"
             >
               <X class="w-4 h-4" />
             </button>
@@ -125,7 +145,7 @@
           rows="2"
           placeholder="Optional notes about these rates..."
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 resize-none"
-        ></textarea>
+        />
       </div>
 
       <!-- Effective Date -->
@@ -137,7 +157,7 @@
           v-model="form.effectiveDate"
           type="date"
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-        />
+        >
         <p class="text-xs text-gray-500 mt-1">
           When these rates take effect (optional)
         </p>
@@ -146,7 +166,11 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <UiButton type="button" variant="outline" @click="$emit('close')">
+        <UiButton
+          type="button"
+          variant="outline"
+          @click="$emit('close')"
+        >
           Cancel
         </UiButton>
         <UiButton
@@ -193,7 +217,7 @@ const toast = useToast()
 
 // State
 const submitting = ref(false)
-const availableUsers = ref<Array<{ id: string; firstName: string; lastName: string }>>([])
+const availableUsers = ref<Array<{ id: string, firstName: string, lastName: string }>>([])
 
 // Form state
 const form = reactive({
@@ -209,9 +233,9 @@ if (props.currentRates) {
   form.attorneyRateDollars = props.currentRates.attorneyRate ? props.currentRates.attorneyRate / 100 : null
   form.staffRateDollars = props.currentRates.staffRate ? props.currentRates.staffRate / 100 : null
   form.notes = props.currentRates.notes || ''
-  form.effectiveDate = props.currentRates.effectiveDate
-    ? formatDateForInput(props.currentRates.effectiveDate)
-    : ''
+  form.effectiveDate = props.currentRates.effectiveDate ?
+      formatDateForInput(props.currentRates.effectiveDate) :
+    ''
 
   // Convert userRates object to array
   if (props.currentRates.userRates) {
@@ -224,11 +248,12 @@ if (props.currentRates) {
 // Fetch users for dropdown
 async function fetchUsers() {
   try {
-    const response = await $fetch<{ users: Array<{ id: string; firstName: string; lastName: string }> }>('/api/users', {
+    const response = await $fetch<{ users: Array<{ id: string, firstName: string, lastName: string }> }>('/api/users', {
       query: { role: 'LAWYER,STAFF' }
     })
     availableUsers.value = response.users || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch users:', error)
     availableUsers.value = []
   }
@@ -261,19 +286,19 @@ async function handleSubmit() {
       }
     }
 
-    const endpoint = props.entityType === 'client'
-      ? `/api/billing-rates/clients/${props.entityId}`
-      : `/api/billing-rates/matters/${props.entityId}`
+    const endpoint = props.entityType === 'client' ?
+      `/api/billing-rates/clients/${props.entityId}` :
+      `/api/billing-rates/matters/${props.entityId}`
 
     await $fetch(endpoint, {
       method: 'PUT',
       body: {
-        attorneyRate: form.attorneyRateDollars !== null && form.attorneyRateDollars >= 0
-          ? Math.round(form.attorneyRateDollars * 100)
-          : null,
-        staffRate: form.staffRateDollars !== null && form.staffRateDollars >= 0
-          ? Math.round(form.staffRateDollars * 100)
-          : null,
+        attorneyRate: form.attorneyRateDollars !== null && form.attorneyRateDollars >= 0 ?
+            Math.round(form.attorneyRateDollars * 100) :
+          null,
+        staffRate: form.staffRateDollars !== null && form.staffRateDollars >= 0 ?
+            Math.round(form.staffRateDollars * 100) :
+          null,
         userRates,
         notes: form.notes || null,
         effectiveDate: form.effectiveDate ? new Date(form.effectiveDate).toISOString() : null
@@ -282,10 +307,12 @@ async function handleSubmit() {
 
     toast.success('Billing rates updated')
     emit('saved')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save billing rates:', error)
     toast.error(error.data?.message || 'Failed to save billing rates')
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

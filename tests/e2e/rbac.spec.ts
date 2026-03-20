@@ -17,7 +17,7 @@ import {
   FIRM_ROUTES,
   ADMIN_ROUTES,
   CLIENT_ROUTES as CLIENT_ONLY_ROUTES,
-  API_ACCESS_CONTROL,
+  API_ACCESS_CONTROL
 } from '../../shared/routes'
 
 /**
@@ -40,18 +40,18 @@ const TEST_USERS = {
   // Admin user with full access
   admin: {
     email: process.env.TEST_ADMIN_EMAIL || 'admin@test.local',
-    password: process.env.TEST_ADMIN_PASSWORD || 'testpassword123',
+    password: process.env.TEST_ADMIN_PASSWORD || 'testpassword123'
   },
   // Lawyer/firm member
   lawyer: {
     email: process.env.TEST_LAWYER_EMAIL || 'lawyer@test.local',
-    password: process.env.TEST_LAWYER_PASSWORD || 'testpassword123',
+    password: process.env.TEST_LAWYER_PASSWORD || 'testpassword123'
   },
   // Client user
   client: {
     email: process.env.TEST_CLIENT_EMAIL || 'client@test.local',
-    password: process.env.TEST_CLIENT_PASSWORD || 'testpassword123',
-  },
+    password: process.env.TEST_CLIENT_PASSWORD || 'testpassword123'
+  }
 }
 
 test.describe('Role-Based Access Control', () => {
@@ -67,7 +67,7 @@ test.describe('Role-Based Access Control', () => {
         { path: '/api/documents', name: 'Document List' },
         { path: '/api/templates', name: 'Templates' },
         { path: '/api/client-journeys', name: 'Journey List' },
-        { path: '/api/users', name: 'User List' },
+        { path: '/api/users', name: 'User List' }
       ]
 
       for (const endpoint of firmOnlyEndpoints) {
@@ -130,7 +130,7 @@ test.describe('Role-Based Access Control', () => {
        * Non-admin firm members should NOT access admin-only endpoints
        */
       const adminOnlyEndpoints = [
-        { path: '/api/oauth-providers', name: 'OAuth Providers' },
+        { path: '/api/oauth-providers', name: 'OAuth Providers' }
         // Note: /api/users may be accessible to lawyers for client lookup
         // but POST/PUT/DELETE operations should be admin-only
       ]

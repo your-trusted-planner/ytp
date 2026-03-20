@@ -7,11 +7,11 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: 'Database seeded successfully'
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     return {
       success: false,
       error: error.message
     }
   }
 })
-

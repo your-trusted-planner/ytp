@@ -121,9 +121,9 @@ export default defineEventHandler(async (event) => {
       google_drive_folder_url: matter.googleDriveFolderUrl,
       google_drive_sync_status: matter.googleDriveSyncStatus,
       google_drive_sync_error: matter.googleDriveSyncError,
-      google_drive_last_sync_at: matter.googleDriveLastSyncAt instanceof Date
-        ? Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000)
-        : matter.googleDriveLastSyncAt,
+      google_drive_last_sync_at: matter.googleDriveLastSyncAt instanceof Date ?
+          Math.floor(matter.googleDriveLastSyncAt.getTime() / 1000) :
+        matter.googleDriveLastSyncAt,
       google_drive_subfolder_ids: matter.googleDriveSubfolderIds,
       // Import/sync metadata
       import_metadata: matter.importMetadata || null,

@@ -20,7 +20,7 @@ export interface ApolloContact {
   first_name: string | null
   last_name: string | null
   email: string | null
-  phone_numbers?: Array<{ raw_number: string; type: string }>
+  phone_numbers?: Array<{ raw_number: string, type: string }>
   organization_name?: string | null
   title?: string | null
   email_unsubscribed?: boolean
@@ -144,7 +144,7 @@ export class ApolloClient {
   /**
    * Test the API connection by fetching a minimal resource
    */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<{ success: boolean, error?: string }> {
     try {
       // Use contacts search with empty query to verify key works
       await this.request<any>('POST', '/contacts/search', {
@@ -152,7 +152,8 @@ export class ApolloClient {
         page: 1
       })
       return { success: true }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof ApolloApiError) {
         return { success: false, error: error.message }
       }
@@ -260,9 +261,9 @@ export async function createApolloClientFromIntegration(
     throw new Error(`Credentials not found for integration ${integrationId}`)
   }
 
-  const credentials: { accessToken: string } = typeof credentialsData === 'string'
-    ? JSON.parse(credentialsData)
-    : credentialsData as { accessToken: string }
+  const credentials: { accessToken: string } = typeof credentialsData === 'string' ?
+      JSON.parse(credentialsData) :
+    credentialsData as { accessToken: string }
 
   if (!credentials.accessToken) {
     throw new Error('Invalid credentials: missing accessToken')

@@ -1,7 +1,13 @@
 <template>
   <div class="flow-root">
-    <ul role="list" class="-mb-8">
-      <li v-for="(event, index) in sortedEvents" :key="event.id">
+    <ul
+      role="list"
+      class="-mb-8"
+    >
+      <li
+        v-for="(event, index) in sortedEvents"
+        :key="event.id"
+      >
         <div class="relative pb-8">
           <!-- Connecting line -->
           <span
@@ -35,16 +41,25 @@
                 </time>
               </div>
 
-              <p v-if="event.description" class="mt-1 text-sm text-gray-600">
+              <p
+                v-if="event.description"
+                class="mt-1 text-sm text-gray-600"
+              >
                 {{ event.description }}
               </p>
 
-              <p v-if="event.personName" class="mt-1 text-sm text-gray-500">
+              <p
+                v-if="event.personName"
+                class="mt-1 text-sm text-gray-500"
+              >
                 <User class="w-3 h-3 inline mr-1" />
                 {{ event.personName }}
               </p>
 
-              <p v-if="event.notes" class="mt-2 text-sm text-gray-400 italic">
+              <p
+                v-if="event.notes"
+                class="mt-2 text-sm text-gray-400 italic"
+              >
                 {{ event.notes }}
               </p>
             </div>
@@ -54,7 +69,10 @@
     </ul>
 
     <!-- Empty state -->
-    <div v-if="events.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-if="events.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       <Calendar class="w-12 h-12 mx-auto mb-3 text-gray-300" />
       <p>No events recorded</p>
     </div>
@@ -88,7 +106,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const eventConfig: Record<string, { label: string; icon: any; bgClass: string }> = {
+const eventConfig: Record<string, { label: string, icon: any, bgClass: string }> = {
   PLAN_CREATED: { label: 'Plan Created', icon: FilePlus, bgClass: 'bg-blue-500' },
   PLAN_SIGNED: { label: 'Documents Signed', icon: PenTool, bgClass: 'bg-green-500' },
   PLAN_AMENDED: { label: 'Plan Amended', icon: Edit, bgClass: 'bg-purple-500' },

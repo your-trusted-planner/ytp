@@ -154,20 +154,25 @@ export function calculateMatchConfidence(
   if (ssnMatches) {
     matchType = 'SSN'
     confidence = confidenceScores.SSN
-  } else if (emailMatches && nameMatches) {
+  }
+  else if (emailMatches && nameMatches) {
     matchType = 'NAME_EMAIL'
     confidence = confidenceScores.NAME_EMAIL
-  } else if (dobMatches && nameMatches) {
+  }
+  else if (dobMatches && nameMatches) {
     matchType = 'NAME_DOB'
     confidence = confidenceScores.NAME_DOB
-  } else if (emailMatches) {
+  }
+  else if (emailMatches) {
     // Email matches but name doesn't - still valuable but lower confidence
     matchType = 'NAME_EMAIL'
     confidence = confidenceScores.EMAIL_ONLY
-  } else if (nameMatches) {
+  }
+  else if (nameMatches) {
     matchType = 'NAME_ONLY'
     confidence = confidenceScores.NAME_ONLY
-  } else {
+  }
+  else {
     // Only DOB or other fields match without name - not useful
     return null
   }
@@ -274,8 +279,8 @@ export async function findPersonMatchesBatch(
  */
 export function buildDecisionLookup(
   decisions: PersonMatchDecision[]
-): Map<string, { action: 'use_existing' | 'create_new'; existingPersonId?: string }> {
-  const lookup = new Map<string, { action: 'use_existing' | 'create_new'; existingPersonId?: string }>()
+): Map<string, { action: 'use_existing' | 'create_new', existingPersonId?: string }> {
+  const lookup = new Map<string, { action: 'use_existing' | 'create_new', existingPersonId?: string }>()
 
   for (const decision of decisions) {
     lookup.set(decision.extractedName, {
@@ -314,7 +319,7 @@ export function buildPersonIdLookupFromDecisions(
  */
 export function shouldCreatePerson(
   extractedName: string,
-  decisionLookup: Map<string, { action: 'use_existing' | 'create_new'; existingPersonId?: string }>,
+  decisionLookup: Map<string, { action: 'use_existing' | 'create_new', existingPersonId?: string }>,
   defaultToCreate = true
 ): boolean {
   const decision = decisionLookup.get(extractedName)

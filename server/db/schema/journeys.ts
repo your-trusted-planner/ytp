@@ -23,7 +23,7 @@ export const journeysToCatalog = sqliteTable('journeys_to_catalog', {
   journeyId: text('journey_id').notNull().references(() => journeys.id, { onDelete: 'cascade' }),
   catalogId: text('catalog_id').notNull().references(() => serviceCatalog.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   pk: primaryKey({ columns: [table.journeyId, table.catalogId] })
 }))
 
@@ -67,7 +67,7 @@ export const clientJourneys = sqliteTable('client_journeys', {
   pausedAt: integer('paused_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => ({
+}, table => ({
   // Composite foreign key to matters_to_services (engagement)
   engagementFk: foreignKey({
     columns: [table.matterId, table.catalogId],

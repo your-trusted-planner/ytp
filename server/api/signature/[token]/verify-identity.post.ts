@@ -209,9 +209,9 @@ export default defineEventHandler(async (event) => {
 
   await logActivity({
     type: activityType,
-    description: verificationResult.success
-      ? `Identity verified via ${request.mode} for "${document?.title || 'document'}"`
-      : `Identity verification failed via ${request.mode} for "${document?.title || 'document'}"`,
+    description: verificationResult.success ?
+      `Identity verified via ${request.mode} for "${document?.title || 'document'}"` :
+      `Identity verification failed via ${request.mode} for "${document?.title || 'document'}"`,
     userId: signer.id,
     userRole: signer.role,
     target: document ? { type: 'document', id: document.id, name: document.title } : undefined,
@@ -249,7 +249,8 @@ export default defineEventHandler(async (event) => {
         updatedAt: now
       })
       .where(eq(schema.signatureSessions.id, session.id))
-  } else {
+  }
+  else {
     // Manual mode - store submission but keep IDENTITY_REQUIRED status
     await db
       .update(schema.signatureSessions)

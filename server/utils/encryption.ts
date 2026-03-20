@@ -104,7 +104,8 @@ async function getMasterKey(context: EncryptionContext): Promise<string> {
   if ('cloudflareEnv' in context) {
     // Queue consumer context - env passed directly
     env = context.cloudflareEnv
-  } else {
+  }
+  else {
     // H3 event context
     env = context.context?.cloudflare?.env
   }

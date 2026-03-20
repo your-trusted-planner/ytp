@@ -129,7 +129,7 @@ class PandaDocService {
     const response = await this.request(`/documents/${documentId}/download`, {
       method: 'GET',
       headers: {
-        'Accept': 'application/pdf'
+        Accept: 'application/pdf'
       }
     })
     return response.url
@@ -149,7 +149,7 @@ class PandaDocService {
     const response = await fetch(`${PANDADOC_API_BASE}/documents`, {
       method: 'POST',
       headers: {
-        'Authorization': `API-Key ${this.apiKey}`
+        Authorization: `API-Key ${this.apiKey}`
       },
       body: formData
     })
@@ -189,7 +189,7 @@ let pandaDocInstance: PandaDocService | null = null
 
 export function usePandaDoc() {
   const config = useRuntimeConfig()
-  
+
   if (!pandaDocInstance) {
     const apiKey = config.pandaDocApiKey || '94594783480feb0cb4837f71bfd5417928b31d73'
     const isSandbox = config.pandaDocSandbox !== false

@@ -186,9 +186,9 @@ export async function generateAgingReport(trustAccountId: string): Promise<Trust
         and(
           eq(schema.trustTransactions.trustAccountId, trustAccountId),
           eq(schema.trustTransactions.clientId, ledger.clientId),
-          ledger.matterId
-            ? eq(schema.trustTransactions.matterId, ledger.matterId)
-            : sql`${schema.trustTransactions.matterId} IS NULL`,
+          ledger.matterId ?
+              eq(schema.trustTransactions.matterId, ledger.matterId) :
+            sql`${schema.trustTransactions.matterId} IS NULL`,
           eq(schema.trustTransactions.transactionType, 'DEPOSIT')
         )
       )
@@ -233,13 +233,16 @@ export async function generateAgingReport(trustAccountId: string): Promise<Trust
     if (!depositDate || depositDate >= thirtyDaysAgo) {
       aging.current = ledger.balance
       totals.current += ledger.balance
-    } else if (depositDate >= sixtyDaysAgo) {
+    }
+    else if (depositDate >= sixtyDaysAgo) {
       aging.days30to60 = ledger.balance
       totals.days30to60 += ledger.balance
-    } else if (depositDate >= ninetyDaysAgo) {
+    }
+    else if (depositDate >= ninetyDaysAgo) {
       aging.days60to90 = ledger.balance
       totals.days60to90 += ledger.balance
-    } else {
+    }
+    else {
       aging.over90 = ledger.balance
       totals.over90 += ledger.balance
     }
@@ -331,7 +334,8 @@ export async function generateClientLedgerStatement(
   if (matterId !== undefined) {
     if (matterId) {
       conditions.push(eq(schema.trustTransactions.matterId, matterId))
-    } else {
+    }
+    else {
       conditions.push(sql`${schema.trustTransactions.matterId} IS NULL`)
     }
   }
@@ -383,7 +387,8 @@ export async function generateClientLedgerStatement(
 
     if (isDeposit) {
       totalDeposits += tx.amount
-    } else {
+    }
+    else {
       totalDisbursements += Math.abs(tx.amount)
     }
 

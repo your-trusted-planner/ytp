@@ -172,23 +172,132 @@ onMounted(() => {
               <span class="toolbar-hint">Click and drag to pan. Scroll to zoom.</span>
             </div>
             <div class="toolbar-center">
-              <button @click="zoomOut" title="Zoom Out (-)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              <button
+                title="Zoom Out (-)"
+                @click="zoomOut"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                /><line
+                  x1="21"
+                  y1="21"
+                  x2="16.65"
+                  y2="16.65"
+                /><line
+                  x1="8"
+                  y1="11"
+                  x2="14"
+                  y2="11"
+                /></svg>
               </button>
               <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
-              <button @click="zoomIn" title="Zoom In (+)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              <button
+                title="Zoom In (+)"
+                @click="zoomIn"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                /><line
+                  x1="21"
+                  y1="21"
+                  x2="16.65"
+                  y2="16.65"
+                /><line
+                  x1="11"
+                  y1="8"
+                  x2="11"
+                  y2="14"
+                /><line
+                  x1="8"
+                  y1="11"
+                  x2="14"
+                  y2="11"
+                /></svg>
               </button>
-              <button @click="resetZoom" title="Reset (0)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <button
+                title="Reset (0)"
+                @click="resetZoom"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
               </button>
-              <button @click="fitToScreen" title="Fit to Screen (F)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              <button
+                title="Fit to Screen (F)"
+                @click="fitToScreen"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" /></svg>
               </button>
             </div>
             <div class="toolbar-right">
-              <button @click="closeModal" title="Close (Esc)" class="close-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <button
+                title="Close (Esc)"
+                class="close-btn"
+                @click="closeModal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ><line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                /><line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                /></svg>
               </button>
             </div>
           </div>
@@ -207,10 +316,14 @@ onMounted(() => {
             <div
               class="diagram-wrapper"
               :style="{
-                transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
+                transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`
               }"
             >
-              <div v-if="currentDiagram" v-html="currentDiagram.outerHTML" class="diagram-container"></div>
+              <div
+                v-if="currentDiagram"
+                class="diagram-container"
+                v-html="currentDiagram.outerHTML"
+              />
             </div>
           </div>
 

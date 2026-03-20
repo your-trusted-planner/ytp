@@ -68,7 +68,7 @@ export const marketingConsent = sqliteTable('marketing_consent', {
   consentIp: text('consent_ip'),
   consentAt: integer('consent_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-}, (table) => [
+}, table => [
   unique('uq_person_channel').on(table.personId, table.channelId)
 ])
 

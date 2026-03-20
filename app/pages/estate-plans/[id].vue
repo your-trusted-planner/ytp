@@ -12,16 +12,29 @@
     </div>
 
     <!-- Loading state -->
-    <div v-if="loading" class="flex justify-center items-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center items-center py-12"
+    >
       <div class="animate-spin w-8 h-8 border-4 border-burgundy-500 border-t-transparent rounded-full" />
     </div>
 
     <!-- Not found -->
-    <div v-else-if="!plan" class="text-center py-12">
+    <div
+      v-else-if="!plan"
+      class="text-center py-12"
+    >
       <FileText class="w-16 h-16 mx-auto text-gray-300 mb-4" />
-      <h2 class="text-xl font-semibold text-gray-900">Plan not found</h2>
-      <p class="text-gray-600 mt-2">The estate plan you're looking for doesn't exist.</p>
-      <NuxtLink to="/estate-plans" class="text-burgundy-600 hover:underline mt-4 inline-block">
+      <h2 class="text-xl font-semibold text-gray-900">
+        Plan not found
+      </h2>
+      <p class="text-gray-600 mt-2">
+        The estate plan you're looking for doesn't exist.
+      </p>
+      <NuxtLink
+        to="/estate-plans"
+        class="text-burgundy-600 hover:underline mt-4 inline-block"
+      >
         Return to Estate Plans
       </NuxtLink>
     </div>
@@ -46,16 +59,24 @@
             />
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ plan.planName }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">
+              {{ plan.planName }}
+            </h1>
             <div class="flex items-center gap-2 mt-1">
-              <EstatePlanStatusBadge :status="plan.status" show-icon />
+              <EstatePlanStatusBadge
+                :status="plan.status"
+                show-icon
+              />
               <span class="text-gray-500">Version {{ plan.currentVersion }}</span>
             </div>
           </div>
         </div>
 
         <div class="flex gap-3">
-          <UiButton variant="outline" @click="showAddEventModal = true">
+          <UiButton
+            variant="outline"
+            @click="showAddEventModal = true"
+          >
             <Plus class="w-4 h-4 mr-2" />
             Add Event
           </UiButton>
@@ -82,15 +103,18 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
-            @click="activeTab = tab.key"
             :class="[
               'py-3 px-1 border-b-2 font-medium text-sm transition-colors',
               activeTab === tab.key
                 ? 'border-burgundy-500 text-burgundy-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             ]"
+            @click="activeTab = tab.key"
           >
-            <component :is="tab.icon" class="w-4 h-4 inline mr-2" />
+            <component
+              :is="tab.icon"
+              class="w-4 h-4 inline mr-2"
+            />
             {{ tab.label }}
           </button>
         </nav>
@@ -99,13 +123,22 @@
       <!-- Tab Content -->
       <div class="mt-6">
         <!-- Overview Tab -->
-        <EstatePlanCurrentStateDashboard v-if="activeTab === 'overview'" :plan="plan" />
+        <EstatePlanCurrentStateDashboard
+          v-if="activeTab === 'overview'"
+          :plan="plan"
+        />
 
         <!-- Roles Tab -->
         <UiCard v-if="activeTab === 'roles'">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Roles & Designations</h2>
-            <UiButton variant="outline" size="sm" @click="showAddRoleModal = true">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Roles & Designations
+            </h2>
+            <UiButton
+              variant="outline"
+              size="sm"
+              @click="showAddRoleModal = true"
+            >
               <Plus class="w-4 h-4 mr-2" />
               Add Role
             </UiButton>
@@ -122,8 +155,13 @@
         <!-- Versions Tab -->
         <UiCard v-if="activeTab === 'versions'">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Version History</h2>
-            <UiButton variant="outline" size="sm">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Version History
+            </h2>
+            <UiButton
+              variant="outline"
+              size="sm"
+            >
               <Plus class="w-4 h-4 mr-2" />
               Record Amendment
             </UiButton>
@@ -134,8 +172,14 @@
         <!-- Events Tab -->
         <UiCard v-if="activeTab === 'events'">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Events & Administration Timeline</h2>
-            <UiButton variant="outline" size="sm" @click="showAddEventModal = true">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Events & Administration Timeline
+            </h2>
+            <UiButton
+              variant="outline"
+              size="sm"
+              @click="showAddEventModal = true"
+            >
               <Plus class="w-4 h-4 mr-2" />
               Add Event
             </UiButton>
@@ -146,8 +190,13 @@
         <!-- Documents Tab -->
         <UiCard v-if="activeTab === 'documents'">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">Documents</h2>
-            <UiButton variant="outline" size="sm">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Documents
+            </h2>
+            <UiButton
+              variant="outline"
+              size="sm"
+            >
               <Upload class="w-4 h-4 mr-2" />
               Upload Document
             </UiButton>
@@ -155,14 +204,19 @@
           <div class="text-center py-8 text-gray-500">
             <FileText class="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No documents uploaded yet</p>
-            <p class="text-sm mt-2">Upload trust documents, amendments, and related files</p>
+            <p class="text-sm mt-2">
+              Upload trust documents, amendments, and related files
+            </p>
           </div>
         </UiCard>
       </div>
     </template>
 
     <!-- Add Event Modal -->
-    <UiModal v-model="showAddEventModal" title="Add Event">
+    <UiModal
+      v-model="showAddEventModal"
+      title="Add Event"
+    >
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
@@ -170,26 +224,56 @@
             v-model="newEvent.eventType"
             class="w-full rounded-lg border-gray-300 focus:ring-burgundy-500 focus:border-burgundy-500"
           >
-            <option value="">Select event type...</option>
+            <option value="">
+              Select event type...
+            </option>
             <optgroup label="Administration Events">
-              <option value="ADMINISTRATION_STARTED">Administration Started</option>
-              <option value="SUCCESSOR_TRUSTEE_APPOINTED">Successor Trustee Appointed</option>
-              <option value="TRUST_FUNDED">Trust Funded</option>
-              <option value="ASSETS_VALUED">Assets Valued</option>
-              <option value="DISTRIBUTION_MADE">Distribution Made</option>
-              <option value="TAX_RETURN_FILED">Tax Return Filed</option>
-              <option value="NOTICE_SENT">Notice Sent</option>
+              <option value="ADMINISTRATION_STARTED">
+                Administration Started
+              </option>
+              <option value="SUCCESSOR_TRUSTEE_APPOINTED">
+                Successor Trustee Appointed
+              </option>
+              <option value="TRUST_FUNDED">
+                Trust Funded
+              </option>
+              <option value="ASSETS_VALUED">
+                Assets Valued
+              </option>
+              <option value="DISTRIBUTION_MADE">
+                Distribution Made
+              </option>
+              <option value="TAX_RETURN_FILED">
+                Tax Return Filed
+              </option>
+              <option value="NOTICE_SENT">
+                Notice Sent
+              </option>
             </optgroup>
             <optgroup label="Trigger Events">
-              <option value="GRANTOR_INCAPACITATED">Grantor Incapacitated</option>
-              <option value="GRANTOR_CAPACITY_RESTORED">Grantor Capacity Restored</option>
-              <option value="FIRST_GRANTOR_DEATH">First Grantor Death</option>
-              <option value="SECOND_GRANTOR_DEATH">Second Grantor Death</option>
+              <option value="GRANTOR_INCAPACITATED">
+                Grantor Incapacitated
+              </option>
+              <option value="GRANTOR_CAPACITY_RESTORED">
+                Grantor Capacity Restored
+              </option>
+              <option value="FIRST_GRANTOR_DEATH">
+                First Grantor Death
+              </option>
+              <option value="SECOND_GRANTOR_DEATH">
+                Second Grantor Death
+              </option>
             </optgroup>
             <optgroup label="Other">
-              <option value="NOTE_ADDED">Note Added</option>
-              <option value="DOCUMENT_ADDED">Document Added</option>
-              <option value="OTHER">Other</option>
+              <option value="NOTE_ADDED">
+                Note Added
+              </option>
+              <option value="DOCUMENT_ADDED">
+                Document Added
+              </option>
+              <option value="OTHER">
+                Other
+              </option>
             </optgroup>
           </select>
         </div>
@@ -200,7 +284,7 @@
             v-model="newEvent.eventDate"
             type="date"
             class="w-full rounded-lg border-gray-300 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
 
         <div>
@@ -225,34 +309,52 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showAddEventModal = false">
+        <UiButton
+          variant="outline"
+          @click="showAddEventModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleAddEvent" :disabled="!newEvent.eventType || !newEvent.eventDate">
+        <UiButton
+          :disabled="!newEvent.eventType || !newEvent.eventDate"
+          @click="handleAddEvent"
+        >
           Add Event
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Add Role Modal (placeholder) -->
-    <UiModal v-model="showAddRoleModal" title="Add Role">
+    <UiModal
+      v-model="showAddRoleModal"
+      title="Add Role"
+    >
       <p class="text-gray-600">
         Role management will be available in a future update.
       </p>
       <template #footer>
-        <UiButton variant="outline" @click="showAddRoleModal = false">
+        <UiButton
+          variant="outline"
+          @click="showAddRoleModal = false"
+        >
           Close
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Delete Plan Modal - only for admin level 2+ -->
-    <UiModal v-if="isAdmin2" v-model="showDeleteModal" title="Delete Estate Plan">
+    <UiModal
+      v-if="isAdmin2"
+      v-model="showDeleteModal"
+      title="Delete Estate Plan"
+    >
       <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
           <AlertTriangle class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 class="font-semibold text-red-800">This action cannot be undone</h4>
+            <h4 class="font-semibold text-red-800">
+              This action cannot be undone
+            </h4>
             <p class="text-sm text-red-700 mt-1">
               Deleting this estate plan will permanently remove:
             </p>
@@ -261,9 +363,15 @@
               <li>All {{ plan?.roles?.length || 0 }} role designations</li>
               <li>All {{ plan?.versions?.length || 0 }} version records</li>
               <li>All {{ plan?.events?.length || 0 }} events</li>
-              <li v-if="plan?.trust">The trust record ({{ plan.trust.trustName }})</li>
-              <li v-if="plan?.wills?.length">{{ plan.wills.length }} will record(s)</li>
-              <li v-if="plan?.linkedMatters?.length">{{ plan.linkedMatters.length }} matter link(s)</li>
+              <li v-if="plan?.trust">
+                The trust record ({{ plan.trust.trustName }})
+              </li>
+              <li v-if="plan?.wills?.length">
+                {{ plan.wills.length }} will record(s)
+              </li>
+              <li v-if="plan?.linkedMatters?.length">
+                {{ plan.linkedMatters.length }} matter link(s)
+              </li>
             </ul>
           </div>
         </div>
@@ -274,7 +382,7 @@
               v-model="deleteOptions.deletePeople"
               type="checkbox"
               class="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
-            />
+            >
             <div>
               <span class="font-medium text-gray-900">Also delete associated people</span>
               <p class="text-sm text-gray-600 mt-0.5">
@@ -296,12 +404,15 @@
             type="text"
             class="w-full rounded-lg border-gray-300 focus:ring-red-500 focus:border-red-500"
             placeholder="Enter plan name to confirm..."
-          />
+          >
         </div>
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="closeDeleteModal">
+        <UiButton
+          variant="outline"
+          @click="closeDeleteModal"
+        >
           Cancel
         </UiButton>
         <UiButton
@@ -516,10 +627,12 @@ async function handleDeletePlan() {
 
     // Navigate back to estate plans list
     router.push('/estate-plans')
-  } catch (err: any) {
+  }
+  catch (err: any) {
     console.error('Failed to delete plan:', err)
     toast.error(err.data?.message || 'Failed to delete estate plan')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }
@@ -563,7 +676,8 @@ async function handleAddEvent() {
 
     // Refresh plan data
     await refresh()
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Failed to add event:', err)
   }
 }

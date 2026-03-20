@@ -8,28 +8,52 @@
             src="/ytp-logo.webp"
             alt="Your Trusted Planner"
             class="h-16 w-auto"
-          />
+          >
         </div>
-        <p class="text-gray-300 mt-2 text-lg">Reset Password</p>
+        <p class="text-gray-300 mt-2 text-lg">
+          Reset Password
+        </p>
       </div>
 
       <ClientOnly>
         <div class="bg-white shadow-xl rounded-lg p-8">
           <!-- Loading State -->
-          <div v-if="isValidating" class="text-center py-8">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-500 mx-auto mb-4"></div>
-            <p class="text-gray-600">Validating reset link...</p>
+          <div
+            v-if="isValidating"
+            class="text-center py-8"
+          >
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-500 mx-auto mb-4" />
+            <p class="text-gray-600">
+              Validating reset link...
+            </p>
           </div>
 
           <!-- Invalid Token State -->
-          <div v-else-if="tokenError" class="text-center">
+          <div
+            v-else-if="tokenError"
+            class="text-center"
+          >
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                class="h-6 w-6 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
-            <h2 class="text-2xl font-semibold text-navy-900 mb-4">Invalid Reset Link</h2>
-            <p class="text-gray-600 mb-6">{{ tokenError }}</p>
+            <h2 class="text-2xl font-semibold text-navy-900 mb-4">
+              Invalid Reset Link
+            </h2>
+            <p class="text-gray-600 mb-6">
+              {{ tokenError }}
+            </p>
             <NuxtLink
               to="/forgot-password"
               class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent-500 hover:bg-accent-600"
@@ -47,13 +71,28 @@
           </div>
 
           <!-- Success State -->
-          <div v-else-if="resetSuccess" class="text-center">
+          <div
+            v-else-if="resetSuccess"
+            class="text-center"
+          >
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              <svg
+                class="h-6 w-6 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h2 class="text-2xl font-semibold text-navy-900 mb-4">Password Reset Complete</h2>
+            <h2 class="text-2xl font-semibold text-navy-900 mb-4">
+              Password Reset Complete
+            </h2>
             <p class="text-gray-600 mb-6">
               Your password has been successfully reset. You can now log in with your new password.
             </p>
@@ -67,19 +106,35 @@
 
           <!-- Reset Form -->
           <div v-else>
-            <h2 class="text-2xl font-semibold text-navy-900 mb-2">Set New Password</h2>
-            <p v-if="maskedEmail" class="text-gray-600 mb-6">
+            <h2 class="text-2xl font-semibold text-navy-900 mb-2">
+              Set New Password
+            </h2>
+            <p
+              v-if="maskedEmail"
+              class="text-gray-600 mb-6"
+            >
               Enter a new password for <strong>{{ maskedEmail }}</strong>
             </p>
-            <p v-else class="text-gray-600 mb-6">
+            <p
+              v-else
+              class="text-gray-600 mb-6"
+            >
               Enter your new password below.
             </p>
 
-            <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p class="text-sm text-red-600">{{ error }}</p>
+            <div
+              v-if="error"
+              class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+            >
+              <p class="text-sm text-red-600">
+                {{ error }}
+              </p>
             </div>
 
-            <form @submit.prevent="handleSubmit" class="space-y-6">
+            <form
+              class="space-y-6"
+              @submit.prevent="handleSubmit"
+            >
               <UiInput
                 v-model="password"
                 label="New Password"
@@ -98,7 +153,10 @@
                 autocomplete="new-password"
               />
 
-              <div v-if="password.length > 0" class="text-sm">
+              <div
+                v-if="password.length > 0"
+                class="text-sm"
+              >
                 <p :class="password.length >= 8 ? 'text-green-600' : 'text-gray-500'">
                   <span v-if="password.length >= 8">&#10003;</span>
                   <span v-else>&#9679;</span>
@@ -127,12 +185,12 @@
         <template #fallback>
           <div class="bg-white shadow-xl rounded-lg p-8">
             <div class="animate-pulse space-y-6">
-              <div class="h-8 bg-gray-200 rounded w-48"></div>
-              <div class="h-4 bg-gray-200 rounded w-full"></div>
+              <div class="h-8 bg-gray-200 rounded w-48" />
+              <div class="h-4 bg-gray-200 rounded w-full" />
               <div class="space-y-4">
-                <div class="h-10 bg-gray-200 rounded"></div>
-                <div class="h-10 bg-gray-200 rounded"></div>
-                <div class="h-12 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded" />
+                <div class="h-10 bg-gray-200 rounded" />
+                <div class="h-12 bg-gray-200 rounded" />
               </div>
             </div>
           </div>
@@ -179,18 +237,21 @@ onMounted(async () => {
   }
 
   try {
-    const response = await $fetch<{ valid: boolean; email?: string; error?: string }>(
+    const response = await $fetch<{ valid: boolean, email?: string, error?: string }>(
       `/api/auth/verify-reset-token?token=${token.value}`
     )
 
     if (!response.valid) {
       tokenError.value = response.error || 'This reset link is invalid or has expired.'
-    } else {
+    }
+    else {
       maskedEmail.value = response.email || ''
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     tokenError.value = 'Failed to validate reset link. Please try again.'
-  } finally {
+  }
+  finally {
     isValidating.value = false
   }
 })
@@ -213,9 +274,11 @@ const handleSubmit = async () => {
     })
 
     resetSuccess.value = true
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'An error occurred. Please try again.'
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }

@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
     const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
       headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`
+        Authorization: `Bearer ${tokenData.access_token}`
       }
     })
 
@@ -79,7 +79,8 @@ export default defineEventHandler(async (event) => {
       const zoomUser = await userResponse.json()
       providerAccountId = zoomUser.id || ''
       providerEmail = zoomUser.email || ''
-    } else {
+    }
+    else {
       // user:read scope may not be granted — extract what we can from token response
       const errorText = await userResponse.text()
       console.warn('Zoom /v2/users/me failed (scope may be missing):', userResponse.status, errorText)
@@ -103,8 +104,8 @@ export default defineEventHandler(async (event) => {
 
     // Redirect to profile with success indicator
     return sendRedirect(event, '/profile?zoom=connected')
-
-  } catch (err: any) {
+  }
+  catch (err: any) {
     console.error('Zoom OAuth error:', err.message)
     return sendRedirect(event, `/profile?zoom=error&reason=${encodeURIComponent(err.message)}`)
   }

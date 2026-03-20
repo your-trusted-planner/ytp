@@ -23,9 +23,9 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const timestamps = integration.lastSyncTimestamps
-    ? JSON.parse(integration.lastSyncTimestamps)
-    : {}
+  const timestamps = integration.lastSyncTimestamps ?
+      JSON.parse(integration.lastSyncTimestamps) :
+      {}
 
   return {
     configured: true,

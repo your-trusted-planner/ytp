@@ -99,15 +99,18 @@ export function usePaginatedData<T = any>(
       // Extract data array (handle both wrapped and unwrapped responses)
       if (dataKey && response[dataKey]) {
         data.value = response[dataKey]
-      } else if (Array.isArray(response)) {
+      }
+      else if (Array.isArray(response)) {
         data.value = response
-      } else {
+      }
+      else {
         // Try to find the data array in the response
         const keys = Object.keys(response)
         const arrayKey = keys.find(k => Array.isArray(response[k]) && k !== 'pagination')
         if (arrayKey) {
           data.value = response[arrayKey]
-        } else {
+        }
+        else {
           data.value = []
         }
       }
@@ -115,14 +118,17 @@ export function usePaginatedData<T = any>(
       // Extract pagination metadata
       if (response.pagination) {
         pagination.value = response.pagination
-      } else {
+      }
+      else {
         // No pagination from server - set to null to indicate unpaginated
         pagination.value = null
       }
-    } catch (e) {
+    }
+    catch (e) {
       error.value = e as Error
       console.error(`Failed to fetch ${endpoint}:`, e)
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }

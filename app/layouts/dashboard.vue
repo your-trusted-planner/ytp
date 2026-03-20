@@ -6,7 +6,11 @@
         <div class="flex h-16 justify-between items-center">
           <!-- Logo -->
           <div class="flex items-center">
-            <img src="/ytp-logo.webp" alt="Your Trusted Planner" class="h-10 w-auto invert" />
+            <img
+              src="/ytp-logo.webp"
+              alt="Your Trusted Planner"
+              class="h-10 w-auto invert"
+            >
           </div>
 
           <!-- User Menu -->
@@ -23,40 +27,59 @@
 
     <div class="flex">
       <!-- Sidebar -->
-      <aside 
+      <aside
         class="bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] transition-all duration-300 relative"
         :class="isSidebarCollapsed ? 'w-20' : 'w-64'"
       >
         <!-- Collapse Toggle -->
-        <button 
-          @click="isSidebarCollapsed = !isSidebarCollapsed"
+        <button
           class="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 text-gray-500 hover:text-gray-700 shadow-sm z-10"
+          @click="isSidebarCollapsed = !isSidebarCollapsed"
         >
-          <component :is="isSidebarCollapsed ? ChevronRight : ChevronLeft" class="w-4 h-4" />
+          <component
+            :is="isSidebarCollapsed ? ChevronRight : ChevronLeft"
+            class="w-4 h-4"
+          />
         </button>
 
         <nav class="p-4 space-y-1">
           <!-- Regular Navigation Items -->
-          <template v-for="item in navigationItems" :key="item.path || item.label">
+          <template
+            v-for="item in navigationItems"
+            :key="item.path || item.label"
+          >
             <!-- Collapsible Section -->
-            <div v-if="item.children" class="space-y-1">
+            <div
+              v-if="item.children"
+              class="space-y-1"
+            >
               <button
-                @click="toggleSection(item.label)"
                 class="flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-50"
                 :class="isSidebarCollapsed ? 'justify-center px-2' : ''"
                 :title="isSidebarCollapsed ? item.label : ''"
+                @click="toggleSection(item.label)"
               >
-                <component :is="item.icon" class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
-                <span v-if="!isSidebarCollapsed" class="flex-1 text-left">{{ item.label }}</span>
                 <component
+                  :is="item.icon"
+                  class="w-5 h-5"
+                  :class="isSidebarCollapsed ? '' : 'mr-3'"
+                />
+                <span
                   v-if="!isSidebarCollapsed"
+                  class="flex-1 text-left"
+                >{{ item.label }}</span>
+                <component
                   :is="item.isOpen ? ChevronDown : ChevronRight"
+                  v-if="!isSidebarCollapsed"
                   class="w-4 h-4 transition-transform"
                 />
               </button>
 
               <!-- Nested Items -->
-              <div v-if="item.isOpen && !isSidebarCollapsed" class="ml-4 space-y-1">
+              <div
+                v-if="item.isOpen && !isSidebarCollapsed"
+                class="ml-4 space-y-1"
+              >
                 <NuxtLink
                   v-for="child in item.children"
                   :key="child.path"
@@ -64,7 +87,10 @@
                   class="flex items-center px-4 py-2 text-sm rounded-lg transition-colors"
                   :class="isActive(child.path) ? 'bg-burgundy-50 text-burgundy-600' : 'text-gray-600 hover:bg-gray-50'"
                 >
-                  <component :is="child.icon" class="w-4 h-4 mr-3" />
+                  <component
+                    :is="child.icon"
+                    class="w-4 h-4 mr-3"
+                  />
                   <span>{{ child.label }}</span>
                 </NuxtLink>
               </div>
@@ -81,7 +107,11 @@
               ]"
               :title="isSidebarCollapsed ? item.label : ''"
             >
-              <component :is="item.icon" class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
+              <component
+                :is="item.icon"
+                class="w-5 h-5"
+                :class="isSidebarCollapsed ? '' : 'mr-3'"
+              />
               <span v-if="!isSidebarCollapsed">{{ item.label }}</span>
             </NuxtLink>
           </template>
@@ -119,7 +149,9 @@ import {
   ScrollText,
   DollarSign,
   Landmark,
-  Clock
+  Clock,
+  CalendarClock,
+  DoorOpen
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -192,6 +224,8 @@ const navigationConfig = ref([
     isOpen: false,
     roles: FIRM_ROLES,
     children: [
+      { path: '/settings/appointment-types', label: 'Appointment Types', icon: CalendarClock, roles: FIRM_ROLES, minAdminLevel: 1 },
+      { path: '/settings/rooms', label: 'Rooms & Locations', icon: DoorOpen, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
       { path: '/service-catalog/service-categories', label: 'Service Categories', icon: FolderOpen, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/journeys', label: 'Journey Templates', icon: Map, roles: FIRM_ROLES },
@@ -219,14 +253,14 @@ const navigationItems = computed(() => {
 
   const filterByAccess = (items: any[]): any[] => {
     return items
-      .filter(item => {
+      .filter((item) => {
         // Check role requirement
         const hasRole = item.roles?.includes(role)
         // Check admin level requirement (if specified)
         const hasAdminLevel = item.minAdminLevel ? adminLevel >= item.minAdminLevel : true
         return hasRole && hasAdminLevel
       })
-      .map(item => {
+      .map((item) => {
         if (item.children) {
           return {
             ...item,
@@ -241,7 +275,7 @@ const navigationItems = computed(() => {
   const items = filterByAccess(navigationConfig.value)
 
   // Auto-expand sections if on a child page
-  items.forEach(item => {
+  items.forEach((item) => {
     if (item.children) {
       const isOnChildPage = item.children.some((child: any) => route.path.startsWith(child.path))
       if (isOnChildPage) {

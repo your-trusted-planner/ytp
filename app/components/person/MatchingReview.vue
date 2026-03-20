@@ -3,10 +3,15 @@
     <!-- Summary Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-900">Review People</h3>
+        <h3 class="text-lg font-semibold text-gray-900">
+          Review People
+        </h3>
         <p class="text-sm text-gray-600 mt-1">
           {{ extractedPeople.length }} {{ extractedPeople.length === 1 ? 'person' : 'people' }} found in import.
-          <span v-if="matchCount > 0" class="text-amber-600 font-medium">
+          <span
+            v-if="matchCount > 0"
+            class="text-amber-600 font-medium"
+          >
             {{ matchCount }} with potential duplicates.
           </span>
         </p>
@@ -16,30 +21,33 @@
       <div class="flex items-center gap-2 flex-wrap">
         <button
           v-if="matchCount > 0"
-          @click="acceptAllHighConfidence"
           class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+          @click="acceptAllHighConfidence"
         >
           Accept all high-confidence matches
         </button>
-        <span v-if="grantorCount > 0 || fiduciaryCount > 0" class="text-gray-300">|</span>
+        <span
+          v-if="grantorCount > 0 || fiduciaryCount > 0"
+          class="text-gray-300"
+        >|</span>
         <button
           v-if="grantorCount > 0"
-          @click="createGrantorsAsClients"
           class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+          @click="createGrantorsAsClients"
         >
           Grantors as clients
         </button>
         <button
           v-if="fiduciaryCount > 0"
-          @click="createFiduciariesAsClients"
           class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+          @click="createFiduciariesAsClients"
         >
           Fiduciaries as clients
         </button>
         <span class="text-gray-300">|</span>
         <button
-          @click="createAllNew"
           class="text-sm text-gray-600 hover:text-gray-700"
+          @click="createAllNew"
         >
           Create all new
         </button>
@@ -48,17 +56,20 @@
 
     <!-- Filter tabs -->
     <div class="border-b border-gray-200">
-      <nav class="flex gap-4" aria-label="Person type filter">
+      <nav
+        class="flex gap-4"
+        aria-label="Person type filter"
+      >
         <button
           v-for="tab in filterTabs"
           :key="tab.key"
-          @click="activeFilter = tab.key"
           :class="[
             'pb-2 px-1 text-sm font-medium border-b-2 transition-colors',
             activeFilter === tab.key
               ? 'border-burgundy-600 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
+          @click="activeFilter = tab.key"
         >
           {{ tab.label }}
           <span
@@ -87,14 +98,19 @@
         />
       </TransitionGroup>
 
-      <p v-if="filteredPeople.length === 0" class="text-center py-8 text-gray-500">
+      <p
+        v-if="filteredPeople.length === 0"
+        class="text-center py-8 text-gray-500"
+      >
         No people in this category
       </p>
     </div>
 
     <!-- Decision summary -->
     <div class="bg-gray-50 rounded-lg p-4">
-      <h4 class="text-sm font-semibold text-gray-700 mb-3">Import Summary</h4>
+      <h4 class="text-sm font-semibold text-gray-700 mb-3">
+        Import Summary
+      </h4>
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
           <span class="text-gray-600">Link to existing:</span>
@@ -169,7 +185,8 @@ watch(() => props.modelValue, (newVal) => {
   for (const decision of newVal) {
     if (decision.action === 'create_new') {
       newDecisions[decision.extractedName] = 'create_new'
-    } else if (decision.existingPersonId) {
+    }
+    else if (decision.existingPersonId) {
       newDecisions[decision.extractedName] = decision.existingPersonId
     }
     if (decision.createAsClient !== undefined) {
@@ -270,9 +287,9 @@ function emitDecisions() {
   const result: PersonDecision[] = []
 
   for (const [name, value] of Object.entries(decisions.value)) {
-    const decision: PersonDecision = value === 'create_new'
-      ? { extractedName: name, action: 'create_new' }
-      : { extractedName: name, action: 'use_existing', existingPersonId: value }
+    const decision: PersonDecision = value === 'create_new' ?
+        { extractedName: name, action: 'create_new' } :
+        { extractedName: name, action: 'use_existing', existingPersonId: value }
 
     // Include createAsClient if set
     if (createAsClientDecisions.value[name] !== undefined) {
@@ -308,7 +325,8 @@ function createGrantorsAsClients() {
   for (const person of props.extractedPeople) {
     if (person.role === 'client' || person.role === 'spouse') {
       createAsClientDecisions.value[person.extractedName] = true
-    } else if (person.role === 'fiduciary') {
+    }
+    else if (person.role === 'fiduciary') {
       createAsClientDecisions.value[person.extractedName] = false
     }
   }
@@ -321,7 +339,8 @@ function createFiduciariesAsClients() {
   for (const person of props.extractedPeople) {
     if (person.role === 'fiduciary') {
       createAsClientDecisions.value[person.extractedName] = true
-    } else if (person.role === 'client' || person.role === 'spouse') {
+    }
+    else if (person.role === 'client' || person.role === 'spouse') {
       createAsClientDecisions.value[person.extractedName] = false
     }
   }

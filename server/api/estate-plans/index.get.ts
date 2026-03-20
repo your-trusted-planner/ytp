@@ -56,11 +56,15 @@ export default defineEventHandler(async (event) => {
   const total = countResult[0]?.count || 0
 
   // Get plans with joined person data
-  const orderByColumn = sortBy === 'planName' ? schema.estatePlans.planName :
-                        sortBy === 'effectiveDate' ? schema.estatePlans.effectiveDate :
-                        sortBy === 'status' ? schema.estatePlans.status :
-                        sortBy === 'createdAt' ? schema.estatePlans.createdAt :
-                        schema.estatePlans.updatedAt
+  const orderByColumn = sortBy === 'planName' ?
+    schema.estatePlans.planName :
+    sortBy === 'effectiveDate' ?
+      schema.estatePlans.effectiveDate :
+      sortBy === 'status' ?
+        schema.estatePlans.status :
+        sortBy === 'createdAt' ?
+          schema.estatePlans.createdAt :
+          schema.estatePlans.updatedAt
 
   const orderFn = sortDirection === 'asc' ? asc : desc
 
@@ -81,7 +85,7 @@ export default defineEventHandler(async (event) => {
     .filter(p => p.plan.grantorPersonId2)
     .map(p => p.plan.grantorPersonId2!)
 
-  let grantor2Map = new Map<string, any>()
+  const grantor2Map = new Map<string, any>()
   if (grantor2Ids.length > 0) {
     const grantor2People = await db.select()
       .from(schema.people)
@@ -129,23 +133,29 @@ export default defineEventHandler(async (event) => {
     lastAmendedAt: plan.lastAmendedAt,
     createdAt: plan.createdAt,
     updatedAt: plan.updatedAt,
-    grantor1: grantor1 ? {
-      id: grantor1.id,
-      fullName: grantor1.fullName,
-      firstName: grantor1.firstName,
-      lastName: grantor1.lastName,
-      email: grantor1.email
-    } : null,
-    grantor2: plan.grantorPersonId2 ? (() => {
-      const g2 = grantor2Map.get(plan.grantorPersonId2)
-      return g2 ? {
-        id: g2.id,
-        fullName: g2.fullName,
-        firstName: g2.firstName,
-        lastName: g2.lastName,
-        email: g2.email
-      } : null
-    })() : null,
+    grantor1: grantor1 ?
+        {
+          id: grantor1.id,
+          fullName: grantor1.fullName,
+          firstName: grantor1.firstName,
+          lastName: grantor1.lastName,
+          email: grantor1.email
+        } :
+      null,
+    grantor2: plan.grantorPersonId2 ?
+        (() => {
+          const g2 = grantor2Map.get(plan.grantorPersonId2)
+          return g2 ?
+              {
+                id: g2.id,
+                fullName: g2.fullName,
+                firstName: g2.firstName,
+                lastName: g2.lastName,
+                email: g2.email
+              } :
+            null
+        })() :
+      null,
     roleCounts: roleCountMap.get(plan.id) || {}
   }))
 

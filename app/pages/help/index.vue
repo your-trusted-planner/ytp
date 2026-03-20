@@ -1,8 +1,12 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">Help Center</h1>
-      <p class="text-gray-600 mt-1">Find answers to common questions and learn how to use Your Trusted Planner</p>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Help Center
+      </h1>
+      <p class="text-gray-600 mt-1">
+        Find answers to common questions and learn how to use Your Trusted Planner
+      </p>
     </div>
 
     <div class="grid grid-cols-12 gap-8">
@@ -13,13 +17,16 @@
             <button
               v-for="topic in helpTopics"
               :key="topic.slug"
-              @click="selectTopic(topic.slug)"
               class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors text-left"
               :class="selectedTopic === topic.slug
                 ? 'bg-burgundy-50 text-burgundy-600'
                 : 'text-gray-700 hover:bg-gray-50'"
+              @click="selectTopic(topic.slug)"
             >
-              <component :is="topic.icon" class="w-5 h-5 mr-3 flex-shrink-0" />
+              <component
+                :is="topic.icon"
+                class="w-5 h-5 mr-3 flex-shrink-0"
+              />
               <span>{{ topic.title }}</span>
             </button>
           </nav>
@@ -29,13 +36,22 @@
       <!-- Content Area -->
       <div class="col-span-9">
         <UiCard>
-          <div v-if="isLoading" class="flex items-center justify-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-500"></div>
+          <div
+            v-if="isLoading"
+            class="flex items-center justify-center py-12"
+          >
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-500" />
           </div>
-          <div v-else-if="error" class="text-red-600 py-8">
+          <div
+            v-else-if="error"
+            class="text-red-600 py-8"
+          >
             {{ error }}
           </div>
-          <UiMarkdownRenderer v-else :content="helpContent" />
+          <UiMarkdownRenderer
+            v-else
+            :content="helpContent"
+          />
         </UiCard>
       </div>
     </div>
@@ -106,13 +122,16 @@ const selectTopic = async (slug: string) => {
     const { data } = await useFetch(`/api/help/${slug}`)
     if (data.value?.content) {
       helpContent.value = data.value.content
-    } else {
+    }
+    else {
       error.value = 'Help content not found'
     }
-  } catch (e) {
+  }
+  catch (e) {
     error.value = 'Failed to load help content'
     console.error('Error loading help:', e)
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }

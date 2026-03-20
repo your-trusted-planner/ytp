@@ -24,8 +24,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // blob is auto-imported from hub:blob
-  const uploadedFiles: Array<{ filename: string; path: string; group: string }> = []
-  const errors: Array<{ filename: string; error: string }> = []
+  const uploadedFiles: Array<{ filename: string, path: string, group: string }> = []
+  const errors: Array<{ filename: string, error: string }> = []
 
   // Get group name from form data
   let groupName = 'General Documents'
@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
         path: blobPath,
         group: groupName
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Error uploading ${file.filename}:`, error)
       const errorMessage = error instanceof Error ? error.message : String(error)
       errors.push({

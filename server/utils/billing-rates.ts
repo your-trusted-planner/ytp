@@ -14,16 +14,16 @@ import { eq } from 'drizzle-orm'
  */
 
 export type RateSource =
-  | 'matter_user'
-  | 'matter_attorney'
-  | 'matter_staff'
-  | 'client_user'
-  | 'client_attorney'
-  | 'client_staff'
-  | 'catalog_attorney'
-  | 'catalog_staff'
-  | 'user_default'
-  | 'none'
+  | 'matter_user' |
+  'matter_attorney' |
+  'matter_staff' |
+  'client_user' |
+  'client_attorney' |
+  'client_staff' |
+  'catalog_attorney' |
+  'catalog_staff' |
+  'user_default' |
+  'none'
 
 export interface ResolvedRate {
   rate: number // Cents
@@ -88,7 +88,8 @@ export async function resolveHourlyRate(context: RateContext): Promise<ResolvedR
         if (userRate !== undefined && userRate > 0) {
           return { rate: userRate, source: 'matter_user' }
         }
-      } catch {
+      }
+      catch {
         // Invalid JSON, continue to next check
       }
     }
@@ -145,7 +146,8 @@ export async function resolveHourlyRate(context: RateContext): Promise<ResolvedR
         if (clientUserRate !== undefined && clientUserRate > 0) {
           return { rate: clientUserRate, source: 'client_user' }
         }
-      } catch {
+      }
+      catch {
         // Invalid JSON, continue to next check
       }
     }

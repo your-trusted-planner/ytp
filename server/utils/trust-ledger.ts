@@ -97,7 +97,8 @@ export async function getOrCreateLedger(
 
   if (matterId) {
     conditions.push(eq(schema.clientTrustLedgers.matterId, matterId))
-  } else {
+  }
+  else {
     conditions.push(sql`${schema.clientTrustLedgers.matterId} IS NULL`)
   }
 
@@ -214,7 +215,7 @@ export async function validateDisbursement(
   clientId: string,
   amount: number,
   matterId?: string
-): Promise<{ isValid: boolean; availableBalance: number; shortfall: number }> {
+): Promise<{ isValid: boolean, availableBalance: number, shortfall: number }> {
   const balance = await getClientTrustBalance(clientId, matterId)
 
   return {

@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
   const progressMap = new Map(progressRecords.map(p => [p.stepId, p]))
 
   // Enrich steps with progress data and convert to snake_case
-  const stepsWithProgress = steps.map(step => {
+  const stepsWithProgress = steps.map((step) => {
     const progress = progressMap.get(step.id)
     return {
       id: step.id,
@@ -103,6 +103,3 @@ export default defineEventHandler(async (event) => {
     steps: stepsWithProgress
   }
 })
-
-
-

@@ -103,8 +103,9 @@ export default defineEventHandler(async (event) => {
   if (invoice) {
     const newDirectPayments = invoice.directPayments + parsed.data.amount
     const newBalanceDue = invoice.totalAmount - invoice.trustApplied - newDirectPayments
-    const newStatus = newBalanceDue <= 0 ? 'PAID' :
-      (invoice.trustApplied > 0 || newDirectPayments > 0) ? 'PARTIALLY_PAID' : invoice.status
+    const newStatus = newBalanceDue <= 0 ?
+      'PAID' :
+        (invoice.trustApplied > 0 || newDirectPayments > 0) ? 'PARTIALLY_PAID' : invoice.status
 
     await db.update(schema.invoices)
       .set({
@@ -166,12 +167,14 @@ export default defineEventHandler(async (event) => {
       status: 'COMPLETED',
       paidAt: paidAt.toISOString()
     },
-    invoice: invoice ? {
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      directPayments: invoice.directPayments + parsed.data.amount,
-      balanceDue: Math.max(0, invoice.totalAmount - invoice.trustApplied - invoice.directPayments - parsed.data.amount),
-      isPaid: (invoice.totalAmount - invoice.trustApplied - invoice.directPayments - parsed.data.amount) <= 0
-    } : null
+    invoice: invoice ?
+        {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          directPayments: invoice.directPayments + parsed.data.amount,
+          balanceDue: Math.max(0, invoice.totalAmount - invoice.trustApplied - invoice.directPayments - parsed.data.amount),
+          isPaid: (invoice.totalAmount - invoice.trustApplied - invoice.directPayments - parsed.data.amount) <= 0
+        } :
+      null
   }
 })

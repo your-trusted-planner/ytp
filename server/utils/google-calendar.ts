@@ -166,7 +166,8 @@ async function getCachedAccessToken(impersonateEmail: string): Promise<string> {
     if (cached && typeof cached === 'string') {
       return cached
     }
-  } catch {
+  }
+  catch {
     // KV not available, fall through to fresh token
   }
 
@@ -175,7 +176,8 @@ async function getCachedAccessToken(impersonateEmail: string): Promise<string> {
   try {
     const { kv } = await import('@nuxthub/kv')
     await kv.set(kvKey, token, { ttl: 3300 }) // 55 min
-  } catch {
+  }
+  catch {
     // KV not available, token still works
   }
 
@@ -186,7 +188,7 @@ async function getCachedAccessToken(impersonateEmail: string): Promise<string> {
  * Get service account credentials.
  * Checks DB config (shared with Drive) first, falls back to runtime env vars.
  */
-async function getServiceAccountConfig(): Promise<{ email: string; privateKey: string }> {
+async function getServiceAccountConfig(): Promise<{ email: string, privateKey: string }> {
   // Try DB config first (shared googleDriveConfig table)
   try {
     const { useDrizzle, schema } = await import('../db')
@@ -202,7 +204,8 @@ async function getServiceAccountConfig(): Promise<{ email: string; privateKey: s
     if (config?.email && config?.privateKey) {
       return { email: config.email, privateKey: config.privateKey }
     }
-  } catch {
+  }
+  catch {
     // DB not available, fall through
   }
 
@@ -336,7 +339,7 @@ export async function deleteCalendarEvent(
     {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       }
     }
   )
@@ -473,7 +476,8 @@ export async function getMultiCalendarFreeBusy(
       if (new Date(current.end) > new Date(last.end)) {
         last.end = current.end
       }
-    } else {
+    }
+    else {
       merged.push({ ...current })
     }
   }
@@ -489,7 +493,8 @@ export async function isServiceAccountConfigured(): Promise<boolean> {
   try {
     await getServiceAccountConfig()
     return true
-  } catch {
+  }
+  catch {
     return false
   }
 }

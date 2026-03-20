@@ -1,5 +1,8 @@
 <template>
-  <div class="relative" ref="containerRef">
+  <div
+    ref="containerRef"
+    class="relative"
+  >
     <div class="relative">
       <input
         ref="inputRef"
@@ -16,7 +19,7 @@
         @blur="handleBlur"
         @input="handleInput"
         @keydown="handleKeydown"
-      />
+      >
       <!-- Clear button -->
       <button
         v-if="searchQuery && !disabled"
@@ -27,8 +30,11 @@
         <X class="w-4 h-4" />
       </button>
       <!-- Loading indicator -->
-      <div v-if="loading" class="absolute right-2 top-1/2 -translate-y-1/2">
-        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600"></div>
+      <div
+        v-if="loading"
+        class="absolute right-2 top-1/2 -translate-y-1/2"
+      >
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
       </div>
     </div>
 
@@ -45,7 +51,10 @@
         v-if="showDropdown && (filteredOptions.length > 0 || searchQuery)"
         class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
       >
-        <ul v-if="filteredOptions.length > 0" class="py-1">
+        <ul
+          v-if="filteredOptions.length > 0"
+          class="py-1"
+        >
           <li
             v-for="(option, index) in filteredOptions"
             :key="getOptionValue(option)"
@@ -56,15 +65,26 @@
             @mousedown.prevent="selectOption(option)"
             @mouseenter="highlightedIndex = index"
           >
-            <slot name="option" :option="option">
-              <div class="font-medium">{{ getOptionLabel(option) }}</div>
-              <div v-if="getOptionSublabel(option)" class="text-xs text-gray-500">
+            <slot
+              name="option"
+              :option="option"
+            >
+              <div class="font-medium">
+                {{ getOptionLabel(option) }}
+              </div>
+              <div
+                v-if="getOptionSublabel(option)"
+                class="text-xs text-gray-500"
+              >
                 {{ getOptionSublabel(option) }}
               </div>
             </slot>
           </li>
         </ul>
-        <div v-else-if="searchQuery && !loading" class="px-3 py-4 text-sm text-gray-500 text-center">
+        <div
+          v-else-if="searchQuery && !loading"
+          class="px-3 py-4 text-sm text-gray-500 text-center"
+        >
           No results found for "{{ searchQuery }}"
         </div>
       </div>
@@ -143,7 +163,7 @@ const filteredOptions = computed(() => {
   }
 
   const query = searchQuery.value.toLowerCase()
-  return props.options.filter(option => {
+  return props.options.filter((option) => {
     const label = getOptionLabel(option).toLowerCase()
     const sublabel = getOptionSublabel(option)?.toLowerCase() || ''
     return label.includes(query) || sublabel.includes(query)
@@ -213,7 +233,8 @@ function handleKeydown(event: KeyboardEvent) {
       event.preventDefault()
       if (!showDropdown.value) {
         showDropdown.value = true
-      } else if (highlightedIndex.value < filteredOptions.value.length - 1) {
+      }
+      else if (highlightedIndex.value < filteredOptions.value.length - 1) {
         highlightedIndex.value++
       }
       break

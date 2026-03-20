@@ -50,7 +50,7 @@ const PAGE_SIZES: Record<ImportPhase, number> = {
   users: 50,
   contacts: 50,
   prospects: 25, // Prospects also create users/clients, more queries per record
-  notes: 25,     // Reduced from 100 to avoid "too many API requests" errors
+  notes: 25, // Reduced from 100 to avoid "too many API requests" errors
   activities: 25
 }
 
@@ -79,7 +79,8 @@ export default {
             console.error(`[Lawmatics Import] Unknown message type: ${(body as any).type}`)
             message.ack()
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error(`[Lawmatics Import] Error processing message:`, error)
 
         // Log error to database
@@ -100,7 +101,8 @@ export default {
             await queuePhaseComplete(env, { runId: body.runId, phase: body.phase, filter: body.filter })
           }
           message.ack()
-        } else {
+        }
+        else {
           // Retry the message (up to max_retries)
           message.retry()
         }
@@ -168,7 +170,7 @@ async function handleImportPage(
   )
 
   // Fetch page based on phase
-  let pageResult: { data: any[]; hasMore: boolean; totalCount?: number }
+  let pageResult: { data: any[], hasMore: boolean, totalCount?: number }
 
   switch (phase) {
     case 'users':
@@ -267,7 +269,8 @@ async function handleImportPage(
       perPage,
       filter
     })
-  } else {
+  }
+  else {
     await queuePhaseComplete(env, { runId, phase, filter })
   }
 
@@ -333,7 +336,8 @@ async function handlePhaseComplete(
       perPage: PAGE_SIZES[nextPhase],
       filter
     })
-  } else {
+  }
+  else {
     // All phases complete
     console.log(`[Lawmatics Import] All phases complete for run ${runId}`)
     await updateRunStatus(runId, 'COMPLETED')
@@ -354,7 +358,7 @@ interface ProcessResult {
   createdCount: number
   updatedCount: number
   skippedCount: number
-  errors: Array<{ externalId?: string; message: string; type: string }>
+  errors: Array<{ externalId?: string, message: string, type: string }>
 }
 
 // Cache for lookup maps to avoid rebuilding on each page
@@ -363,7 +367,7 @@ let clientLookupCache: Map<string, string> | null = null
 let peopleLookupCache: Map<string, string> | null = null
 let matterLookupCache: Map<string, string> | null = null
 let existingEmailsCache: Set<string> | null = null
-let emailIndexCache: Map<string, { personId: string; originalEmail: string }> | null = null
+let emailIndexCache: Map<string, { personId: string, originalEmail: string }> | null = null
 let matchIndexCache: import('../utils/record-matcher/types').MatchIndex | null = null
 
 async function getOrBuildUserLookup(): Promise<Map<string, string>> {
@@ -410,7 +414,7 @@ async function getExistingEmails(): Promise<Set<string>> {
   return existingEmailsCache
 }
 
-async function getOrBuildEmailIndex(): Promise<Map<string, { personId: string; originalEmail: string }>> {
+async function getOrBuildEmailIndex(): Promise<Map<string, { personId: string, originalEmail: string }>> {
   if (!emailIndexCache) {
     const { buildEmailIndex } = await import('../utils/duplicate-detector')
     emailIndexCache = await buildEmailIndex()
@@ -584,7 +588,8 @@ async function processRecords(
           if (userLookupCache) {
             userLookupCache.set(record.id, upsertResult.id)
           }
-        } catch (error) {
+        }
+        catch (error) {
           result.errors.push({
             externalId: record.id,
             message: error instanceof Error ? error.message : String(error),
@@ -635,13 +640,16 @@ async function processRecords(
                 'LAWMATICS',
                 record.id,
                 false, // Not primary — the existing person's original ID is primary
-                finalCheck.bestMatch.matchDetails ? {
-                  matchConfidence: finalCheck.bestMatch.confidenceScore,
-                  matchMethod: finalCheck.bestMatch.type,
-                  linkedDuringRun: runId
-                } : undefined
+                finalCheck.bestMatch.matchDetails ?
+                    {
+                      matchConfidence: finalCheck.bestMatch.confidenceScore,
+                      matchMethod: finalCheck.bestMatch.type,
+                      linkedDuringRun: runId
+                    } :
+                  undefined
               )
-            } catch (linkError) {
+            }
+            catch (linkError) {
               console.warn('[Lawmatics Import] Failed to link external ID:', linkError)
             }
 
@@ -663,7 +671,8 @@ async function processRecords(
                 resolvedPersonId: finalCheck.bestMatch.existingPersonId,
                 createdAt: new Date()
               })
-            } catch (logError) {
+            }
+            catch (logError) {
               console.error('[Lawmatics Import] Failed to log duplicate:', logError)
             }
 
@@ -672,7 +681,7 @@ async function processRecords(
           }
 
           // 2. Fetch structured address data from Lawmatics if available
-          let addressData: { street?: string; city?: string; state?: string; zipcode?: string } | null = null
+          let addressData: { street?: string, city?: string, state?: string, zipcode?: string } | null = null
           const addressRelation = record.relationships?.addresses?.data
           const addressId = Array.isArray(addressRelation) ? addressRelation[0]?.id : null
 
@@ -680,17 +689,20 @@ async function processRecords(
             try {
               const addressObj = await client.fetchAddress(addressId)
               addressData = addressObj.attributes
-            } catch (addrError) {
+            }
+            catch (addrError) {
               const errMsg = addrError instanceof Error ? addrError.message : String(addrError)
               const errType = addrError instanceof Error ? addrError.constructor.name : typeof addrError
               // Distinguish API errors (expected, warn) from code bugs (unexpected, error)
               if (errType === 'RateLimitError' || errType === 'LawmaticsApiError') {
                 console.warn(`[Lawmatics Import] Address fetch failed for contact ${record.id} (address ${addressId}): ${errMsg}`)
-              } else {
+              }
+              else {
                 console.error(`[Lawmatics Import] Unexpected error fetching address ${addressId} for contact ${record.id} [${errType}]: ${errMsg}`)
               }
             }
-          } else if (addressId && !client) {
+          }
+          else if (addressId && !client) {
             console.error(`[Lawmatics Import] Cannot fetch address for contact ${record.id} — client not provided to processRecords`)
           }
 
@@ -718,7 +730,8 @@ async function processRecords(
             try {
               const { setGlobalUnsubscribe } = await import('../utils/marketing-consent')
               await setGlobalUnsubscribe(upsertResult.id, 'LAWMATICS')
-            } catch (e) {
+            }
+            catch (e) {
               console.warn('[Lawmatics Import] Failed to set global unsubscribe:', e)
             }
           }
@@ -739,7 +752,8 @@ async function processRecords(
               })
             }
           }
-        } catch (error) {
+        }
+        catch (error) {
           result.errors.push({
             externalId: record.id,
             message: error instanceof Error ? error.message : String(error),
@@ -762,9 +776,9 @@ async function processRecords(
         try {
           // First, find the person for this prospect's contact
           const contactRelation = record.relationships?.contact?.data
-          const contactExternalId = Array.isArray(contactRelation)
-            ? contactRelation[0]?.id
-            : contactRelation?.id
+          const contactExternalId = Array.isArray(contactRelation) ?
+            contactRelation[0]?.id :
+            contactRelation?.id
 
           if (!contactExternalId) {
             result.errors.push({
@@ -799,8 +813,8 @@ async function processRecords(
           // Now transform the prospect with the user ID as the client
           const transformed = transformers.transformProspect(record, {
             importRunId: runId,
-            clientLookup: (extId) => extId === contactExternalId ? userId! : null,
-            userLookup: (externalId) => userLookup.get(externalId) || null
+            clientLookup: extId => extId === contactExternalId ? userId! : null,
+            userLookup: externalId => userLookup.get(externalId) || null
           })
 
           if (!transformed) {
@@ -822,7 +836,8 @@ async function processRecords(
           if (matterLookupCache) {
             matterLookupCache.set(record.id, upsertResult.id)
           }
-        } catch (error) {
+        }
+        catch (error) {
           result.errors.push({
             externalId: record.id,
             message: error instanceof Error ? error.message : String(error),
@@ -851,9 +866,9 @@ async function processRecords(
         try {
           const transformed = transformers.transformNote(record, {
             importRunId: runId,
-            contactLookup: (externalId) => peopleLookup.get(externalId) || null,
-            prospectLookup: (externalId) => matterLookup.get(externalId) || null,
-            userLookup: (externalId) => userLookup.get(externalId) || null,
+            contactLookup: externalId => peopleLookup.get(externalId) || null,
+            prospectLookup: externalId => matterLookup.get(externalId) || null,
+            userLookup: externalId => userLookup.get(externalId) || null,
             defaultUserId
           })
 
@@ -877,7 +892,8 @@ async function processRecords(
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
-        } catch (error) {
+        }
+        catch (error) {
           result.errors.push({
             externalId: record.id,
             message: error instanceof Error ? error.message : String(error),
@@ -905,9 +921,9 @@ async function processRecords(
         try {
           const transformed = transformers.transformActivity(record, {
             importRunId: runId,
-            contactLookup: (externalId) => peopleLookup.get(externalId) || null,
-            prospectLookup: (externalId) => matterLookup.get(externalId) || null,
-            userLookup: (externalId) => userLookup.get(externalId) || null,
+            contactLookup: externalId => peopleLookup.get(externalId) || null,
+            prospectLookup: externalId => matterLookup.get(externalId) || null,
+            userLookup: externalId => userLookup.get(externalId) || null,
             defaultUserId
           })
 
@@ -920,7 +936,8 @@ async function processRecords(
           result.processedCount++
           if (upsertResult.action === 'created') result.createdCount++
           else if (upsertResult.action === 'updated') result.updatedCount++
-        } catch (error) {
+        }
+        catch (error) {
           result.errors.push({
             externalId: record.id,
             message: error instanceof Error ? error.message : String(error),
@@ -971,7 +988,7 @@ async function queueNextPage(
 
 async function queuePhaseComplete(
   env: any,
-  params: { runId: string; phase: ImportPhase; filter?: { updatedSince?: string } }
+  params: { runId: string, phase: ImportPhase, filter?: { updatedSince?: string } }
 ): Promise<void> {
   const queue = env.LAWMATICS_IMPORT_QUEUE
 
@@ -1031,7 +1048,7 @@ async function updateRunProgress(
     updatedRecords: number
     skippedRecords: number
     errorCount: number
-    checkpoint: { phase: string; page: number; timestamp: string }
+    checkpoint: { phase: string, page: number, timestamp: string }
   }
 ): Promise<void> {
   const { useDrizzle, schema } = await import('../db')
@@ -1099,7 +1116,8 @@ async function updateIntegrationSyncTimestamps(
   if (integration?.lastSyncTimestamps) {
     try {
       existing = JSON.parse(integration.lastSyncTimestamps)
-    } catch { /* start fresh */ }
+    }
+    catch { /* start fresh */ }
   }
 
   const now = new Date().toISOString()

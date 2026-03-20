@@ -43,7 +43,7 @@ export default {
           continue
         }
 
-        let result: { success: boolean; error?: string }
+        let result: { success: boolean, error?: string }
 
         switch (type) {
           case 'document':
@@ -57,11 +57,13 @@ export default {
           case 'client':
             if (!name) {
               result = { success: false, error: 'Client name is required' }
-            } else {
+            }
+            else {
               try {
                 await createClientFolder(id, name)
                 result = { success: true }
-              } catch (error) {
+              }
+              catch (error) {
                 result = { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
               }
             }
@@ -70,11 +72,13 @@ export default {
           case 'matter':
             if (!name || !parentFolderId || !matterNumber) {
               result = { success: false, error: 'Matter name, parent folder ID, and matter number are required' }
-            } else {
+            }
+            else {
               try {
                 await createMatterFolder(id, name, matterNumber, parentFolderId)
                 result = { success: true }
-              } catch (error) {
+              }
+              catch (error) {
                 result = { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
               }
             }
@@ -87,12 +91,14 @@ export default {
         if (result.success) {
           console.log(`[Drive Sync] Successfully synced ${type} ${id}`)
           message.ack()
-        } else {
+        }
+        else {
           console.error(`[Drive Sync] Failed to sync ${type} ${id}: ${result.error}`)
           // Retry on failure (up to 3 times by default)
           message.retry()
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error(`[Drive Sync] Error processing ${type} ${id}:`, error)
         message.retry()
       }

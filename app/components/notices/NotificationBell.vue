@@ -2,9 +2,9 @@
   <div class="relative">
     <!-- Bell Button -->
     <button
-      @click="toggleDropdown"
       class="relative p-2 text-white/80 hover:text-white rounded-lg transition-colors"
       :class="{ 'text-white': isOpen }"
+      @click="toggleDropdown"
     >
       <Bell class="w-5 h-5" />
 

@@ -3,11 +3,19 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Time Tracking</h1>
-        <p class="text-gray-600 mt-1">Track billable hours and manage time entries</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Time Tracking
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Track billable hours and manage time entries
+        </p>
       </div>
       <div class="flex gap-2">
-        <UiButton v-if="selectedIds.length > 0" variant="secondary" @click="showBulkBillModal = true">
+        <UiButton
+          v-if="selectedIds.length > 0"
+          variant="secondary"
+          @click="showBulkBillModal = true"
+        >
           <FileText class="w-4 h-4 mr-1" />
           Bill {{ selectedIds.length }} Entries
         </UiButton>
@@ -19,19 +27,31 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loadingSummary" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+    <div
+      v-if="loadingSummary"
+      class="flex items-center justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
     <!-- Summary Cards -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+    >
       <!-- Total Hours This Month -->
       <UiCard>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">This Month</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary?.totalHoursThisMonth || '0.00' }}</p>
-            <p class="text-sm text-gray-500">hours tracked</p>
+            <p class="text-sm font-medium text-gray-500">
+              This Month
+            </p>
+            <p class="text-2xl font-bold text-gray-900">
+              {{ summary?.totalHoursThisMonth || '0.00' }}
+            </p>
+            <p class="text-sm text-gray-500">
+              hours tracked
+            </p>
           </div>
           <div class="p-3 bg-blue-100 rounded-full">
             <Clock class="w-6 h-6 text-blue-600" />
@@ -40,28 +60,53 @@
       </UiCard>
 
       <!-- Pending Approval -->
-      <UiCard class="cursor-pointer hover:shadow-md transition-shadow" @click="activeTab = 'submitted'">
+      <UiCard
+        class="cursor-pointer hover:shadow-md transition-shadow"
+        @click="activeTab = 'submitted'"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Pending Approval</p>
-            <p class="text-2xl font-bold" :class="(summary?.pendingApprovalCount || 0) > 0 ? 'text-amber-600' : 'text-gray-900'">
+            <p class="text-sm font-medium text-gray-500">
+              Pending Approval
+            </p>
+            <p
+              class="text-2xl font-bold"
+              :class="(summary?.pendingApprovalCount || 0) > 0 ? 'text-amber-600' : 'text-gray-900'"
+            >
               {{ summary?.pendingApprovalCount || 0 }}
             </p>
-            <p class="text-sm text-gray-500">entries awaiting review</p>
+            <p class="text-sm text-gray-500">
+              entries awaiting review
+            </p>
           </div>
-          <div class="p-3 rounded-full" :class="(summary?.pendingApprovalCount || 0) > 0 ? 'bg-amber-100' : 'bg-gray-100'">
-            <AlertCircle class="w-6 h-6" :class="(summary?.pendingApprovalCount || 0) > 0 ? 'text-amber-600' : 'text-gray-400'" />
+          <div
+            class="p-3 rounded-full"
+            :class="(summary?.pendingApprovalCount || 0) > 0 ? 'bg-amber-100' : 'bg-gray-100'"
+          >
+            <AlertCircle
+              class="w-6 h-6"
+              :class="(summary?.pendingApprovalCount || 0) > 0 ? 'text-amber-600' : 'text-gray-400'"
+            />
           </div>
         </div>
       </UiCard>
 
       <!-- Billable Amount -->
-      <UiCard class="cursor-pointer hover:shadow-md transition-shadow" @click="activeTab = 'approved'">
+      <UiCard
+        class="cursor-pointer hover:shadow-md transition-shadow"
+        @click="activeTab = 'approved'"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Ready to Bill</p>
-            <p class="text-2xl font-bold text-green-600">{{ formatCurrency(summary?.billableAmount || 0) }}</p>
-            <p class="text-sm text-gray-500">approved entries</p>
+            <p class="text-sm font-medium text-gray-500">
+              Ready to Bill
+            </p>
+            <p class="text-2xl font-bold text-green-600">
+              {{ formatCurrency(summary?.billableAmount || 0) }}
+            </p>
+            <p class="text-sm text-gray-500">
+              approved entries
+            </p>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
             <DollarSign class="w-6 h-6 text-green-600" />
@@ -73,9 +118,15 @@
       <UiCard>
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">This Week</p>
-            <p class="text-2xl font-bold text-gray-900">{{ summary?.totalHoursThisWeek || '0.00' }}</p>
-            <p class="text-sm text-gray-500">hours tracked</p>
+            <p class="text-sm font-medium text-gray-500">
+              This Week
+            </p>
+            <p class="text-2xl font-bold text-gray-900">
+              {{ summary?.totalHoursThisWeek || '0.00' }}
+            </p>
+            <p class="text-sm text-gray-500">
+              hours tracked
+            </p>
           </div>
           <div class="p-3 bg-purple-100 rounded-full">
             <Calendar class="w-6 h-6 text-purple-600" />
@@ -90,13 +141,13 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
           :class="[
             'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
             activeTab === tab.id
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
+          @click="activeTab = tab.id"
         >
           {{ tab.name }}
           <span
@@ -123,10 +174,17 @@
         </span>
       </div>
       <div class="flex gap-2">
-        <UiButton size="sm" variant="outline" @click="selectedIds = []">
+        <UiButton
+          size="sm"
+          variant="outline"
+          @click="selectedIds = []"
+        >
           Clear Selection
         </UiButton>
-        <UiButton size="sm" @click="showBulkBillModal = true">
+        <UiButton
+          size="sm"
+          @click="showBulkBillModal = true"
+        >
           <FileText class="w-4 h-4 mr-1" />
           Bill Selected
         </UiButton>
@@ -258,9 +316,11 @@ async function fetchSummary() {
   try {
     const response = await $fetch<{ summary: any }>('/api/time-entries/summary')
     summary.value = response.summary
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch summary:', error)
-  } finally {
+  }
+  finally {
     loadingSummary.value = false
   }
 }
@@ -279,18 +339,24 @@ async function fetchEntries(status?: string) {
 
     if (status === 'all' || !status) {
       allEntries.value = entries
-    } else if (status === 'draft') {
+    }
+    else if (status === 'draft') {
       draftEntries.value = entries
-    } else if (status === 'submitted') {
+    }
+    else if (status === 'submitted') {
       submittedEntries.value = entries
-    } else if (status === 'approved') {
+    }
+    else if (status === 'approved') {
       approvedEntries.value = entries
-    } else if (status === 'billed') {
+    }
+    else if (status === 'billed') {
       billedEntries.value = entries
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch entries:', error)
-  } finally {
+  }
+  finally {
     loadingEntries.value = false
   }
 }
@@ -326,7 +392,8 @@ async function handleDelete(entry: TimeEntry) {
     await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
     toast.success('Time entry deleted')
     refreshAll()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete entry')
   }
 }
@@ -336,7 +403,8 @@ async function handleSubmit(entry: TimeEntry) {
     await $fetch(`/api/time-entries/${entry.id}/submit`, { method: 'POST' })
     toast.success('Time entry submitted for approval')
     refreshAll()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to submit entry')
   }
 }
@@ -346,7 +414,8 @@ async function handleApprove(entry: TimeEntry) {
     await $fetch(`/api/time-entries/${entry.id}/approve`, { method: 'POST' })
     toast.success('Time entry approved')
     refreshAll()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to approve entry')
   }
 }

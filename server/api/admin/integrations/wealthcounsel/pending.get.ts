@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
           expiresIn
         })
       }
-    } catch (error) {
+    }
+    catch (error) {
       // Skip invalid entries
       console.error(`Error reading pending session ${key}:`, error)
     }

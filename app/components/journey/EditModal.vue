@@ -1,6 +1,13 @@
 <template>
-  <UiModal v-model="isOpen" title="Edit Journey" size="lg">
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+  <UiModal
+    v-model="isOpen"
+    title="Edit Journey"
+    size="lg"
+  >
+    <form
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <UiInput
         v-model="form.name"
         label="Journey Name"
@@ -33,21 +40,30 @@
             :class="{ 'bg-burgundy-50': form.catalogIds.includes(service.id) }"
           >
             <input
+              v-model="form.catalogIds"
               type="checkbox"
               :value="service.id"
-              v-model="form.catalogIds"
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
+            >
             <div class="ml-3">
               <div class="text-sm font-medium text-gray-900">{{ service.name }}</div>
-              <div v-if="service.category" class="text-xs text-gray-500">{{ service.category }}</div>
+              <div
+                v-if="service.category"
+                class="text-xs text-gray-500"
+              >{{ service.category }}</div>
             </div>
           </label>
-          <div v-if="serviceCatalog.length === 0" class="p-3 text-sm text-gray-500 text-center">
+          <div
+            v-if="serviceCatalog.length === 0"
+            class="p-3 text-sm text-gray-500 text-center"
+          >
             No services in catalog
           </div>
         </div>
-        <p v-if="form.catalogIds.length > 0" class="mt-2 text-sm text-gray-600">
+        <p
+          v-if="form.catalogIds.length > 0"
+          class="mt-2 text-sm text-gray-600"
+        >
           {{ form.catalogIds.length }} service{{ form.catalogIds.length === 1 ? '' : 's' }} selected
         </p>
       </div>
@@ -63,14 +79,16 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Journey Type</label>
         <div class="space-y-3">
-          <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                 :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+          <label
+            class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+            :class="form.journeyType === 'SERVICE' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'"
+          >
             <input
-              type="radio"
               v-model="form.journeyType"
+              type="radio"
               value="SERVICE"
               class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
-            />
+            >
             <div class="ml-3">
               <div class="font-medium text-gray-900">Service Journey</div>
               <div class="text-sm text-gray-600">
@@ -79,14 +97,16 @@
             </div>
           </label>
 
-          <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                 :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'">
+          <label
+            class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+            :class="form.journeyType === 'ENGAGEMENT' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-300'"
+          >
             <input
-              type="radio"
               v-model="form.journeyType"
+              type="radio"
               value="ENGAGEMENT"
               class="mt-1 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500"
-            />
+            >
             <div class="ml-3">
               <div class="font-medium text-gray-900">Engagement Journey</div>
               <div class="text-sm text-gray-600">
@@ -97,7 +117,10 @@
         </div>
 
         <!-- Warning for ENGAGEMENT type -->
-        <div v-if="form.journeyType === 'ENGAGEMENT'" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div
+          v-if="form.journeyType === 'ENGAGEMENT'"
+          class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+        >
           <p class="text-sm text-blue-800">
             <strong>Note:</strong> Engagement journeys can only use these action types:
             Draft Document, E-Sign, Payment, Meeting, Review, Upload, Decision
@@ -106,10 +129,17 @@
       </div>
 
       <div class="flex justify-end space-x-3 pt-4">
-        <UiButton type="button" variant="ghost" @click="handleCancel">
+        <UiButton
+          type="button"
+          variant="ghost"
+          @click="handleCancel"
+        >
           Cancel
         </UiButton>
-        <UiButton type="submit" :loading="saving">
+        <UiButton
+          type="submit"
+          :loading="saving"
+        >
           Save Changes
         </UiButton>
       </div>
@@ -153,7 +183,7 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value)
 })
 
 const saving = ref(false)
@@ -199,9 +229,11 @@ async function handleSubmit() {
 
     emit('save', props.journey, form.value)
     isOpen.value = false
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error updating journey:', error)
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }

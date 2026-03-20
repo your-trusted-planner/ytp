@@ -192,7 +192,8 @@ export default defineEventHandler(async (event) => {
         title: template.name,
         requiresNotary: Boolean(template.requiresNotary)
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Error generating document from template ${template.id}:`, error)
     }
   }
@@ -203,6 +204,3 @@ export default defineEventHandler(async (event) => {
     count: generatedDocs.length
   }
 })
-
-
-

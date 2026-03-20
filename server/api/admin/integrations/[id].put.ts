@@ -19,7 +19,6 @@ const updateIntegrationSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -115,17 +114,17 @@ export default defineEventHandler(async (event) => {
       type: updated!.type,
       name: updated!.name,
       status: updated!.status,
-      lastTestedAt: updated!.lastTestedAt instanceof Date
-        ? updated!.lastTestedAt.toISOString()
-        : updated!.lastTestedAt,
+      lastTestedAt: updated!.lastTestedAt instanceof Date ?
+          updated!.lastTestedAt.toISOString() :
+        updated!.lastTestedAt,
       lastErrorMessage: updated!.lastErrorMessage,
       settings: updated!.settings ? JSON.parse(updated!.settings) : null,
-      createdAt: updated!.createdAt instanceof Date
-        ? updated!.createdAt.toISOString()
-        : updated!.createdAt,
-      updatedAt: updated!.updatedAt instanceof Date
-        ? updated!.updatedAt.toISOString()
-        : updated!.updatedAt
+      createdAt: updated!.createdAt instanceof Date ?
+          updated!.createdAt.toISOString() :
+        updated!.createdAt,
+      updatedAt: updated!.updatedAt instanceof Date ?
+          updated!.updatedAt.toISOString() :
+        updated!.updatedAt
     }
   }
 })

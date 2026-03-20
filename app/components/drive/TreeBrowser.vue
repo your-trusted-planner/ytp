@@ -3,16 +3,22 @@
     <!-- Header with breadcrumb and actions -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2 min-w-0">
-        <IconsGoogleDrive :size="20" class="text-gray-600 flex-shrink-0" />
+        <IconsGoogleDrive
+          :size="20"
+          class="text-gray-600 flex-shrink-0"
+        />
         <nav class="flex items-center gap-1 text-sm overflow-hidden">
           <button
             v-for="(crumb, index) in breadcrumbs"
             :key="crumb.id"
-            @click="navigateTo(crumb.id)"
             class="flex items-center gap-1 text-gray-600 hover:text-burgundy-600 truncate"
             :class="{ 'font-medium text-gray-900': index === breadcrumbs.length - 1 }"
+            @click="navigateTo(crumb.id)"
           >
-            <ChevronRight v-if="index > 0" class="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <ChevronRight
+              v-if="index > 0"
+              class="w-4 h-4 text-gray-400 flex-shrink-0"
+            />
             <span class="truncate">{{ crumb.name }}</span>
           </button>
         </nav>
@@ -21,38 +27,51 @@
       <div class="flex items-center gap-2">
         <button
           v-if="folderUrl"
-          @click="openInDrive"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-burgundy-600 hover:text-burgundy-800 hover:bg-burgundy-50 rounded-lg transition-colors"
+          @click="openInDrive"
         >
           <ExternalLink class="w-4 h-4" />
           Open in Drive
         </button>
         <button
-          @click="refresh"
           :disabled="loading"
           class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           title="Refresh"
+          @click="refresh"
         >
-          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+          <RefreshCw
+            class="w-4 h-4"
+            :class="{ 'animate-spin': loading }"
+          />
         </button>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading && items.length === 0" class="flex items-center justify-center py-12">
+    <div
+      v-if="loading && items.length === 0"
+      class="flex items-center justify-center py-12"
+    >
       <Loader2 class="w-6 h-6 animate-spin text-burgundy-600" />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div
+      v-else-if="error"
+      class="bg-red-50 border border-red-200 rounded-lg p-4"
+    >
       <div class="flex items-start gap-3">
         <AlertTriangle class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
         <div>
-          <p class="text-sm font-medium text-red-800">Failed to load folder contents</p>
-          <p class="text-sm text-red-700 mt-1">{{ error }}</p>
+          <p class="text-sm font-medium text-red-800">
+            Failed to load folder contents
+          </p>
+          <p class="text-sm text-red-700 mt-1">
+            {{ error }}
+          </p>
           <button
-            @click="refresh"
             class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            @click="refresh"
           >
             Try again
           </button>
@@ -61,18 +80,26 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="items.length === 0 && !loading" class="text-center py-12">
+    <div
+      v-else-if="items.length === 0 && !loading"
+      class="text-center py-12"
+    >
       <FolderOpen class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-      <p class="text-gray-500">This folder is empty</p>
+      <p class="text-gray-500">
+        This folder is empty
+      </p>
     </div>
 
     <!-- File/Folder List -->
-    <div v-else class="space-y-1">
+    <div
+      v-else
+      class="space-y-1"
+    >
       <!-- Back button when not at root -->
       <button
         v-if="breadcrumbs.length > 1"
-        @click="goBack"
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+        @click="goBack"
       >
         <ArrowLeft class="w-4 h-4" />
         <span>Back to parent folder</span>
@@ -82,9 +109,9 @@
       <div
         v-for="item in items"
         :key="item.id"
-        @click="handleItemClick(item)"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
         :class="item.isFolder ? 'hover:bg-gray-50' : 'hover:bg-gray-50'"
+        @click="handleItemClick(item)"
       >
         <!-- Icon -->
         <component
@@ -98,7 +125,10 @@
           <div class="text-sm font-medium text-gray-900 truncate">
             {{ item.name }}
           </div>
-          <div v-if="!item.isFolder && item.modifiedTime" class="text-xs text-gray-500">
+          <div
+            v-if="!item.isFolder && item.modifiedTime"
+            class="text-xs text-gray-500"
+          >
             Modified {{ formatRelativeTime(item.modifiedTime) }}
             <span v-if="item.size"> &middot; {{ formatFileSize(parseInt(item.size)) }}</span>
           </div>
@@ -111,9 +141,9 @@
             :href="item.webViewLink"
             target="_blank"
             rel="noopener noreferrer"
-            @click.stop
             class="p-1.5 text-gray-400 hover:text-burgundy-600 hover:bg-burgundy-50 rounded transition-colors"
             title="Open in Google Drive"
+            @click.stop
           >
             <ExternalLink class="w-4 h-4" />
           </a>
@@ -122,9 +152,9 @@
             :href="item.webContentLink"
             target="_blank"
             rel="noopener noreferrer"
-            @click.stop
             class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
             title="Download"
+            @click.stop
           >
             <Download class="w-4 h-4" />
           </a>
@@ -137,7 +167,10 @@
     </div>
 
     <!-- Item count footer -->
-    <div v-if="items.length > 0" class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
+    <div
+      v-if="items.length > 0"
+      class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500"
+    >
       {{ items.length }} item{{ items.length === 1 ? '' : 's' }}
     </div>
   </div>
@@ -205,17 +238,19 @@ async function loadFolder(folderId: string) {
 
   try {
     const response = await $fetch<{
-      folder: { id: string; name: string; webViewLink?: string }
+      folder: { id: string, name: string, webViewLink?: string }
       items: DriveItem[]
       itemCount: number
     }>(`/api/google-drive/browse/${folderId}`)
 
     items.value = response.items
     currentFolderId.value = folderId
-  } catch (err: any) {
+  }
+  catch (err: any) {
     console.error('Failed to load folder:', err)
     error.value = err.data?.message || err.message || 'Failed to load folder contents'
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -225,7 +260,8 @@ function handleItemClick(item: DriveItem) {
     // Navigate into folder
     breadcrumbs.value.push({ id: item.id, name: item.name })
     loadFolder(item.id)
-  } else if (item.webViewLink) {
+  }
+  else if (item.webViewLink) {
     // Open file in Drive
     window.open(item.webViewLink, '_blank')
   }

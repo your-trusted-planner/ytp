@@ -90,7 +90,8 @@ export default defineEventHandler(async (event) => {
       await blob.delete(document.docxBlobKey)
       deletionDetails.blobsDeleted.push('docx')
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('Failed to delete docx blob:', error)
     // Continue with deletion even if blob cleanup fails
   }
@@ -100,7 +101,8 @@ export default defineEventHandler(async (event) => {
       await blob.delete(document.signedPdfBlobKey)
       deletionDetails.blobsDeleted.push('signedPdf')
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('Failed to delete signedPdf blob:', error)
   }
 

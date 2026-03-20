@@ -11,21 +11,32 @@
 
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">OAuth Providers</h1>
-        <p class="text-gray-600 mt-1">Enable authentication providers for user sign-in</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          OAuth Providers
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Enable authentication providers for user sign-in
+        </p>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-500">Loading providers...</p>
+    <div
+      v-if="loading"
+      class="text-center py-12"
+    >
+      <p class="text-gray-500">
+        Loading providers...
+      </p>
     </div>
 
     <template v-else>
       <!-- Well-Known Providers Section -->
       <UiCard>
         <template #header>
-          <h2 class="text-lg font-semibold text-gray-900">Standard Providers</h2>
+          <h2 class="text-lg font-semibold text-gray-900">
+            Standard Providers
+          </h2>
           <p class="text-sm text-gray-600 mt-1">
             Toggle providers on or off. Make sure each provider is configured in your
             <a
@@ -52,40 +63,69 @@
                     :src="getPreset(providerId).logoUrl"
                     :alt="getPreset(providerId).name"
                     class="h-6 w-6 object-contain"
-                  />
+                  >
                 </div>
                 <div>
-                  <h3 class="font-medium text-gray-900">{{ getPreset(providerId).name }}</h3>
-                  <p class="text-xs text-gray-500">{{ providerId }}</p>
+                  <h3 class="font-medium text-gray-900">
+                    {{ getPreset(providerId).name }}
+                  </h3>
+                  <p class="text-xs text-gray-500">
+                    {{ providerId }}
+                  </p>
                 </div>
               </div>
               <UiToggle
                 :model-value="isProviderEnabled(providerId)"
-                @update:model-value="toggleProvider(providerId, $event)"
                 :disabled="togglingProvider === providerId"
+                @update:model-value="toggleProvider(providerId, $event)"
               />
             </div>
-            <p class="mt-3 text-sm text-gray-600">{{ getPreset(providerId).description }}</p>
-            <div v-if="isProviderEnabled(providerId)" class="mt-3 pt-3 border-t border-gray-200">
+            <p class="mt-3 text-sm text-gray-600">
+              {{ getPreset(providerId).description }}
+            </p>
+            <div
+              v-if="isProviderEnabled(providerId)"
+              class="mt-3 pt-3 border-t border-gray-200"
+            >
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-500">Display Order</span>
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="changeDisplayOrder(providerId, -1)"
                     class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     :disabled="getProviderDisplayOrder(providerId) <= 0"
+                    @click="changeDisplayOrder(providerId, -1)"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 15l7-7 7 7"
+                      />
                     </svg>
                   </button>
                   <span class="w-6 text-center font-medium">{{ getProviderDisplayOrder(providerId) }}</span>
                   <button
-                    @click="changeDisplayOrder(providerId, 1)"
                     class="p-1 text-gray-400 hover:text-gray-600"
+                    @click="changeDisplayOrder(providerId, 1)"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -100,37 +140,71 @@
         <template #header>
           <div class="flex justify-between items-center">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">Custom Providers</h2>
+              <h2 class="text-lg font-semibold text-gray-900">
+                Custom Providers
+              </h2>
               <p class="text-sm text-gray-600 mt-1">
                 Add custom OIDC or SAML providers not listed above
               </p>
             </div>
-            <UiButton size="sm" @click="openCreateModal">
+            <UiButton
+              size="sm"
+              @click="openCreateModal"
+            >
               Add Custom Provider
             </UiButton>
           </div>
         </template>
 
-        <div v-if="customProviders.length === 0" class="text-center py-8">
-          <p class="text-gray-500">No custom providers configured</p>
+        <div
+          v-if="customProviders.length === 0"
+          class="text-center py-8"
+        >
+          <p class="text-gray-500">
+            No custom providers configured
+          </p>
         </div>
-        <div v-else class="overflow-x-auto">
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Provider
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Provider ID
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Order
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="provider in customProviders" :key="provider.id" class="hover:bg-gray-50">
+              <tr
+                v-for="provider in customProviders"
+                :key="provider.id"
+                class="hover:bg-gray-50"
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
-                    <div v-if="provider.logoUrl" class="flex-shrink-0 h-8 w-8 mr-3">
-                      <img :src="provider.logoUrl" :alt="provider.name" class="h-8 w-8 object-contain" />
+                    <div
+                      v-if="provider.logoUrl"
+                      class="flex-shrink-0 h-8 w-8 mr-3"
+                    >
+                      <img
+                        :src="provider.logoUrl"
+                        :alt="provider.name"
+                        class="h-8 w-8 object-contain"
+                      >
                     </div>
                     <div
                       v-else
@@ -139,11 +213,15 @@
                     >
                       {{ provider.name.charAt(0) }}
                     </div>
-                    <div class="text-sm font-medium text-gray-900">{{ provider.name }}</div>
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ provider.name }}
+                    </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-600 font-mono">{{ provider.providerId }}</div>
+                  <div class="text-sm text-gray-600 font-mono">
+                    {{ provider.providerId }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <UiBadge :variant="provider.isEnabled ? 'success' : 'default'">
@@ -151,18 +229,20 @@
                   </UiBadge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{{ provider.displayOrder }}</div>
+                  <div class="text-sm text-gray-900">
+                    {{ provider.displayOrder }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                   <button
-                    @click="editProvider(provider)"
                     class="text-burgundy-600 hover:text-burgundy-900"
+                    @click="editProvider(provider)"
                   >
                     Edit
                   </button>
                   <button
-                    @click="confirmDelete(provider)"
                     class="text-red-600 hover:text-red-900"
+                    @click="confirmDelete(provider)"
                   >
                     Delete
                   </button>
@@ -175,8 +255,15 @@
     </template>
 
     <!-- Create/Edit Custom Provider Modal -->
-    <UiModal v-model="showEditModal" :title="editingProvider ? 'Edit Custom Provider' : 'Add Custom Provider'" size="lg">
-      <form @submit.prevent="handleSaveProvider" class="space-y-4">
+    <UiModal
+      v-model="showEditModal"
+      :title="editingProvider ? 'Edit Custom Provider' : 'Add Custom Provider'"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSaveProvider"
+      >
         <UiInput
           v-model="providerForm.providerId"
           label="Provider ID"
@@ -221,7 +308,7 @@
               v-model="providerForm.buttonColor"
               type="color"
               class="h-10 w-20 rounded border border-gray-300 cursor-pointer"
-            />
+            >
             <UiInput
               v-model="providerForm.buttonColor"
               placeholder="#4285F4"
@@ -253,17 +340,27 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showEditModal = false">
+        <UiButton
+          variant="outline"
+          @click="showEditModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleSaveProvider" :is-loading="saving">
+        <UiButton
+          :is-loading="saving"
+          @click="handleSaveProvider"
+        >
           {{ editingProvider ? 'Save Changes' : 'Add Provider' }}
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Delete Confirmation Modal -->
-    <UiModal v-model="showDeleteModal" title="Delete Provider" size="sm">
+    <UiModal
+      v-model="showDeleteModal"
+      title="Delete Provider"
+      size="sm"
+    >
       <div class="space-y-4">
         <p class="text-gray-700">
           Are you sure you want to delete <strong>{{ deletingProvider?.name }}</strong>?
@@ -276,10 +373,17 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showDeleteModal = false">
+        <UiButton
+          variant="outline"
+          @click="showDeleteModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton variant="danger" @click="handleDeleteProvider" :is-loading="deleting">
+        <UiButton
+          variant="danger"
+          :is-loading="deleting"
+          @click="handleDeleteProvider"
+        >
           Delete Provider
         </UiButton>
       </template>
@@ -363,9 +467,11 @@ async function fetchProviders() {
   try {
     const response = await $fetch<{ providers: OAuthProvider[] }>('/api/oauth-providers')
     providers.value = response.providers || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch providers:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -382,7 +488,8 @@ async function toggleProvider(providerId: string, enabled: boolean) {
         method: 'PUT',
         body: { isEnabled: enabled }
       })
-    } else if (enabled) {
+    }
+    else if (enabled) {
       // Create new provider with preset values
       const preset = getPreset(providerId)
       const maxOrder = Math.max(0, ...providers.value.map(p => p.displayOrder))
@@ -399,10 +506,12 @@ async function toggleProvider(providerId: string, enabled: boolean) {
       })
     }
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to toggle provider:', error)
     toast.error(error.data?.message || 'Failed to toggle provider')
-  } finally {
+  }
+  finally {
     togglingProvider.value = null
   }
 }
@@ -420,7 +529,8 @@ async function changeDisplayOrder(providerId: string, delta: number) {
       body: { displayOrder: newOrder }
     })
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to update display order:', error)
   }
 }
@@ -467,7 +577,8 @@ async function handleSaveProvider() {
         method: 'PUT',
         body: providerForm.value
       })
-    } else {
+    }
+    else {
       // Create new provider
       await $fetch('/api/oauth-providers', {
         method: 'POST',
@@ -477,10 +588,12 @@ async function handleSaveProvider() {
 
     showEditModal.value = false
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save provider:', error)
     toast.error(error.data?.message || 'Failed to save provider')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -501,10 +614,12 @@ async function handleDeleteProvider() {
 
     showDeleteModal.value = false
     await fetchProviders()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to delete provider:', error)
     toast.error(error.data?.message || 'Failed to delete provider')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }

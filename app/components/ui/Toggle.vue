@@ -17,9 +17,16 @@
         ]"
       />
     </button>
-    <label v-if="label" @click="toggle" class="ml-3 text-sm cursor-pointer">
+    <label
+      v-if="label"
+      class="ml-3 text-sm cursor-pointer"
+      @click="toggle"
+    >
       <span class="font-medium text-gray-900">{{ label }}</span>
-      <span v-if="description" class="text-gray-500 block">{{ description }}</span>
+      <span
+        v-if="description"
+        class="text-gray-500 block"
+      >{{ description }}</span>
     </label>
   </div>
 </template>

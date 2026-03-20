@@ -1,25 +1,25 @@
-import { H3Event } from 'h3'
+import type { H3Event } from 'h3'
 import { generateId } from './auth'
 import { captureRequestContext } from './request-context'
 import { generateDescription } from './activity-description'
 
 // Entity types that can be referenced in activities
 export type EntityType =
-  | 'user'
-  | 'person'   // New: Any person in the system (Belly Button Principle)
-  | 'client'
-  | 'matter'
-  | 'document'
-  | 'journey'
-  | 'template'
-  | 'referral_partner'
-  | 'service'
-  | 'appointment'
-  | 'appointment_type'
-  | 'room'
-  | 'note'
-  | 'setting'
-  | 'estate_plan'
+  | 'user' |
+  'person' | // New: Any person in the system (Belly Button Principle)
+  'client' |
+  'matter' |
+  'document' |
+  'journey' |
+  'template' |
+  'referral_partner' |
+  'service' |
+  'appointment' |
+  'appointment_type' |
+  'room' |
+  'note' |
+  'setting' |
+  'estate_plan'
 
 /**
  * Standardized entity reference for activity logging.
@@ -34,92 +34,92 @@ export interface EntityRef {
 // Activity types for structured logging
 export type ActivityType =
   // User events
-  | 'USER_LOGIN'
-  | 'USER_LOGOUT'
-  | 'USER_CREATED'
-  | 'USER_UPDATED'
-  | 'USER_PASSWORD_CHANGED'
-  | 'PASSWORD_RESET'
+  | 'USER_LOGIN' |
+  'USER_LOGOUT' |
+  'USER_CREATED' |
+  'USER_UPDATED' |
+  'USER_PASSWORD_CHANGED' |
+  'PASSWORD_RESET' |
   // Client events
-  | 'CLIENT_CREATED'
-  | 'CLIENT_UPDATED'
-  | 'CLIENT_VIEWED'
-  | 'CLIENT_STATUS_CHANGED'
+  'CLIENT_CREATED' |
+  'CLIENT_UPDATED' |
+  'CLIENT_VIEWED' |
+  'CLIENT_STATUS_CHANGED' |
   // Matter events
-  | 'MATTER_CREATED'
-  | 'MATTER_UPDATED'
-  | 'MATTER_STATUS_CHANGED'
-  | 'MATTER_SERVICE_ADDED'
+  'MATTER_CREATED' |
+  'MATTER_UPDATED' |
+  'MATTER_STATUS_CHANGED' |
+  'MATTER_SERVICE_ADDED' |
   // Document events
-  | 'DOCUMENT_CREATED'
-  | 'DOCUMENT_VIEWED'
-  | 'DOCUMENT_SIGNED'
-  | 'DOCUMENT_DOWNLOADED'
-  | 'DOCUMENT_STATUS_CHANGED'
-  | 'DOCUMENT_DELETED'
+  'DOCUMENT_CREATED' |
+  'DOCUMENT_VIEWED' |
+  'DOCUMENT_SIGNED' |
+  'DOCUMENT_DOWNLOADED' |
+  'DOCUMENT_STATUS_CHANGED' |
+  'DOCUMENT_DELETED' |
   // Journey events
-  | 'JOURNEY_STARTED'
-  | 'JOURNEY_STEP_COMPLETED'
-  | 'JOURNEY_COMPLETED'
-  | 'JOURNEY_PAUSED'
+  'JOURNEY_STARTED' |
+  'JOURNEY_STEP_COMPLETED' |
+  'JOURNEY_COMPLETED' |
+  'JOURNEY_PAUSED' |
   // Template events
-  | 'TEMPLATE_CREATED'
-  | 'TEMPLATE_UPDATED'
-  | 'TEMPLATE_DELETED'
+  'TEMPLATE_CREATED' |
+  'TEMPLATE_UPDATED' |
+  'TEMPLATE_DELETED' |
   // Note events
-  | 'NOTE_CREATED'
-  | 'NOTE_UPDATED'
-  | 'NOTE_DELETED'
+  'NOTE_CREATED' |
+  'NOTE_UPDATED' |
+  'NOTE_DELETED' |
   // Referral events
-  | 'REFERRAL_PARTNER_CREATED'
-  | 'REFERRAL_PARTNER_UPDATED'
+  'REFERRAL_PARTNER_CREATED' |
+  'REFERRAL_PARTNER_UPDATED' |
   // Estate plan events
-  | 'ESTATE_PLAN_CREATED'
-  | 'ESTATE_PLAN_UPDATED'
-  | 'ESTATE_PLAN_AMENDED'
-  | 'ESTATE_PLAN_IMPORTED'
-  | 'ESTATE_PLAN_STATUS_CHANGED'
+  'ESTATE_PLAN_CREATED' |
+  'ESTATE_PLAN_UPDATED' |
+  'ESTATE_PLAN_AMENDED' |
+  'ESTATE_PLAN_IMPORTED' |
+  'ESTATE_PLAN_STATUS_CHANGED' |
   // Trust account events
-  | 'TRUST_ACCOUNT_CREATED'
-  | 'TRUST_DEPOSIT_RECEIVED'
-  | 'TRUST_DISBURSEMENT_MADE'
-  | 'TRUST_REFUND_ISSUED'
+  'TRUST_ACCOUNT_CREATED' |
+  'TRUST_DEPOSIT_RECEIVED' |
+  'TRUST_DISBURSEMENT_MADE' |
+  'TRUST_REFUND_ISSUED' |
   // Invoice events
-  | 'INVOICE_CREATED'
-  | 'INVOICE_UPDATED'
-  | 'INVOICE_SENT'
-  | 'INVOICE_PAID'
-  | 'INVOICE_CANCELLED'
-  | 'INVOICE_VOID'
+  'INVOICE_CREATED' |
+  'INVOICE_UPDATED' |
+  'INVOICE_SENT' |
+  'INVOICE_PAID' |
+  'INVOICE_CANCELLED' |
+  'INVOICE_VOID' |
   // Payment events
-  | 'PAYMENT_RECEIVED'
-  | 'PAYMENT_APPLIED'
+  'PAYMENT_RECEIVED' |
+  'PAYMENT_APPLIED' |
   // Time entry events
-  | 'TIME_ENTRY_CREATED'
-  | 'TIME_ENTRY_UPDATED'
-  | 'TIME_ENTRY_DELETED'
-  | 'TIME_ENTRY_SUBMITTED'
-  | 'TIME_ENTRY_APPROVED'
-  | 'TIME_ENTRIES_BILLED'
+  'TIME_ENTRY_CREATED' |
+  'TIME_ENTRY_UPDATED' |
+  'TIME_ENTRY_DELETED' |
+  'TIME_ENTRY_SUBMITTED' |
+  'TIME_ENTRY_APPROVED' |
+  'TIME_ENTRIES_BILLED' |
   // Billing rate events
-  | 'USER_RATE_UPDATED'
-  | 'CLIENT_RATES_UPDATED'
-  | 'MATTER_RATES_UPDATED'
+  'USER_RATE_UPDATED' |
+  'CLIENT_RATES_UPDATED' |
+  'MATTER_RATES_UPDATED' |
   // Appointment events
-  | 'APPOINTMENT_CREATED'
-  | 'APPOINTMENT_UPDATED'
-  | 'APPOINTMENT_CANCELLED'
+  'APPOINTMENT_CREATED' |
+  'APPOINTMENT_UPDATED' |
+  'APPOINTMENT_CANCELLED' |
   // Appointment type events
-  | 'APPOINTMENT_TYPE_CREATED'
-  | 'APPOINTMENT_TYPE_UPDATED'
-  | 'APPOINTMENT_TYPE_DELETED'
+  'APPOINTMENT_TYPE_CREATED' |
+  'APPOINTMENT_TYPE_UPDATED' |
+  'APPOINTMENT_TYPE_DELETED' |
   // Room events
-  | 'ROOM_CREATED'
-  | 'ROOM_UPDATED'
-  | 'ROOM_DELETED'
+  'ROOM_CREATED' |
+  'ROOM_UPDATED' |
+  'ROOM_DELETED' |
   // Admin events
-  | 'ADMIN_ACTION'
-  | 'SETTINGS_CHANGED'
+  'ADMIN_ACTION' |
+  'SETTINGS_CHANGED'
 
 export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room'
 
@@ -129,8 +129,8 @@ export interface LogActivityParams {
   userRole?: string
 
   // NEW: Structured entity references (preferred)
-  target?: EntityRef                    // Primary entity being acted upon
-  relatedEntities?: EntityRef[]         // Secondary/related entities
+  target?: EntityRef // Primary entity being acted upon
+  relatedEntities?: EntityRef[] // Secondary/related entities
 
   // NEW: Structured details (preferred over metadata for activity-specific data)
   details?: Record<string, unknown>
@@ -278,9 +278,9 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
   }
 
   // Serialize metadata to JSON
-  const metadataJson = Object.keys(structuredMetadata).length > 0
-    ? JSON.stringify(structuredMetadata)
-    : null
+  const metadataJson = Object.keys(structuredMetadata).length > 0 ?
+      JSON.stringify(structuredMetadata) :
+    null
 
   // Use target EntityRef to populate targetType/targetId if not explicitly set
   const targetType = params.targetType || (params.target?.type as TargetType) || null
@@ -298,7 +298,8 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
       params.relatedEntities,
       params.details
     )
-  } else if (!description) {
+  }
+  else if (!description) {
     // Fallback for activities without structured refs
     description = `Activity: ${params.type}`
   }

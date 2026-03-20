@@ -6,7 +6,9 @@
         <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <ShieldCheck class="w-8 h-8 text-amber-600" />
         </div>
-        <h2 class="text-xl font-semibold text-slate-900">Identity Verification Required</h2>
+        <h2 class="text-xl font-semibold text-slate-900">
+          Identity Verification Required
+        </h2>
         <p class="text-slate-600 mt-2">
           This document requires additional identity verification before signing.
         </p>
@@ -19,16 +21,25 @@
             {{ signerInitials }}
           </div>
           <div>
-            <p class="font-medium text-slate-900">{{ signer.name }}</p>
-            <p class="text-sm text-slate-600">{{ signer.email }}</p>
+            <p class="font-medium text-slate-900">
+              {{ signer.name }}
+            </p>
+            <p class="text-sm text-slate-600">
+              {{ signer.email }}
+            </p>
           </div>
         </div>
       </div>
 
       <!-- Attestation Mode -->
-      <div v-if="mode === 'attestation'" class="space-y-6">
+      <div
+        v-if="mode === 'attestation'"
+        class="space-y-6"
+      >
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="font-medium text-blue-900 mb-2">Self-Attestation</h3>
+          <h3 class="font-medium text-blue-900 mb-2">
+            Self-Attestation
+          </h3>
           <p class="text-sm text-blue-800">
             Please read and agree to the following attestation statement to verify your identity.
           </p>
@@ -46,31 +57,44 @@
               v-model="attestationAgreed"
               type="checkbox"
               class="mt-1 h-5 w-5 text-[#C41E3A] focus:ring-[#C41E3A] border-slate-300 rounded"
-            />
+            >
             <span class="ml-3 text-slate-700">
               I have read and agree to the above attestation statement. I understand that making a false statement constitutes perjury.
             </span>
           </label>
         </div>
 
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-sm text-red-800">{{ error }}</p>
+        <div
+          v-if="error"
+          class="bg-red-50 border border-red-200 rounded-lg p-4"
+        >
+          <p class="text-sm text-red-800">
+            {{ error }}
+          </p>
         </div>
 
         <button
-          @click="submitAttestation"
           :disabled="!attestationAgreed || isSubmitting"
           class="w-full px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          @click="submitAttestation"
         >
-          <Loader2 v-if="isSubmitting" class="w-5 h-5 mr-2 animate-spin" />
+          <Loader2
+            v-if="isSubmitting"
+            class="w-5 h-5 mr-2 animate-spin"
+          />
           {{ isSubmitting ? 'Verifying...' : 'Confirm Identity' }}
         </button>
       </div>
 
       <!-- KBA Mode -->
-      <div v-else-if="mode === 'kba'" class="space-y-6">
+      <div
+        v-else-if="mode === 'kba'"
+        class="space-y-6"
+      >
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="font-medium text-blue-900 mb-2">Knowledge-Based Verification</h3>
+          <h3 class="font-medium text-blue-900 mb-2">
+            Knowledge-Based Verification
+          </h3>
           <p class="text-sm text-blue-800">
             Please confirm your identity by providing the following information as it appears in our records.
           </p>
@@ -86,7 +110,7 @@
               type="date"
               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-[#C41E3A]"
               placeholder="YYYY-MM-DD"
-            />
+            >
           </div>
 
           <div v-if="requireSsn">
@@ -100,28 +124,41 @@
               pattern="\d{4}"
               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-[#C41E3A]"
               placeholder="####"
-            />
+            >
           </div>
         </div>
 
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-sm text-red-800">{{ error }}</p>
+        <div
+          v-if="error"
+          class="bg-red-50 border border-red-200 rounded-lg p-4"
+        >
+          <p class="text-sm text-red-800">
+            {{ error }}
+          </p>
         </div>
 
         <button
-          @click="submitKba"
           :disabled="!kbaDateOfBirth || isSubmitting"
           class="w-full px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          @click="submitKba"
         >
-          <Loader2 v-if="isSubmitting" class="w-5 h-5 mr-2 animate-spin" />
+          <Loader2
+            v-if="isSubmitting"
+            class="w-5 h-5 mr-2 animate-spin"
+          />
           {{ isSubmitting ? 'Verifying...' : 'Verify Identity' }}
         </button>
       </div>
 
       <!-- Manual Mode -->
-      <div v-else-if="mode === 'manual'" class="space-y-6">
+      <div
+        v-else-if="mode === 'manual'"
+        class="space-y-6"
+      >
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="font-medium text-blue-900 mb-2">Photo ID Verification</h3>
+          <h3 class="font-medium text-blue-900 mb-2">
+            Photo ID Verification
+          </h3>
           <p class="text-sm text-blue-800">
             Please upload a clear photo of your government-issued ID. An attorney will review and approve your identity.
           </p>
@@ -136,10 +173,18 @@
               v-model="manualIdType"
               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-[#C41E3A]"
             >
-              <option value="">Select ID type...</option>
-              <option value="DRIVERS_LICENSE">Driver's License</option>
-              <option value="PASSPORT">Passport</option>
-              <option value="STATE_ID">State ID Card</option>
+              <option value="">
+                Select ID type...
+              </option>
+              <option value="DRIVERS_LICENSE">
+                Driver's License
+              </option>
+              <option value="PASSPORT">
+                Passport
+              </option>
+              <option value="STATE_ID">
+                State ID Card
+              </option>
             </select>
           </div>
 
@@ -159,21 +204,30 @@
                 accept="image/*"
                 class="hidden"
                 @change="handleFileSelect"
-              />
+              >
 
               <div v-if="!manualIdImage">
                 <Upload class="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                <p class="text-slate-600">Click or drag to upload ID photo</p>
-                <p class="text-sm text-slate-500 mt-1">JPG, PNG, or HEIC</p>
+                <p class="text-slate-600">
+                  Click or drag to upload ID photo
+                </p>
+                <p class="text-sm text-slate-500 mt-1">
+                  JPG, PNG, or HEIC
+                </p>
               </div>
 
-              <div v-else class="space-y-2">
+              <div
+                v-else
+                class="space-y-2"
+              >
                 <CheckCircle class="w-10 h-10 text-green-500 mx-auto" />
-                <p class="text-green-700 font-medium">ID photo uploaded</p>
+                <p class="text-green-700 font-medium">
+                  ID photo uploaded
+                </p>
                 <button
                   type="button"
-                  @click.stop="clearIdImage"
                   class="text-sm text-slate-600 hover:text-red-600"
+                  @click.stop="clearIdImage"
                 >
                   Remove and upload different photo
                 </button>
@@ -182,16 +236,24 @@
           </div>
         </div>
 
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-sm text-red-800">{{ error }}</p>
+        <div
+          v-if="error"
+          class="bg-red-50 border border-red-200 rounded-lg p-4"
+        >
+          <p class="text-sm text-red-800">
+            {{ error }}
+          </p>
         </div>
 
         <button
-          @click="submitManual"
           :disabled="!manualIdType || !manualIdImage || isSubmitting"
           class="w-full px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          @click="submitManual"
         >
-          <Loader2 v-if="isSubmitting" class="w-5 h-5 mr-2 animate-spin" />
+          <Loader2
+            v-if="isSubmitting"
+            class="w-5 h-5 mr-2 animate-spin"
+          />
           {{ isSubmitting ? 'Submitting...' : 'Submit for Review' }}
         </button>
 
@@ -201,10 +263,15 @@
       </div>
 
       <!-- Pending Review Message -->
-      <div v-if="pendingReview" class="space-y-6">
+      <div
+        v-if="pendingReview"
+        class="space-y-6"
+      >
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
           <Clock class="w-12 h-12 text-amber-600 mx-auto mb-4" />
-          <h3 class="font-semibold text-amber-900 mb-2">Verification Pending</h3>
+          <h3 class="font-semibold text-amber-900 mb-2">
+            Verification Pending
+          </h3>
           <p class="text-amber-800">
             Your ID has been submitted for review. You'll receive an email once it's approved and you can proceed with signing.
           </p>
@@ -233,7 +300,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'verified': [data: { method: string; verifiedAt: string }]
+  'verified': [data: { method: string, verifiedAt: string }]
   'pending-review': []
 }>()
 
@@ -293,9 +360,11 @@ async function submitAttestation() {
         verifiedAt: response.data.verifiedAt
       })
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Verification failed. Please try again.'
-  } finally {
+  }
+  finally {
     isSubmitting.value = false
   }
 }
@@ -325,9 +394,11 @@ async function submitKba() {
         verifiedAt: response.data.verifiedAt
       })
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Verification failed. Please check your information and try again.'
-  } finally {
+  }
+  finally {
     isSubmitting.value = false
   }
 }
@@ -355,16 +426,19 @@ async function submitManual() {
       if (response.data.requiresApproval) {
         pendingReview.value = true
         emit('pending-review')
-      } else if (response.data.verified) {
+      }
+      else if (response.data.verified) {
         emit('verified', {
           method: 'manual',
           verifiedAt: response.data.verifiedAt
         })
       }
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     error.value = err.data?.message || 'Submission failed. Please try again.'
-  } finally {
+  }
+  finally {
     isSubmitting.value = false
   }
 }

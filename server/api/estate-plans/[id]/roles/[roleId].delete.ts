@@ -62,15 +62,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const now = new Date()
-  const personName = existingRole.person
-    ? existingRole.person.fullName || [existingRole.person.firstName, existingRole.person.lastName].filter(Boolean).join(' ') || 'Unknown'
-    : 'Unknown'
+  const personName = existingRole.person ?
+    existingRole.person.fullName || [existingRole.person.firstName, existingRole.person.lastName].filter(Boolean).join(' ') || 'Unknown' :
+    'Unknown'
 
   if (hardDelete) {
     // Permanently delete the role
     await db.delete(schema.planRoles)
       .where(eq(schema.planRoles.id, roleId))
-  } else {
+  }
+  else {
     // Soft delete: set status to REMOVED
     await db.update(schema.planRoles)
       .set({
@@ -90,9 +91,9 @@ export default defineEventHandler(async (event) => {
     userId: user.id,
     userRole: user.role,
     target: { type: 'estate_plan', id: planId, name: planName || 'Estate Plan' },
-    relatedEntities: existingRole.person
-      ? [{ type: 'person', id: existingRole.role.personId, name: personName }]
-      : undefined,
+    relatedEntities: existingRole.person ?
+        [{ type: 'person', id: existingRole.role.personId, name: personName }] :
+      undefined,
     event,
     details: {
       action: 'ROLE_REMOVED',

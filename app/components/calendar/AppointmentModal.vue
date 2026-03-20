@@ -1,6 +1,13 @@
 <template>
-  <UiModal v-model="isOpen" :title="editing ? 'Edit Appointment' : 'New Appointment'" size="lg">
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+  <UiModal
+    v-model="isOpen"
+    :title="editing ? 'Edit Appointment' : 'New Appointment'"
+    size="lg"
+  >
+    <form
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Title -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
@@ -10,7 +17,7 @@
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           placeholder="Appointment title"
-        />
+        >
       </div>
 
       <!-- Type -->
@@ -21,8 +28,14 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           @change="onTypeChange"
         >
-          <option value="">Select type...</option>
-          <option v-for="t in calendar.appointmentTypes" :key="t.id" :value="t.id">
+          <option value="">
+            Select type...
+          </option>
+          <option
+            v-for="t in calendar.appointmentTypes"
+            :key="t.id"
+            :value="t.id"
+          >
             {{ t.name }}
           </option>
         </select>
@@ -37,7 +50,7 @@
             type="datetime-local"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          />
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">End *</label>
@@ -46,7 +59,7 @@
             type="datetime-local"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          />
+          >
         </div>
       </div>
 
@@ -58,13 +71,29 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           @change="onLocationTypeChange"
         >
-          <option value="none">No location</option>
-          <option v-if="calendar.rooms.length > 0" disabled class="text-xs text-gray-400 uppercase">-- Rooms --</option>
-          <option v-for="room in calendar.rooms" :key="room.id" :value="'room:' + room.id">
+          <option value="none">
+            No location
+          </option>
+          <option
+            v-if="calendar.rooms.length > 0"
+            disabled
+            class="text-xs text-gray-400 uppercase"
+          >
+            -- Rooms --
+          </option>
+          <option
+            v-for="room in calendar.rooms"
+            :key="room.id"
+            :value="'room:' + room.id"
+          >
             {{ room.name }}{{ room.building ? ` (${room.building})` : '' }}
           </option>
-          <option value="video:zoom">Zoom Meeting</option>
-          <option value="custom">Custom...</option>
+          <option value="video:zoom">
+            Zoom Meeting
+          </option>
+          <option value="custom">
+            Custom...
+          </option>
         </select>
         <input
           v-if="form.locationType === 'custom'"
@@ -72,7 +101,7 @@
           type="text"
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           placeholder="Enter location..."
-        />
+        >
       </div>
 
       <!-- Description -->
@@ -83,7 +112,7 @@
           rows="2"
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           placeholder="Notes or details"
-        ></textarea>
+        />
       </div>
 
       <!-- Client Search -->
@@ -106,8 +135,16 @@
           v-model="form.matterId"
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         >
-          <option value="">No matter</option>
-          <option v-for="m in matters" :key="m.id" :value="m.id">{{ m.title }}</option>
+          <option value="">
+            No matter
+          </option>
+          <option
+            v-for="m in matters"
+            :key="m.id"
+            :value="m.id"
+          >
+            {{ m.title }}
+          </option>
         </select>
       </div>
 
@@ -121,11 +158,11 @@
             class="flex items-center gap-2 text-sm"
           >
             <input
+              v-model="form.attendeeIds"
               type="checkbox"
               :value="staff.id"
-              v-model="form.attendeeIds"
               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
+            >
             {{ staff.name }}
           </label>
         </div>
@@ -134,18 +171,29 @@
       <!-- Sync to Google -->
       <div class="flex items-center gap-2">
         <input
-          type="checkbox"
-          v-model="form.syncToGoogle"
           id="syncToGoogle"
+          v-model="form.syncToGoogle"
+          type="checkbox"
           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
-        <label for="syncToGoogle" class="text-sm text-gray-700">Sync to Google Calendar</label>
+        >
+        <label
+          for="syncToGoogle"
+          class="text-sm text-gray-700"
+        >Sync to Google Calendar</label>
       </div>
     </form>
 
     <template #footer>
-      <UiButton variant="outline" @click="isOpen = false">Cancel</UiButton>
-      <UiButton @click="handleSubmit" :disabled="submitting">
+      <UiButton
+        variant="outline"
+        @click="isOpen = false"
+      >
+        Cancel
+      </UiButton>
+      <UiButton
+        :disabled="submitting"
+        @click="handleSubmit"
+      >
         {{ submitting ? 'Saving...' : editing ? 'Update' : 'Create' }}
       </UiButton>
     </template>
@@ -164,19 +212,19 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  submit: [data: Record<string, any>]
+  'submit': [data: Record<string, any>]
 }>()
 
 const calendar = useCalendarStore()
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: val => emit('update:modelValue', val)
 })
 
 const submitting = ref(false)
-const clientOptions = ref<Array<{ label: string; value: string }>>([])
-const matters = ref<Array<{ id: string; title: string }>>([])
+const clientOptions = ref<Array<{ label: string, value: string }>>([])
+const matters = ref<Array<{ id: string, title: string }>>([])
 
 // Use the store's shared staff list instead of fetching independently
 const staffList = computed(() => calendar.staffList)
@@ -210,7 +258,8 @@ function parseLocationConfig(data: Record<string, any>): string {
       if (config.type === 'room' && config.roomId) return 'room:' + config.roomId
       if (config.type === 'video') return 'video:' + (config.provider || 'zoom')
       if (config.type === 'custom') return 'custom'
-    } catch { /* fall through */ }
+    }
+    catch { /* fall through */ }
   }
   if (data.location) return 'custom'
   return 'none'
@@ -271,7 +320,8 @@ async function searchClients(query: string) {
       label: c.firstName && c.lastName ? `${c.firstName} ${c.lastName}` : c.email || c.id,
       value: c.id
     }))
-  } catch {
+  }
+  catch {
     clientOptions.value = []
   }
 }
@@ -285,7 +335,8 @@ watch(() => form.value.clientId, async (clientId) => {
   try {
     const result = await $fetch<any[]>(`/api/matters?clientId=${clientId}`)
     matters.value = result.map(m => ({ id: m.id, title: m.title }))
-  } catch {
+  }
+  catch {
     matters.value = []
   }
 })
@@ -308,22 +359,26 @@ function onTypeChange() {
   if (form.value.locationType === 'none') {
     if (type.defaultLocationConfig) {
       try {
-        const config = typeof type.defaultLocationConfig === 'string'
-          ? JSON.parse(type.defaultLocationConfig)
-          : type.defaultLocationConfig
+        const config = typeof type.defaultLocationConfig === 'string' ?
+            JSON.parse(type.defaultLocationConfig) :
+          type.defaultLocationConfig
         if (config.type === 'room' && config.roomId) {
           form.value.locationType = 'room:' + config.roomId
           const room = calendar.rooms.find(r => r.id === config.roomId)
           form.value.location = room ? (room.building ? `${room.name}, ${room.building}` : room.name) : ''
-        } else if (config.type === 'video') {
+        }
+        else if (config.type === 'video') {
           form.value.locationType = 'video:' + (config.provider || 'zoom')
           form.value.location = config.provider === 'zoom' ? 'Zoom Meeting' : 'Google Meet'
-        } else if (config.type === 'custom' && config.text) {
+        }
+        else if (config.type === 'custom' && config.text) {
           form.value.locationType = 'custom'
           form.value.location = config.text
         }
-      } catch { /* ignore */ }
-    } else if (type.defaultLocation) {
+      }
+      catch { /* ignore */ }
+    }
+    else if (type.defaultLocation) {
       form.value.locationType = 'custom'
       form.value.location = type.defaultLocation
     }
@@ -334,13 +389,16 @@ function onLocationTypeChange() {
   const lt = form.value.locationType
   if (lt === 'none') {
     form.value.location = ''
-  } else if (lt.startsWith('room:')) {
+  }
+  else if (lt.startsWith('room:')) {
     const roomId = lt.replace('room:', '')
     const room = calendar.rooms.find(r => r.id === roomId)
     form.value.location = room ? (room.building ? `${room.name}, ${room.building}` : room.name) : ''
-  } else if (lt === 'video:zoom') {
+  }
+  else if (lt === 'video:zoom') {
     form.value.location = 'Zoom Meeting'
-  } else if (lt === 'custom') {
+  }
+  else if (lt === 'custom') {
     form.value.location = ''
   }
 }
@@ -360,10 +418,12 @@ async function handleSubmit() {
     if (lt.startsWith('room:')) {
       roomId = lt.replace('room:', '')
       locationConfig = { type: 'room', roomId }
-    } else if (lt.startsWith('video:')) {
+    }
+    else if (lt.startsWith('video:')) {
       const provider = lt.replace('video:', '')
       locationConfig = { type: 'video', provider }
-    } else if (lt === 'custom' && form.value.location) {
+    }
+    else if (lt === 'custom' && form.value.location) {
       locationConfig = { type: 'custom', text: form.value.location }
     }
 
@@ -398,7 +458,8 @@ async function handleSubmit() {
 
     emit('submit', payload)
     isOpen.value = false
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

@@ -27,7 +27,8 @@ export default defineNuxtPlugin(() => {
     })
     firebaseAuth = getAuth(firebaseApp)
     console.log('[Firebase] Initialized successfully')
-  } else {
+  }
+  else {
     firebaseApp = getApps()[0]
     firebaseAuth = getAuth(firebaseApp)
   }

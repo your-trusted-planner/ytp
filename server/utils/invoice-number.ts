@@ -58,7 +58,7 @@ export function isValidInvoiceNumber(invoiceNumber: string): boolean {
  * @param invoiceNumber The invoice number to parse
  * @returns Object with year and sequence, or null if invalid
  */
-export function parseInvoiceNumber(invoiceNumber: string): { year: number; sequence: number } | null {
+export function parseInvoiceNumber(invoiceNumber: string): { year: number, sequence: number } | null {
   const match = invoiceNumber.match(/^INV-(\d{4})-(\d+)$/)
   if (!match) return null
 

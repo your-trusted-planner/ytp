@@ -26,7 +26,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: `Calendar accessible. ${busyPeriods.length} busy period(s) in the next hour.`
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     throw createError({
       statusCode: 400,
       message: `Cannot access calendar: ${err.message}`

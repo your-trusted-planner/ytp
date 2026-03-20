@@ -3,43 +3,86 @@
     <div>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <h1 class="text-3xl font-bold text-gray-900">Document Templates</h1>
-          <UiHelpLink topic="documents" title="Learn about documents and templates" />
+          <h1 class="text-3xl font-bold text-gray-900">
+            Document Templates
+          </h1>
+          <UiHelpLink
+            topic="documents"
+            title="Learn about documents and templates"
+          />
         </div>
         <UiButton @click="showUploadModal = true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mr-2"
+          ><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line
+            x1="12"
+            y1="3"
+            x2="12"
+            y2="15"
+          /></svg>
           Upload Template
         </UiButton>
       </div>
-      <p class="text-gray-600 mt-1">Manage your legal document templates</p>
+      <p class="text-gray-600 mt-1">
+        Manage your legal document templates
+      </p>
     </div>
 
     <UiCard>
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading templates...</p>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          Loading templates...
+        </p>
       </div>
-      <div v-else-if="templates.length === 0" class="text-center py-12">
-        <p class="text-gray-500">No templates yet</p>
+      <div
+        v-else-if="templates.length === 0"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          No templates yet
+        </p>
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
         <div
           v-for="template in templates"
           :key="template.id"
           class="p-4 border border-gray-200 rounded-lg hover:border-burgundy-500 hover:bg-burgundy-50 transition-colors"
           @click="viewTemplate(template)"
         >
-          <h3 class="font-semibold text-gray-900">{{ template.name }}</h3>
-          <p class="text-sm text-gray-600 mt-1">{{ template.category }}</p>
-          <p v-if="template.description" class="text-sm text-gray-500 mt-2">
+          <h3 class="font-semibold text-gray-900">
+            {{ template.name }}
+          </h3>
+          <p class="text-sm text-gray-600 mt-1">
+            {{ template.category }}
+          </p>
+          <p
+            v-if="template.description"
+            class="text-sm text-gray-500 mt-2"
+          >
             {{ template.description }}
           </p>
           <div class="mt-3 flex items-center justify-between">
             <UiBadge :variant="template.isActive ? 'success' : 'default'">
               {{ template.isActive ? 'Active' : 'Inactive' }}
             </UiBadge>
-            <button 
-              @click.stop="openUseTemplateModal(template)"
+            <button
               class="text-sm text-accent-600 hover:text-accent-900 cursor-pointer"
+              @click.stop="openUseTemplateModal(template)"
             >
               Use Template
             </button>
@@ -49,13 +92,29 @@
     </UiCard>
 
     <!-- Use Template Modal -->
-    <UiModal v-model="showUseTemplateModal" title="Generate Document from Template" size="lg">
-      <div v-if="selectedTemplate" class="space-y-4">
+    <UiModal
+      v-model="showUseTemplateModal"
+      title="Generate Document from Template"
+      size="lg"
+    >
+      <div
+        v-if="selectedTemplate"
+        class="space-y-4"
+      >
         <div class="bg-gray-50 p-4 rounded">
-          <h4 class="font-semibold text-gray-900">{{ selectedTemplate.name }}</h4>
-          <p class="text-sm text-gray-600 mt-1">{{ selectedTemplate.category }}</p>
-          <div v-if="templateVariables.length > 0" class="mt-3">
-            <p class="text-sm font-medium text-gray-700">Variables found: {{ templateVariables.length }}</p>
+          <h4 class="font-semibold text-gray-900">
+            {{ selectedTemplate.name }}
+          </h4>
+          <p class="text-sm text-gray-600 mt-1">
+            {{ selectedTemplate.category }}
+          </p>
+          <div
+            v-if="templateVariables.length > 0"
+            class="mt-3"
+          >
+            <p class="text-sm font-medium text-gray-700">
+              Variables found: {{ templateVariables.length }}
+            </p>
             <div class="text-xs text-gray-600 mt-1">
               {{ templateVariables.slice(0, 5).join(', ') }}
               <span v-if="templateVariables.length > 5">... and {{ templateVariables.length - 5 }} more</span>
@@ -64,9 +123,19 @@
         </div>
 
         <div class="space-y-3">
-          <UiSelect v-model="useTemplateForm.clientId" label="Select Client *" required>
-            <option value="">-- Choose Client --</option>
-            <option v-for="client in clients" :key="client.id" :value="client.id">
+          <UiSelect
+            v-model="useTemplateForm.clientId"
+            label="Select Client *"
+            required
+          >
+            <option value="">
+              -- Choose Client --
+            </option>
+            <option
+              v-for="client in clients"
+              :key="client.id"
+              :value="client.id"
+            >
               {{ client.first_name }} {{ client.last_name }} ({{ client.email }})
             </option>
           </UiSelect>
@@ -93,10 +162,17 @@
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="showUseTemplateModal = false">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="showUseTemplateModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton @click="generateDocument" :loading="generating">
+          <UiButton
+            :loading="generating"
+            @click="generateDocument"
+          >
             Generate Document
           </UiButton>
         </div>
@@ -104,8 +180,15 @@
     </UiModal>
 
     <!-- Upload Template Modal -->
-    <UiModal v-model="showUploadModal" title="Upload New Template" size="lg">
-      <form @submit.prevent="handleUpload" class="space-y-4">
+    <UiModal
+      v-model="showUploadModal"
+      title="Upload New Template"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleUpload"
+      >
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Upload Document (DOCX) *
@@ -114,10 +197,10 @@
             ref="fileInput"
             type="file"
             accept=".docx"
-            @change="handleFileSelect"
             class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-burgundy-50 file:text-burgundy-700 hover:file:bg-burgundy-100"
             required
-          />
+            @change="handleFileSelect"
+          >
           <div class="mt-2 text-xs space-y-1">
             <p class="text-gray-600">
               <strong>Variable Syntax:</strong> &#123;&#123;variableName&#125;&#125;
@@ -147,43 +230,80 @@
           :rows="2"
         />
 
-        <UiSelect v-model="uploadForm.category" label="Category">
-          <option value="General">General</option>
-          <option value="Trust">Trust</option>
-          <option value="LLC">LLC</option>
-          <option value="Engagement">Engagement Letter</option>
-          <option value="Affidavit">Affidavit</option>
-          <option value="Certificate">Certificate</option>
-          <option value="Meeting Minutes">Meeting Minutes</option>
-          <option value="Questionnaire">Questionnaire</option>
+        <UiSelect
+          v-model="uploadForm.category"
+          label="Category"
+        >
+          <option value="General">
+            General
+          </option>
+          <option value="Trust">
+            Trust
+          </option>
+          <option value="LLC">
+            LLC
+          </option>
+          <option value="Engagement">
+            Engagement Letter
+          </option>
+          <option value="Affidavit">
+            Affidavit
+          </option>
+          <option value="Certificate">
+            Certificate
+          </option>
+          <option value="Meeting Minutes">
+            Meeting Minutes
+          </option>
+          <option value="Questionnaire">
+            Questionnaire
+          </option>
         </UiSelect>
 
-        <div v-if="uploadResult" class="bg-green-50 border border-green-200 rounded p-4">
-          <h4 class="font-semibold text-green-900 mb-2">✅ Template Created Successfully!</h4>
+        <div
+          v-if="uploadResult"
+          class="bg-green-50 border border-green-200 rounded p-4"
+        >
+          <h4 class="font-semibold text-green-900 mb-2">
+            ✅ Template Created Successfully!
+          </h4>
           <div class="text-sm text-green-800 space-y-1">
             <p><strong>Name:</strong> {{ uploadResult.name }}</p>
             <p><strong>Category:</strong> {{ uploadResult.category }}</p>
             <p><strong>Variables Found:</strong> {{ uploadResult.variableCount }}</p>
-            <p v-if="uploadResult.requiresNotary" class="text-burgundy-700">
+            <p
+              v-if="uploadResult.requiresNotary"
+              class="text-burgundy-700"
+            >
               ⚠️ This template requires notarization
             </p>
           </div>
         </div>
 
         <!-- Variable Mapping Interface -->
-        <div v-if="uploadResult && uploadResult.variables.length > 0" class="border border-gray-300 rounded-lg p-4 space-y-4">
+        <div
+          v-if="uploadResult && uploadResult.variables.length > 0"
+          class="border border-gray-300 rounded-lg p-4 space-y-4"
+        >
           <div class="flex justify-between items-center">
-            <h4 class="font-semibold text-gray-900">Map Variables to Database Fields</h4>
+            <h4 class="font-semibold text-gray-900">
+              Map Variables to Database Fields
+            </h4>
             <button
-              @click="showMappingHelp = !showMappingHelp"
               class="text-xs text-blue-600 hover:text-blue-800"
+              @click="showMappingHelp = !showMappingHelp"
             >
               {{ showMappingHelp ? 'Hide Help' : 'Show Help' }}
             </button>
           </div>
 
-          <div v-if="showMappingHelp" class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-            <p class="font-medium mb-1">How Variable Mapping Works:</p>
+          <div
+            v-if="showMappingHelp"
+            class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800"
+          >
+            <p class="font-medium mb-1">
+              How Variable Mapping Works:
+            </p>
             <ul class="list-disc list-inside space-y-1 text-xs">
               <li>Mapped variables automatically pull data from the database</li>
               <li>Unmapped variables can be filled manually when generating documents</li>
@@ -205,12 +325,18 @@
               <div class="col-span-4">
                 <select
                   v-model="variableMappings[variable].source"
-                  @change="onSourceChange(variable)"
                   class="w-full text-sm border-gray-300 rounded-md"
+                  @change="onSourceChange(variable)"
                 >
-                  <option value="">Not Mapped (Manual Entry)</option>
-                  <option value="client">Client Data</option>
-                  <option value="matter">Matter Data</option>
+                  <option value="">
+                    Not Mapped (Manual Entry)
+                  </option>
+                  <option value="client">
+                    Client Data
+                  </option>
+                  <option value="matter">
+                    Matter Data
+                  </option>
                 </select>
               </div>
 
@@ -220,24 +346,60 @@
                   :disabled="!variableMappings[variable].source"
                   class="w-full text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-500"
                 >
-                  <option value="">-- Select Field --</option>
-                  <optgroup v-if="variableMappings[variable].source === 'client'" label="Client Fields">
-                    <option value="firstName">First Name</option>
-                    <option value="lastName">Last Name</option>
-                    <option value="fullName">Full Name</option>
-                    <option value="email">Email</option>
-                    <option value="phone">Phone</option>
-                    <option value="address">Address</option>
-                    <option value="city">City</option>
-                    <option value="state">State</option>
-                    <option value="zipCode">ZIP Code</option>
+                  <option value="">
+                    -- Select Field --
+                  </option>
+                  <optgroup
+                    v-if="variableMappings[variable].source === 'client'"
+                    label="Client Fields"
+                  >
+                    <option value="firstName">
+                      First Name
+                    </option>
+                    <option value="lastName">
+                      Last Name
+                    </option>
+                    <option value="fullName">
+                      Full Name
+                    </option>
+                    <option value="email">
+                      Email
+                    </option>
+                    <option value="phone">
+                      Phone
+                    </option>
+                    <option value="address">
+                      Address
+                    </option>
+                    <option value="city">
+                      City
+                    </option>
+                    <option value="state">
+                      State
+                    </option>
+                    <option value="zipCode">
+                      ZIP Code
+                    </option>
                   </optgroup>
-                  <optgroup v-if="variableMappings[variable].source === 'matter'" label="Matter Fields">
-                    <option value="title">Matter Title</option>
-                    <option value="matterNumber">Matter Number</option>
-                    <option value="status">Status</option>
-                    <option value="contractDate">Contract Date</option>
-                    <option value="description">Description</option>
+                  <optgroup
+                    v-if="variableMappings[variable].source === 'matter'"
+                    label="Matter Fields"
+                  >
+                    <option value="title">
+                      Matter Title
+                    </option>
+                    <option value="matterNumber">
+                      Matter Number
+                    </option>
+                    <option value="status">
+                      Status
+                    </option>
+                    <option value="contractDate">
+                      Contract Date
+                    </option>
+                    <option value="description">
+                      Description
+                    </option>
                   </optgroup>
                 </select>
               </div>
@@ -245,17 +407,29 @@
           </div>
 
           <div class="flex justify-end pt-3 border-t">
-            <UiButton @click="saveMappings" :loading="savingMappings" size="sm">
+            <UiButton
+              :loading="savingMappings"
+              size="sm"
+              @click="saveMappings"
+            >
               Save Mappings
             </UiButton>
           </div>
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="closeUploadModal">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="closeUploadModal"
+          >
             {{ uploadResult ? 'Done' : 'Cancel' }}
           </UiButton>
-          <UiButton v-if="!uploadResult" type="submit" :loading="uploading">
+          <UiButton
+            v-if="!uploadResult"
+            type="submit"
+            :loading="uploading"
+          >
             Upload & Extract Variables
           </UiButton>
         </div>
@@ -263,14 +437,26 @@
     </UiModal>
 
     <!-- View Template Modal -->
-    <UiModal v-model="showViewTemplateModal" :title="editingTemplateDetails ? 'Edit Template Details' : 'Template Preview'" size="xl">
-      <div v-if="viewingTemplate" class="space-y-4">
-        <div v-if="!editingTemplateDetails" class="bg-gray-50 p-4 rounded">
+    <UiModal
+      v-model="showViewTemplateModal"
+      :title="editingTemplateDetails ? 'Edit Template Details' : 'Template Preview'"
+      size="xl"
+    >
+      <div
+        v-if="viewingTemplate"
+        class="space-y-4"
+      >
+        <div
+          v-if="!editingTemplateDetails"
+          class="bg-gray-50 p-4 rounded"
+        >
           <div class="flex justify-between items-start">
-            <h4 class="font-semibold text-gray-900">{{ viewingTemplate.name }}</h4>
+            <h4 class="font-semibold text-gray-900">
+              {{ viewingTemplate.name }}
+            </h4>
             <button
-              @click="startEditingTemplate"
               class="text-sm text-blue-600 hover:text-blue-800"
+              @click="startEditingTemplate"
             >
               Edit Details
             </button>
@@ -295,7 +481,10 @@
         </div>
 
         <!-- Edit Form -->
-        <div v-if="editingTemplateDetails" class="space-y-4 bg-gray-50 p-4 rounded">
+        <div
+          v-if="editingTemplateDetails"
+          class="space-y-4 bg-gray-50 p-4 rounded"
+        >
           <UiInput
             v-model="templateEditForm.name"
             label="Template Name"
@@ -310,51 +499,87 @@
             :rows="2"
           />
 
-          <UiSelect v-model="templateEditForm.category" label="Category">
-            <option value="General">General</option>
-            <option value="Trust">Trust</option>
-            <option value="LLC">LLC</option>
-            <option value="Engagement">Engagement Letter</option>
-            <option value="Affidavit">Affidavit</option>
-            <option value="Certificate">Certificate</option>
-            <option value="Meeting Minutes">Meeting Minutes</option>
-            <option value="Questionnaire">Questionnaire</option>
+          <UiSelect
+            v-model="templateEditForm.category"
+            label="Category"
+          >
+            <option value="General">
+              General
+            </option>
+            <option value="Trust">
+              Trust
+            </option>
+            <option value="LLC">
+              LLC
+            </option>
+            <option value="Engagement">
+              Engagement Letter
+            </option>
+            <option value="Affidavit">
+              Affidavit
+            </option>
+            <option value="Certificate">
+              Certificate
+            </option>
+            <option value="Meeting Minutes">
+              Meeting Minutes
+            </option>
+            <option value="Questionnaire">
+              Questionnaire
+            </option>
           </UiSelect>
 
           <div class="flex items-center space-x-2">
             <input
-              type="checkbox"
-              v-model="templateEditForm.isActive"
               id="isActive"
+              v-model="templateEditForm.isActive"
+              type="checkbox"
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="isActive" class="text-sm text-gray-700">
+            >
+            <label
+              for="isActive"
+              class="text-sm text-gray-700"
+            >
               Active (available for use)
             </label>
           </div>
 
           <div class="flex justify-end space-x-3 pt-4 border-t">
-            <UiButton variant="ghost" @click="cancelEditingTemplate">
+            <UiButton
+              variant="ghost"
+              @click="cancelEditingTemplate"
+            >
               Cancel
             </UiButton>
-            <UiButton @click="saveTemplateDetails" :loading="savingTemplateDetails">
+            <UiButton
+              :loading="savingTemplateDetails"
+              @click="saveTemplateDetails"
+            >
               Save Changes
             </UiButton>
           </div>
         </div>
 
-        <div v-if="templateVariables.length > 0" class="bg-yellow-50 border border-yellow-200 p-4 rounded">
+        <div
+          v-if="templateVariables.length > 0"
+          class="bg-yellow-50 border border-yellow-200 p-4 rounded"
+        >
           <div class="flex justify-between items-center mb-2">
-            <h5 class="font-semibold text-yellow-900">Template Variables ({{ templateVariables.length }})</h5>
+            <h5 class="font-semibold text-yellow-900">
+              Template Variables ({{ templateVariables.length }})
+            </h5>
             <button
               v-if="!editingMappings"
-              @click="startEditingMappings"
               class="text-sm text-blue-600 hover:text-blue-800"
+              @click="startEditingMappings"
             >
               Edit Variable Mappings
             </button>
           </div>
-          <div v-if="!editingMappings" class="flex flex-wrap gap-2">
+          <div
+            v-if="!editingMappings"
+            class="flex flex-wrap gap-2"
+          >
             <span
               v-for="variable in templateVariables"
               :key="variable"
@@ -366,19 +591,29 @@
         </div>
 
         <!-- Variable Mapping Editor (Existing Templates) -->
-        <div v-if="editingMappings && templateVariables.length > 0" class="border border-gray-300 rounded-lg p-4 space-y-4">
+        <div
+          v-if="editingMappings && templateVariables.length > 0"
+          class="border border-gray-300 rounded-lg p-4 space-y-4"
+        >
           <div class="flex justify-between items-center">
-            <h4 class="font-semibold text-gray-900">Edit Variable Mappings</h4>
+            <h4 class="font-semibold text-gray-900">
+              Edit Variable Mappings
+            </h4>
             <button
-              @click="showMappingHelp = !showMappingHelp"
               class="text-xs text-blue-600 hover:text-blue-800"
+              @click="showMappingHelp = !showMappingHelp"
             >
               {{ showMappingHelp ? 'Hide Help' : 'Show Help' }}
             </button>
           </div>
 
-          <div v-if="showMappingHelp" class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-            <p class="font-medium mb-1">How Variable Mapping Works:</p>
+          <div
+            v-if="showMappingHelp"
+            class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800"
+          >
+            <p class="font-medium mb-1">
+              How Variable Mapping Works:
+            </p>
             <ul class="list-disc list-inside space-y-1 text-xs">
               <li>Mapped variables automatically pull data from the database</li>
               <li>Unmapped variables can be filled manually when generating documents</li>
@@ -400,12 +635,18 @@
               <div class="col-span-4">
                 <select
                   v-model="variableMappings[variable].source"
-                  @change="onSourceChange(variable)"
                   class="w-full text-sm border-gray-300 rounded-md"
+                  @change="onSourceChange(variable)"
                 >
-                  <option value="">Not Mapped (Manual Entry)</option>
-                  <option value="client">Client Data</option>
-                  <option value="matter">Matter Data</option>
+                  <option value="">
+                    Not Mapped (Manual Entry)
+                  </option>
+                  <option value="client">
+                    Client Data
+                  </option>
+                  <option value="matter">
+                    Matter Data
+                  </option>
                 </select>
               </div>
 
@@ -415,24 +656,60 @@
                   :disabled="!variableMappings[variable].source"
                   class="w-full text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-500"
                 >
-                  <option value="">-- Select Field --</option>
-                  <optgroup v-if="variableMappings[variable].source === 'client'" label="Client Fields">
-                    <option value="firstName">First Name</option>
-                    <option value="lastName">Last Name</option>
-                    <option value="fullName">Full Name</option>
-                    <option value="email">Email</option>
-                    <option value="phone">Phone</option>
-                    <option value="address">Address</option>
-                    <option value="city">City</option>
-                    <option value="state">State</option>
-                    <option value="zipCode">ZIP Code</option>
+                  <option value="">
+                    -- Select Field --
+                  </option>
+                  <optgroup
+                    v-if="variableMappings[variable].source === 'client'"
+                    label="Client Fields"
+                  >
+                    <option value="firstName">
+                      First Name
+                    </option>
+                    <option value="lastName">
+                      Last Name
+                    </option>
+                    <option value="fullName">
+                      Full Name
+                    </option>
+                    <option value="email">
+                      Email
+                    </option>
+                    <option value="phone">
+                      Phone
+                    </option>
+                    <option value="address">
+                      Address
+                    </option>
+                    <option value="city">
+                      City
+                    </option>
+                    <option value="state">
+                      State
+                    </option>
+                    <option value="zipCode">
+                      ZIP Code
+                    </option>
                   </optgroup>
-                  <optgroup v-if="variableMappings[variable].source === 'matter'" label="Matter Fields">
-                    <option value="title">Matter Title</option>
-                    <option value="matterNumber">Matter Number</option>
-                    <option value="status">Status</option>
-                    <option value="contractDate">Contract Date</option>
-                    <option value="description">Description</option>
+                  <optgroup
+                    v-if="variableMappings[variable].source === 'matter'"
+                    label="Matter Fields"
+                  >
+                    <option value="title">
+                      Matter Title
+                    </option>
+                    <option value="matterNumber">
+                      Matter Number
+                    </option>
+                    <option value="status">
+                      Status
+                    </option>
+                    <option value="contractDate">
+                      Contract Date
+                    </option>
+                    <option value="description">
+                      Description
+                    </option>
                   </optgroup>
                 </select>
               </div>
@@ -440,18 +717,29 @@
           </div>
 
           <div class="flex justify-end space-x-3 pt-3 border-t">
-            <UiButton variant="ghost" @click="cancelEditingMappings">
+            <UiButton
+              variant="ghost"
+              @click="cancelEditingMappings"
+            >
               Cancel
             </UiButton>
-            <UiButton @click="saveExistingTemplateMappings" :loading="savingMappings">
+            <UiButton
+              :loading="savingMappings"
+              @click="saveExistingTemplateMappings"
+            >
               Save Mappings
             </UiButton>
           </div>
         </div>
 
         <div class="border border-gray-200 rounded p-4 max-h-96 overflow-auto">
-          <h5 class="font-semibold text-gray-900 mb-3">Template Content Preview</h5>
-          <div class="prose prose-sm max-w-none" v-html="sanitizedTemplateContent"></div>
+          <h5 class="font-semibold text-gray-900 mb-3">
+            Template Content Preview
+          </h5>
+          <div
+            class="prose prose-sm max-w-none"
+            v-html="sanitizedTemplateContent"
+          />
         </div>
 
         <div class="flex justify-between items-center pt-4">
@@ -476,7 +764,11 @@
             </UiButton>
           </div>
           <div class="flex space-x-3">
-            <UiButton type="button" variant="ghost" @click="showViewTemplateModal = false">
+            <UiButton
+              type="button"
+              variant="ghost"
+              @click="showViewTemplateModal = false"
+            >
               Close
             </UiButton>
             <UiButton @click="openUseTemplateFromView">
@@ -488,9 +780,16 @@
     </UiModal>
 
     <!-- Delete Template Modal -->
-    <UiModal v-model="showDeleteTemplateModal" title="Delete Template" size="md">
+    <UiModal
+      v-model="showDeleteTemplateModal"
+      title="Delete Template"
+      size="md"
+    >
       <div class="space-y-4">
-        <div v-if="viewingTemplate" class="space-y-3">
+        <div
+          v-if="viewingTemplate"
+          class="space-y-3"
+        >
           <p class="text-sm text-gray-700">
             Are you sure you want to delete "<strong>{{ viewingTemplate.name }}</strong>"?
           </p>
@@ -506,12 +805,15 @@
             <p class="text-sm text-yellow-800">
               <strong>Note:</strong> If this template is used by existing documents, it will be soft-deleted (hidden but not permanently removed).
             </p>
-            <label v-if="viewingTemplate.isActive" class="flex items-center mt-2">
+            <label
+              v-if="viewingTemplate.isActive"
+              class="flex items-center mt-2"
+            >
               <input
-                type="checkbox"
                 v-model="forceHardDelete"
+                type="checkbox"
                 class="rounded border-gray-300 text-red-600 focus:ring-red-500"
-              />
+              >
               <span class="ml-2 text-sm text-yellow-900">
                 Permanently delete (only if not used by documents)
               </span>
@@ -521,13 +823,16 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showDeleteTemplateModal = false; forceHardDelete = false">
+        <UiButton
+          variant="outline"
+          @click="showDeleteTemplateModal = false; forceHardDelete = false"
+        >
           Cancel
         </UiButton>
         <UiButton
           variant="danger"
-          @click="handleDeleteTemplate"
           :is-loading="deletingTemplate"
+          @click="handleDeleteTemplate"
         >
           Delete Template
         </UiButton>
@@ -535,9 +840,16 @@
     </UiModal>
 
     <!-- Reactivate Template Modal -->
-    <UiModal v-model="showReactivateModal" title="Reactivate Template" size="md">
+    <UiModal
+      v-model="showReactivateModal"
+      title="Reactivate Template"
+      size="md"
+    >
       <div class="space-y-4">
-        <div v-if="viewingTemplate" class="space-y-3">
+        <div
+          v-if="viewingTemplate"
+          class="space-y-3"
+        >
           <p class="text-sm text-gray-700">
             Reactivate "<strong>{{ viewingTemplate.name }}</strong>"?
           </p>
@@ -558,12 +870,15 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showReactivateModal = false">
+        <UiButton
+          variant="outline"
+          @click="showReactivateModal = false"
+        >
           Cancel
         </UiButton>
         <UiButton
-          @click="handleReactivateTemplate"
           :is-loading="reactivatingTemplate"
+          @click="handleReactivateTemplate"
         >
           Reactivate Template
         </UiButton>
@@ -643,7 +958,7 @@ const templateVariables = computed(() => {
     const parsed = JSON.parse(template.variables)
     // Handle both array of strings and array of objects
     if (Array.isArray(parsed)) {
-      return parsed.map(v => {
+      return parsed.map((v) => {
         // If it's an object, try to extract the name/key
         if (typeof v === 'object' && v !== null) {
           return v.name || v.key || v.variable || JSON.stringify(v)
@@ -653,7 +968,8 @@ const templateVariables = computed(() => {
       })
     }
     return []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error parsing template variables:', error, template.variables)
     return []
   }
@@ -667,9 +983,11 @@ async function fetchTemplates() {
   loading.value = true
   try {
     templates.value = await $fetch('/api/templates')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch templates:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -679,7 +997,8 @@ async function fetchClients() {
   try {
     const data = await $fetch('/api/clients')
     clients.value = data.clients || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch clients:', error)
   }
 }
@@ -741,10 +1060,12 @@ async function saveTemplateDetails() {
 
     editingTemplateDetails.value = false
     toast.success('Template updated successfully!')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to update template:', error)
     toast.error(error.data?.message || error.message || 'Failed to update template')
-  } finally {
+  }
+  finally {
     savingTemplateDetails.value = false
   }
 }
@@ -813,10 +1134,12 @@ async function handleUpload() {
 
     // Refresh templates list
     await fetchTemplates()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to upload template:', error)
     toast.error(error.data?.message || error.message || 'Failed to upload template')
-  } finally {
+  }
+  finally {
     uploading.value = false
   }
 }
@@ -839,7 +1162,8 @@ function startEditingMappings() {
     try {
       const mappingsStr = viewingTemplate.value.variable_mappings || viewingTemplate.value.variableMappings
       existingMappings = typeof mappingsStr === 'string' ? JSON.parse(mappingsStr) : mappingsStr
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error parsing existing mappings:', error)
     }
   }
@@ -888,10 +1212,12 @@ async function saveExistingTemplateMappings() {
 
     // Refresh templates list
     await fetchTemplates()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save mappings:', error)
     toast.error(error.data?.message || error.message || 'Failed to save mappings')
-  } finally {
+  }
+  finally {
     savingMappings.value = false
   }
 }
@@ -916,10 +1242,12 @@ async function saveMappings() {
     })
 
     toast.success('Variable mappings saved successfully!')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save mappings:', error)
     toast.error(error.data?.message || error.message || 'Failed to save mappings')
-  } finally {
+  }
+  finally {
     savingMappings.value = false
   }
 }
@@ -966,10 +1294,12 @@ async function generateDocument() {
 
     // Navigate to document detail page
     router.push(`/documents/${document.id}`)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to generate document:', error)
     toast.error(error.data?.message || error.message || 'Failed to generate document')
-  } finally {
+  }
+  finally {
     generating.value = false
   }
 }
@@ -992,10 +1322,12 @@ async function handleDeleteTemplate() {
       showViewTemplateModal.value = false
       await fetchTemplates()
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to delete template:', error)
     toast.error(error.data?.message || error.message || 'Failed to delete template')
-  } finally {
+  }
+  finally {
     deletingTemplate.value = false
     forceHardDelete.value = false
   }
@@ -1017,10 +1349,12 @@ async function handleReactivateTemplate() {
       showReactivateModal.value = false
       await fetchTemplates()
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to reactivate template:', error)
     toast.error(error.data?.message || error.message || 'Failed to reactivate template')
-  } finally {
+  }
+  finally {
     reactivatingTemplate.value = false
   }
 }

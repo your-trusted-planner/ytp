@@ -204,7 +204,7 @@ describe('Estate Plan Architecture', () => {
         repo.createWill({
           planId: plan2.id,
           willType: 'POUR_OVER',
-          pourOverTrustId: trust1.id  // Wrong plan!
+          pourOverTrustId: trust1.id // Wrong plan!
         })
       }).toThrow(EstatePlanViolationError)
     })
@@ -404,7 +404,7 @@ describe('Estate Plan Architecture', () => {
         repo.createPlanRole({
           planId: plan2.id,
           personId: beneficiary.id,
-          trustId: trust1.id,  // Wrong plan!
+          trustId: trust1.id, // Wrong plan!
           roleCategory: 'BENEFICIARY',
           roleType: 'PRIMARY_BENEFICIARY',
           status: 'ACTIVE'

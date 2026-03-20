@@ -1,8 +1,18 @@
 <template>
-  <UiModal v-model="isOpen" :title="editingItem ? 'Edit Action Item' : 'Add Action Item'" size="xl">
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+  <UiModal
+    v-model="isOpen"
+    :title="editingItem ? 'Edit Action Item' : 'Add Action Item'"
+    size="xl"
+  >
+    <form
+      class="space-y-6"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Engagement Journey Banner -->
-      <div v-if="journeyType === 'ENGAGEMENT'" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div
+        v-if="journeyType === 'ENGAGEMENT'"
+        class="bg-blue-50 border border-blue-200 rounded-lg p-3"
+      >
         <p class="text-sm text-blue-800">
           <strong>Engagement Journey:</strong> Only certain action types are available.
         </p>
@@ -16,21 +26,25 @@
             v-for="type in availableActionTypes"
             :key="type.value"
             type="button"
-            @click="form.actionType = type.value"
             :class="[
               'p-4 border-2 rounded-lg text-left transition-all hover:shadow-md',
               form.actionType === type.value
                 ? 'border-burgundy-600 bg-burgundy-50 shadow-md'
                 : 'border-gray-200 hover:border-gray-300'
             ]"
+            @click="form.actionType = type.value"
           >
             <component
               :is="type.icon"
               class="w-6 h-6 mb-2"
               :class="form.actionType === type.value ? 'text-burgundy-600' : 'text-gray-400'"
             />
-            <div class="font-semibold text-sm mb-1">{{ type.label }}</div>
-            <div class="text-xs text-gray-600">{{ type.description }}</div>
+            <div class="font-semibold text-sm mb-1">
+              {{ type.label }}
+            </div>
+            <div class="text-xs text-gray-600">
+              {{ type.description }}
+            </div>
           </button>
         </div>
       </div>
@@ -59,11 +73,21 @@
           label="Assigned To"
           required
         >
-          <option value="CLIENT">Client</option>
-          <option value="LAWYER">Lawyer</option>
-          <option value="STAFF">Staff</option>
-          <option value="AUTOMATION">Automation</option>
-          <option value="THIRD_PARTY">Third Party</option>
+          <option value="CLIENT">
+            Client
+          </option>
+          <option value="LAWYER">
+            Lawyer
+          </option>
+          <option value="STAFF">
+            Staff
+          </option>
+          <option value="AUTOMATION">
+            Automation
+          </option>
+          <option value="THIRD_PARTY">
+            Third Party
+          </option>
         </UiSelect>
 
         <UiSelect
@@ -71,23 +95,48 @@
           label="Priority"
           required
         >
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-          <option value="URGENT">Urgent</option>
+          <option value="LOW">
+            Low
+          </option>
+          <option value="MEDIUM">
+            Medium
+          </option>
+          <option value="HIGH">
+            High
+          </option>
+          <option value="URGENT">
+            Urgent
+          </option>
         </UiSelect>
       </div>
 
       <!-- Type-Specific Configuration -->
-      <div v-if="form.actionType" class="border-t border-gray-200 pt-4">
-        <h3 class="text-sm font-semibold text-gray-900 mb-3">{{ getActionTypeLabel(form.actionType) }} Configuration</h3>
+      <div
+        v-if="form.actionType"
+        class="border-t border-gray-200 pt-4"
+      >
+        <h3 class="text-sm font-semibold text-gray-900 mb-3">
+          {{ getActionTypeLabel(form.actionType) }} Configuration
+        </h3>
 
         <!-- Meeting Configuration -->
-        <div v-if="form.actionType === 'MEETING'" class="space-y-3">
-          <UiSelect v-model="form.config.meetingType" label="Meeting Type">
-            <option value="PHONE">Phone Call</option>
-            <option value="VIDEO">Video Call</option>
-            <option value="IN_PERSON">In Person</option>
+        <div
+          v-if="form.actionType === 'MEETING'"
+          class="space-y-3"
+        >
+          <UiSelect
+            v-model="form.config.meetingType"
+            label="Meeting Type"
+          >
+            <option value="PHONE">
+              Phone Call
+            </option>
+            <option value="VIDEO">
+              Video Call
+            </option>
+            <option value="IN_PERSON">
+              In Person
+            </option>
           </UiSelect>
           <UiInput
             v-model.number="form.config.durationMinutes"
@@ -97,21 +146,27 @@
           />
           <div class="flex items-center">
             <input
+              id="calendar-integration"
               v-model="form.systemIntegrationType"
               type="checkbox"
-              id="calendar-integration"
               true-value="calendar"
               false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="calendar-integration" class="ml-2 block text-sm text-gray-900">
+            >
+            <label
+              for="calendar-integration"
+              class="ml-2 block text-sm text-gray-900"
+            >
               Integrate with calendar system
             </label>
           </div>
         </div>
 
         <!-- Upload Configuration -->
-        <div v-else-if="form.actionType === 'UPLOAD'" class="space-y-3">
+        <div
+          v-else-if="form.actionType === 'UPLOAD'"
+          class="space-y-3"
+        >
           <UiInput
             v-model="form.config.fileTypes"
             label="Accepted File Types"
@@ -125,21 +180,27 @@
           />
           <div class="flex items-center">
             <input
+              id="document-integration"
               v-model="form.systemIntegrationType"
               type="checkbox"
-              id="document-integration"
               true-value="document"
               false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="document-integration" class="ml-2 block text-sm text-gray-900">
+            >
+            <label
+              for="document-integration"
+              class="ml-2 block text-sm text-gray-900"
+            >
               Integrate with document management system
             </label>
           </div>
         </div>
 
         <!-- Payment Configuration -->
-        <div v-else-if="form.actionType === 'PAYMENT'" class="space-y-3">
+        <div
+          v-else-if="form.actionType === 'PAYMENT'"
+          class="space-y-3"
+        >
           <UiInput
             v-model.number="form.config.amount"
             type="number"
@@ -147,29 +208,46 @@
             label="Payment Amount ($)"
             placeholder="0.00"
           />
-          <UiSelect v-model="form.config.paymentType" label="Payment Type">
-            <option value="DEPOSIT">Deposit</option>
-            <option value="INSTALLMENT">Installment</option>
-            <option value="FINAL">Final Payment</option>
-            <option value="FEE">Fee</option>
+          <UiSelect
+            v-model="form.config.paymentType"
+            label="Payment Type"
+          >
+            <option value="DEPOSIT">
+              Deposit
+            </option>
+            <option value="INSTALLMENT">
+              Installment
+            </option>
+            <option value="FINAL">
+              Final Payment
+            </option>
+            <option value="FEE">
+              Fee
+            </option>
           </UiSelect>
           <div class="flex items-center">
             <input
+              id="payment-integration"
               v-model="form.systemIntegrationType"
               type="checkbox"
-              id="payment-integration"
               true-value="payment"
               false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="payment-integration" class="ml-2 block text-sm text-gray-900">
+            >
+            <label
+              for="payment-integration"
+              class="ml-2 block text-sm text-gray-900"
+            >
               Integrate with payment processing system
             </label>
           </div>
         </div>
 
         <!-- Questionnaire Configuration -->
-        <div v-else-if="form.actionType === 'QUESTIONNAIRE'" class="space-y-3">
+        <div
+          v-else-if="form.actionType === 'QUESTIONNAIRE'"
+          class="space-y-3"
+        >
           <UiInput
             v-model="form.config.templateId"
             label="Questionnaire Template ID"
@@ -184,7 +262,10 @@
         </div>
 
         <!-- E-Signature Configuration -->
-        <div v-else-if="form.actionType === 'ESIGN'" class="space-y-3">
+        <div
+          v-else-if="form.actionType === 'ESIGN'"
+          class="space-y-3"
+        >
           <!-- Document Selector (Required) -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -195,7 +276,9 @@
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-burgundy-500 focus:ring-burgundy-500 sm:text-sm"
               required
             >
-              <option value="">Select a document...</option>
+              <option value="">
+                Select a document...
+              </option>
               <option
                 v-for="doc in availableDocuments"
                 :key="doc.id"
@@ -205,26 +288,44 @@
                 {{ doc.title }} ({{ doc.status }})
               </option>
             </select>
-            <p v-if="loadingDocuments" class="text-xs text-gray-500 mt-1">Loading documents...</p>
-            <p v-else-if="availableDocuments.length === 0" class="text-xs text-amber-600 mt-1">
+            <p
+              v-if="loadingDocuments"
+              class="text-xs text-gray-500 mt-1"
+            >
+              Loading documents...
+            </p>
+            <p
+              v-else-if="availableDocuments.length === 0"
+              class="text-xs text-amber-600 mt-1"
+            >
               No documents found. Create a document first before adding an ESIGN action.
             </p>
           </div>
 
           <!-- Signature Tier -->
-          <UiSelect v-model="form.config.signatureTier" label="Signature Tier">
-            <option value="STANDARD">Standard (email verification)</option>
-            <option value="ENHANCED">Enhanced (identity verification required)</option>
+          <UiSelect
+            v-model="form.config.signatureTier"
+            label="Signature Tier"
+          >
+            <option value="STANDARD">
+              Standard (email verification)
+            </option>
+            <option value="ENHANCED">
+              Enhanced (identity verification required)
+            </option>
           </UiSelect>
 
           <div class="flex items-center">
             <input
+              id="requires-witness"
               v-model="form.config.requiresWitness"
               type="checkbox"
-              id="requires-witness"
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="requires-witness" class="ml-2 block text-sm text-gray-900">
+            >
+            <label
+              for="requires-witness"
+              class="ml-2 block text-sm text-gray-900"
+            >
               Requires witness
             </label>
           </div>
@@ -235,7 +336,10 @@
         </div>
 
         <!-- Draft Document Configuration -->
-        <div v-else-if="form.actionType === 'DRAFT_DOCUMENT'" class="space-y-3">
+        <div
+          v-else-if="form.actionType === 'DRAFT_DOCUMENT'"
+          class="space-y-3"
+        >
           <UiInput
             v-model="form.config.documentName"
             label="Document Name"
@@ -254,14 +358,17 @@
           />
           <div class="flex items-center">
             <input
+              id="draft-document-integration"
               v-model="form.systemIntegrationType"
               type="checkbox"
-              id="draft-document-integration"
               true-value="document"
               false-value=""
               class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            />
-            <label for="document-integration" class="ml-2 block text-sm text-gray-900">
+            >
+            <label
+              for="document-integration"
+              class="ml-2 block text-sm text-gray-900"
+            >
               Integrate with document generation system
             </label>
           </div>
@@ -271,22 +378,31 @@
         </div>
 
         <!-- Generic configuration for other types -->
-        <div v-else class="text-sm text-gray-600">
+        <div
+          v-else
+          class="text-sm text-gray-600"
+        >
           <p>Additional configuration options for {{ getActionTypeLabel(form.actionType) }} will be available soon.</p>
         </div>
       </div>
 
       <!-- Service Delivery Verification (for final step actions) -->
-      <div v-if="step?.is_final_step || step?.requires_verification" class="border-t border-gray-200 pt-4">
+      <div
+        v-if="step?.is_final_step || step?.requires_verification"
+        class="border-t border-gray-200 pt-4"
+      >
         <div class="flex items-start mb-3">
           <input
+            id="service-delivery"
             v-model="form.isServiceDeliveryVerification"
             type="checkbox"
-            id="service-delivery"
             class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded mt-1"
-          />
+          >
           <div class="ml-2">
-            <label for="service-delivery" class="block text-sm font-medium text-gray-900">
+            <label
+              for="service-delivery"
+              class="block text-sm font-medium text-gray-900"
+            >
               🔔 Ring the Bell - Service Delivery Verification
             </label>
             <p class="text-xs text-gray-600 mt-1">
@@ -295,7 +411,10 @@
           </div>
         </div>
 
-        <div v-if="form.isServiceDeliveryVerification" class="space-y-3 ml-6">
+        <div
+          v-if="form.isServiceDeliveryVerification"
+          class="space-y-3 ml-6"
+        >
           <UiTextarea
             v-model="form.verificationCriteriaText"
             label="Verification Criteria"
@@ -307,10 +426,16 @@
     </form>
 
     <template #footer>
-      <UiButton variant="outline" @click="handleCancel">
+      <UiButton
+        variant="outline"
+        @click="handleCancel"
+      >
         Cancel
       </UiButton>
-      <UiButton @click="handleSubmit" :is-loading="saving">
+      <UiButton
+        :is-loading="saving"
+        @click="handleSubmit"
+      >
         {{ editingItem ? 'Update' : 'Add' }} Action Item
       </UiButton>
     </template>
@@ -344,24 +469,26 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value)
 })
 
 const saving = ref(false)
 const loadingDocuments = ref(false)
-const availableDocuments = ref<Array<{ id: string; title: string; status: string }>>([])
+const availableDocuments = ref<Array<{ id: string, title: string, status: string }>>([])
 
 // Fetch documents when ESIGN action type is selected
 async function fetchDocuments() {
   loadingDocuments.value = true
   try {
-    const response = await $fetch<{ documents: Array<{ id: string; title: string; status: string }> }>('/api/documents')
+    const response = await $fetch<{ documents: Array<{ id: string, title: string, status: string }> }>('/api/documents')
     // Filter to only show documents that haven't been signed
     availableDocuments.value = response.documents.filter((doc: any) => doc.status !== 'SIGNED')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch documents:', error)
     availableDocuments.value = []
-  } finally {
+  }
+  finally {
     loadingDocuments.value = false
   }
 }
@@ -434,7 +561,8 @@ watch(() => props.editingItem, (item) => {
     if (item.actionType === 'ESIGN') {
       fetchDocuments()
     }
-  } else {
+  }
+  else {
     // Reset form for new item
     form.value = {
       actionType: 'QUESTIONNAIRE',
@@ -488,9 +616,9 @@ async function handleSubmit() {
   saving.value = true
   try {
     // For ESIGN actions, ensure systemIntegrationType is set
-    const systemIntegrationType = form.value.actionType === 'ESIGN'
-      ? 'document'
-      : form.value.systemIntegrationType
+    const systemIntegrationType = form.value.actionType === 'ESIGN' ?
+      'document' :
+      form.value.systemIntegrationType
 
     const payload = {
       stepId: props.step.id,
@@ -511,7 +639,8 @@ async function handleSubmit() {
         method: 'PUT',
         body: payload
       })
-    } else {
+    }
+    else {
       // Create new
       await $fetch('/api/action-items', {
         method: 'POST',
@@ -520,10 +649,12 @@ async function handleSubmit() {
     }
 
     emit('save', props.step.id)
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Error saving action item:', error)
     toast.error(error.data?.message || 'Failed to save action item')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }

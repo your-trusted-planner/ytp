@@ -11,7 +11,7 @@ import { useDrizzle, schema } from '../../../db'
 import { sql } from 'drizzle-orm'
 
 // Available data migrations
-const DATA_MIGRATIONS: Record<string, { name: string; description: string; steps: string[] }> = {
+const DATA_MIGRATIONS: Record<string, { name: string, description: string, steps: string[] }> = {
   'people-consolidation': {
     name: 'People Consolidation',
     description: 'Migrate users to people + clients structure (Belly Button Principle)',
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = useDrizzle()
-  const results: { step: number; sql: string; rowsAffected?: number; error?: string }[] = []
+  const results: { step: number, sql: string, rowsAffected?: number, error?: string }[] = []
 
   // Get counts before migration
   const beforeCounts = {
@@ -153,7 +153,8 @@ export default defineEventHandler(async (event) => {
         sql: stepSql.substring(0, 100) + '...',
         rowsAffected: result.rowsAffected
       })
-    } catch (error) {
+    }
+    catch (error) {
       results.push({
         step: i + 1,
         sql: stepSql.substring(0, 100) + '...',

@@ -86,9 +86,10 @@ ${context.faqContext?.length ? `Relevant FAQ entries:\n${context.faqContext.join
         escalate: shouldEscalate,
         suggestedActions: this.getSuggestedActions(question, context)
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('AI Agent error:', error)
-      
+
       // Fallback to simple pattern matching
       return this.fallbackResponse(question, context)
     }
@@ -111,7 +112,7 @@ ${context.faqContext?.length ? `Relevant FAQ entries:\n${context.faqContext.join
     const questionLower = question.toLowerCase()
     const responseLower = response.toLowerCase()
 
-    return escalationKeywords.some(keyword => 
+    return escalationKeywords.some(keyword =>
       questionLower.includes(keyword) || responseLower.includes(keyword)
     )
   }
@@ -204,6 +205,3 @@ export function useAIAgent() {
 }
 
 export default AIAgent
-
-
-

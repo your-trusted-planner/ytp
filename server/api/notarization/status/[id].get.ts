@@ -5,7 +5,7 @@ import { usePandaDoc } from '../../../utils/pandadoc'
 
 export default defineEventHandler(async (event) => {
   await requireAuth(event)
-  
+
   const id = getRouterParam(event, 'id')
   if (!id) {
     throw createError({
@@ -13,31 +13,31 @@ export default defineEventHandler(async (event) => {
       message: 'Document ID required'
     })
   }
-  
+
   const db = useDrizzle()
-  
+
   const document = await db
     .select()
     .from(schema.documents)
     .where(eq(schema.documents.id, id))
     .get()
-  
+
   if (!document || !document.pandaDocRequestId) {
     throw createError({
       statusCode: 404,
       message: 'Notarization request not found'
     })
   }
-  
+
   try {
     const pandaDoc = usePandaDoc()
     const status = await pandaDoc.getStatus(document.pandaDocRequestId)
-    
+
     // Update document status based on PandaDoc status
     let newStatus = document.notarizationStatus
     if (status.status === 'completed') {
       newStatus = 'COMPLETED'
-      
+
       await db
         .update(schema.documents)
         .set({
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
         })
         .where(eq(schema.documents.id, id))
     }
-    
+
     return {
       documentId: id,
       notarizationStatus: newStatus,
@@ -56,7 +56,8 @@ export default defineEventHandler(async (event) => {
       completedAt: status.completedAt,
       notary: status.notary
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('PandaDoc status check error:', error)
     throw createError({
       statusCode: 500,
@@ -64,4 +65,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-

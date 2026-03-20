@@ -9,7 +9,7 @@
 const GOOGLE_KEYS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
 
 // Cache for Google's public keys
-let cachedKeys: { keys: Record<string, string>; expiresAt: number } | null = null
+let cachedKeys: { keys: Record<string, string>, expiresAt: number } | null = null
 
 export interface DecodedIdToken {
   uid: string
@@ -135,13 +135,16 @@ function extractPublicKeyFromCert(cert: Uint8Array): ArrayBuffer {
       if (lengthByte < 128) {
         contentStart = searchIndex + 4
         contentLength = lengthByte * 2
-      } else if (lengthByte === 0x81) {
+      }
+      else if (lengthByte === 0x81) {
         contentLength = parseInt(hex.substring(searchIndex + 4, searchIndex + 6), 16) * 2
         contentStart = searchIndex + 6
-      } else if (lengthByte === 0x82) {
+      }
+      else if (lengthByte === 0x82) {
         contentLength = parseInt(hex.substring(searchIndex + 4, searchIndex + 8), 16) * 2
         contentStart = searchIndex + 8
-      } else {
+      }
+      else {
         continue
       }
 
@@ -267,7 +270,8 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<DecodedIdT
     payload.uid = payload.sub
 
     return payload
-  } catch (error) {
+  }
+  catch (error) {
     console.error('[Firebase] Token verification error:', error)
     return null
   }

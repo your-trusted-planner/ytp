@@ -3,8 +3,12 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Notifications</h1>
-        <p class="text-gray-600 mt-1">Stay updated on important activity</p>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Notifications
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Stay updated on important activity
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <UiButton
@@ -25,13 +29,13 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
           :class="[
             activeTab === tab.id
               ? 'border-burgundy-500 text-burgundy-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2'
           ]"
+          @click="activeTab = tab.id"
         >
           {{ tab.label }}
           <span
@@ -46,12 +50,18 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center py-12"
+    >
       <Loader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="filteredNotices.length === 0" class="text-center py-12">
+    <div
+      v-else-if="filteredNotices.length === 0"
+      class="text-center py-12"
+    >
       <Bell class="w-16 h-16 text-gray-300 mx-auto mb-4" />
       <h3 class="text-lg font-medium text-gray-900 mb-2">
         {{ activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet' }}
@@ -64,7 +74,10 @@
     </div>
 
     <!-- Notifications List -->
-    <div v-else class="space-y-2">
+    <div
+      v-else
+      class="space-y-2"
+    >
       <div
         v-for="notice in filteredNotices"
         :key="notice.recipientId"
@@ -95,7 +108,10 @@
                   <span class="text-xs text-gray-400">
                     {{ formatDate(notice.createdAt) }}
                   </span>
-                  <UiBadge size="sm" :variant="getTypeBadgeVariant(notice.type)">
+                  <UiBadge
+                    size="sm"
+                    :variant="getTypeBadgeVariant(notice.type)"
+                  >
                     {{ formatNoticeType(notice.type) }}
                   </UiBadge>
                 </div>
@@ -115,18 +131,18 @@
                 <!-- Mark Read -->
                 <button
                   v-if="!notice.isRead"
-                  @click="handleMarkAsRead(notice.recipientId)"
                   class="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
                   title="Mark as read"
+                  @click="handleMarkAsRead(notice.recipientId)"
                 >
                   <Check class="w-4 h-4" />
                 </button>
 
                 <!-- Dismiss -->
                 <button
-                  @click="handleDismiss(notice.recipientId)"
                   class="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
                   title="Dismiss"
+                  @click="handleDismiss(notice.recipientId)"
                 >
                   <X class="w-4 h-4" />
                 </button>
@@ -137,8 +153,15 @@
       </div>
 
       <!-- Load More -->
-      <div v-if="hasMore" class="text-center py-4">
-        <UiButton variant="outline" @click="loadMore" :is-loading="loadingMore">
+      <div
+        v-if="hasMore"
+        class="text-center py-4"
+      >
+        <UiButton
+          variant="outline"
+          :is-loading="loadingMore"
+          @click="loadMore"
+        >
           Load more
         </UiButton>
       </div>

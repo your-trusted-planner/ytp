@@ -395,9 +395,9 @@ describe('Identity Verification Utilities', () => {
     })
 
     it('should handle names with special characters', () => {
-      const text = getAttestationText("Mary O'Brien-Smith")
+      const text = getAttestationText('Mary O\'Brien-Smith')
 
-      expect(text).toContain("Mary O'Brien-Smith")
+      expect(text).toContain('Mary O\'Brien-Smith')
     })
   })
 

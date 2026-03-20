@@ -63,7 +63,8 @@ export default defineEventHandler(async (event) => {
         folderUrl: existingFolder.webViewLink || matter.googleDriveFolderUrl,
         alreadyExists: true
       }
-    } catch (error) {
+    }
+    catch (error) {
       // Folder is not accessible - it may have been deleted or is in a different drive
       console.warn(`Existing folder ${matter.googleDriveFolderId} not accessible, will create new folder:`, error)
 
@@ -112,7 +113,8 @@ export default defineEventHandler(async (event) => {
   // Verify the client folder is still accessible
   try {
     await getFile(clientProfile.googleDriveFolderId)
-  } catch (error) {
+  }
+  catch (error) {
     throw createError({
       statusCode: 400,
       message: 'Client Google Drive folder is not accessible. Please resync the client folder first.'
@@ -134,7 +136,8 @@ export default defineEventHandler(async (event) => {
       folderUrl: folder.webViewLink,
       subfolders: Object.keys(subfolders)
     }
-  } catch (error) {
+  }
+  catch (error) {
     // Update status to ERROR
     await db.update(schema.matters)
       .set({

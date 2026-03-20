@@ -36,13 +36,13 @@ export function scoreRecordPair(
   input: PersonRecord,
   candidate: PersonRecord,
   config: MatchConfig = DEFAULT_MATCH_CONFIG
-): { rawScore: number; fieldScores: FieldScore[] } {
+): { rawScore: number, fieldScores: FieldScore[] } {
   const fieldScores: FieldScore[] = []
   let totalWeight = 0
   let weightedSum = 0
 
   // Determine which fields are present in both records
-  const fieldValues: Record<string, { a: any; b: any }> = {
+  const fieldValues: Record<string, { a: any, b: any }> = {
     email: { a: input.email, b: candidate.email },
     firstName: { a: input.firstName, b: candidate.firstName },
     lastName: { a: input.lastName, b: candidate.lastName },
@@ -94,7 +94,7 @@ export function applyAntiSignals(
   config: MatchConfig = DEFAULT_MATCH_CONFIG,
   knownSpousePersonIds?: Set<string>,
   candidatePersonId?: string
-): { adjustedScore: number; antiSignals: AntiSignal[] } {
+): { adjustedScore: number, antiSignals: AntiSignal[] } {
   const antiSignals: AntiSignal[] = []
 
   const emailScore = fieldScores.find(s => s.field === 'email')
@@ -105,8 +105,8 @@ export function applyAntiSignals(
   // Threshold 0.90: nickname matches (0.95) pass, but metaphone-only matches (0.85)
   // like John/Jane (same phonetics, different people) trigger the penalty
   if (emailScore && emailScore.score === 1.0 &&
-      firstNameScore && firstNameScore.score < 0.90 &&
-      firstNameScore.method !== 'missing') {
+    firstNameScore && firstNameScore.score < 0.90 &&
+    firstNameScore.method !== 'missing') {
     const penalty = config.antiSignalPenalties.shared_email_different_name ?? 0.40
     antiSignals.push({
       type: 'shared_email_different_name',
@@ -156,7 +156,7 @@ export function applyAntiSignals(
  */
 export function classifyMatch(
   adjustedScore: number,
-  thresholds: { high: number; medium: number } = DEFAULT_MATCH_CONFIG.thresholds
+  thresholds: { high: number, medium: number } = DEFAULT_MATCH_CONFIG.thresholds
 ): 'high' | 'medium' | 'low' {
   if (adjustedScore >= thresholds.high) return 'high'
   if (adjustedScore >= thresholds.medium) return 'medium'

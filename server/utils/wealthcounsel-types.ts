@@ -163,7 +163,7 @@ export interface WealthCounselMatchSuggestion {
   email?: string | null
   dateOfBirth?: string | null
   matchType: 'SSN' | 'NAME_EMAIL' | 'NAME_DOB' | 'NAME_ONLY'
-  confidence: number  // 0-100
+  confidence: number // 0-100
   matchingFields: string[]
 }
 
@@ -174,19 +174,19 @@ export interface ExtractedPersonWithMatches {
   extractedEmail?: string
   extractedDateOfBirth?: string
   role: 'client' | 'spouse' | 'child' | 'beneficiary' | 'fiduciary'
-  rolesInPlan: string[]  // e.g., ['Trustee', 'Financial Agent']
+  rolesInPlan: string[] // e.g., ['Trustee', 'Financial Agent']
 
   // Potential matches from database
   matches: WealthCounselMatchSuggestion[]
 
   // User's decision (set during import)
   decision?: 'use_existing' | 'create_new'
-  selectedPersonId?: string  // If use_existing
+  selectedPersonId?: string // If use_existing
 }
 
 // Parse result returned to frontend
 export interface WealthCounselParseResult {
-  parseId: string  // Temporary ID for this parse session
+  parseId: string // Temporary ID for this parse session
 
   parsed: {
     client: {
@@ -261,7 +261,7 @@ export interface WealthCounselParseResult {
 }
 
 // Mapping of WealthCounsel role types to our schema
-export const WC_ROLE_MAPPING: Record<string, { roleType: string; roleCategory: string }> = {
+export const WC_ROLE_MAPPING: Record<string, { roleType: string, roleCategory: string }> = {
   'RLT Trustee Initial': { roleType: 'TRUSTEE', roleCategory: 'FIDUCIARY' },
   'RLT Trustee Successor': { roleType: 'SUCCESSOR_TRUSTEE', roleCategory: 'FIDUCIARY' },
   'Financial Agent initial': { roleType: 'FINANCIAL_AGENT', roleCategory: 'FIDUCIARY' },

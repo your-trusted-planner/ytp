@@ -1,25 +1,38 @@
 <template>
   <div class="space-y-4">
-    <div v-if="loading" class="text-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-500 mx-auto"></div>
-      <p class="text-gray-500 mt-2">Loading activity...</p>
+    <div
+      v-if="loading"
+      class="text-center py-8"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-500 mx-auto" />
+      <p class="text-gray-500 mt-2">
+        Loading activity...
+      </p>
     </div>
 
-    <div v-else-if="activities.length === 0" class="text-gray-500 text-center py-8">
+    <div
+      v-else-if="activities.length === 0"
+      class="text-gray-500 text-center py-8"
+    >
       No recent activity
     </div>
 
-    <div v-else class="space-y-3">
+    <div
+      v-else
+      class="space-y-3"
+    >
       <div
         v-for="activity in activities"
         :key="activity.id"
         class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
       >
         <!-- Activity Icon -->
-        <div :class="[
-          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-          getActivityIconBg(activity.type)
-        ]">
+        <div
+          :class="[
+            'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+            getActivityIconBg(activity.type)
+          ]"
+        >
           <component
             :is="getActivityIcon(activity.type)"
             :class="['w-4 h-4', getActivityIconColor(activity.type)]"
@@ -28,21 +41,32 @@
 
         <!-- Activity Content -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-900">{{ activity.description }}</p>
+          <p class="text-sm text-gray-900">
+            {{ activity.description }}
+          </p>
           <div class="flex items-center gap-2 mt-1">
             <p class="text-xs text-gray-500">
               {{ formatTimeAgo(activity.createdAt) }}
             </p>
-            <span v-if="activity.user" class="text-xs text-gray-400">
+            <span
+              v-if="activity.user"
+              class="text-xs text-gray-400"
+            >
               by {{ activity.user.firstName || activity.user.email }}
             </span>
-            <span v-if="activity.country" class="text-xs text-gray-400">
+            <span
+              v-if="activity.country"
+              class="text-xs text-gray-400"
+            >
               from {{ activity.country }}
             </span>
           </div>
 
           <!-- Entity link badges (new structured format) -->
-          <div v-if="activity.target?.link || (activity.relatedEntities?.length)" class="flex flex-wrap gap-1.5 mt-2">
+          <div
+            v-if="activity.target?.link || (activity.relatedEntities?.length)"
+            class="flex flex-wrap gap-1.5 mt-2"
+          >
             <!-- Primary target entity badge -->
             <NuxtLink
               v-if="activity.target?.link"
@@ -50,7 +74,10 @@
               class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-burgundy-50 text-burgundy-700 hover:bg-burgundy-100 transition-colors"
               :title="activity.target.snapshotName !== activity.target.currentName ? `Was: ${activity.target.snapshotName}` : ''"
             >
-              <component :is="getEntityTypeIcon(activity.target.type)" class="w-3 h-3" />
+              <component
+                :is="getEntityTypeIcon(activity.target.type)"
+                class="w-3 h-3"
+              />
               {{ activity.target.currentName }}
             </NuxtLink>
 
@@ -63,7 +90,10 @@
                 class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
                 :class="{ 'pointer-events-none': !entity.link }"
               >
-                <component :is="getEntityTypeIcon(entity.type)" class="w-3 h-3" />
+                <component
+                  :is="getEntityTypeIcon(entity.type)"
+                  class="w-3 h-3"
+                />
                 {{ entity.currentName }}
               </NuxtLink>
             </template>
@@ -82,10 +112,13 @@
     </div>
 
     <!-- Load More / Pagination -->
-    <div v-if="hasMore && !loading" class="text-center pt-2">
+    <div
+      v-if="hasMore && !loading"
+      class="text-center pt-2"
+    >
       <button
-        @click="loadMore"
         class="text-sm text-burgundy-600 hover:text-burgundy-700 font-medium"
+        @click="loadMore"
       >
         Load more activity
       </button>
@@ -194,13 +227,16 @@ async function fetchActivities(append = false) {
 
     if (append) {
       activities.value = [...activities.value, ...response.activities]
-    } else {
+    }
+    else {
       activities.value = response.activities
     }
     total.value = response.pagination.total
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch activities:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -334,7 +370,8 @@ watch(() => props.autoRefresh, (newVal) => {
       offset.value = 0
       fetchActivities()
     }, props.refreshInterval)
-  } else if (refreshTimer) {
+  }
+  else if (refreshTimer) {
     clearInterval(refreshTimer)
     refreshTimer = null
   }

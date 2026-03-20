@@ -1,21 +1,21 @@
 // Mock database for local testing when D1 is not available
 import { hashPassword } from './auth'
 
-let mockUsers: any[] = []
-let mockClientProfiles: any[] = []
-let mockDocuments: any[] = []
-let mockTemplates: any[] = []
-let mockAppointments: any[] = []
-let mockActivities: any[] = []
+const mockUsers: any[] = []
+const mockClientProfiles: any[] = []
+const mockDocuments: any[] = []
+const mockTemplates: any[] = []
+const mockAppointments: any[] = []
+const mockActivities: any[] = []
 
 let isInitialized = false
 
 export async function initMockDb() {
   if (isInitialized) return
-  
+
   const lawyerPassword = await hashPassword('password123')
   const clientPassword = await hashPassword('password123')
-  
+
   // Create lawyer
   mockUsers.push({
     id: 'lawyer-1',
@@ -29,7 +29,7 @@ export async function initMockDb() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   // Create test client
   mockUsers.push({
     id: 'client-1',
@@ -43,7 +43,7 @@ export async function initMockDb() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   // Create client profile
   mockClientProfiles.push({
     id: 'profile-1',
@@ -52,7 +52,7 @@ export async function initMockDb() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   // Create sample template
   mockTemplates.push({
     id: 'template-1',
@@ -70,7 +70,7 @@ export async function initMockDb() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   // Create engagement letter template
   mockTemplates.push({
     id: 'template-2',
@@ -89,19 +89,19 @@ export async function initMockDb() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   isInitialized = true
   console.log('✅ Mock database initialized with test data')
 }
 
-let mockMatters: any[] = []
-let mockClientMatters: any[] = []
-let mockQuestionnaires: any[] = []
+const mockMatters: any[] = []
+const mockClientMatters: any[] = []
+const mockQuestionnaires: any[] = []
 
 // Initialize mock matters
 export async function initMockMatters() {
   if (mockMatters.length > 0) return
-  
+
   mockMatters.push({
     id: 'matter-1',
     name: 'Wyoming Asset Protection Trust',
@@ -114,7 +114,7 @@ export async function initMockMatters() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   mockMatters.push({
     id: 'matter-2',
     name: 'Annual Trust Maintenance',
@@ -127,7 +127,7 @@ export async function initMockMatters() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   mockMatters.push({
     id: 'matter-3',
     name: 'LLC Formation - Wyoming',
@@ -139,7 +139,7 @@ export async function initMockMatters() {
     createdAt: new Date(),
     updatedAt: new Date()
   })
-  
+
   console.log('✅ Mock matters initialized')
 }
 
@@ -217,4 +217,3 @@ export const mockDb = {
     }
   }
 }
-

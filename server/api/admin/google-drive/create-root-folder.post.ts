@@ -66,7 +66,8 @@ export default defineEventHandler(async (event) => {
       folderId: folder.id,
       folderUrl: folder.webViewLink
     }
-  } catch (error) {
+  }
+  catch (error) {
     throw createError({
       statusCode: 500,
       message: `Failed to create root folder: ${error instanceof Error ? error.message : 'Unknown error'}`

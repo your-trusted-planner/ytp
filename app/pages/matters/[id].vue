@@ -3,14 +3,23 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="text-gray-600 hover:text-gray-900">
+        <button
+          class="text-gray-600 hover:text-gray-900"
+          @click="$router.back()"
+        >
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 v-if="matter" class="text-2xl font-bold text-gray-900">
+          <h1
+            v-if="matter"
+            class="text-2xl font-bold text-gray-900"
+          >
             {{ matter.title }}
           </h1>
-          <div v-if="matter" class="flex items-center space-x-3 mt-1">
+          <div
+            v-if="matter"
+            class="flex items-center space-x-3 mt-1"
+          >
             <span class="text-gray-600">Matter #: {{ matter.matterNumber }}</span>
             <UiBadge :variant="getStatusVariant(matter.status)">
               {{ matter.status }}
@@ -28,13 +37,20 @@
           </div>
         </div>
       </div>
-      <UiButton v-if="matter" @click="showEditModal = true" variant="outline">
+      <UiButton
+        v-if="matter"
+        variant="outline"
+        @click="showEditModal = true"
+      >
         Edit Matter
       </UiButton>
     </div>
 
     <!-- Loading -->
-    <div v-if="matterStore.loading" class="flex justify-center py-12">
+    <div
+      v-if="matterStore.loading"
+      class="flex justify-center py-12"
+    >
       <Loader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
@@ -46,13 +62,13 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTab = tab.id"
             :class="[
               activeTab === tab.id
                 ? 'border-burgundy-500 text-burgundy-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
             ]"
+            @click="activeTab = tab.id"
           >
             {{ tab.label }}
           </button>
@@ -62,11 +78,16 @@
       <!-- Tab Content -->
       <div class="mt-6">
         <!-- Overview Tab -->
-        <div v-if="activeTab === 'overview'" class="space-y-6">
+        <div
+          v-if="activeTab === 'overview'"
+          class="space-y-6"
+        >
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Matter Info Card -->
             <UiCard class="lg:col-span-2">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Matter Details</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Matter Details
+              </h3>
               <div class="space-y-3 text-sm">
                 <div>
                   <span class="text-gray-600">Title:</span>
@@ -78,7 +99,10 @@
                 </div>
                 <div>
                   <span class="text-gray-600">Status:</span>
-                  <UiBadge :variant="getStatusVariant(matter.status)" class="ml-2">
+                  <UiBadge
+                    :variant="getStatusVariant(matter.status)"
+                    class="ml-2"
+                  >
                     {{ matter.status }}
                   </UiBadge>
                 </div>
@@ -91,7 +115,10 @@
                   >
                     {{ matterStore.clientName }}
                   </NuxtLink>
-                  <span v-else class="ml-2 font-medium">{{ matterStore.clientName }}</span>
+                  <span
+                    v-else
+                    class="ml-2 font-medium"
+                  >{{ matterStore.clientName }}</span>
                 </div>
                 <div v-if="matterStore.leadAttorneyName">
                   <span class="text-gray-600">Lead Attorney:</span>
@@ -102,22 +129,26 @@
                   <span class="ml-2 font-medium">{{ matter.engagementJourneyName }}</span>
                   <button
                     v-if="matter.engagementJourneyId"
-                    @click="viewEngagementJourney(matter.engagementJourneyId)"
                     class="ml-2 text-burgundy-600 hover:text-burgundy-800 text-sm"
+                    @click="viewEngagementJourney(matter.engagementJourneyId)"
                   >
                     View Progress
                   </button>
                 </div>
                 <div v-if="matter.description">
                   <span class="text-gray-600">Description:</span>
-                  <p class="ml-2 mt-1">{{ matter.description }}</p>
+                  <p class="ml-2 mt-1">
+                    {{ matter.description }}
+                  </p>
                 </div>
               </div>
             </UiCard>
 
             <!-- Quick Stats Card -->
             <UiCard>
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Quick Stats
+              </h3>
               <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-600">Engaged Services</span>
@@ -144,7 +175,10 @@
                   >
                     {{ formatCurrency(clientTrustBalance) }}
                   </NuxtLink>
-                  <span v-else class="font-semibold text-green-600">
+                  <span
+                    v-else
+                    class="font-semibold text-green-600"
+                  >
                     {{ formatCurrency(clientTrustBalance) }}
                   </span>
                 </div>
@@ -169,8 +203,13 @@
         <div v-if="activeTab === 'services'">
           <UiCard>
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Engaged Services</h3>
-              <UiButton size="sm" @click="showAddServiceModal = true">
+              <h3 class="text-lg font-semibold text-gray-900">
+                Engaged Services
+              </h3>
+              <UiButton
+                size="sm"
+                @click="showAddServiceModal = true"
+              >
                 <Plus class="w-4 h-4 mr-1" />
                 Add Service
               </UiButton>
@@ -183,15 +222,25 @@
         <div v-if="activeTab === 'journeys'">
           <UiCard>
             <div class="mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Client Journeys</h3>
-              <p class="text-sm text-gray-500 mt-1">Journeys are automatically created when you add a service with an associated journey template</p>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Client Journeys
+              </h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Journeys are automatically created when you add a service with an associated journey template
+              </p>
             </div>
 
-            <div v-if="matterStore.journeys.length === 0" class="text-center py-8 text-gray-500">
+            <div
+              v-if="matterStore.journeys.length === 0"
+              class="text-center py-8 text-gray-500"
+            >
               No journeys started yet. Add a service to begin.
             </div>
 
-            <div v-else class="space-y-3">
+            <div
+              v-else
+              class="space-y-3"
+            >
               <div
                 v-for="journey in matterStore.journeys"
                 :key="journey.id"
@@ -200,11 +249,19 @@
               >
                 <div class="flex justify-between items-start">
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{ journey.journeyName }}</h4>
-                    <p v-if="journey.serviceName" class="text-sm text-gray-600 mt-1">
+                    <h4 class="font-semibold text-gray-900">
+                      {{ journey.journeyName }}
+                    </h4>
+                    <p
+                      v-if="journey.serviceName"
+                      class="text-sm text-gray-600 mt-1"
+                    >
                       Service: {{ journey.serviceName }}
                     </p>
-                    <p v-if="journey.currentStepName" class="text-sm text-gray-600">
+                    <p
+                      v-if="journey.currentStepName"
+                      class="text-sm text-gray-600"
+                    >
                       Current: {{ journey.currentStepName }}
                     </p>
                   </div>
@@ -218,25 +275,45 @@
         </div>
 
         <!-- Billing Tab -->
-        <div v-if="activeTab === 'billing'" class="space-y-6">
+        <div
+          v-if="activeTab === 'billing'"
+          class="space-y-6"
+        >
           <!-- Billing Actions Card -->
           <UiCard>
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Billing Actions</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Billing Actions
+              </h3>
               <div class="flex items-center gap-2">
-                <UiButton size="sm" variant="outline" @click="showTimeEntryModal = true">
+                <UiButton
+                  size="sm"
+                  variant="outline"
+                  @click="showTimeEntryModal = true"
+                >
                   <Clock class="w-4 h-4 mr-1" />
                   Log Time
                 </UiButton>
-                <UiButton size="sm" variant="outline" @click="showTrustDepositModal = true">
+                <UiButton
+                  size="sm"
+                  variant="outline"
+                  @click="showTrustDepositModal = true"
+                >
                   <Wallet class="w-4 h-4 mr-1" />
                   Deposit to Trust
                 </UiButton>
-                <UiButton size="sm" variant="outline" @click="showCreateInvoiceModal = true">
+                <UiButton
+                  size="sm"
+                  variant="outline"
+                  @click="showCreateInvoiceModal = true"
+                >
                   <FileText class="w-4 h-4 mr-1" />
                   Create Invoice
                 </UiButton>
-                <UiButton size="sm" @click="showPaymentModal = true">
+                <UiButton
+                  size="sm"
+                  @click="showPaymentModal = true"
+                >
                   <DollarSign class="w-4 h-4 mr-1" />
                   Record Payment
                 </UiButton>
@@ -246,8 +323,12 @@
             <!-- Client Trust Balance Summary -->
             <div class="grid grid-cols-3 gap-4">
               <div class="bg-green-50 rounded-lg p-4">
-                <div class="text-sm text-green-600 font-medium">Client Trust Balance</div>
-                <div class="text-2xl font-bold text-green-700">{{ formatCurrency(clientTrustBalance) }}</div>
+                <div class="text-sm text-green-600 font-medium">
+                  Client Trust Balance
+                </div>
+                <div class="text-2xl font-bold text-green-700">
+                  {{ formatCurrency(clientTrustBalance) }}
+                </div>
                 <NuxtLink
                   v-if="matter?.clientId"
                   :to="`/billing/trust/${matter.clientId}`"
@@ -257,15 +338,23 @@
                 </NuxtLink>
               </div>
               <div class="bg-amber-50 rounded-lg p-4">
-                <div class="text-sm text-amber-600 font-medium">Outstanding Invoices</div>
-                <div class="text-2xl font-bold text-amber-700">{{ outstandingInvoices.length }}</div>
+                <div class="text-sm text-amber-600 font-medium">
+                  Outstanding Invoices
+                </div>
+                <div class="text-2xl font-bold text-amber-700">
+                  {{ outstandingInvoices.length }}
+                </div>
                 <div class="text-xs text-amber-600">
                   {{ formatCurrency(outstandingInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0)) }} due
                 </div>
               </div>
               <div class="bg-blue-50 rounded-lg p-4">
-                <div class="text-sm text-blue-600 font-medium">Total Collected</div>
-                <div class="text-2xl font-bold text-blue-700">{{ formatCurrency(matterStore.totalPayments) }}</div>
+                <div class="text-sm text-blue-600 font-medium">
+                  Total Collected
+                </div>
+                <div class="text-2xl font-bold text-blue-700">
+                  {{ formatCurrency(matterStore.totalPayments) }}
+                </div>
                 <NuxtLink
                   to="/billing"
                   class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
@@ -286,7 +375,9 @@
           <!-- Time Entries Section -->
           <UiCard>
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Time Entries</h3>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Time Entries
+              </h3>
               <NuxtLink
                 to="/billing/time-entries"
                 class="text-sm text-burgundy-600 hover:text-burgundy-700"
@@ -295,14 +386,25 @@
               </NuxtLink>
             </div>
 
-            <div v-if="loadingTimeEntries" class="flex justify-center py-8">
+            <div
+              v-if="loadingTimeEntries"
+              class="flex justify-center py-8"
+            >
               <Loader class="w-6 h-6 animate-spin text-burgundy-600" />
             </div>
 
-            <div v-else-if="timeEntries.length === 0" class="text-center py-8">
+            <div
+              v-else-if="timeEntries.length === 0"
+              class="text-center py-8"
+            >
               <Clock class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p class="text-gray-500 mb-4">No time entries for this matter yet</p>
-              <UiButton size="sm" @click="showTimeEntryModal = true">
+              <p class="text-gray-500 mb-4">
+                No time entries for this matter yet
+              </p>
+              <UiButton
+                size="sm"
+                @click="showTimeEntryModal = true"
+              >
                 <Clock class="w-4 h-4 mr-1" />
                 Log Time
               </UiButton>
@@ -322,7 +424,9 @@
 
           <!-- Outstanding Invoices -->
           <UiCard v-if="outstandingInvoices.length > 0">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Outstanding Invoices</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              Outstanding Invoices
+            </h3>
             <div class="space-y-3">
               <div
                 v-for="invoice in outstandingInvoices"
@@ -331,14 +435,21 @@
                 @click="$router.push(`/invoices/${invoice.id}`)"
               >
                 <div>
-                  <div class="font-medium text-gray-900">{{ invoice.invoiceNumber }}</div>
+                  <div class="font-medium text-gray-900">
+                    {{ invoice.invoiceNumber }}
+                  </div>
                   <div class="text-sm text-gray-500">
                     Due {{ formatInvoiceDate(invoice.dueDate) }}
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="font-semibold text-gray-900">{{ formatCurrency(invoice.balanceDue) }}</div>
-                  <UiBadge :variant="getInvoiceStatusVariant(invoice.status)" size="sm">
+                  <div class="font-semibold text-gray-900">
+                    {{ formatCurrency(invoice.balanceDue) }}
+                  </div>
+                  <UiBadge
+                    :variant="getInvoiceStatusVariant(invoice.status)"
+                    size="sm"
+                  >
                     {{ invoice.status }}
                   </UiBadge>
                 </div>
@@ -348,30 +459,34 @@
 
           <!-- Payment History -->
           <UiCard>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment History</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              Payment History
+            </h3>
             <MatterPaymentsTable :payments="paymentsForTable" />
           </UiCard>
         </div>
 
         <!-- Documents Tab -->
-        <div v-if="activeTab === 'documents'" class="space-y-4">
+        <div
+          v-if="activeTab === 'documents'"
+          class="space-y-4"
+        >
           <!-- View Toggle -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
               <button
-                @click="setDocumentView('local')"
                 :class="[
                   'px-4 py-2 text-sm font-medium rounded-md transition-colors',
                   documentView === 'local'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 ]"
+                @click="setDocumentView('local')"
               >
                 <Database class="w-4 h-4 inline-block mr-1.5" />
                 System Documents
               </button>
               <button
-                @click="setDocumentView('drive')"
                 :disabled="!matterStore.hasDriveFolder"
                 :class="[
                   'px-4 py-2 text-sm font-medium rounded-md transition-colors',
@@ -380,8 +495,12 @@
                     : 'text-gray-600 hover:text-gray-900',
                   !matterStore.hasDriveFolder && 'opacity-50 cursor-not-allowed'
                 ]"
+                @click="setDocumentView('drive')"
               >
-                <IconsGoogleDrive :size="16" class="inline-block mr-1.5" />
+                <IconsGoogleDrive
+                  :size="16"
+                  class="inline-block mr-1.5"
+                />
                 Google Drive
               </button>
             </div>
@@ -389,8 +508,8 @@
               v-if="documentView === 'local'"
               size="sm"
               variant="outline"
-              @click="matterStore.fetchDocuments()"
               :is-loading="matterStore.loadingDocuments"
+              @click="matterStore.fetchDocuments()"
             >
               <RefreshCw class="w-4 h-4 mr-1" />
               Refresh
@@ -399,7 +518,10 @@
 
           <!-- Local Documents View -->
           <UiCard v-if="documentView === 'local'">
-            <div v-if="matterStore.loadingDocuments" class="flex justify-center py-8">
+            <div
+              v-if="matterStore.loadingDocuments"
+              class="flex justify-center py-8"
+            >
               <Loader class="w-6 h-6 animate-spin text-burgundy-600" />
             </div>
             <MatterDocumentsTable
@@ -414,10 +536,18 @@
 
           <!-- Google Drive View -->
           <UiCard v-else-if="documentView === 'drive'">
-            <div v-if="!matterStore.hasDriveFolder" class="text-center py-8">
+            <div
+              v-if="!matterStore.hasDriveFolder"
+              class="text-center py-8"
+            >
               <FolderX class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p class="text-gray-500 mb-4">This matter is not synced to Google Drive yet</p>
-              <UiButton size="sm" @click="activeTab = 'overview'">
+              <p class="text-gray-500 mb-4">
+                This matter is not synced to Google Drive yet
+              </p>
+              <UiButton
+                size="sm"
+                @click="activeTab = 'overview'"
+              >
                 Go to Overview to Sync
               </UiButton>
             </div>
@@ -443,21 +573,44 @@
     </div>
 
     <!-- Add Service Modal -->
-    <UiModal v-model="showAddServiceModal" title="Add Service to Matter" size="md">
-      <form @submit.prevent="handleAddService" class="space-y-4">
-        <UiSelect v-model="newServiceForm.catalogId" label="Select Service" required>
-          <option value="">Choose a service...</option>
-          <option v-for="item in catalog" :key="item.id" :value="item.id">
+    <UiModal
+      v-model="showAddServiceModal"
+      title="Add Service to Matter"
+      size="md"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleAddService"
+      >
+        <UiSelect
+          v-model="newServiceForm.catalogId"
+          label="Select Service"
+          required
+        >
+          <option value="">
+            Choose a service...
+          </option>
+          <option
+            v-for="item in catalog"
+            :key="item.id"
+            :value="item.id"
+          >
             {{ item.name }} ({{ formatCurrency(item.price) }})
           </option>
         </UiSelect>
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showAddServiceModal = false">
+        <UiButton
+          variant="outline"
+          @click="showAddServiceModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleAddService" :is-loading="addingService">
+        <UiButton
+          :is-loading="addingService"
+          @click="handleAddService"
+        >
           Add Service
         </UiButton>
       </template>
@@ -505,7 +658,6 @@
       @created="handleTimeEntrySaved"
       @updated="handleTimeEntrySaved"
     />
-
   </div>
 </template>
 
@@ -623,7 +775,8 @@ async function fetchCatalog() {
   try {
     const response = await $fetch<any>('/api/catalog')
     catalog.value = response.services || response || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch catalog:', error)
   }
 }
@@ -633,7 +786,8 @@ async function fetchClients() {
   try {
     const response = await $fetch<{ clients: any[] }>('/api/clients')
     clients.value = response.clients || response
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch clients:', error)
   }
 }
@@ -643,7 +797,8 @@ async function fetchLawyers() {
   try {
     const response = await $fetch<{ lawyers: any[] }>('/api/matters/lawyers')
     lawyers.value = response.lawyers || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch lawyers:', error)
   }
 }
@@ -653,7 +808,8 @@ async function fetchEngagementJourneys() {
   try {
     const response = await $fetch<{ engagementJourneys: any[] }>('/api/journeys/engagement-templates')
     engagementJourneys.value = response.engagementJourneys || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch engagement journeys:', error)
   }
 }
@@ -676,17 +832,21 @@ async function handleAddService() {
     showAddServiceModal.value = false
     newServiceForm.value.catalogId = ''
     toast.success('Service added successfully')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to add service:', error)
 
     if (error.statusCode === 409) {
       toast.error('This service is already engaged for this matter')
-    } else if (error.statusCode === 404) {
+    }
+    else if (error.statusCode === 404) {
       toast.error('Service not found in catalog')
-    } else {
+    }
+    else {
       toast.error(error.data?.message || 'Failed to add service')
     }
-  } finally {
+  }
+  finally {
     addingService.value = false
   }
 }
@@ -749,7 +909,7 @@ function handleDownloadUpload(uploadId: string) {
 }
 
 // Handle Drive synced - update store
-function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
+function handleDriveSynced(data: { folderId: string, folderUrl: string }) {
   matterStore.updateDriveSync(data)
 }
 
@@ -765,7 +925,8 @@ async function refreshTrustBalance() {
   try {
     const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${matter.value.clientId}/balance`)
     matterStore.clientTrustBalance = response.totalBalance || 0
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch trust balance:', error)
   }
 }
@@ -779,7 +940,8 @@ async function refreshOutstandingInvoices() {
       }
     })
     matterStore.outstandingInvoices = response.invoices || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch outstanding invoices:', error)
   }
 }
@@ -791,9 +953,11 @@ async function refreshTimeEntries() {
       query: { matterId: matterId }
     })
     matterStore.timeEntries = response.timeEntries || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch time entries:', error)
-  } finally {
+  }
+  finally {
     matterStore.loadingTimeEntries = false
   }
 }
@@ -820,7 +984,8 @@ async function handleDeleteTimeEntry(entry: any) {
     await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
     toast.success('Time entry deleted')
     await refreshTimeEntries()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to delete time entry')
   }
 }
@@ -831,7 +996,8 @@ async function handleSubmitTimeEntry(entry: any) {
     await $fetch(`/api/time-entries/${entry.id}/submit`, { method: 'POST' })
     toast.success('Time entry submitted for approval')
     await refreshTimeEntries()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to submit time entry')
   }
 }
@@ -842,7 +1008,8 @@ async function handleApproveTimeEntry(entry: any) {
     await $fetch(`/api/time-entries/${entry.id}/approve`, { method: 'POST' })
     toast.success('Time entry approved')
     await refreshTimeEntries()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to approve time entry')
   }
 }

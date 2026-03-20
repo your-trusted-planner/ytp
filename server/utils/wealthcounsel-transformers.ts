@@ -253,7 +253,8 @@ export function transformToEstatePlan(
   let effectiveDate: Date | undefined
   if (data.trust?.signDate) {
     effectiveDate = new Date(data.trust.signDate)
-  } else if (data.will?.executionDate) {
+  }
+  else if (data.will?.executionDate) {
     effectiveDate = new Date(data.will.executionDate)
   }
 
@@ -335,7 +336,7 @@ export function transformToEstatePlan(
 export function transformRoles(
   data: WealthCounselData,
   planId: string,
-  personLookup: Map<string, string>,  // name -> personId
+  personLookup: Map<string, string>, // name -> personId
   clientPersonId: string,
   spousePersonId?: string
 ): TransformedPlanRole[] {
@@ -457,9 +458,9 @@ export function transformRoles(
   // Add beneficiaries
   ordinalCounter = 1
   for (const beneficiary of data.beneficiaries) {
-    const sharePercent = beneficiary.percentage
-      ? parseInt(beneficiary.percentage.replace('%', ''))
-      : undefined
+    const sharePercent = beneficiary.percentage ?
+        parseInt(beneficiary.percentage.replace('%', '')) :
+      undefined
 
     addRole(beneficiary.name, 'PRIMARY_BENEFICIARY', 'BENEFICIARY', ordinalCounter === 1, ordinalCounter++, {
       sharePercentage: sharePercent,
@@ -470,7 +471,7 @@ export function transformRoles(
   // Deduplicate roles based on (personId, roleType, forPersonId) tuple
   // This prevents the same person having the same role multiple times
   const seen = new Set<string>()
-  const deduplicatedRoles = roles.filter(role => {
+  const deduplicatedRoles = roles.filter((role) => {
     const key = `${role.personId}:${role.roleType}:${role.forPersonId || 'null'}`
     if (seen.has(key)) {
       return false
@@ -592,12 +593,12 @@ export function extractClientsToCreate(
   const hasMinorChildren = checkForMinorChildren(data.children)
 
   // Build children info JSON
-  const childrenInfo = data.children.length > 0
-    ? JSON.stringify(data.children.map(child => ({
-      name: child.fullName,
-      dateOfBirth: child.dateOfBirth
-    })))
-    : undefined
+  const childrenInfo = data.children.length > 0 ?
+      JSON.stringify(data.children.map(child => ({
+        name: child.fullName,
+        dateOfBirth: child.dateOfBirth
+      }))) :
+    undefined
 
   // First client (no hierarchy implied - both grantors are equal clients)
   clients.push({

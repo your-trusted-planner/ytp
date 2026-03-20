@@ -9,7 +9,6 @@ import { startMigrationRun } from '../../../../queue/lawmatics-import'
 import type { ImportPhase } from '../../../../queue/lawmatics-import'
 
 export default defineEventHandler(async (event) => {
-
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -54,7 +53,8 @@ export default defineEventHandler(async (event) => {
       if (checkpoint.page) {
         resumePage = checkpoint.page + 1 // Resume from next page
       }
-    } catch {
+    }
+    catch {
       // Use defaults
     }
   }

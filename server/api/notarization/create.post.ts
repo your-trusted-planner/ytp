@@ -11,7 +11,7 @@ const createNotarizationSchema = z.object({
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
   const body = await readBody(event)
-  
+
   const result = createNotarizationSchema.safeParse(body)
   if (!result.success) {
     throw createError({
@@ -19,34 +19,34 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid input'
     })
   }
-  
+
   const { documentId } = result.data
   const db = useDrizzle()
-  
+
   // Get the document
   const document = await db
     .select()
     .from(schema.documents)
     .where(eq(schema.documents.id, documentId))
     .get()
-  
+
   if (!document) {
     throw createError({
       statusCode: 404,
       message: 'Document not found'
     })
   }
-  
+
   if (!document.requiresNotary) {
     throw createError({
       statusCode: 400,
       message: 'Document does not require notarization'
     })
   }
-  
+
   try {
     const pandaDoc = usePandaDoc()
-    
+
     // Create notarization request
     const notarizationRequest = await pandaDoc.createNotarizationRequest({
       documentId: document.id,
@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
       documentTitle: document.title,
       documentContent: document.content
     })
-    
+
     // Update document with PandaDoc request ID
     await db
       .update(schema.documents)
@@ -65,13 +65,14 @@ export default defineEventHandler(async (event) => {
         updatedAt: new Date()
       })
       .where(eq(schema.documents.id, documentId))
-    
+
     return {
       success: true,
       requestId: notarizationRequest.id,
       status: notarizationRequest.status
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('PandaDoc error:', error)
     throw createError({
       statusCode: 500,
@@ -79,4 +80,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-

@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Service Catalog</h1>
-        <p class="text-gray-600 mt-1">Manage your service offerings and product catalog</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          Service Catalog
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage your service offerings and product catalog
+        </p>
       </div>
       <UiButton @click="showAddModal = true">
         Add Catalog Item
@@ -21,53 +25,75 @@
         <div class="p-6">
           <div class="flex justify-between items-start mb-3">
             <div class="flex-1">
-              <h3 class="font-semibold text-gray-900 text-lg">{{ matter.name }}</h3>
-              <p v-if="matter.category" class="text-sm text-gray-500">{{ matter.category }}</p>
+              <h3 class="font-semibold text-gray-900 text-lg">
+                {{ matter.name }}
+              </h3>
+              <p
+                v-if="matter.category"
+                class="text-sm text-gray-500"
+              >
+                {{ matter.category }}
+              </p>
             </div>
             <UiBadge :variant="matter.type === 'RECURRING' ? 'info' : matter.type === 'HOURLY' ? 'warning' : 'default'">
               {{ matter.type }}
             </UiBadge>
           </div>
-          
-          <p v-if="matter.description" class="text-sm text-gray-600 mb-4">
+
+          <p
+            v-if="matter.description"
+            class="text-sm text-gray-600 mb-4"
+          >
             {{ matter.description }}
           </p>
-          
+
           <div class="space-y-2 border-t border-gray-200 pt-4">
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Price:</span>
               <span class="font-semibold text-gray-900">{{ formatCurrency(matter.price) }}</span>
             </div>
-            <div v-if="matter.type === 'RECURRING' && matter.duration" class="flex justify-between text-sm">
+            <div
+              v-if="matter.type === 'RECURRING' && matter.duration"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Billing:</span>
               <span class="font-medium text-gray-700">{{ matter.duration }}</span>
             </div>
-            <div v-if="matter.type === 'HOURLY' && matter.defaultAttorneyRate" class="flex justify-between text-sm">
+            <div
+              v-if="matter.type === 'HOURLY' && matter.defaultAttorneyRate"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Attorney Rate:</span>
               <span class="font-medium text-gray-700">{{ formatCurrency(matter.defaultAttorneyRate) }}/hr</span>
             </div>
-            <div v-if="matter.type === 'HOURLY' && matter.defaultStaffRate" class="flex justify-between text-sm">
+            <div
+              v-if="matter.type === 'HOURLY' && matter.defaultStaffRate"
+              class="flex justify-between text-sm"
+            >
               <span class="text-gray-600">Staff Rate:</span>
               <span class="font-medium text-gray-700">{{ formatCurrency(matter.defaultStaffRate) }}/hr</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Status:</span>
-              <UiBadge :variant="matter.isActive ? 'success' : 'default'" size="sm">
+              <UiBadge
+                :variant="matter.isActive ? 'success' : 'default'"
+                size="sm"
+              >
                 {{ matter.isActive ? 'Active' : 'Inactive' }}
               </UiBadge>
             </div>
           </div>
-          
+
           <div class="mt-4 flex space-x-2">
             <button
-              @click="editMatter(matter)"
               class="flex-1 text-sm text-accent-600 hover:text-accent-900 font-medium"
+              @click="editMatter(matter)"
             >
               Edit
             </button>
             <button
-              @click="toggleMatterStatus(matter)"
               class="flex-1 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              @click="toggleMatterStatus(matter)"
             >
               {{ matter.isActive ? 'Deactivate' : 'Activate' }}
             </button>
@@ -77,30 +103,43 @@
     </div>
 
     <!-- Add/Edit Matter Modal -->
-    <UiModal v-model="showAddModal" :title="editingMatter ? 'Edit Service' : 'Add New Service'" size="lg">
-      <form @submit.prevent="handleSaveMatter" class="space-y-4">
+    <UiModal
+      v-model="showAddModal"
+      :title="editingMatter ? 'Edit Service' : 'Add New Service'"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSaveMatter"
+      >
         <UiInput
           v-model="matterForm.name"
           label="Service Name"
           placeholder="e.g., Wyoming Asset Protection Trust"
           required
         />
-        
+
         <UiTextarea
           v-model="matterForm.description"
           label="Description"
           placeholder="Detailed description of this service..."
           :rows="3"
         />
-        
+
         <div class="grid grid-cols-2 gap-4">
           <UiSelect
             v-model="matterForm.category"
             label="Category"
             required
           >
-            <option value="">Select category</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.name">
+            <option value="">
+              Select category
+            </option>
+            <option
+              v-for="cat in categories"
+              :key="cat.id"
+              :value="cat.name"
+            >
               {{ cat.name }}
             </option>
           </UiSelect>
@@ -110,16 +149,28 @@
             label="Type"
             required
           >
-            <option value="SINGLE">Single Service</option>
-            <option value="RECURRING">Recurring Service</option>
-            <option value="HOURLY">Hourly Service</option>
+            <option value="SINGLE">
+              Single Service
+            </option>
+            <option value="RECURRING">
+              Recurring Service
+            </option>
+            <option value="HOURLY">
+              Hourly Service
+            </option>
           </UiSelect>
         </div>
 
-        <p v-if="categories.length === 0" class="text-sm text-gray-500">
-          No categories defined. <NuxtLink to="/service-catalog/service-categories" class="text-burgundy-600 hover:text-burgundy-800 underline">Add categories</NuxtLink>.
+        <p
+          v-if="categories.length === 0"
+          class="text-sm text-gray-500"
+        >
+          No categories defined. <NuxtLink
+            to="/service-catalog/service-categories"
+            class="text-burgundy-600 hover:text-burgundy-800 underline"
+          >Add categories</NuxtLink>.
         </p>
-        
+
         <div class="grid grid-cols-2 gap-4">
           <UiInput
             v-if="matterForm.type !== 'HOURLY'"
@@ -136,15 +187,26 @@
             v-model="matterForm.duration"
             label="Billing Cycle"
           >
-            <option value="">Select frequency</option>
-            <option value="MONTHLY">Monthly</option>
-            <option value="QUARTERLY">Quarterly</option>
-            <option value="ANNUALLY">Annually</option>
+            <option value="">
+              Select frequency
+            </option>
+            <option value="MONTHLY">
+              Monthly
+            </option>
+            <option value="QUARTERLY">
+              Quarterly
+            </option>
+            <option value="ANNUALLY">
+              Annually
+            </option>
           </UiSelect>
         </div>
 
         <!-- Hourly rate inputs for HOURLY type -->
-        <div v-if="matterForm.type === 'HOURLY'" class="grid grid-cols-2 gap-4">
+        <div
+          v-if="matterForm.type === 'HOURLY'"
+          class="grid grid-cols-2 gap-4"
+        >
           <UiInput
             v-model="matterForm.defaultAttorneyRate"
             label="Attorney Hourly Rate ($)"
@@ -162,16 +224,25 @@
           />
         </div>
 
-        <p v-if="matterForm.type === 'HOURLY'" class="text-sm text-gray-500">
+        <p
+          v-if="matterForm.type === 'HOURLY'"
+          class="text-sm text-gray-500"
+        >
           Optional. If not set, billing will use the user's default hourly rate.
         </p>
       </form>
-      
+
       <template #footer>
-        <UiButton variant="outline" @click="closeModal">
+        <UiButton
+          variant="outline"
+          @click="closeModal"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleSaveMatter" :is-loading="saving">
+        <UiButton
+          :is-loading="saving"
+          @click="handleSaveMatter"
+        >
           {{ editingMatter ? 'Update' : 'Create' }} Service
         </UiButton>
       </template>
@@ -218,7 +289,8 @@ const fetchCategories = async () => {
   try {
     const { categories: data } = await $fetch<{ categories: Category[] }>('/api/service-categories')
     categories.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch categories:', error)
   }
 }
@@ -227,7 +299,8 @@ const fetchMatters = async () => {
   try {
     const response = await $fetch('/api/catalog')
     matters.value = response.services || response || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch matters:', error)
   }
 }
@@ -254,7 +327,8 @@ const toggleMatterStatus = async (matter: any) => {
       body: { isActive: !matter.isActive }
     })
     await fetchMatters()
-  } catch (error) {
+  }
+  catch (error) {
     toast.error('Failed to update service status')
   }
 }
@@ -272,30 +346,34 @@ const handleSaveMatter = async () => {
       payload.price = matterForm.value.price ? parseFloat(matterForm.value.price) : 0
       payload.defaultAttorneyRate = parseFloat(matterForm.value.defaultAttorneyRate)
       payload.defaultStaffRate = parseFloat(matterForm.value.defaultStaffRate)
-    } else {
+    }
+    else {
       // Non-HOURLY services require price, clear hourly rates
       payload.price = parseFloat(matterForm.value.price)
       delete payload.defaultAttorneyRate
       delete payload.defaultStaffRate
     }
-    
+
     if (editingMatter.value) {
       await $fetch(`/api/catalog/${editingMatter.value.id}`, {
         method: 'PUT',
         body: payload
       })
-    } else {
+    }
+    else {
       await $fetch('/api/catalog', {
         method: 'POST',
         body: payload
       })
     }
-    
+
     closeModal()
     await fetchMatters()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to save service')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -320,6 +398,3 @@ onMounted(() => {
   fetchCategories()
 })
 </script>
-
-
-

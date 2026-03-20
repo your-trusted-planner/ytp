@@ -39,9 +39,9 @@
         <!-- Dismiss Button -->
         <button
           v-if="showDismiss"
-          @click.stop="handleDismiss"
           class="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
           title="Dismiss"
+          @click.stop="handleDismiss"
         >
           <X class="w-4 h-4" />
         </button>

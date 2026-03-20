@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
     .all()
 
   if (faqs.length > 0) {
-    context.faqContext = faqs.map((faq) =>
+    context.faqContext = faqs.map(faq =>
       `Q: ${faq.question}\nA: ${faq.answer}`
     )
   }
@@ -112,6 +112,3 @@ export default defineEventHandler(async (event) => {
 
   return response
 })
-
-
-

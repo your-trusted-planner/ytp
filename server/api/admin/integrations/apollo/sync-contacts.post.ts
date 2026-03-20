@@ -38,9 +38,9 @@ export default defineEventHandler(async (event) => {
   const result = await syncContactsToApollo(client, host, { clientsOnly })
 
   // Update last sync timestamp
-  const timestamps = integration.lastSyncTimestamps
-    ? JSON.parse(integration.lastSyncTimestamps)
-    : {}
+  const timestamps = integration.lastSyncTimestamps ?
+      JSON.parse(integration.lastSyncTimestamps) :
+      {}
   timestamps.contactSync = new Date().toISOString()
 
   await db.update(schema.integrations)

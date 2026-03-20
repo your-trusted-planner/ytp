@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { logActivity } from '../../../utils/activity-logger'
 
+import { eq } from 'drizzle-orm'
+
 const createTrustAccountSchema = z.object({
   accountName: z.string().min(1, 'Account name is required'),
   accountType: z.enum(['IOLTA', 'NON_IOLTA', 'ESCROW']).default('IOLTA'),
@@ -80,5 +82,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-
-import { eq } from 'drizzle-orm'

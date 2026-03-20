@@ -114,7 +114,7 @@ export const useCalendarStore = defineStore('calendar', {
   }),
 
   getters: {
-    dateRange(): { timeMin: string; timeMax: string } {
+    dateRange(): { timeMin: string, timeMax: string } {
       const d = this.currentDate
       if (this.viewMode === 'week') {
         const start = new Date(d)
@@ -123,11 +123,13 @@ export const useCalendarStore = defineStore('calendar', {
         const end = new Date(start)
         end.setDate(start.getDate() + 7)
         return { timeMin: start.toISOString(), timeMax: end.toISOString() }
-      } else if (this.viewMode === 'month') {
+      }
+      else if (this.viewMode === 'month') {
         const start = new Date(d.getFullYear(), d.getMonth(), 1)
         const end = new Date(d.getFullYear(), d.getMonth() + 1, 1)
         return { timeMin: start.toISOString(), timeMax: end.toISOString() }
-      } else {
+      }
+      else {
         const start = new Date(d)
         start.setHours(0, 0, 0, 0)
         const end = new Date(start)
@@ -205,11 +207,13 @@ export const useCalendarStore = defineStore('calendar', {
         this.events = data.events
         this.lastFetchKey = key
         this.lastFetchTime = Date.now()
-      } catch (err: any) {
+      }
+      catch (err: any) {
         console.error('Failed to fetch calendar events:', err)
         this.error = err.data?.message || 'Failed to load calendar'
         this.events = []
-      } finally {
+      }
+      finally {
         this.loading = false
       }
     },
@@ -223,7 +227,7 @@ export const useCalendarStore = defineStore('calendar', {
         const calendars = await $fetch<any[]>('/api/admin/calendars')
         const seen = new Set<string>()
         this.staffList = calendars
-          .filter(c => {
+          .filter((c) => {
             if (seen.has(c.attorneyId)) return false
             seen.add(c.attorneyId)
             return true
@@ -234,7 +238,8 @@ export const useCalendarStore = defineStore('calendar', {
             email: c.attorneyEmail || ''
           }))
         this.staffListLoaded = true
-      } catch {
+      }
+      catch {
         // Non-admin may not have access — that's fine
       }
     },
@@ -247,7 +252,8 @@ export const useCalendarStore = defineStore('calendar', {
       try {
         this.appointmentTypes = await $fetch<AppointmentType[]>('/api/appointment-types')
         this.appointmentTypesLoaded = true
-      } catch {
+      }
+      catch {
         // May fail if no types configured yet — that's fine
       }
     },
@@ -261,7 +267,8 @@ export const useCalendarStore = defineStore('calendar', {
         const allRooms = await $fetch<Room[]>('/api/admin/rooms')
         this.rooms = allRooms.filter(r => r.isActive)
         this.roomsLoaded = true
-      } catch {
+      }
+      catch {
         // May fail if no rooms configured — that's fine
       }
     },
@@ -329,9 +336,11 @@ export const useCalendarStore = defineStore('calendar', {
       const d = new Date(this.currentDate)
       if (this.viewMode === 'week') {
         d.setDate(d.getDate() + 7)
-      } else if (this.viewMode === 'month') {
+      }
+      else if (this.viewMode === 'month') {
         d.setMonth(d.getMonth() + 1)
-      } else {
+      }
+      else {
         d.setDate(d.getDate() + 14)
       }
       this.currentDate = d
@@ -341,9 +350,11 @@ export const useCalendarStore = defineStore('calendar', {
       const d = new Date(this.currentDate)
       if (this.viewMode === 'week') {
         d.setDate(d.getDate() - 7)
-      } else if (this.viewMode === 'month') {
+      }
+      else if (this.viewMode === 'month') {
         d.setMonth(d.getMonth() - 1)
-      } else {
+      }
+      else {
         d.setDate(d.getDate() - 14)
       }
       this.currentDate = d
@@ -359,7 +370,7 @@ export const useCalendarStore = defineStore('calendar', {
       const dayM = day.getMonth()
       const dayD = day.getDate()
 
-      return this.events.filter(e => {
+      return this.events.filter((e) => {
         const start = new Date(e.startTime)
         return start.getFullYear() === dayY &&
           start.getMonth() === dayM &&
@@ -368,7 +379,7 @@ export const useCalendarStore = defineStore('calendar', {
     },
 
     getEventsForHour(day: Date, hour: number): CalendarEvent[] {
-      return this.getEventsForDay(day).filter(e => {
+      return this.getEventsForDay(day).filter((e) => {
         const start = new Date(e.startTime)
         return start.getHours() === hour
       })

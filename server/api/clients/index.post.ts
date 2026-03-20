@@ -194,7 +194,7 @@ export default defineEventHandler(async (event) => {
   })
 
   // Create Google Drive folder for client
-  let googleDrive: {
+  const googleDrive: {
     enabled: boolean
     success: boolean
     folderUrl?: string
@@ -209,7 +209,8 @@ export default defineEventHandler(async (event) => {
       googleDrive.success = true
       googleDrive.folderUrl = folder.webViewLink
     }
-  } catch (error) {
+  }
+  catch (error) {
     // Log error but don't fail the client creation
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Failed to create Google Drive folder for client:', error)
@@ -226,7 +227,8 @@ export default defineEventHandler(async (event) => {
         `${data.firstName} ${data.lastName}`,
         errorMessage
       )
-    } catch (noticeError) {
+    }
+    catch (noticeError) {
       console.error('Failed to create Drive sync error notice:', noticeError)
     }
   }

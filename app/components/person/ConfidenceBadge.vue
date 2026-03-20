@@ -1,12 +1,27 @@
 <template>
   <span :class="badgeClasses">
-    <span v-if="showIcon" class="mr-1">
-      <CheckCircle v-if="level === 'high'" class="w-3 h-3" />
-      <AlertCircle v-else-if="level === 'medium'" class="w-3 h-3" />
-      <HelpCircle v-else class="w-3 h-3" />
+    <span
+      v-if="showIcon"
+      class="mr-1"
+    >
+      <CheckCircle
+        v-if="level === 'high'"
+        class="w-3 h-3"
+      />
+      <AlertCircle
+        v-else-if="level === 'medium'"
+        class="w-3 h-3"
+      />
+      <HelpCircle
+        v-else
+        class="w-3 h-3"
+      />
     </span>
     {{ confidence }}%
-    <span v-if="showLabel" class="ml-1 capitalize">{{ level }}</span>
+    <span
+      v-if="showLabel"
+      class="ml-1 capitalize"
+    >{{ level }}</span>
   </span>
 </template>
 
@@ -36,9 +51,9 @@ const level = computed(() => {
 const badgeClasses = computed(() => {
   const base = 'inline-flex items-center font-medium rounded-full'
 
-  const sizeClasses = props.size === 'sm'
-    ? 'px-2 py-0.5 text-xs'
-    : 'px-2.5 py-0.5 text-sm'
+  const sizeClasses = props.size === 'sm' ?
+    'px-2 py-0.5 text-xs' :
+    'px-2.5 py-0.5 text-sm'
 
   const colorClasses = {
     high: 'bg-green-100 text-green-800',

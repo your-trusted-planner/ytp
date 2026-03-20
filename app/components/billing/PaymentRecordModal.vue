@@ -1,10 +1,22 @@
 <template>
-  <UiModal :modelValue="true" title="Record Payment" size="lg" @update:modelValue="$emit('close')">
-    <div v-if="loading" class="flex items-center justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600"></div>
+  <UiModal
+    :model-value="true"
+    title="Record Payment"
+    size="lg"
+    @update:model-value="$emit('close')"
+  >
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-8"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy-600" />
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="space-y-4">
+    <form
+      v-else
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Invoice Selection (if not provided) -->
       <div v-if="!invoiceId">
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -16,15 +28,24 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
           @change="handleInvoiceChange"
         >
-          <option value="">Select an invoice...</option>
-          <option v-for="inv in invoices" :key="inv.id" :value="inv.id">
+          <option value="">
+            Select an invoice...
+          </option>
+          <option
+            v-for="inv in invoices"
+            :key="inv.id"
+            :value="inv.id"
+          >
             {{ inv.invoiceNumber || inv.invoice_number }} - {{ inv.clientName || inv.client_name }} - {{ formatCurrency(inv.balanceDue || inv.balance_due) }} due
           </option>
         </select>
       </div>
 
       <!-- Invoice Info (when invoice selected or provided) -->
-      <div v-if="selectedInvoice" class="bg-gray-50 rounded-lg p-4">
+      <div
+        v-if="selectedInvoice"
+        class="bg-gray-50 rounded-lg p-4"
+      >
         <div class="flex justify-between items-start mb-2">
           <div>
             <p class="text-sm font-medium text-gray-900">
@@ -67,12 +88,24 @@
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
         >
-          <option value="CHECK">Check</option>
-          <option value="CASH">Cash</option>
-          <option value="CREDIT_CARD">Credit Card</option>
-          <option value="ACH">ACH / Bank Transfer</option>
-          <option value="WIRE">Wire Transfer</option>
-          <option value="OTHER">Other</option>
+          <option value="CHECK">
+            Check
+          </option>
+          <option value="CASH">
+            Cash
+          </option>
+          <option value="CREDIT_CARD">
+            Credit Card
+          </option>
+          <option value="ACH">
+            ACH / Bank Transfer
+          </option>
+          <option value="WIRE">
+            Wire Transfer
+          </option>
+          <option value="OTHER">
+            Other
+          </option>
         </select>
       </div>
 
@@ -91,13 +124,13 @@
             required
             placeholder="0.00"
             class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
         <button
           v-if="selectedInvoice"
           type="button"
-          @click="form.amountDollars = (selectedInvoice.balanceDue || selectedInvoice.balance_due) / 100"
           class="text-xs text-burgundy-600 hover:text-burgundy-800 mt-1"
+          @click="form.amountDollars = (selectedInvoice.balanceDue || selectedInvoice.balance_due) / 100"
         >
           Pay Balance in Full ({{ formatCurrency(selectedInvoice.balanceDue || selectedInvoice.balance_due) }})
         </button>
@@ -114,7 +147,7 @@
             type="text"
             placeholder="1234"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -125,7 +158,7 @@
             type="text"
             placeholder="Transaction ID"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          />
+          >
         </div>
       </div>
 
@@ -139,7 +172,7 @@
           type="date"
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-        />
+        >
       </div>
 
       <!-- Notes -->
@@ -152,11 +185,14 @@
           rows="2"
           placeholder="Any additional notes about this payment..."
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-        ></textarea>
+        />
       </div>
 
       <!-- Result Preview -->
-      <div v-if="selectedInvoice && form.amountDollars" class="bg-gray-50 rounded-lg p-4">
+      <div
+        v-if="selectedInvoice && form.amountDollars"
+        class="bg-gray-50 rounded-lg p-4"
+      >
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-600">New Balance After Payment</span>
           <span
@@ -167,16 +203,26 @@
             {{ newBalance <= 0 ? '(Paid in full)' : '' }}
           </span>
         </div>
-        <p v-if="form.amountDollars * 100 > (selectedInvoice.balanceDue || selectedInvoice.balance_due)" class="text-xs text-amber-600 mt-2">
+        <p
+          v-if="form.amountDollars * 100 > (selectedInvoice.balanceDue || selectedInvoice.balance_due)"
+          class="text-xs text-amber-600 mt-2"
+        >
           Note: Payment exceeds balance due. Overpayment of {{ formatCurrency((form.amountDollars * 100) - (selectedInvoice.balanceDue || selectedInvoice.balance_due)) }} will be recorded.
         </p>
       </div>
 
       <div class="flex justify-end gap-3 pt-4 border-t">
-        <UiButton type="button" variant="secondary" @click="$emit('close')">
+        <UiButton
+          type="button"
+          variant="secondary"
+          @click="$emit('close')"
+        >
           Cancel
         </UiButton>
-        <UiButton type="submit" :disabled="!isValid || submitting">
+        <UiButton
+          type="submit"
+          :disabled="!isValid || submitting"
+        >
           {{ submitting ? 'Recording...' : 'Record Payment' }}
         </UiButton>
       </div>
@@ -263,9 +309,11 @@ async function fetchInvoices() {
         form.value.amountDollars = (selectedInvoice.value.balanceDue || selectedInvoice.value.balance_due) / 100
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch invoices:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -281,7 +329,8 @@ async function handleInvoiceChange() {
     selectedInvoice.value = response.invoice
     // Default to full balance
     form.value.amountDollars = (selectedInvoice.value.balanceDue || selectedInvoice.value.balance_due) / 100
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch invoice:', error)
     selectedInvoice.value = null
   }
@@ -309,9 +358,11 @@ async function handleSubmit() {
 
     toast.success('Payment recorded successfully')
     emit('recorded')
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to record payment')
-  } finally {
+  }
+  finally {
     submitting.value = false
   }
 }

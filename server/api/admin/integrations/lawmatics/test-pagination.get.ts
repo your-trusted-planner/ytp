@@ -35,9 +35,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const credentials: { accessToken: string } = typeof credentialsData === 'string'
-    ? JSON.parse(credentialsData)
-    : credentialsData as { accessToken: string }
+  const credentials: { accessToken: string } = typeof credentialsData === 'string' ?
+      JSON.parse(credentialsData) :
+    credentialsData as { accessToken: string }
 
   const decryptedToken = await decrypt(event, credentials.accessToken)
 
@@ -78,13 +78,14 @@ export default defineEventHandler(async (event) => {
         meta: data.meta,
         links: data.links,
         // Include first record's structure (without sensitive data)
-        sampleRecordKeys: Array.isArray(data.data) && data.data[0]
-          ? Object.keys(data.data[0])
-          : [],
+        sampleRecordKeys: Array.isArray(data.data) && data.data[0] ?
+            Object.keys(data.data[0]) :
+            [],
         // Raw response keys at top level
         responseKeys: Object.keys(data)
       }
-    } catch (error) {
+    }
+    catch (error) {
       results[endpoint.name] = {
         error: true,
         message: error instanceof Error ? error.message : String(error)

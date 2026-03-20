@@ -13,7 +13,7 @@ const registerSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  
+
   // Validate input
   const result = registerSchema.safeParse(body)
   if (!result.success) {
@@ -22,27 +22,27 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid input'
     })
   }
-  
+
   const { email, password, firstName, lastName, phone } = result.data
   const db = useDrizzle()
-  
+
   // Check if user already exists
   const existingUser = await db
     .select()
     .from(schema.users)
     .where(eq(schema.users.email, email))
     .get()
-  
+
   if (existingUser) {
     throw createError({
       statusCode: 409,
       message: 'User already exists'
     })
   }
-  
+
   // Hash password
   const hashedPassword = await hashPassword(password)
-  
+
   // Create user
   const newUser = {
     id: generateId(),
@@ -54,9 +54,9 @@ export default defineEventHandler(async (event) => {
     phone,
     status: 'PROSPECT' as const
   }
-  
+
   await db.insert(schema.users).values(newUser)
-  
+
   // Create session
   await setUserSession(event, {
     user: {
@@ -68,12 +68,11 @@ export default defineEventHandler(async (event) => {
     },
     loggedInAt: new Date()
   })
-  
+
   // Return user without password
   const { password: _, ...userWithoutPassword } = newUser
-  
+
   return {
     user: userWithoutPassword
   }
 })
-

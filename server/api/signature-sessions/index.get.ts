@@ -35,7 +35,8 @@ export default defineEventHandler(async (event) => {
     const statuses = status.split(',').map(s => s.trim().toUpperCase())
     if (statuses.length === 1) {
       conditions.push(eq(schema.signatureSessions.status, statuses[0]))
-    } else {
+    }
+    else {
       conditions.push(inArray(schema.signatureSessions.status, statuses))
     }
   }
@@ -77,29 +78,29 @@ export default defineEventHandler(async (event) => {
 
   // Check for expired sessions and mark them
   const now = new Date()
-  const processedSessions = sessions.map(session => {
+  const processedSessions = sessions.map((session) => {
     const isExpired = session.tokenExpiresAt && new Date(session.tokenExpiresAt) < now
-    const effectiveStatus = (session.status === 'PENDING' || session.status === 'IDENTITY_REQUIRED') && isExpired
-      ? 'EXPIRED'
-      : session.status
+    const effectiveStatus = (session.status === 'PENDING' || session.status === 'IDENTITY_REQUIRED') && isExpired ?
+      'EXPIRED' :
+      session.status
 
     return {
       ...session,
       status: effectiveStatus,
       isExpired,
       signerName: [session.signerFirstName, session.signerLastName].filter(Boolean).join(' ') || session.signerEmail,
-      tokenExpiresAt: session.tokenExpiresAt instanceof Date
-        ? session.tokenExpiresAt.toISOString()
-        : session.tokenExpiresAt,
-      signedAt: session.signedAt instanceof Date
-        ? session.signedAt.toISOString()
-        : session.signedAt,
-      createdAt: session.createdAt instanceof Date
-        ? session.createdAt.toISOString()
-        : session.createdAt,
-      updatedAt: session.updatedAt instanceof Date
-        ? session.updatedAt.toISOString()
-        : session.updatedAt
+      tokenExpiresAt: session.tokenExpiresAt instanceof Date ?
+          session.tokenExpiresAt.toISOString() :
+        session.tokenExpiresAt,
+      signedAt: session.signedAt instanceof Date ?
+          session.signedAt.toISOString() :
+        session.signedAt,
+      createdAt: session.createdAt instanceof Date ?
+          session.createdAt.toISOString() :
+        session.createdAt,
+      updatedAt: session.updatedAt instanceof Date ?
+          session.updatedAt.toISOString() :
+        session.updatedAt
     }
   })
 
@@ -120,19 +121,24 @@ export default defineEventHandler(async (event) => {
     revoked: 0
   }
 
-  allSessions.forEach(s => {
+  allSessions.forEach((s) => {
     const isExpired = s.tokenExpiresAt && new Date(s.tokenExpiresAt) < now
     if ((s.status === 'PENDING' || s.status === 'IDENTITY_REQUIRED') && isExpired) {
       counts.expired++
-    } else if (s.status === 'PENDING') {
+    }
+    else if (s.status === 'PENDING') {
       counts.pending++
-    } else if (s.status === 'IDENTITY_REQUIRED') {
+    }
+    else if (s.status === 'IDENTITY_REQUIRED') {
       counts.identityRequired++
-    } else if (s.status === 'SIGNED') {
+    }
+    else if (s.status === 'SIGNED') {
       counts.signed++
-    } else if (s.status === 'EXPIRED') {
+    }
+    else if (s.status === 'EXPIRED') {
       counts.expired++
-    } else if (s.status === 'REVOKED') {
+    }
+    else if (s.status === 'REVOKED') {
       counts.revoked++
     }
   })

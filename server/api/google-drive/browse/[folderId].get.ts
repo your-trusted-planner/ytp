@@ -173,7 +173,7 @@ export default defineEventHandler(async (event) => {
 
     const response = await fetch(`${GOOGLE_DRIVE_API}/files?${params}`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`
       }
     })
 
@@ -212,7 +212,7 @@ export default defineEventHandler(async (event) => {
       `${GOOGLE_DRIVE_API}/files/${folderId}?${folderParams}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         }
       }
     )
@@ -227,7 +227,8 @@ export default defineEventHandler(async (event) => {
       items,
       itemCount: items.length
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Google Drive browse error:', error)
     throw createError({
       statusCode: 500,

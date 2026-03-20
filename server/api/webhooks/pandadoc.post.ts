@@ -40,7 +40,8 @@ export default defineEventHandler(async (event) => {
         if (body.data?.status === 'document.completed') {
           notarizationStatus = 'COMPLETED'
           documentStatus = 'SIGNED' // Also mark document as signed
-        } else if (body.data?.status === 'document.sent') {
+        }
+        else if (body.data?.status === 'document.sent') {
           notarizationStatus = 'SCHEDULED'
         }
         break
@@ -67,7 +68,8 @@ export default defineEventHandler(async (event) => {
     // TODO: Create activity log entry
 
     return { success: true }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error processing PandaDoc webhook:', error)
     throw createError({
       statusCode: 500,
@@ -75,6 +77,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-
-
-

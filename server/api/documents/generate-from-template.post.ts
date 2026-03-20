@@ -5,7 +5,7 @@ import { logActivity } from '../../utils/activity-logger'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  
+
   // Only lawyers/admins can generate documents
   if (user.role !== 'LAWYER' && user.role !== 'ADMIN') {
     throw createError({
@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
   if (template.variableMappings) {
     try {
       variableMappings = JSON.parse(template.variableMappings)
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error parsing variable mappings:', error)
     }
   }
@@ -151,7 +152,8 @@ export default defineEventHandler(async (event) => {
         zipCode: client.zip_code || ''
       }
       context[variable] = fieldMap[mapping.field] || ''
-    } else if (mapping.source === 'matter' && matter) {
+    }
+    else if (mapping.source === 'matter' && matter) {
       // Map matter fields
       const fieldMap: Record<string, any> = {
         title: matter.title || '',
@@ -186,18 +188,18 @@ export default defineEventHandler(async (event) => {
     // Service/Matter info (for engagement letters)
     serviceName: template.name || 'Legal Services',
     matterName: body.matterName || template.name || 'Legal Services',
-    
+
     // Fee info (for engagement letters) - placeholder values
     fee: '$[To be determined]',
     retainerFee: '$[To be determined]',
     hourlyRate: '$[To be determined]',
-    
+
     // Dates
     currentDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     today: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signatureDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     signedOn: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    
+
     // Placeholder for signatures (will be filled when client signs)
     clientSignature: '[Signature Required]',
     signature: '[Signature Required]',
@@ -238,10 +240,12 @@ export default defineEventHandler(async (event) => {
 
         // Use the generated document ID
         var finalDocumentId = documentId
-      } else {
+      }
+      else {
         console.warn('Template DOCX not found in blob storage, generating HTML only')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error generating DOCX:', error)
       // Continue with HTML only if DOCX generation fails
     }
@@ -302,11 +306,12 @@ export default defineEventHandler(async (event) => {
         // Queue the sync (in a real implementation, this would use the queue binding)
         // For now, we'll do synchronous sync - the queue will be used for retries
         const { syncDocumentToDrive } = await import('../../utils/google-drive')
-        syncDocumentToDrive(documentId).catch(error => {
+        syncDocumentToDrive(documentId).catch((error) => {
           console.error('Failed to sync document to Google Drive:', error)
         })
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error checking Drive sync status:', error)
     }
   }
@@ -337,4 +342,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-

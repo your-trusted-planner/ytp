@@ -1,19 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2026-01-02',
-  // Use app/ directory for Nuxt 4 structure
-  // srcDir: 'app',
-
-  // App configuration
-  app: {
-    head: {
-      link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/ytp-logo.svg' },
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
-      ]
-    }
-  },
 
   // https://nuxt.com/modules
   modules: [
@@ -37,6 +23,24 @@ export default defineNuxtConfig({
 
   // https://devtools.nuxt.com
   devtools: { enabled: true },
+  // Use app/ directory for Nuxt 4 structure
+  // srcDir: 'app',
+
+  // App configuration
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/ytp-logo.svg' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
+      ]
+    }
+  },
+
+  // Global CSS
+  css: [
+    '~/assets/css/toast.css'
+  ],
 
   // Env variables - https://nuxt.com/docs/getting-started/configuration#environment-variables-and-private-tokens
   runtimeConfig: {
@@ -75,6 +79,7 @@ export default defineNuxtConfig({
     // Radar address autocomplete
     radarApiKey: process.env.RADAR_API_KEY || ''
   },
+  compatibilityDate: '2026-01-02',
 
   // Nitro config
   nitro: {
@@ -105,10 +110,5 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
-  },
-
-  // Global CSS
-  css: [
-    '~/assets/css/toast.css'
-  ]
+  }
 })

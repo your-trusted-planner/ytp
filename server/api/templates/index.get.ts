@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(schema.documentTemplates.createdAt))
     .all()
 
-  return templates.map((template) => ({
+  return templates.map(template => ({
     id: template.id,
     name: template.name,
     description: template.description,
@@ -37,4 +37,3 @@ export default defineEventHandler(async (event) => {
     variable_mappings: template.variableMappings
   }))
 })
-
