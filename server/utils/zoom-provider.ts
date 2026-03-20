@@ -11,13 +11,34 @@ import type { VideoMeetingProvider, CreateMeetingParams, MeetingResult, UpdateMe
 
 const ZOOM_API = 'https://api.zoom.us/v2'
 
+/**
+ * Convert a UTC ISO string to a local datetime string in the given IANA timezone.
+ * Zoom expects `start_time` as local time (no Z) paired with the `timezone` field.
+ * E.g., "2026-03-20T16:00:00.000Z" with tz "America/Denver" → "2026-03-20T10:00:00"
+ */
+function toLocalTimeForZoom(utcIso: string, timezone: string): string {
+  const date = new Date(utcIso)
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+  const parts = formatter.formatToParts(date)
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '00'
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`
+}
+
 export class ZoomProvider implements VideoMeetingProvider {
   async createMeeting(params: CreateMeetingParams): Promise<MeetingResult> {
     const accessToken = await getZoomAccessToken(params.hostUserId, params.event)
 
     // Zoom expects start_time as local time (no Z suffix) paired with timezone.
-    // If we send a Z-suffixed UTC string, Zoom ignores the timezone field.
-    const startTime = params.startTime.replace(/\.\d{3}Z$/, '').replace(/Z$/, '')
+    const startTime = toLocalTimeForZoom(params.startTime, params.timezone)
 
     const response = await fetch(`${ZOOM_API}/users/me/meetings`, {
       method: 'POST',
@@ -73,7 +94,7 @@ export class ZoomProvider implements VideoMeetingProvider {
 
     const body: Record<string, any> = {}
     if (params.topic) body.topic = params.topic
-    if (params.startTime) body.start_time = params.startTime.replace(/\.\d{3}Z$/, '').replace(/Z$/, '')
+    if (params.startTime) body.start_time = toLocalTimeForZoom(params.startTime, params.timezone || 'UTC')
     if (params.durationMinutes) body.duration = params.durationMinutes
     if (params.timezone) body.timezone = params.timezone
 
