@@ -96,8 +96,6 @@ export default defineEventHandler(async (event) => {
   let videoMeetingId: string | null = null
   let resolvedLocation = data.location || null
 
-  console.log('[Appointment] locationConfig:', data.locationConfig, '| location:', data.location)
-
   if (data.locationConfig) {
     try {
       const config = JSON.parse(data.locationConfig)

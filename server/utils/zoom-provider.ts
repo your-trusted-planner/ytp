@@ -15,6 +15,10 @@ export class ZoomProvider implements VideoMeetingProvider {
   async createMeeting(params: CreateMeetingParams): Promise<MeetingResult> {
     const accessToken = await getZoomAccessToken(params.hostUserId, params.event)
 
+    // Zoom expects start_time as local time (no Z suffix) paired with timezone.
+    // If we send a Z-suffixed UTC string, Zoom ignores the timezone field.
+    const startTime = params.startTime.replace(/\.\d{3}Z$/, '').replace(/Z$/, '')
+
     const response = await fetch(`${ZOOM_API}/users/me/meetings`, {
       method: 'POST',
       headers: {
@@ -24,7 +28,7 @@ export class ZoomProvider implements VideoMeetingProvider {
       body: JSON.stringify({
         topic: params.topic,
         type: 2, // Scheduled meeting
-        start_time: params.startTime,
+        start_time: startTime,
         duration: params.durationMinutes,
         timezone: params.timezone,
         agenda: params.description || '',
@@ -69,7 +73,7 @@ export class ZoomProvider implements VideoMeetingProvider {
 
     const body: Record<string, any> = {}
     if (params.topic) body.topic = params.topic
-    if (params.startTime) body.start_time = params.startTime
+    if (params.startTime) body.start_time = params.startTime.replace(/\.\d{3}Z$/, '').replace(/Z$/, '')
     if (params.durationMinutes) body.duration = params.durationMinutes
     if (params.timezone) body.timezone = params.timezone
 

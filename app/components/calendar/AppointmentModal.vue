@@ -88,7 +88,10 @@
           >
             {{ room.name }}{{ room.building ? ` (${room.building})` : '' }}
           </option>
-          <option value="video:zoom">
+          <option
+            v-if="hasZoomConnection"
+            value="video:zoom"
+          >
             Zoom Meeting
           </option>
           <option value="custom">
@@ -223,6 +226,7 @@ const isOpen = computed({
 })
 
 const submitting = ref(false)
+const hasZoomConnection = ref(false)
 const clientOptions = ref<Array<{ label: string, value: string }>>([])
 const matters = ref<Array<{ id: string, title: string }>>([])
 
@@ -244,10 +248,18 @@ const form = ref({
 })
 
 // Load staff list, appointment types, and rooms from store (no-op if already loaded)
-onMounted(() => {
+onMounted(async () => {
   calendar.loadStaffList()
   calendar.loadAppointmentTypes()
   calendar.loadRooms()
+
+  // Check if user has an active Zoom connection
+  try {
+    const connections = await $fetch<Array<{ provider: string, status: string }>>('/api/profile/video-connections')
+    hasZoomConnection.value = connections.some(c => c.provider === 'zoom' && c.status === 'ACTIVE')
+  } catch {
+    // Not connected or endpoint unavailable
+  }
 })
 
 // Parse locationConfig to determine locationType
