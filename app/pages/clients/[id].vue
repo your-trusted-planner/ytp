@@ -3,17 +3,31 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <button @click="$router.back()" class="text-gray-600 hover:text-gray-900">
+        <button
+          class="text-gray-600 hover:text-gray-900"
+          @click="$router.back()"
+        >
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
-          <h1 v-if="client" class="text-2xl font-bold text-gray-900">
+          <h1
+            v-if="client"
+            class="text-2xl font-bold text-gray-900"
+          >
             {{ client.first_name }} {{ client.last_name }}
           </h1>
-          <p v-if="client" class="text-gray-600 mt-1">{{ client.email }}</p>
+          <p
+            v-if="client"
+            class="text-gray-600 mt-1"
+          >
+            {{ client.email }}
+          </p>
         </div>
       </div>
-      <div v-if="client" class="flex items-center space-x-3">
+      <div
+        v-if="client"
+        class="flex items-center space-x-3"
+      >
         <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : client.status === 'PROSPECTIVE' ? 'warning' : 'default'">
           {{ client.status }}
         </UiBadge>
@@ -27,7 +41,11 @@
           v-if="client?.importMetadata"
           :import-metadata="client.importMetadata"
         />
-        <UiButton variant="outline" size="sm" @click="openEditModal">
+        <UiButton
+          variant="outline"
+          size="sm"
+          @click="openEditModal"
+        >
           <Edit class="w-4 h-4 mr-1" />
           Edit Client
         </UiButton>
@@ -35,17 +53,25 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
+    <div
+      v-if="loading"
+      class="flex justify-center py-12"
+    >
       <Loader class="w-8 h-8 animate-spin text-burgundy-600" />
     </div>
 
     <!-- Client Details -->
-    <div v-else-if="client" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div
+      v-else-if="client"
+      class="grid grid-cols-1 lg:grid-cols-3 gap-6"
+    >
       <!-- Left Column: Client Info -->
       <div class="lg:col-span-1 space-y-6">
         <!-- Basic Info Card -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Contact Information
+          </h3>
           <div class="space-y-3 text-sm">
             <div>
               <span class="text-gray-600">Name:</span>
@@ -62,7 +88,9 @@
             <div v-if="clientProfile">
               <span class="text-gray-600">Address:</span>
               <div class="ml-2 mt-1">
-                <div v-if="clientProfile.address">{{ clientProfile.address }}</div>
+                <div v-if="clientProfile.address">
+                  {{ clientProfile.address }}
+                </div>
                 <div v-if="clientProfile.city || clientProfile.state">
                   {{ clientProfile.city }}, {{ clientProfile.state }} {{ clientProfile.zip_code }}
                 </div>
@@ -76,7 +104,9 @@
 
         <!-- Quick Stats -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Quick Stats
+          </h3>
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-gray-600">Active Matters</span>
@@ -111,7 +141,11 @@
               <Wallet class="w-5 h-5 mr-2 text-green-600" />
               Trust Account
             </h3>
-            <UiButton size="sm" variant="outline" @click="showTrustDepositModal = true">
+            <UiButton
+              size="sm"
+              variant="outline"
+              @click="showTrustDepositModal = true"
+            >
               <Plus class="w-4 h-4 mr-1" />
               Deposit
             </UiButton>
@@ -121,7 +155,9 @@
             <div class="text-3xl font-bold text-green-600">
               {{ formatCurrency(trustBalance) }}
             </div>
-            <div class="text-sm text-gray-500 mt-1">Available Balance</div>
+            <div class="text-sm text-gray-500 mt-1">
+              Available Balance
+            </div>
           </div>
 
           <NuxtLink
@@ -133,13 +169,18 @@
         </div>
 
         <!-- Outstanding Invoices Card -->
-        <div v-if="outstandingInvoices.length > 0" class="bg-white rounded-lg border border-gray-200 p-6">
+        <div
+          v-if="outstandingInvoices.length > 0"
+          class="bg-white rounded-lg border border-gray-200 p-6"
+        >
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
               <FileText class="w-5 h-5 mr-2 text-amber-600" />
               Outstanding Invoices
             </h3>
-            <UiBadge variant="warning">{{ outstandingInvoices.length }}</UiBadge>
+            <UiBadge variant="warning">
+              {{ outstandingInvoices.length }}
+            </UiBadge>
           </div>
 
           <div class="space-y-3">
@@ -150,12 +191,21 @@
               @click="$router.push(`/invoices/${invoice.id}`)"
             >
               <div>
-                <div class="font-medium text-gray-900 text-sm">{{ invoice.invoiceNumber }}</div>
-                <div class="text-xs text-gray-500">Due {{ formatInvoiceDate(invoice.dueDate) }}</div>
+                <div class="font-medium text-gray-900 text-sm">
+                  {{ invoice.invoiceNumber }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  Due {{ formatInvoiceDate(invoice.dueDate) }}
+                </div>
               </div>
               <div class="text-right">
-                <div class="font-semibold text-gray-900 text-sm">{{ formatCurrency(invoice.balanceDue) }}</div>
-                <UiBadge :variant="getInvoiceStatusVariant(invoice.status)" size="sm">
+                <div class="font-semibold text-gray-900 text-sm">
+                  {{ formatCurrency(invoice.balanceDue) }}
+                </div>
+                <UiBadge
+                  :variant="getInvoiceStatusVariant(invoice.status)"
+                  size="sm"
+                >
                   {{ invoice.status }}
                 </UiBadge>
               </div>
@@ -194,18 +244,30 @@
         <!-- People & Relationships -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">People & Relationships</h3>
-            <UiButton size="sm" variant="outline" @click="showAddRelationshipModal = true">
+            <h3 class="text-lg font-semibold text-gray-900">
+              People & Relationships
+            </h3>
+            <UiButton
+              size="sm"
+              variant="outline"
+              @click="showAddRelationshipModal = true"
+            >
               <Plus class="w-4 h-4 mr-1" />
               Add Person
             </UiButton>
           </div>
 
-          <div v-if="relationships.length === 0" class="text-center py-8 text-gray-500 text-sm">
+          <div
+            v-if="relationships.length === 0"
+            class="text-center py-8 text-gray-500 text-sm"
+          >
             No relationships yet
           </div>
 
-          <div v-else class="space-y-3">
+          <div
+            v-else
+            class="space-y-3"
+          >
             <div
               v-for="rel in relationships"
               :key="rel.id"
@@ -213,19 +275,31 @@
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
-                  <div class="font-medium text-gray-900">{{ rel.person.fullName }}</div>
+                  <div class="font-medium text-gray-900">
+                    {{ rel.person.fullName }}
+                  </div>
                   <div class="text-sm text-burgundy-600 mt-1">
                     {{ formatRelationshipType(rel.relationshipType) }}
-                    <span v-if="rel.ordinal > 0" class="text-gray-500">(#{{ rel.ordinal }})</span>
+                    <span
+                      v-if="rel.ordinal > 0"
+                      class="text-gray-500"
+                    >(#{{ rel.ordinal }})</span>
                   </div>
-                  <div v-if="rel.person.email || rel.person.phone" class="text-xs text-gray-600 mt-1 space-y-0.5">
-                    <div v-if="rel.person.email">{{ rel.person.email }}</div>
-                    <div v-if="rel.person.phone">{{ rel.person.phone }}</div>
+                  <div
+                    v-if="rel.person.email || rel.person.phone"
+                    class="text-xs text-gray-600 mt-1 space-y-0.5"
+                  >
+                    <div v-if="rel.person.email">
+                      {{ rel.person.email }}
+                    </div>
+                    <div v-if="rel.person.phone">
+                      {{ rel.person.phone }}
+                    </div>
                   </div>
                 </div>
                 <button
-                  @click="removeRelationship(rel.id)"
                   class="text-gray-400 hover:text-red-600 transition-colors"
+                  @click="removeRelationship(rel.id)"
                 >
                   <X class="w-4 h-4" />
                 </button>
@@ -240,18 +314,29 @@
         <!-- Active Matters -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Client Matters</h3>
-            <UiButton size="sm" @click="$router.push(`/matters?createNew=true&clientId=${clientId}`)">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Client Matters
+            </h3>
+            <UiButton
+              size="sm"
+              @click="$router.push(`/matters?createNew=true&clientId=${clientId}`)"
+            >
               <Plus class="w-4 h-4 mr-1" />
               Create Matter
             </UiButton>
           </div>
 
-          <div v-if="matters.length === 0" class="text-center py-8 text-gray-500">
+          <div
+            v-if="matters.length === 0"
+            class="text-center py-8 text-gray-500"
+          >
             No matters yet. Click "Create Matter" to begin.
           </div>
 
-          <div v-else class="space-y-3">
+          <div
+            v-else
+            class="space-y-3"
+          >
             <div
               v-for="matter in matters"
               :key="matter.id"
@@ -261,10 +346,15 @@
               <div class="flex justify-between items-start mb-3">
                 <div>
                   <div class="flex items-center gap-2">
-                    <h4 class="font-semibold text-gray-900">{{ matter.title }}</h4>
+                    <h4 class="font-semibold text-gray-900">
+                      {{ matter.title }}
+                    </h4>
                     <span class="text-xs text-gray-500">#{{ matter.matter_number }}</span>
                   </div>
-                  <p v-if="matter.description" class="text-sm text-gray-600 mt-1">
+                  <p
+                    v-if="matter.description"
+                    class="text-sm text-gray-600 mt-1"
+                  >
                     {{ matter.description }}
                   </p>
                 </div>
@@ -288,7 +378,10 @@
                 </div>
               </div>
 
-              <div v-if="matter.engaged_services && matter.engaged_services.length > 0" class="mt-3 flex flex-wrap gap-2">
+              <div
+                v-if="matter.engaged_services && matter.engaged_services.length > 0"
+                class="mt-3 flex flex-wrap gap-2"
+              >
                 <span
                   v-for="service in matter.engaged_services"
                   :key="service.catalog_id"
@@ -304,15 +397,25 @@
         <!-- Active Journeys -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Active Journeys</h3>
-            <p class="text-sm text-gray-500 mt-1">Journeys are automatically created when services with journey templates are added to matters</p>
+            <h3 class="text-lg font-semibold text-gray-900">
+              Active Journeys
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Journeys are automatically created when services with journey templates are added to matters
+            </p>
           </div>
 
-          <div v-if="journeys.length === 0" class="text-center py-8 text-gray-500">
+          <div
+            v-if="journeys.length === 0"
+            class="text-center py-8 text-gray-500"
+          >
             No active journeys yet. Add a service to a matter to begin.
           </div>
 
-          <div v-else class="space-y-3">
+          <div
+            v-else
+            class="space-y-3"
+          >
             <div
               v-for="journey in journeys"
               :key="journey.id"
@@ -325,19 +428,30 @@
                   <div class="flex items-center gap-2 mb-2 text-xs text-gray-600">
                     <span v-if="journey.matter_title">
                       Matter: {{ journey.matter_title }}
-                      <span v-if="journey.matter_number" class="text-gray-500">(#{{ journey.matter_number }})</span>
+                      <span
+                        v-if="journey.matter_number"
+                        class="text-gray-500"
+                      >(#{{ journey.matter_number }})</span>
                     </span>
-                    <span v-if="journey.service_name" class="text-gray-500">•</span>
+                    <span
+                      v-if="journey.service_name"
+                      class="text-gray-500"
+                    >•</span>
                     <span v-if="journey.service_name">
                       Service: {{ journey.service_name }}
                     </span>
                   </div>
 
                   <!-- Journey Name -->
-                  <h4 class="font-semibold text-gray-900">{{ journey.journey_name }}</h4>
+                  <h4 class="font-semibold text-gray-900">
+                    {{ journey.journey_name }}
+                  </h4>
 
                   <!-- Current Step -->
-                  <p v-if="journey.current_step_name" class="text-sm text-gray-600 mt-1">
+                  <p
+                    v-if="journey.current_step_name"
+                    class="text-sm text-gray-600 mt-1"
+                  >
                     Current: {{ journey.current_step_name }}
                   </p>
                 </div>
@@ -351,19 +465,31 @@
 
         <!-- Recent Documents -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Documents</h3>
-          <div v-if="documents.length === 0" class="text-center py-8 text-gray-500">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Recent Documents
+          </h3>
+          <div
+            v-if="documents.length === 0"
+            class="text-center py-8 text-gray-500"
+          >
             No documents yet
           </div>
-          <div v-else class="space-y-2">
+          <div
+            v-else
+            class="space-y-2"
+          >
             <div
               v-for="doc in documents"
               :key="doc.id"
               class="flex justify-between items-center p-3 border border-gray-100 rounded hover:bg-gray-50"
             >
               <div>
-                <div class="font-medium text-gray-900">{{ doc.title }}</div>
-                <div class="text-xs text-gray-600">{{ formatDate(doc.created_at) }}</div>
+                <div class="font-medium text-gray-900">
+                  {{ doc.title }}
+                </div>
+                <div class="text-xs text-gray-600">
+                  {{ formatDate(doc.created_at) }}
+                </div>
               </div>
               <UiBadge>{{ doc.status }}</UiBadge>
             </div>
@@ -372,15 +498,24 @@
 
         <!-- Notes -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <EntityNotes entityType="client" :entityId="clientId" />
+          <EntityNotes
+            entity-type="client"
+            :entity-id="clientId"
+          />
         </div>
       </div>
     </div>
 
-
     <!-- Edit Client Modal -->
-    <UiModal v-model="showEditModal" title="Edit Client" size="lg">
-      <form @submit.prevent="saveClientChanges" class="space-y-4">
+    <UiModal
+      v-model="showEditModal"
+      title="Edit Client"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="saveClientChanges"
+      >
         <div class="grid grid-cols-2 gap-4">
           <UiInput
             v-model="editForm.first_name"
@@ -401,14 +536,15 @@
           required
         />
 
-        <UiInput
+        <UiPhoneInput
           v-model="editForm.phone"
           label="Phone"
-          type="tel"
         />
 
         <div class="border-t pt-4 mt-4">
-          <h4 class="font-semibold text-gray-900 mb-3">Address Information</h4>
+          <h4 class="font-semibold text-gray-900 mb-3">
+            Address Information
+          </h4>
 
           <div class="space-y-4">
             <UiInput
@@ -437,10 +573,17 @@
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="showEditModal = false">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="showEditModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :loading="savingClient">
+          <UiButton
+            type="submit"
+            :loading="savingClient"
+          >
             Save Changes
           </UiButton>
         </div>
@@ -462,8 +605,15 @@
     />
 
     <!-- Add Relationship Modal -->
-    <UiModal v-model="showAddRelationshipModal" title="Add Person & Relationship" size="lg">
-      <form @submit.prevent="addRelationship" class="space-y-4">
+    <UiModal
+      v-model="showAddRelationshipModal"
+      title="Add Person & Relationship"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="addRelationship"
+      >
         <!-- Choose existing person or create new -->
         <div class="border-b pb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -472,20 +622,20 @@
           <div class="space-y-2">
             <label class="flex items-center">
               <input
-                type="radio"
                 v-model="relationshipForm.mode"
+                type="radio"
                 value="existing"
                 class="mr-2"
-              />
+              >
               Select existing person
             </label>
             <label class="flex items-center">
               <input
-                type="radio"
                 v-model="relationshipForm.mode"
+                type="radio"
                 value="new"
                 class="mr-2"
-              />
+              >
               Create new person
             </label>
           </div>
@@ -493,16 +643,29 @@
 
         <!-- Select existing person -->
         <div v-if="relationshipForm.mode === 'existing'">
-          <UiSelect v-model="relationshipForm.personId" label="Select Person" required>
-            <option value="">-- Select a person --</option>
-            <option v-for="person in availablePeople" :key="person.id" :value="person.id">
+          <UiSelect
+            v-model="relationshipForm.personId"
+            label="Select Person"
+            required
+          >
+            <option value="">
+              -- Select a person --
+            </option>
+            <option
+              v-for="person in availablePeople"
+              :key="person.id"
+              :value="person.id"
+            >
               {{ person.fullName }} <span v-if="person.email">({{ person.email }})</span>
             </option>
           </UiSelect>
         </div>
 
         <!-- Create new person -->
-        <div v-if="relationshipForm.mode === 'new'" class="space-y-4">
+        <div
+          v-if="relationshipForm.mode === 'new'"
+          class="space-y-4"
+        >
           <div class="grid grid-cols-2 gap-4">
             <UiInput
               v-model="relationshipForm.newPerson.firstName"
@@ -522,38 +685,73 @@
             type="email"
           />
 
-          <UiInput
+          <UiPhoneInput
             v-model="relationshipForm.newPerson.phone"
             label="Phone"
-            type="tel"
           />
         </div>
 
         <!-- Relationship details -->
         <div class="border-t pt-4 space-y-4">
-          <h4 class="font-semibold text-gray-900">Relationship Details</h4>
+          <h4 class="font-semibold text-gray-900">
+            Relationship Details
+          </h4>
 
-          <UiSelect v-model="relationshipForm.relationshipType" label="Relationship Type" required>
-            <option value="">-- Select type --</option>
+          <UiSelect
+            v-model="relationshipForm.relationshipType"
+            label="Relationship Type"
+            required
+          >
+            <option value="">
+              -- Select type --
+            </option>
             <optgroup label="Family">
-              <option value="SPOUSE">Spouse</option>
-              <option value="EX_SPOUSE">Ex-Spouse</option>
-              <option value="PARTNER">Partner</option>
-              <option value="CHILD">Child</option>
-              <option value="STEPCHILD">Stepchild</option>
-              <option value="GRANDCHILD">Grandchild</option>
-              <option value="PARENT">Parent</option>
-              <option value="SIBLING">Sibling</option>
+              <option value="SPOUSE">
+                Spouse
+              </option>
+              <option value="EX_SPOUSE">
+                Ex-Spouse
+              </option>
+              <option value="PARTNER">
+                Partner
+              </option>
+              <option value="CHILD">
+                Child
+              </option>
+              <option value="STEPCHILD">
+                Stepchild
+              </option>
+              <option value="GRANDCHILD">
+                Grandchild
+              </option>
+              <option value="PARENT">
+                Parent
+              </option>
+              <option value="SIBLING">
+                Sibling
+              </option>
             </optgroup>
             <optgroup label="Professional">
-              <option value="FINANCIAL_ADVISOR">Financial Advisor</option>
-              <option value="ACCOUNTANT">Accountant</option>
-              <option value="INSURANCE_AGENT">Insurance Agent</option>
-              <option value="ATTORNEY">Attorney</option>
+              <option value="FINANCIAL_ADVISOR">
+                Financial Advisor
+              </option>
+              <option value="ACCOUNTANT">
+                Accountant
+              </option>
+              <option value="INSURANCE_AGENT">
+                Insurance Agent
+              </option>
+              <option value="ATTORNEY">
+                Attorney
+              </option>
             </optgroup>
             <optgroup label="Business">
-              <option value="BUSINESS_PARTNER">Business Partner</option>
-              <option value="BUSINESS_ASSOCIATE">Business Associate</option>
+              <option value="BUSINESS_PARTNER">
+                Business Partner
+              </option>
+              <option value="BUSINESS_ASSOCIATE">
+                Business Associate
+              </option>
             </optgroup>
           </UiSelect>
 
@@ -573,10 +771,17 @@
         </div>
 
         <div class="flex justify-end space-x-3 pt-4">
-          <UiButton type="button" variant="ghost" @click="showAddRelationshipModal = false">
+          <UiButton
+            type="button"
+            variant="ghost"
+            @click="showAddRelationshipModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :loading="savingRelationship">
+          <UiButton
+            type="submit"
+            :loading="savingRelationship"
+          >
             Add Relationship
           </UiButton>
         </div>
@@ -671,9 +876,11 @@ async function fetchClient() {
     relationships.value = data.relationships || []
     trustBalance.value = data.trustBalance || 0
     outstandingInvoices.value = data.invoices || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching client:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -684,7 +891,8 @@ watch(showAddRelationshipModal, async (isOpen) => {
     try {
       const peopleData = await $fetch('/api/people')
       availablePeople.value = (peopleData as any).people || []
-    } catch {
+    }
+    catch {
       availablePeople.value = []
     }
   }
@@ -736,10 +944,12 @@ async function saveClientChanges() {
 
     // Refresh client data
     await fetchClient()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error updating client:', error)
     toast.error(error.message || 'Failed to update client')
-  } finally {
+  }
+  finally {
     savingClient.value = false
   }
 }
@@ -786,10 +996,12 @@ async function addRelationship() {
 
     // Refresh data
     await fetchClient()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error adding relationship:', error)
     toast.error(error.message || 'Failed to add relationship')
-  } finally {
+  }
+  finally {
     savingRelationship.value = false
   }
 }
@@ -805,7 +1017,8 @@ async function removeRelationship(relationshipId: string) {
 
     // Refresh data
     await fetchClient()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error removing relationship:', error)
     toast.error(error.message || 'Failed to remove relationship')
   }
@@ -840,7 +1053,8 @@ function formatDate(dateInput: number | string | Date) {
   if (typeof dateInput === 'number') {
     // If timestamp is in seconds (Unix), convert to milliseconds
     date = dateInput < 10000000000 ? new Date(dateInput * 1000) : new Date(dateInput)
-  } else {
+  }
+  else {
     date = new Date(dateInput)
   }
   return date.toLocaleDateString('en-US', {
@@ -874,7 +1088,8 @@ async function fetchTrustBalance() {
   try {
     const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${clientId}/balance`)
     trustBalance.value = response.totalBalance || 0
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch trust balance:', error)
     trustBalance.value = 0
   }
@@ -890,7 +1105,8 @@ async function fetchOutstandingInvoices() {
       }
     })
     outstandingInvoices.value = response.invoices || []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch outstanding invoices:', error)
     outstandingInvoices.value = []
   }
@@ -913,7 +1129,7 @@ async function handlePaymentRecorded() {
 }
 
 // Handle Drive synced
-function handleDriveSynced(data: { folderId: string; folderUrl: string }) {
+function handleDriveSynced(data: { folderId: string, folderUrl: string }) {
   if (clientProfile.value) {
     clientProfile.value.google_drive_folder_id = data.folderId
     clientProfile.value.google_drive_folder_url = data.folderUrl
@@ -927,4 +1143,3 @@ onMounted(() => {
   fetchClient()
 })
 </script>
-

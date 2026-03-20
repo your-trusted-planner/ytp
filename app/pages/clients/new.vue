@@ -3,21 +3,35 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">New Client Intake</h1>
-        <p class="text-gray-600 mt-1">Add a new client with comprehensive information</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          New Client Intake
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Add a new client with comprehensive information
+        </p>
       </div>
-      <NuxtLink to="/clients" class="text-burgundy-600 hover:text-burgundy-800 flex items-center gap-1">
+      <NuxtLink
+        to="/clients"
+        class="text-burgundy-600 hover:text-burgundy-800 flex items-center gap-1"
+      >
         <ArrowLeft class="w-4 h-4" />
         Back to Clients
       </NuxtLink>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+    <form
+      class="space-y-6"
+      @submit.prevent="handleSubmit"
+    >
       <!-- Section 1: Basic Information (Required, always expanded) -->
       <UiCard>
         <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-lg font-semibold text-gray-900">Basic Information</h2>
-          <p class="text-sm text-gray-500">Required contact information for the client</p>
+          <h2 class="text-lg font-semibold text-gray-900">
+            Basic Information
+          </h2>
+          <p class="text-sm text-gray-500">
+            Required contact information for the client
+          </p>
         </div>
         <div class="p-6 space-y-4">
           <div class="grid grid-cols-2 gap-4">
@@ -44,10 +58,9 @@
             :error="errors.email"
             @blur="checkForDuplicates"
           />
-          <UiInput
+          <UiPhoneInput
             v-model="form.phone"
             label="Phone"
-            type="tel"
             @blur="checkForDuplicates"
           />
           <div class="relative">
@@ -64,15 +77,24 @@
               class="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
               @click="showPassword = !showPassword"
             >
-              <EyeOff v-if="showPassword" class="w-4 h-4" />
-              <Eye v-else class="w-4 h-4" />
+              <EyeOff
+                v-if="showPassword"
+                class="w-4 h-4"
+              />
+              <Eye
+                v-else
+                class="w-4 h-4"
+              />
             </button>
           </div>
         </div>
       </UiCard>
 
       <!-- Duplicate Warning -->
-      <div v-if="duplicateMatches.length > 0" class="rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <div
+        v-if="duplicateMatches.length > 0"
+        class="rounded-lg border border-amber-300 bg-amber-50 p-4"
+      >
         <div class="flex items-start gap-3">
           <AlertTriangle class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div class="flex-1">
@@ -131,15 +153,22 @@
           @click="sections.address = !sections.address"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Address</h2>
-            <p class="text-sm text-gray-500">Client's residential address</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Address
+            </h2>
+            <p class="text-sm text-gray-500">
+              Client's residential address
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.address }"
           />
         </button>
-        <div v-if="sections.address" class="p-6 border-t border-gray-200">
+        <div
+          v-if="sections.address"
+          class="p-6 border-t border-gray-200"
+        >
           <UiAddressInput
             v-model="addressValue"
             label="Address"
@@ -156,15 +185,22 @@
           @click="sections.personal = !sections.personal"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Personal Details</h2>
-            <p class="text-sm text-gray-500">Date of birth and identification</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Personal Details
+            </h2>
+            <p class="text-sm text-gray-500">
+              Date of birth and identification
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.personal }"
           />
         </button>
-        <div v-if="sections.personal" class="p-6 border-t border-gray-200 space-y-4">
+        <div
+          v-if="sections.personal"
+          class="p-6 border-t border-gray-200 space-y-4"
+        >
           <UiInput
             v-model="form.dateOfBirth"
             label="Date of Birth"
@@ -190,15 +226,22 @@
           @click="sections.family = !sections.family"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Family Information</h2>
-            <p class="text-sm text-gray-500">Children and dependents</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Family Information
+            </h2>
+            <p class="text-sm text-gray-500">
+              Children and dependents
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.family }"
           />
         </button>
-        <div v-if="sections.family" class="p-6 border-t border-gray-200 space-y-4">
+        <div
+          v-if="sections.family"
+          class="p-6 border-t border-gray-200 space-y-4"
+        >
           <UiToggle
             v-model="form.hasMinorChildren"
             label="Has Minor Children"
@@ -223,15 +266,22 @@
           @click="sections.planning = !sections.planning"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Existing Planning</h2>
-            <p class="text-sm text-gray-500">Current estate planning documents</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Existing Planning
+            </h2>
+            <p class="text-sm text-gray-500">
+              Current estate planning documents
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.planning }"
           />
         </button>
-        <div v-if="sections.planning" class="p-6 border-t border-gray-200 space-y-4">
+        <div
+          v-if="sections.planning"
+          class="p-6 border-t border-gray-200 space-y-4"
+        >
           <UiToggle
             v-model="form.hasWill"
             label="Has Existing Will"
@@ -253,15 +303,22 @@
           @click="sections.business = !sections.business"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Business Information</h2>
-            <p class="text-sm text-gray-500">Business ownership details</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Business Information
+            </h2>
+            <p class="text-sm text-gray-500">
+              Business ownership details
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.business }"
           />
         </button>
-        <div v-if="sections.business" class="p-6 border-t border-gray-200 space-y-4">
+        <div
+          v-if="sections.business"
+          class="p-6 border-t border-gray-200 space-y-4"
+        >
           <UiInput
             v-model="form.businessName"
             label="Business Name"
@@ -271,13 +328,27 @@
             label="Business Type"
             placeholder="Select business type"
           >
-            <option value="sole_proprietorship">Sole Proprietorship</option>
-            <option value="partnership">Partnership</option>
-            <option value="llc">LLC</option>
-            <option value="s_corp">S Corporation</option>
-            <option value="c_corp">C Corporation</option>
-            <option value="nonprofit">Nonprofit</option>
-            <option value="other">Other</option>
+            <option value="sole_proprietorship">
+              Sole Proprietorship
+            </option>
+            <option value="partnership">
+              Partnership
+            </option>
+            <option value="llc">
+              LLC
+            </option>
+            <option value="s_corp">
+              S Corporation
+            </option>
+            <option value="c_corp">
+              C Corporation
+            </option>
+            <option value="nonprofit">
+              Nonprofit
+            </option>
+            <option value="other">
+              Other
+            </option>
           </UiSelect>
         </div>
       </UiCard>
@@ -290,24 +361,39 @@
           @click="sections.referral = !sections.referral"
         >
           <div class="text-left">
-            <h2 class="text-lg font-semibold text-gray-900">Referral Source</h2>
-            <p class="text-sm text-gray-500">How did this client find you?</p>
+            <h2 class="text-lg font-semibold text-gray-900">
+              Referral Source
+            </h2>
+            <p class="text-sm text-gray-500">
+              How did this client find you?
+            </p>
           </div>
           <ChevronDown
             class="w-5 h-5 text-gray-400 transition-transform"
             :class="{ 'rotate-180': sections.referral }"
           />
         </button>
-        <div v-if="sections.referral" class="p-6 border-t border-gray-200 space-y-4">
+        <div
+          v-if="sections.referral"
+          class="p-6 border-t border-gray-200 space-y-4"
+        >
           <UiSelect
             v-model="form.referralType"
             label="Referral Type"
             placeholder="Select referral type"
           >
-            <option value="CLIENT">Existing Client</option>
-            <option value="PROFESSIONAL">Professional Partner</option>
-            <option value="EVENT">Event</option>
-            <option value="MARKETING">Marketing Campaign</option>
+            <option value="CLIENT">
+              Existing Client
+            </option>
+            <option value="PROFESSIONAL">
+              Professional Partner
+            </option>
+            <option value="EVENT">
+              Event
+            </option>
+            <option value="MARKETING">
+              Marketing Campaign
+            </option>
           </UiSelect>
 
           <!-- Professional Partner selection -->
@@ -457,7 +543,7 @@ interface DuplicateMatch {
   personName: string
   confidence: 'high' | 'medium'
   adjustedScore: number
-  topFields: Array<{ field: string; score: number; method: string; details?: string }>
+  topFields: Array<{ field: string, score: number, method: string, details?: string }>
 }
 
 const duplicateMatches = ref<DuplicateMatch[]>([])
@@ -491,10 +577,12 @@ async function checkForDuplicates() {
         }
       })
       duplicateMatches.value = response.matches
-    } catch (err) {
+    }
+    catch (err) {
       console.warn('[Duplicate Check] Failed:', err)
       duplicateMatches.value = []
-    } finally {
+    }
+    finally {
       dupCheckInFlight.value = false
     }
   }, 500)
@@ -510,9 +598,11 @@ async function fetchReferralPartners() {
   try {
     const data = await $fetch<any[]>('/api/referral-partners')
     referralPartners.value = data
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch referral partners:', error)
-  } finally {
+  }
+  finally {
     loadingPartners.value = false
   }
 }
@@ -536,9 +626,11 @@ async function searchClients(query: string) {
         params: { search: query, limit: 10 }
       })
       existingClients.value = response.clients
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to search clients:', error)
-    } finally {
+    }
+    finally {
       loadingClients.value = false
     }
   }, 300)
@@ -560,12 +652,14 @@ function validate(): boolean {
   }
   if (!form.value.email.trim()) {
     errors.value.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+  }
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
     errors.value.email = 'Invalid email format'
   }
   if (!form.value.password) {
     errors.value.password = 'Password is required'
-  } else if (form.value.password.length < 6) {
+  }
+  else if (form.value.password.length < 6) {
     errors.value.password = 'Password must be at least 6 characters'
   }
 
@@ -614,7 +708,7 @@ async function submitForm(status: 'PROSPECTIVE') {
       referralType: form.value.referralType || undefined
     }
 
-    const response = await $fetch<{ success: boolean; clientId: string }>('/api/clients', {
+    const response = await $fetch<{ success: boolean, clientId: string }>('/api/clients', {
       method: 'POST',
       body: payload
     })
@@ -623,9 +717,11 @@ async function submitForm(status: 'PROSPECTIVE') {
       toast.success(`Client created successfully as ${status.toLowerCase()}`)
       router.push(`/clients/${response.clientId}`)
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to create client')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }

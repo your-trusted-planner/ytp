@@ -1,4 +1,4 @@
-import { eq, sql, asc, desc, and } from 'drizzle-orm'
+import { eq, sql, asc, desc, and, or, like } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
 import { requireRole } from '../../utils/rbac'
 import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calculateOffset } from '../../utils/pagination'
@@ -15,6 +15,9 @@ export default defineEventHandler(async (event) => {
   const statusFilter = typeof query.status === 'string' ? query.status.toUpperCase() : null
   const validStatuses = ['PROSPECTIVE', 'ACTIVE', 'FORMER']
   const status = statusFilter && validStatuses.includes(statusFilter) ? statusFilter : null
+
+  // Search filter (searches first name, last name, full name, email)
+  const search = typeof query.search === 'string' ? query.search.trim() : null
 
   // Build base query for clients using the clients_with_status view (derives status from matters)
   // Join with people table to get name/email data
@@ -44,19 +47,40 @@ export default defineEventHandler(async (event) => {
     .from(schema.clientsWithStatus)
     .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
 
-  // Apply status filter if provided
+  // Build WHERE conditions
+  const conditions = []
   if (status) {
-    clientsQuery = clientsQuery.where(eq(schema.clientsWithStatus.status, status)) as typeof clientsQuery
+    conditions.push(eq(schema.clientsWithStatus.status, status))
+  }
+  if (search) {
+    const pattern = `%${search}%`
+    conditions.push(
+      or(
+        like(schema.people.firstName, pattern),
+        like(schema.people.lastName, pattern),
+        like(schema.people.fullName, pattern),
+        like(schema.people.email, pattern)
+      )!
+    )
+  }
+  if (conditions.length > 0) {
+    clientsQuery = clientsQuery.where(and(...conditions)) as typeof clientsQuery
   }
 
   // Apply sorting - use people table for name/email fields
-  const sortColumn = sortBy === 'firstName' ? schema.people.firstName
-    : sortBy === 'lastName' ? schema.people.lastName
-    : sortBy === 'email' ? schema.people.email
-    : sortBy === 'status' ? schema.clientsWithStatus.status
-    : sortBy === 'createdAt' ? schema.clientsWithStatus.createdAt
-    : sortBy === 'updatedAt' ? schema.clientsWithStatus.updatedAt
-    : schema.clientsWithStatus.createdAt // default sort
+  const sortColumn = sortBy === 'firstName' ?
+    schema.people.firstName :
+    sortBy === 'lastName' ?
+      schema.people.lastName :
+      sortBy === 'email' ?
+        schema.people.email :
+        sortBy === 'status' ?
+          schema.clientsWithStatus.status :
+          sortBy === 'createdAt' ?
+            schema.clientsWithStatus.createdAt :
+            sortBy === 'updatedAt' ?
+              schema.clientsWithStatus.updatedAt :
+              schema.clientsWithStatus.createdAt // default sort
 
   clientsQuery = clientsQuery.orderBy(
     sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)
@@ -68,10 +92,11 @@ export default defineEventHandler(async (event) => {
     let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(schema.clientsWithStatus)
+      .innerJoin(schema.people, eq(schema.clientsWithStatus.personId, schema.people.id))
 
-    // Apply same status filter to count query
-    if (status) {
-      countQuery = countQuery.where(eq(schema.clientsWithStatus.status, status)) as typeof countQuery
+    // Apply same filters to count query
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions)) as typeof countQuery
     }
 
     const countResult = await countQuery.get()

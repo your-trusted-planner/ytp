@@ -8,8 +8,9 @@ const createBookingSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   phone: z.string().optional(),
-  questionnaireId: z.string(),
-  responses: z.record(z.any()), // Question/answer pairs
+  appointmentTypeId: z.string().optional(), // User-defined appointment type
+  questionnaireId: z.string().optional(), // Can come from type or direct
+  responses: z.record(z.any()).default({}), // Question/answer pairs
   attorneyId: z.string().optional(), // If they selected specific attorney
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const { email, firstName, lastName, phone, questionnaireId, responses, attorneyId, utmSource, utmMedium, utmCampaign } = result.data
+  const { email, firstName, lastName, phone, appointmentTypeId, questionnaireId, responses, attorneyId, utmSource, utmMedium, utmCampaign } = result.data
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, and, ne } = await import('drizzle-orm')
@@ -47,7 +48,6 @@ export default defineEventHandler(async (event) => {
     .get()
 
   if (existingBooking) {
-    // Return existing booking if not yet completed
     return {
       success: true,
       bookingId: existingBooking.id,
@@ -56,35 +56,45 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Get questionnaire details
-  const questionnaire = await db.select()
-    .from(schema.questionnaires)
-    .where(eq(schema.questionnaires.id, questionnaireId))
-    .get()
-
-  if (!questionnaire) {
-    throw createError({
-      statusCode: 404,
-      message: 'Questionnaire not found'
-    })
-  }
-
-  // Get service catalog consultation fee if linked
+  // Resolve fee settings — prefer appointment type, fall back to questionnaire/service catalog
   let consultationFee = 37500 // Default $375
   let consultationFeeEnabled = false
+  let resolvedQuestionnaireId = questionnaireId || null
 
-  if (questionnaire.serviceCatalogId) {
-    const serviceCatalog = await db.select({
-      consultationFee: schema.serviceCatalog.consultationFee,
-      consultationFeeEnabled: schema.serviceCatalog.consultationFeeEnabled
-    })
-      .from(schema.serviceCatalog)
-      .where(eq(schema.serviceCatalog.id, questionnaire.serviceCatalogId))
+  if (appointmentTypeId) {
+    // Use appointment type settings
+    const apptType = await db.select()
+      .from(schema.appointmentTypes)
+      .where(eq(schema.appointmentTypes.id, appointmentTypeId))
       .get()
 
-    if (serviceCatalog) {
-      consultationFee = serviceCatalog.consultationFee || consultationFee
-      consultationFeeEnabled = serviceCatalog.consultationFeeEnabled || false
+    if (apptType) {
+      consultationFee = apptType.consultationFee || 0
+      consultationFeeEnabled = apptType.consultationFeeEnabled
+      if (!resolvedQuestionnaireId && apptType.questionnaireId) {
+        resolvedQuestionnaireId = apptType.questionnaireId
+      }
+    }
+  } else if (resolvedQuestionnaireId) {
+    // Legacy path: get fee from questionnaire's linked service catalog
+    const questionnaire = await db.select()
+      .from(schema.questionnaires)
+      .where(eq(schema.questionnaires.id, resolvedQuestionnaireId))
+      .get()
+
+    if (questionnaire?.serviceCatalogId) {
+      const serviceCatalog = await db.select({
+        consultationFee: schema.serviceCatalog.consultationFee,
+        consultationFeeEnabled: schema.serviceCatalog.consultationFeeEnabled
+      })
+        .from(schema.serviceCatalog)
+        .where(eq(schema.serviceCatalog.id, questionnaire.serviceCatalogId))
+        .get()
+
+      if (serviceCatalog) {
+        consultationFee = serviceCatalog.consultationFee || consultationFee
+        consultationFeeEnabled = serviceCatalog.consultationFeeEnabled || false
+      }
     }
   }
 
@@ -98,9 +108,10 @@ export default defineEventHandler(async (event) => {
     firstName,
     lastName,
     phone: phone || null,
-    questionnaireId,
+    appointmentTypeId: appointmentTypeId || null,
+    questionnaireId: resolvedQuestionnaireId,
     questionnaireResponses: JSON.stringify(responses),
-    consultationFeePaid: consultationFeeEnabled ? false : true, // If fee disabled, mark as paid
+    consultationFeePaid: consultationFeeEnabled ? false : true,
     paymentAmount: consultationFeeEnabled ? consultationFee : 0,
     attorneyId: attorneyId || null,
     status: consultationFeeEnabled ? 'PENDING_PAYMENT' : 'PENDING_BOOKING',

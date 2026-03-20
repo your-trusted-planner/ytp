@@ -108,7 +108,8 @@ function enableMultipleMiddleNames() {
   // Convert single middle name to array format
   if (personForm.middleName.trim()) {
     personForm.middleNames = [personForm.middleName.trim()]
-  } else {
+  }
+  else {
     personForm.middleNames = ['']
   }
   personForm.useMultipleMiddleNames = true
@@ -144,9 +145,11 @@ async function fetchPeople() {
     })
     people.value = data.people || []
     pagination.value = data.pagination || null
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error fetching people:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -237,7 +240,8 @@ function openEditModal(person: Person) {
     personForm.entityName = person.entityName
     personForm.entityType = person.entityType || ''
     personForm.entityEin = person.entityEin || ''
-  } else {
+  }
+  else {
     personForm.mode = 'person'
     personForm.firstName = person.firstName || ''
     personForm.lastName = person.lastName || ''
@@ -248,7 +252,8 @@ function openEditModal(person: Person) {
       personForm.useMultipleMiddleNames = true
       personForm.middleNames = [...middleNames]
       personForm.middleName = ''
-    } else {
+    }
+    else {
       personForm.useMultipleMiddleNames = false
       personForm.middleName = middleNames[0] || ''
       personForm.middleNames = []
@@ -303,14 +308,16 @@ async function addPerson() {
       // Handle middle names - combine single and multiple modes
       if (personForm.useMultipleMiddleNames) {
         payload.middleNames = personForm.middleNames.filter(name => name.trim() !== '')
-      } else {
+      }
+      else {
         payload.middleNames = personForm.middleName.trim() ? [personForm.middleName.trim()] : []
       }
       if (personForm.dateOfBirth) {
         payload.dateOfBirth = new Date(personForm.dateOfBirth).getTime()
       }
       payload.ssnLast4 = personForm.ssnLast4 || undefined
-    } else {
+    }
+    else {
       payload.entityName = personForm.entityName
       payload.entityType = personForm.entityType || undefined
       payload.entityEin = personForm.entityEin || undefined
@@ -324,10 +331,12 @@ async function addPerson() {
     showAddModal.value = false
     resetForm()
     await fetchPeople()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error adding person:', error)
     toast.error('Failed to add person')
-  } finally {
+  }
+  finally {
     savingPerson.value = false
   }
 }
@@ -355,14 +364,16 @@ async function updatePerson() {
       // Handle middle names - combine single and multiple modes
       if (personForm.useMultipleMiddleNames) {
         payload.middleNames = personForm.middleNames.filter(name => name.trim() !== '')
-      } else {
+      }
+      else {
         payload.middleNames = personForm.middleName.trim() ? [personForm.middleName.trim()] : []
       }
       if (personForm.dateOfBirth) {
         payload.dateOfBirth = new Date(personForm.dateOfBirth).getTime()
       }
       payload.ssnLast4 = personForm.ssnLast4 || undefined
-    } else {
+    }
+    else {
       payload.entityName = personForm.entityName
       payload.entityType = personForm.entityType || undefined
       payload.entityEin = personForm.entityEin || undefined
@@ -377,10 +388,12 @@ async function updatePerson() {
     editingPerson.value = null
     resetForm()
     await fetchPeople()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error updating person:', error)
     toast.error('Failed to update person')
-  } finally {
+  }
+  finally {
     savingPerson.value = false
   }
 }
@@ -397,7 +410,8 @@ async function deletePerson(person: Person) {
     })
 
     await fetchPeople()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Error deleting person:', error)
     toast.error(error.data?.message || 'Failed to delete person')
   }
@@ -420,8 +434,12 @@ onMounted(() => {
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">People</h1>
-        <p class="text-sm text-gray-600 mt-1">Manage individuals and entities</p>
+        <h1 class="text-2xl font-bold text-gray-900">
+          People
+        </h1>
+        <p class="text-sm text-gray-600 mt-1">
+          Manage individuals and entities
+        </p>
       </div>
       <UiButton @click="openAddModal">
         <Plus class="w-4 h-4 mr-2" />
@@ -439,23 +457,37 @@ onMounted(() => {
           placeholder="Search by name, email, phone..."
           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
           @input="handleSearchInput"
-        />
+        >
       </div>
     </div>
 
     <!-- People Table -->
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <UiLoadingState v-if="loading" message="Loading people..." />
+      <UiLoadingState
+        v-if="loading"
+        message="Loading people..."
+      />
 
-      <div v-else-if="people.length === 0" class="p-8 text-center text-gray-500">
+      <div
+        v-else-if="people.length === 0"
+        class="p-8 text-center text-gray-500"
+      >
         <p>No people found</p>
-        <UiButton variant="outline" size="sm" @click="openAddModal" class="mt-4">
+        <UiButton
+          variant="outline"
+          size="sm"
+          class="mt-4"
+          @click="openAddModal"
+        >
           <Plus class="w-4 h-4 mr-2" />
           Add Your First Person
         </UiButton>
       </div>
 
-      <table v-else class="w-full">
+      <table
+        v-else
+        class="w-full"
+      >
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -487,45 +519,76 @@ onMounted(() => {
           >
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
-                <Building2 v-if="person.entityName" class="w-5 h-5 text-gray-400 mr-2" />
-                <User v-else class="w-5 h-5 text-gray-400 mr-2" />
+                <Building2
+                  v-if="person.entityName"
+                  class="w-5 h-5 text-gray-400 mr-2"
+                />
+                <User
+                  v-else
+                  class="w-5 h-5 text-gray-400 mr-2"
+                />
                 <div>
-                  <div class="font-medium text-gray-900">{{ person.fullName }}</div>
-                  <div v-if="person.entityType" class="text-xs text-gray-500">{{ person.entityType }}</div>
+                  <div class="font-medium text-gray-900">
+                    {{ person.fullName }}
+                  </div>
+                  <div
+                    v-if="person.entityType"
+                    class="text-xs text-gray-500"
+                  >
+                    {{ person.entityType }}
+                  </div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span v-if="person.entityName" class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+              <span
+                v-if="person.entityName"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
+              >
                 Entity
               </span>
-              <span v-else class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+              <span
+                v-else
+                class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800"
+              >
                 Individual
               </span>
             </td>
             <td class="px-6 py-4">
-              <div class="text-sm text-gray-900">{{ person.email || '-' }}</div>
-              <div class="text-sm text-gray-500">{{ person.phone || '-' }}</div>
+              <div class="text-sm text-gray-900">
+                {{ person.email || '-' }}
+              </div>
+              <div class="text-sm text-gray-500">
+                {{ person.phone || '-' }}
+              </div>
             </td>
             <td class="px-6 py-4">
-              <div v-if="person.city || person.state" class="text-sm text-gray-900">
+              <div
+                v-if="person.city || person.state"
+                class="text-sm text-gray-900"
+              >
                 {{ person.city }}{{ person.city && person.state ? ', ' : '' }}{{ person.state }}{{ person.country && person.country !== 'US' ? ` ${person.country}` : '' }}
               </div>
-              <div v-else class="text-sm text-gray-500">-</div>
+              <div
+                v-else
+                class="text-sm text-gray-500"
+              >
+                -
+              </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ formatDate(person.createdAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button
-                @click.stop="openEditModal(person)"
                 class="text-burgundy-600 hover:text-burgundy-900 mr-3"
+                @click.stop="openEditModal(person)"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
-                @click.stop="deletePerson(person)"
                 class="text-red-600 hover:text-red-900"
+                @click.stop="deletePerson(person)"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -535,7 +598,10 @@ onMounted(() => {
       </table>
 
       <!-- Pagination Controls -->
-      <div v-if="pagination" class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+      <div
+        v-if="pagination"
+        class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between"
+      >
         <!-- Page info -->
         <div class="text-sm text-gray-700">
           Showing {{ paginationStartItem }}-{{ paginationEndItem }} of {{ pagination.totalCount }}
@@ -544,14 +610,21 @@ onMounted(() => {
         <div class="flex items-center gap-4">
           <!-- Page size selector -->
           <div class="flex items-center gap-2">
-            <label for="page-size" class="text-sm text-gray-700">Per page:</label>
+            <label
+              for="page-size"
+              class="text-sm text-gray-700"
+            >Per page:</label>
             <select
               id="page-size"
               :value="currentLimit"
               class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
               @change="setPageSize(Number(($event.target as HTMLSelectElement).value))"
             >
-              <option v-for="size in pageSizeOptions" :key="size" :value="size">
+              <option
+                v-for="size in pageSizeOptions"
+                :key="size"
+                :value="size"
+              >
                 {{ size }}
               </option>
             </select>
@@ -584,29 +657,36 @@ onMounted(() => {
     </div>
 
     <!-- Add Person Modal -->
-    <UiModal v-model="showAddModal" title="Add Person" size="lg">
-      <form @submit.prevent="addPerson" class="space-y-4">
+    <UiModal
+      v-model="showAddModal"
+      title="Add Person"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="addPerson"
+      >
         <!-- Type Selection -->
         <div class="border-b pb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
           <div class="flex gap-4">
             <label class="flex items-center cursor-pointer">
               <input
-                type="radio"
                 v-model="personForm.mode"
+                type="radio"
                 value="person"
                 class="mr-2"
-              />
+              >
               <User class="w-4 h-4 mr-1" />
               Individual Person
             </label>
             <label class="flex items-center cursor-pointer">
               <input
-                type="radio"
                 v-model="personForm.mode"
+                type="radio"
                 value="entity"
                 class="mr-2"
-              />
+              >
               <Building2 class="w-4 h-4 mr-1" />
               Business Entity
             </label>
@@ -614,10 +694,21 @@ onMounted(() => {
         </div>
 
         <!-- Person Fields -->
-        <div v-if="personForm.mode === 'person'" class="space-y-4">
+        <div
+          v-if="personForm.mode === 'person'"
+          class="space-y-4"
+        >
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.firstName" label="First Name" required />
-            <UiInput v-model="personForm.lastName" label="Last Name" required />
+            <UiInput
+              v-model="personForm.firstName"
+              label="First Name"
+              required
+            />
+            <UiInput
+              v-model="personForm.lastName"
+              label="Last Name"
+              required
+            />
           </div>
 
           <!-- Middle Names -->
@@ -630,41 +721,48 @@ onMounted(() => {
                 type="text"
                 placeholder="Middle name"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-              />
+              >
               <button
                 type="button"
-                @click="enableMultipleMiddleNames"
                 class="mt-1 text-sm text-burgundy-600 hover:text-burgundy-800"
+                @click="enableMultipleMiddleNames"
               >
                 + Add another middle name
               </button>
             </div>
 
             <!-- Advanced mode: multiple inputs -->
-            <div v-else class="space-y-2">
+            <div
+              v-else
+              class="space-y-2"
+            >
               <div class="flex items-center justify-between">
                 <label class="block text-sm font-medium text-gray-700">Middle Names</label>
                 <button
                   type="button"
-                  @click="addMiddleName"
                   class="text-sm text-burgundy-600 hover:text-burgundy-800 flex items-center"
+                  @click="addMiddleName"
                 >
                   <Plus class="w-4 h-4 mr-1" />
                   Add Another
                 </button>
               </div>
-              <div v-for="(middleName, index) in personForm.middleNames" :key="index" class="flex items-center gap-2">
+              <div
+                v-for="(middleName, index) in personForm.middleNames"
+                :key="index"
+                class="flex items-center gap-2"
+              >
                 <input
                   v-model="personForm.middleNames[index]"
                   type="text"
                   :placeholder="`Middle Name ${index + 1}`"
                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-                />
+                >
                 <button
                   type="button"
-                  @click="removeMiddleName(index)"
                   class="p-2 text-red-600 hover:text-red-800"
                   title="Remove middle name"
+                  @click="removeMiddleName(index)"
                 >
                   <Minus class="w-4 h-4" />
                 </button>
@@ -673,34 +771,78 @@ onMounted(() => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.dateOfBirth" label="Date of Birth" type="date" />
-            <UiInput v-model="personForm.ssnLast4" label="SSN Last 4" maxlength="4" />
+            <UiInput
+              v-model="personForm.dateOfBirth"
+              label="Date of Birth"
+              type="date"
+            />
+            <UiInput
+              v-model="personForm.ssnLast4"
+              label="SSN Last 4"
+              maxlength="4"
+            />
           </div>
         </div>
 
         <!-- Entity Fields -->
-        <div v-if="personForm.mode === 'entity'" class="space-y-4">
-          <UiInput v-model="personForm.entityName" label="Entity Name" required />
+        <div
+          v-if="personForm.mode === 'entity'"
+          class="space-y-4"
+        >
+          <UiInput
+            v-model="personForm.entityName"
+            label="Entity Name"
+            required
+          />
           <div class="grid grid-cols-2 gap-4">
-            <UiSelect v-model="personForm.entityType" label="Entity Type">
-              <option value="">-- Select Type --</option>
-              <option value="LLC">LLC</option>
-              <option value="Corporation">Corporation</option>
-              <option value="Partnership">Partnership</option>
-              <option value="Trust">Trust</option>
-              <option value="Non-Profit">Non-Profit</option>
-              <option value="Other">Other</option>
+            <UiSelect
+              v-model="personForm.entityType"
+              label="Entity Type"
+            >
+              <option value="">
+                -- Select Type --
+              </option>
+              <option value="LLC">
+                LLC
+              </option>
+              <option value="Corporation">
+                Corporation
+              </option>
+              <option value="Partnership">
+                Partnership
+              </option>
+              <option value="Trust">
+                Trust
+              </option>
+              <option value="Non-Profit">
+                Non-Profit
+              </option>
+              <option value="Other">
+                Other
+              </option>
             </UiSelect>
-            <UiInput v-model="personForm.entityEin" label="EIN" />
+            <UiInput
+              v-model="personForm.entityEin"
+              label="EIN"
+            />
           </div>
         </div>
 
         <!-- Contact Information -->
         <div class="border-t pt-4 space-y-4">
-          <h4 class="font-semibold text-gray-900">Contact Information</h4>
+          <h4 class="font-semibold text-gray-900">
+            Contact Information
+          </h4>
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.email" label="Email" type="email" />
-            <UiInput v-model="personForm.phone" label="Phone" type="tel" />
+            <UiInput
+              v-model="personForm.email"
+              label="Email"
+              type="email"
+            />
+            <UiPhoneInput
+              v-model="personForm.phone"
+              label="Phone"
+            />
           </div>
           <UiAddressInput
             v-model="addressValue"
@@ -709,14 +851,25 @@ onMounted(() => {
         </div>
 
         <!-- Notes -->
-        <UiTextarea v-model="personForm.notes" label="Notes (optional)" :rows="3" />
+        <UiTextarea
+          v-model="personForm.notes"
+          label="Notes (optional)"
+          :rows="3"
+        />
 
         <!-- Actions -->
         <div class="flex justify-end gap-2 pt-4">
-          <UiButton type="button" variant="outline" @click="showAddModal = false">
+          <UiButton
+            type="button"
+            variant="outline"
+            @click="showAddModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :disabled="savingPerson">
+          <UiButton
+            type="submit"
+            :disabled="savingPerson"
+          >
             {{ savingPerson ? 'Adding...' : 'Add Person' }}
           </UiButton>
         </div>
@@ -724,23 +877,47 @@ onMounted(() => {
     </UiModal>
 
     <!-- Edit Person Modal -->
-    <UiModal v-model="showEditModal" title="Edit Person" size="lg">
-      <form @submit.prevent="updatePerson" class="space-y-4">
+    <UiModal
+      v-model="showEditModal"
+      title="Edit Person"
+      size="lg"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="updatePerson"
+      >
         <!-- Type Display (read-only) -->
         <div class="border-b pb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
           <div class="flex items-center text-sm text-gray-600">
-            <Building2 v-if="personForm.mode === 'entity'" class="w-4 h-4 mr-2" />
-            <User v-else class="w-4 h-4 mr-2" />
+            <Building2
+              v-if="personForm.mode === 'entity'"
+              class="w-4 h-4 mr-2"
+            />
+            <User
+              v-else
+              class="w-4 h-4 mr-2"
+            />
             {{ personForm.mode === 'entity' ? 'Business Entity' : 'Individual Person' }}
           </div>
         </div>
 
         <!-- Person Fields -->
-        <div v-if="personForm.mode === 'person'" class="space-y-4">
+        <div
+          v-if="personForm.mode === 'person'"
+          class="space-y-4"
+        >
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.firstName" label="First Name" required />
-            <UiInput v-model="personForm.lastName" label="Last Name" required />
+            <UiInput
+              v-model="personForm.firstName"
+              label="First Name"
+              required
+            />
+            <UiInput
+              v-model="personForm.lastName"
+              label="Last Name"
+              required
+            />
           </div>
 
           <!-- Middle Names -->
@@ -753,41 +930,48 @@ onMounted(() => {
                 type="text"
                 placeholder="Middle name"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-              />
+              >
               <button
                 type="button"
-                @click="enableMultipleMiddleNames"
                 class="mt-1 text-sm text-burgundy-600 hover:text-burgundy-800"
+                @click="enableMultipleMiddleNames"
               >
                 + Add another middle name
               </button>
             </div>
 
             <!-- Advanced mode: multiple inputs -->
-            <div v-else class="space-y-2">
+            <div
+              v-else
+              class="space-y-2"
+            >
               <div class="flex items-center justify-between">
                 <label class="block text-sm font-medium text-gray-700">Middle Names</label>
                 <button
                   type="button"
-                  @click="addMiddleName"
                   class="text-sm text-burgundy-600 hover:text-burgundy-800 flex items-center"
+                  @click="addMiddleName"
                 >
                   <Plus class="w-4 h-4 mr-1" />
                   Add Another
                 </button>
               </div>
-              <div v-for="(middleName, index) in personForm.middleNames" :key="index" class="flex items-center gap-2">
+              <div
+                v-for="(middleName, index) in personForm.middleNames"
+                :key="index"
+                class="flex items-center gap-2"
+              >
                 <input
                   v-model="personForm.middleNames[index]"
                   type="text"
                   :placeholder="`Middle Name ${index + 1}`"
                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-                />
+                >
                 <button
                   type="button"
-                  @click="removeMiddleName(index)"
                   class="p-2 text-red-600 hover:text-red-800"
                   title="Remove middle name"
+                  @click="removeMiddleName(index)"
                 >
                   <Minus class="w-4 h-4" />
                 </button>
@@ -796,34 +980,78 @@ onMounted(() => {
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.dateOfBirth" label="Date of Birth" type="date" />
-            <UiInput v-model="personForm.ssnLast4" label="SSN Last 4" maxlength="4" />
+            <UiInput
+              v-model="personForm.dateOfBirth"
+              label="Date of Birth"
+              type="date"
+            />
+            <UiInput
+              v-model="personForm.ssnLast4"
+              label="SSN Last 4"
+              maxlength="4"
+            />
           </div>
         </div>
 
         <!-- Entity Fields -->
-        <div v-if="personForm.mode === 'entity'" class="space-y-4">
-          <UiInput v-model="personForm.entityName" label="Entity Name" required />
+        <div
+          v-if="personForm.mode === 'entity'"
+          class="space-y-4"
+        >
+          <UiInput
+            v-model="personForm.entityName"
+            label="Entity Name"
+            required
+          />
           <div class="grid grid-cols-2 gap-4">
-            <UiSelect v-model="personForm.entityType" label="Entity Type">
-              <option value="">-- Select Type --</option>
-              <option value="LLC">LLC</option>
-              <option value="Corporation">Corporation</option>
-              <option value="Partnership">Partnership</option>
-              <option value="Trust">Trust</option>
-              <option value="Non-Profit">Non-Profit</option>
-              <option value="Other">Other</option>
+            <UiSelect
+              v-model="personForm.entityType"
+              label="Entity Type"
+            >
+              <option value="">
+                -- Select Type --
+              </option>
+              <option value="LLC">
+                LLC
+              </option>
+              <option value="Corporation">
+                Corporation
+              </option>
+              <option value="Partnership">
+                Partnership
+              </option>
+              <option value="Trust">
+                Trust
+              </option>
+              <option value="Non-Profit">
+                Non-Profit
+              </option>
+              <option value="Other">
+                Other
+              </option>
             </UiSelect>
-            <UiInput v-model="personForm.entityEin" label="EIN" />
+            <UiInput
+              v-model="personForm.entityEin"
+              label="EIN"
+            />
           </div>
         </div>
 
         <!-- Contact Information -->
         <div class="border-t pt-4 space-y-4">
-          <h4 class="font-semibold text-gray-900">Contact Information</h4>
+          <h4 class="font-semibold text-gray-900">
+            Contact Information
+          </h4>
           <div class="grid grid-cols-2 gap-4">
-            <UiInput v-model="personForm.email" label="Email" type="email" />
-            <UiInput v-model="personForm.phone" label="Phone" type="tel" />
+            <UiInput
+              v-model="personForm.email"
+              label="Email"
+              type="email"
+            />
+            <UiPhoneInput
+              v-model="personForm.phone"
+              label="Phone"
+            />
           </div>
           <UiAddressInput
             v-model="addressValue"
@@ -832,14 +1060,25 @@ onMounted(() => {
         </div>
 
         <!-- Notes -->
-        <UiTextarea v-model="personForm.notes" label="Notes (optional)" :rows="3" />
+        <UiTextarea
+          v-model="personForm.notes"
+          label="Notes (optional)"
+          :rows="3"
+        />
 
         <!-- Actions -->
         <div class="flex justify-end gap-2 pt-4">
-          <UiButton type="button" variant="outline" @click="showEditModal = false">
+          <UiButton
+            type="button"
+            variant="outline"
+            @click="showEditModal = false"
+          >
             Cancel
           </UiButton>
-          <UiButton type="submit" :disabled="savingPerson">
+          <UiButton
+            type="submit"
+            :disabled="savingPerson"
+          >
             {{ savingPerson ? 'Saving...' : 'Save Changes' }}
           </UiButton>
         </div>

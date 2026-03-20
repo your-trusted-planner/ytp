@@ -3,13 +3,23 @@
     <div class="flex justify-between items-center">
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-3xl font-bold text-gray-900">Clients</h1>
-          <UiHelpLink topic="managing-clients" title="Learn about managing clients" />
+          <h1 class="text-3xl font-bold text-gray-900">
+            Clients
+          </h1>
+          <UiHelpLink
+            topic="managing-clients"
+            title="Learn about managing clients"
+          />
         </div>
-        <p class="text-gray-600 mt-1">Manage your client list</p>
+        <p class="text-gray-600 mt-1">
+          Manage your client list
+        </p>
       </div>
       <div class="flex gap-2">
-        <UiButton variant="outline" @click="showAddModal = true">
+        <UiButton
+          variant="outline"
+          @click="showAddModal = true"
+        >
           Quick Add
         </UiButton>
         <NuxtLink to="/clients/new">
@@ -26,24 +36,27 @@
         <span class="text-sm text-gray-600">Status:</span>
         <div class="flex gap-1">
           <button
-            @click="setStatusFilter(null)"
             class="px-3 py-1 text-sm rounded-full transition-colors"
             :class="!statusFilter ? 'bg-burgundy-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            @click="setStatusFilter(null)"
           >
             All
           </button>
           <button
             v-for="status in availableStatuses"
             :key="status"
-            @click="setStatusFilter(status)"
             class="px-3 py-1 text-sm rounded-full transition-colors"
             :class="statusFilter === status ? 'bg-burgundy-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            @click="setStatusFilter(status)"
           >
             {{ status }}
           </button>
         </div>
       </div>
-      <div v-if="statusFilter" class="text-sm text-gray-500">
+      <div
+        v-if="statusFilter"
+        class="text-sm text-gray-500"
+      >
         Showing {{ clients.length }} {{ statusFilter.toLowerCase() }} client{{ clients.length !== 1 ? 's' : '' }}
       </div>
     </div>
@@ -55,8 +68,14 @@
       :class="driveStatus.success ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'"
     >
       <div class="flex items-start space-x-3">
-        <CheckCircle v-if="driveStatus.success" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-        <AlertTriangle v-else class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <CheckCircle
+          v-if="driveStatus.success"
+          class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+        />
+        <AlertTriangle
+          v-else
+          class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"
+        />
         <div>
           <p :class="driveStatus.success ? 'text-green-800' : 'text-yellow-800'">
             {{ driveStatus.message }}
@@ -70,15 +89,18 @@
           >
             Open in Google Drive
           </a>
-          <p v-if="!driveStatus.success" class="text-sm text-yellow-700 mt-1">
+          <p
+            v-if="!driveStatus.success"
+            class="text-sm text-yellow-700 mt-1"
+          >
             You can manually create the folder later from the client's profile or Settings &rarr; Google Drive.
           </p>
         </div>
       </div>
       <button
-        @click="driveStatus.show = false"
         class="flex-shrink-0 ml-4"
         :class="driveStatus.success ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800'"
+        @click="driveStatus.show = false"
       >
         <X class="w-5 h-5" />
       </button>
@@ -129,8 +151,14 @@
     </UiCard>
 
     <!-- Add Client Modal -->
-    <UiModal v-model="showAddModal" title="Add New Client">
-      <form @submit.prevent="handleAddClient" class="space-y-4">
+    <UiModal
+      v-model="showAddModal"
+      title="Add New Client"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleAddClient"
+      >
         <UiInput
           v-model="newClient.firstName"
           label="First Name"
@@ -147,7 +175,7 @@
           type="email"
           required
         />
-        <UiInput
+        <UiPhoneInput
           v-model="newClient.phone"
           label="Phone"
         />
@@ -160,10 +188,16 @@
         />
       </form>
       <template #footer>
-        <UiButton variant="outline" @click="showAddModal = false">
+        <UiButton
+          variant="outline"
+          @click="showAddModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleAddClient" :is-loading="saving">
+        <UiButton
+          :is-loading="saving"
+          @click="handleAddClient"
+        >
           Add Client
         </UiButton>
       </template>
@@ -216,7 +250,8 @@ const setStatusFilter = (status: string | null) => {
   const query = { ...route.query }
   if (status) {
     query.status = status
-  } else {
+  }
+  else {
     delete query.status
   }
   router.replace({ query })
@@ -256,7 +291,7 @@ const columns: Column[] = [
     label: 'Phone',
     sortable: true,
     textClass: 'text-sm text-gray-500',
-    format: (val) => val || 'N/A'
+    format: val => val || 'N/A'
   },
   {
     key: 'status',
@@ -268,14 +303,14 @@ const columns: Column[] = [
     label: 'Created On',
     sortable: true,
     textClass: 'text-sm text-gray-500',
-    format: (val) => formatDate(val)
+    format: val => formatDate(val)
   },
   {
     key: 'updatedAt',
     label: 'Updated On',
     sortable: true,
     textClass: 'text-sm text-gray-500',
-    format: (val) => formatDate(val)
+    format: val => formatDate(val)
   },
   {
     key: 'actions',
@@ -309,9 +344,11 @@ const fetchClients = async () => {
     })
     clients.value = response.clients
     pagination.value = response.pagination || null
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch clients:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -373,7 +410,8 @@ const handleAddClient = async () => {
           message: 'Client created successfully. Google Drive folder created.',
           folderUrl: response.googleDrive.folderUrl
         }
-      } else {
+      }
+      else {
         driveStatus.value = {
           show: true,
           success: false,
@@ -387,9 +425,11 @@ const handleAddClient = async () => {
         }, 10000)
       }
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     toast.error(error.data?.message || 'Failed to add client')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }

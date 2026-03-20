@@ -9,11 +9,11 @@ const addCalendarSchema = z.object({
   calendarEmail: z.string().email(),
   isPrimary: z.boolean().optional(),
   timezone: z.string().optional(),
-  serviceAccountKey: z.string().optional(), // JSON string (will be encrypted)
+  serviceAccountKey: z.string().optional() // JSON string (will be encrypted)
 })
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireRole(event, ['LAWYER', 'ADMIN'])
+  const user = requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
   const body = await readBody(event)
   const result = addCalendarSchema.safeParse(body)
 
@@ -62,4 +62,3 @@ export default defineEventHandler(async (event) => {
     message: 'Calendar added successfully'
   }
 })
-

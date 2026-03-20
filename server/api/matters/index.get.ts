@@ -18,23 +18,34 @@ export default defineEventHandler(async (event) => {
   const usePagination = isPaginationRequested(query)
   const { page, limit, sortBy, sortDirection } = parsePaginationParams(query)
 
+  // Client filter (for AppointmentModal matter select)
+  const clientId = typeof query.clientId === 'string' ? query.clientId : null
+
   // Get total count for pagination
   let totalCount = 0
   if (usePagination) {
-    const countResult = await db
+    let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(schema.matters)
-      .get()
+    if (clientId) {
+      countQuery = countQuery.where(eq(schema.matters.clientId, clientId)) as typeof countQuery
+    }
+    const countResult = await countQuery.get()
     totalCount = countResult?.count ?? 0
   }
 
   // Build query with join to get client names
-  const sortColumn = sortBy === 'title' ? schema.matters.title
-    : sortBy === 'status' ? schema.matters.status
-    : sortBy === 'matterNumber' ? schema.matters.matterNumber
-    : sortBy === 'createdAt' ? schema.matters.createdAt
-    : sortBy === 'updatedAt' ? schema.matters.updatedAt
-    : schema.matters.createdAt // default sort
+  const sortColumn = sortBy === 'title' ?
+    schema.matters.title :
+    sortBy === 'status' ?
+      schema.matters.status :
+      sortBy === 'matterNumber' ?
+        schema.matters.matterNumber :
+        sortBy === 'createdAt' ?
+          schema.matters.createdAt :
+          sortBy === 'updatedAt' ?
+            schema.matters.updatedAt :
+            schema.matters.createdAt // default sort
 
   // Note: matters.clientId references users.id (legacy), not clients.id
   // Join through users -> people to get client name
@@ -59,7 +70,13 @@ export default defineEventHandler(async (event) => {
     .from(schema.matters)
     .leftJoin(schema.users, eq(schema.matters.clientId, schema.users.id))
     .leftJoin(schema.people, eq(schema.users.personId, schema.people.id))
-    .orderBy(sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn))
+
+  // Apply client filter
+  if (clientId) {
+    mattersQuery = mattersQuery.where(eq(schema.matters.clientId, clientId)) as typeof mattersQuery
+  }
+
+  mattersQuery = mattersQuery.orderBy(sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)) as typeof mattersQuery
 
   // Apply pagination
   if (usePagination) {
@@ -71,12 +88,12 @@ export default defineEventHandler(async (event) => {
   const matters = await mattersQuery.all()
 
   // Convert to API format with client names
-  const mattersData = matters.map(matter => {
+  const mattersData = matters.map((matter) => {
     // Build client name from available fields
-    const clientName = matter.clientFullName
-      || (matter.clientFirstName && matter.clientLastName
-        ? `${matter.clientFirstName} ${matter.clientLastName}`
-        : matter.clientFirstName || matter.clientLastName || '')
+    const clientName = matter.clientFullName ||
+      (matter.clientFirstName && matter.clientLastName ?
+        `${matter.clientFirstName} ${matter.clientLastName}` :
+        matter.clientFirstName || matter.clientLastName || '')
 
     return {
       id: matter.id,

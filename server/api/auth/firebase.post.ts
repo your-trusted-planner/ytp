@@ -6,6 +6,25 @@ const firebaseAuthSchema = z.object({
   idToken: z.string().min(1, 'ID token is required')
 })
 
+/**
+ * Fetch an avatar image URL and convert to a base64 data URI.
+ * Falls back to the original URL if fetch fails.
+ */
+async function fetchAvatarAsBase64(url: string): Promise<string> {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return url
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+    const buffer = await response.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    return `data:${contentType};base64,${base64}`
+  }
+  catch {
+    return url // Fall back to URL if conversion fails
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -70,8 +89,9 @@ export default defineEventHandler(async (event) => {
 
     // Update avatar from OAuth provider if we have one and user doesn't have a custom one
     // or if their current avatar is also from an OAuth provider (update it)
+    // Store as base64 data URI to avoid external URL dependencies (rate limits, etc.)
     if (picture && (!user.avatar || user.avatar.startsWith('http'))) {
-      updates.avatar = picture
+      updates.avatar = await fetchAvatarAsBase64(picture)
     }
 
     if (Object.keys(updates).length > 1) { // More than just updatedAt
@@ -80,7 +100,8 @@ export default defineEventHandler(async (event) => {
         .set(updates)
         .where(eq(schema.users.id, user.id))
     }
-  } else {
+  }
+  else {
     // Create new user with linked person record (Belly Button Principle)
     const userId = crypto.randomUUID()
     const personId = `person_${userId}`
@@ -119,7 +140,7 @@ export default defineEventHandler(async (event) => {
       status: 'PROSPECT',
       firstName,
       lastName,
-      avatar: picture || null,
+      avatar: picture ? await fetchAvatarAsBase64(picture) : null,
       createdAt: now,
       updatedAt: now
     })

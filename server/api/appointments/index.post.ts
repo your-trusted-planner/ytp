@@ -8,14 +8,14 @@ const createAppointmentSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   location: z.string().optional(),
-  clientId: z.string()
+  clientId: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN'])
 
   const body = await readBody(event)
-  
+
   const result = createAppointmentSchema.safeParse(body)
   if (!result.success) {
     throw createError({
@@ -23,10 +23,10 @@ export default defineEventHandler(async (event) => {
       message: 'Invalid input'
     })
   }
-  
+
   const { title, description, startTime, endTime, location, clientId } = result.data
   const db = useDrizzle()
-  
+
   await db.insert(schema.appointments).values({
     id: generateId(),
     title,
@@ -34,10 +34,9 @@ export default defineEventHandler(async (event) => {
     startTime: new Date(startTime),
     endTime: new Date(endTime),
     location,
-    clientId,
+    clientId: clientId || null,
     status: 'PENDING'
   })
-  
+
   return { success: true }
 })
-

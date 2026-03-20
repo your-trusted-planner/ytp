@@ -1,10 +1,95 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-03-06
+**Last Updated**: 2026-03-18
 
 ## 📍 Where We Are Now
 
+### In Progress 🔧
+
+#### Google Calendar Integration — Phase 2/3 Refinements
+- **Status**: Phase 1 & 2 core complete, Phase 3 partially complete
+- **Remaining work**:
+  - Public booking page (`/book/[bookingId]`) — SlotPicker and BookingConfirmation components are built but need end-to-end testing with a real booking flow
+  - Existing `/book.vue` questionnaire page needs to redirect to `/book/[bookingId]` after creating a booking (currently self-contained with hardcoded slots)
+  - Month view event rendering — functional but not battle-tested with many events
+  - AppointmentModal client search depends on `/api/clients?search=` accepting a search param (verify this works)
+  - Matter select in AppointmentModal depends on `/api/matters?clientId=` accepting a clientId filter (verify this works)
+  - Profile page calendar management buttons (Set Primary, Deactivate, Delete) are still disabled/TODO
+
 ### Recently Completed ✅
+
+#### Google Calendar Integration — Phase 1 & 2 (2026-03-18)
+- **Status**: Complete ✅
+- **What**: Full Google Calendar integration with team dedup view, appointment CRUD with Google sync, and unified Google Workspace settings.
+
+**Schema Changes** (`server/db/schema/appointments.ts`):
+  - `appointments`: added `googleCalendarEventId`, `googleCalendarEmail`, `matterId`, `appointmentType` (6 types), `attendeeIds` (JSON), `createdById`; `clientId` now nullable
+  - `publicBookings`: added `selectedSlotStart`, `selectedSlotEnd`, `timezone`
+
+**Google Calendar Utility** (`server/utils/google-calendar.ts`):
+  - Expanded scope to full `https://www.googleapis.com/auth/calendar`
+  - Added KV token caching (55-min TTL) via `getCachedAccessToken()`
+  - Credentials now read from DB (`googleDriveConfig` table) first, fall back to env vars — shared with Drive
+  - Added `listCalendarList()`, `isServiceAccountConfigured()`, typed `FreeBusyPeriod` return
+  - `getFreeBusy()` now returns parsed busy periods instead of raw API response
+
+**New API Endpoints**:
+  - `GET /api/calendar/events` — team calendar with dedup logic (groups shared Google events by ID, builds avatar stacks)
+  - `POST/PUT/DELETE /api/calendar/appointments` — CRUD with Google Calendar sync + activity logging
+  - `GET /api/public/booking/availability` — free/busy slot calculation for public booking
+  - `POST /api/public/booking/book-slot` — double-book prevention, creates appointment + Google event
+  - `GET /api/public/booking/[id]` — booking status for public page
+  - `GET/PUT/DELETE /api/admin/calendars` — admin calendar management
+  - `GET /api/admin/google-workspace/status` — unified integration status
+  - `POST /api/admin/google-workspace/test-credentials` — service account auth test (no Drive ID required)
+
+**New Utility** (`server/utils/availability.ts`):
+  - `calculateAvailableSlots()` — pure function generating 30-min interval slots within business hours, filtering busy periods
+
+**Activity Logger** (`server/utils/activity-logger.ts`, `activity-description.ts`):
+  - Added `APPOINTMENT_CREATED`, `APPOINTMENT_UPDATED`, `APPOINTMENT_CANCELLED` types with descriptions
+
+**Frontend — Pinia Store** (`app/stores/useCalendarStore.ts`):
+  - Singleton state for calendar views (replaces composable)
+  - 30-second skip-if-fresh caching; CRUD auto-invalidates
+  - Shared staff list (fetched once, used by modal + filters)
+  - Date navigation, event lookups by day/hour
+
+**Frontend — Components**:
+  - `CalendarToolbar` — date nav, week/month/agenda toggle, team/individual toggle
+  - `CalendarGrid` — CSS grid week + month views with time slots
+  - `CalendarAgenda` — day-grouped list view
+  - `CalendarEventCard` — color-coded by type, truncated text, avatar stack
+  - `CalendarAppointmentModal` — create/edit form with client search, matter select, staff checkboxes, Google sync toggle
+  - `AvatarStack` — overlapping circular avatars with initials fallback
+  - `SlotPicker` — date selector + available time slot buttons for public booking
+  - `BookingConfirmation` — confirmation display with .ics download
+
+**Frontend — Pages**:
+  - `/schedule` — full rewrite: toolbar, grid/agenda views, event detail modal, create/edit/cancel
+  - `/appointments` — enhanced with modal and calendar link
+  - `/settings/google-workspace` — new tabbed page (Service Account, Drive, Calendars) replacing separate pages
+  - `/settings/google-drive` — refactored to remove credentials (now in Workspace), back-link updated
+  - `/book/[bookingId]` — new dynamic-route booking page with payment/schedule/confirmation flow
+  - `/profile` — fixed Add Calendar button (was in nonexistent slot), gated behind service account config
+
+**Bug Fixes**:
+  - `server/api/attorney/calendars/index.post.ts` — `requireRole` was destructured incorrectly (`{ user }` vs direct return)
+  - `server/api/client/appointments.get.ts` — fixed broken query builder chaining
+  - `server/api/appointments/index.post.ts` — `clientId` made optional to match schema
+  - `server/api/admin/google-drive/configure.post.ts` — `isEnabled` made optional (defaults false) for partial saves
+  - `server/api/admin/google-drive/test.post.ts` — merges form values with stored config instead of requiring all fields
+  - `app/pages/settings/google-drive.vue` — hydration fix (load status in `fetchConfig` instead of relying on store SSR state)
+  - `app/pages/profile/index.vue` — `ClientOnly` wrapper for calendar section to avoid hydration mismatch
+  - `CalendarEventCard` — `overflow-hidden min-w-0` to prevent text from blowing out grid columns
+  - `CalendarEventCard` — renamed `click` emit to `select` to fix event propagation
+
+**Test Coverage** (92 new tests across 5 files):
+  - `tests/unit/calendar/availability.test.ts` (23 tests) — slot generation, busy filtering, durations, business hours, edge cases
+  - `tests/unit/calendar/activity-descriptions.test.ts` (8 tests) — appointment description generation
+  - `tests/unit/calendar/appointment-validation.test.ts` (26 tests) — Zod schemas for create/update/booking/availability
+  - `tests/unit/calendar/events-dedup.test.ts` (15 tests) — team dedup logic, merge, sort, edge cases
+  - `tests/unit/calendar/booking-validation.test.ts` (20 tests) — booking state machine, double-book prevention
 
 #### Derived Client Status via SQL View (2026-03-06)
 - **Status**: Complete ✅

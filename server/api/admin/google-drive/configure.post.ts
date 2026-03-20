@@ -9,7 +9,7 @@ import { generateId } from '../../../utils/auth'
 import { requireRole } from '../../../utils/rbac'
 
 const configureSchema = z.object({
-  isEnabled: z.boolean(),
+  isEnabled: z.boolean().default(false),
   serviceAccountEmail: z.string().email().optional(),
   serviceAccountPrivateKey: z.string().optional(),
   sharedDriveId: z.string().optional(),
@@ -73,7 +73,8 @@ export default defineEventHandler(async (event) => {
     await db.update(schema.googleDriveConfig)
       .set(configData)
       .where(eq(schema.googleDriveConfig.id, existingConfig.id))
-  } else {
+  }
+  else {
     // Create new config
     await db.insert(schema.googleDriveConfig).values({
       id: generateId(),

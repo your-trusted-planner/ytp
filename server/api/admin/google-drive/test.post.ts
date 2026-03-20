@@ -37,36 +37,33 @@ export default defineEventHandler(async (event) => {
     impersonateEmail?: string | null
   }
 
-  if (result.data.serviceAccountEmail && result.data.serviceAccountPrivateKey && result.data.sharedDriveId) {
-    testConfig = {
-      serviceAccountEmail: result.data.serviceAccountEmail,
-      serviceAccountPrivateKey: result.data.serviceAccountPrivateKey,
-      sharedDriveId: result.data.sharedDriveId,
-      impersonateEmail: result.data.impersonateEmail
-    }
-  } else {
-    // Use stored config
-    const storedConfig = await getDriveConfig()
-    if (!storedConfig) {
-      throw createError({
-        statusCode: 400,
-        message: 'Google Drive is not configured. Please provide credentials or save configuration first.'
-      })
-    }
+  // Merge: use provided values, fall back to stored config for anything missing
+  const storedConfig = await getDriveConfig()
 
-    if (!storedConfig.serviceAccountEmail || !storedConfig.serviceAccountPrivateKey || !storedConfig.sharedDriveId) {
-      throw createError({
-        statusCode: 400,
-        message: 'Incomplete configuration. Please provide service account credentials and Shared Drive ID.'
-      })
-    }
+  const email = result.data.serviceAccountEmail || storedConfig?.serviceAccountEmail
+  const key = result.data.serviceAccountPrivateKey || storedConfig?.serviceAccountPrivateKey
+  const driveId = result.data.sharedDriveId || storedConfig?.sharedDriveId
+  const impersonate = result.data.impersonateEmail ?? storedConfig?.impersonateEmail
 
-    testConfig = {
-      serviceAccountEmail: storedConfig.serviceAccountEmail,
-      serviceAccountPrivateKey: storedConfig.serviceAccountPrivateKey,
-      sharedDriveId: storedConfig.sharedDriveId,
-      impersonateEmail: storedConfig.impersonateEmail
-    }
+  if (!email || !key) {
+    throw createError({
+      statusCode: 400,
+      message: 'Service account credentials not configured. Go to Settings > Google Workspace to set up credentials.'
+    })
+  }
+
+  if (!driveId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Shared Drive ID is required. Enter a Drive ID above or configure one in the form.'
+    })
+  }
+
+  testConfig = {
+    serviceAccountEmail: email,
+    serviceAccountPrivateKey: key,
+    sharedDriveId: driveId,
+    impersonateEmail: impersonate
   }
 
   const testResult = await testDriveConnection(testConfig)

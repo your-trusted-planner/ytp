@@ -7,8 +7,12 @@
  */
 
 export default defineNuxtPlugin(async () => {
-  const appConfigStore = useAppConfigStore()
+  // Skip config fetch on public pages — these endpoints require auth
+  const route = useRoute()
+  if (route.path.startsWith('/book') || route.path === '/login' || route.path === '/register' || route.path === '/forgot-password' || route.path === '/reset-password') {
+    return
+  }
 
-  // Fetch config on app init (only on client-side)
+  const appConfigStore = useAppConfigStore()
   await appConfigStore.fetchConfig()
 })

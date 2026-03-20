@@ -11,8 +11,12 @@
 
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
-        <p class="text-gray-600 mt-1">Manage user roles and permissions</p>
+        <h1 class="text-3xl font-bold text-gray-900">
+          User Management
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Manage user roles and permissions
+        </p>
       </div>
       <UiButton @click="openCreateModal">
         Create User
@@ -22,52 +26,90 @@
     <!-- Users List -->
     <UiCard>
       <!-- Filter Summary -->
-      <div v-if="hasActiveFilters" class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <div
+        v-if="hasActiveFilters"
+        class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between"
+      >
         <div class="text-sm text-gray-600">
           Showing {{ filteredUsers.length }} of {{ users.length }} users
         </div>
         <button
-          @click="clearAllFilters"
           class="text-sm text-burgundy-600 hover:text-burgundy-800"
+          @click="clearAllFilters"
         >
           Clear all filters
         </button>
       </div>
 
-      <div v-if="loading" class="text-center py-12">
-        <p class="text-gray-500">Loading users...</p>
+      <div
+        v-if="loading"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          Loading users...
+        </p>
       </div>
-      <div v-else-if="users.length === 0" class="text-center py-12">
-        <p class="text-gray-500">No users found</p>
+      <div
+        v-else-if="users.length === 0"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          No users found
+        </p>
       </div>
-      <div v-else-if="filteredUsers.length === 0" class="text-center py-12">
-        <p class="text-gray-500">No users match the current filters</p>
+      <div
+        v-else-if="filteredUsers.length === 0"
+        class="text-center py-12"
+      >
+        <p class="text-gray-500">
+          No users match the current filters
+        </p>
         <button
-          @click="clearAllFilters"
           class="mt-2 text-sm text-burgundy-600 hover:text-burgundy-800"
+          @click="clearAllFilters"
         >
           Clear filters
         </button>
       </div>
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                User
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email
+              </th>
               <!-- Role Filter -->
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div class="relative">
                   <button
-                    @click="toggleFilter('role')"
                     class="flex items-center gap-1 hover:text-gray-700"
                     :class="{ 'text-burgundy-600': roleFilter.size > 0 }"
+                    @click="toggleFilter('role')"
                   >
                     Role
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
                     </svg>
-                    <span v-if="roleFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                    <span
+                      v-if="roleFilter.size > 0"
+                      class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full"
+                    >
                       {{ roleFilter.size }}
                     </span>
                   </button>
@@ -76,7 +118,10 @@
                     class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
                   >
                     <div class="p-2 border-b border-gray-100">
-                      <button @click="clearFilter('role')" class="text-xs text-gray-500 hover:text-gray-700">
+                      <button
+                        class="text-xs text-gray-500 hover:text-gray-700"
+                        @click="clearFilter('role')"
+                      >
                         Clear filter
                       </button>
                     </div>
@@ -89,10 +134,13 @@
                         <input
                           type="checkbox"
                           :checked="roleFilter.has(role)"
-                          @change="toggleFilterValue('role', role)"
                           class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
-                        />
-                        <UiBadge :variant="getRoleBadgeVariant(role)" size="sm">{{ role }}</UiBadge>
+                          @change="toggleFilterValue('role', role)"
+                        >
+                        <UiBadge
+                          :variant="getRoleBadgeVariant(role)"
+                          size="sm"
+                        >{{ role }}</UiBadge>
                       </label>
                     </div>
                   </div>
@@ -102,15 +150,28 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div class="relative">
                   <button
-                    @click="toggleFilter('adminLevel')"
                     class="flex items-center gap-1 hover:text-gray-700"
                     :class="{ 'text-burgundy-600': adminLevelFilter.size > 0 }"
+                    @click="toggleFilter('adminLevel')"
                   >
                     Admin Level
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
                     </svg>
-                    <span v-if="adminLevelFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                    <span
+                      v-if="adminLevelFilter.size > 0"
+                      class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full"
+                    >
                       {{ adminLevelFilter.size }}
                     </span>
                   </button>
@@ -119,7 +180,10 @@
                     class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
                   >
                     <div class="p-2 border-b border-gray-100">
-                      <button @click="clearFilter('adminLevel')" class="text-xs text-gray-500 hover:text-gray-700">
+                      <button
+                        class="text-xs text-gray-500 hover:text-gray-700"
+                        @click="clearFilter('adminLevel')"
+                      >
                         Clear filter
                       </button>
                     </div>
@@ -132,11 +196,18 @@
                         <input
                           type="checkbox"
                           :checked="adminLevelFilter.has(level)"
-                          @change="toggleFilterValue('adminLevel', level)"
                           class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
-                        />
-                        <span v-if="level === 0" class="text-gray-400 text-sm">None</span>
-                        <UiBadge v-else :variant="getAdminLevelVariant(level)" size="sm">Level {{ level }}</UiBadge>
+                          @change="toggleFilterValue('adminLevel', level)"
+                        >
+                        <span
+                          v-if="level === 0"
+                          class="text-gray-400 text-sm"
+                        >None</span>
+                        <UiBadge
+                          v-else
+                          :variant="getAdminLevelVariant(level)"
+                          size="sm"
+                        >Level {{ level }}</UiBadge>
                       </label>
                     </div>
                   </div>
@@ -146,15 +217,28 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div class="relative">
                   <button
-                    @click="toggleFilter('status')"
                     class="flex items-center gap-1 hover:text-gray-700"
                     :class="{ 'text-burgundy-600': statusFilter.size > 0 }"
+                    @click="toggleFilter('status')"
                   >
                     Status
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
                     </svg>
-                    <span v-if="statusFilter.size > 0" class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full">
+                    <span
+                      v-if="statusFilter.size > 0"
+                      class="ml-1 px-1.5 py-0.5 text-xs bg-burgundy-100 text-burgundy-700 rounded-full"
+                    >
                       {{ statusFilter.size }}
                     </span>
                   </button>
@@ -163,7 +247,10 @@
                     class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200"
                   >
                     <div class="p-2 border-b border-gray-100">
-                      <button @click="clearFilter('status')" class="text-xs text-gray-500 hover:text-gray-700">
+                      <button
+                        class="text-xs text-gray-500 hover:text-gray-700"
+                        @click="clearFilter('status')"
+                      >
                         Clear filter
                       </button>
                     </div>
@@ -176,28 +263,41 @@
                         <input
                           type="checkbox"
                           :checked="statusFilter.has(status)"
-                          @change="toggleFilterValue('status', status)"
                           class="rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
-                        />
-                        <UiBadge :variant="getStatusBadgeVariant(status)" size="sm">{{ status }}</UiBadge>
+                          @change="toggleFilterValue('status', status)"
+                        >
+                        <UiBadge
+                          :variant="getStatusBadgeVariant(status)"
+                          size="sm"
+                        >{{ status }}</UiBadge>
                       </label>
                     </div>
                   </div>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hourly Rate</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Hourly Rate
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50">
+            <tr
+              v-for="user in filteredUsers"
+              :key="user.id"
+              class="hover:bg-gray-50"
+            >
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">
                   {{ user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'No name' }}
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ user.email }}</div>
+                <div class="text-sm text-gray-900">
+                  {{ user.email }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getRoleBadgeVariant(user.role)">
@@ -205,10 +305,16 @@
                 </UiBadge>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <UiBadge v-if="user.adminLevel > 0" :variant="getAdminLevelVariant(user.adminLevel)">
+                <UiBadge
+                  v-if="user.adminLevel > 0"
+                  :variant="getAdminLevelVariant(user.adminLevel)"
+                >
                   Level {{ user.adminLevel }}
                 </UiBadge>
-                <span v-else class="text-gray-400 text-sm">—</span>
+                <span
+                  v-else
+                  class="text-gray-400 text-sm"
+                >—</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UiBadge :variant="getStatusBadgeVariant(user.status)">
@@ -216,30 +322,39 @@
                 </UiBadge>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span v-if="['LAWYER', 'STAFF'].includes(user.role) && user.defaultHourlyRate" class="text-sm font-medium text-gray-900">
+                <span
+                  v-if="['LAWYER', 'STAFF'].includes(user.role) && user.defaultHourlyRate"
+                  class="text-sm font-medium text-gray-900"
+                >
                   {{ formatCurrency(user.defaultHourlyRate) }}/hr
                 </span>
-                <span v-else-if="['LAWYER', 'STAFF'].includes(user.role)" class="text-gray-400 text-sm">Not set</span>
-                <span v-else class="text-gray-400 text-sm">—</span>
+                <span
+                  v-else-if="['LAWYER', 'STAFF'].includes(user.role)"
+                  class="text-gray-400 text-sm"
+                >Not set</span>
+                <span
+                  v-else
+                  class="text-gray-400 text-sm"
+                >—</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                 <button
-                  @click="editUser(user)"
                   class="text-burgundy-600 hover:text-burgundy-900"
+                  @click="editUser(user)"
                 >
                   Edit
                 </button>
                 <button
                   v-if="user.email && user.status !== 'INACTIVE'"
-                  @click="sendPasswordReset(user)"
                   class="text-blue-600 hover:text-blue-900"
                   :disabled="sendingResetFor === user.id"
+                  @click="sendPasswordReset(user)"
                 >
                   {{ sendingResetFor === user.id ? 'Sending...' : 'Reset Password' }}
                 </button>
                 <button
-                  @click="confirmDelete(user)"
                   class="text-red-600 hover:text-red-900"
+                  @click="confirmDelete(user)"
                 >
                   Delete
                 </button>
@@ -251,8 +366,15 @@
     </UiCard>
 
     <!-- Create/Edit User Modal -->
-    <UiModal v-model="showEditModal" :title="editingUser ? 'Edit User' : 'Create User'" size="md">
-      <form @submit.prevent="handleSaveUser" class="space-y-4">
+    <UiModal
+      v-model="showEditModal"
+      :title="editingUser ? 'Edit User' : 'Create User'"
+      size="md"
+    >
+      <form
+        class="space-y-4"
+        @submit.prevent="handleSaveUser"
+      >
         <UiInput
           v-if="!editingUser"
           v-model="editForm.email"
@@ -279,10 +401,9 @@
           label="Last Name"
         />
 
-        <UiInput
+        <UiPhoneInput
           v-model="editForm.phone"
           label="Phone"
-          type="tel"
         />
 
         <UiSelect
@@ -290,12 +411,24 @@
           label="Role"
           required
         >
-          <option value="PROSPECT">Prospect</option>
-          <option value="LEAD">Lead</option>
-          <option value="CLIENT">Client</option>
-          <option value="ADVISOR">Advisor (External)</option>
-          <option value="STAFF">Staff</option>
-          <option value="LAWYER">Lawyer</option>
+          <option value="PROSPECT">
+            Prospect
+          </option>
+          <option value="LEAD">
+            Lead
+          </option>
+          <option value="CLIENT">
+            Client
+          </option>
+          <option value="ADVISOR">
+            Advisor (External)
+          </option>
+          <option value="STAFF">
+            Staff
+          </option>
+          <option value="LAWYER">
+            Lawyer
+          </option>
         </UiSelect>
 
         <UiSelect
@@ -303,10 +436,18 @@
           label="Status"
           required
         >
-          <option value="PROSPECT">Prospect</option>
-          <option value="PENDING_APPROVAL">Pending Approval</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
+          <option value="PROSPECT">
+            Prospect
+          </option>
+          <option value="PENDING_APPROVAL">
+            Pending Approval
+          </option>
+          <option value="ACTIVE">
+            Active
+          </option>
+          <option value="INACTIVE">
+            Inactive
+          </option>
         </UiSelect>
 
         <!-- Admin Level - only visible to admin level 2+ -->
@@ -315,8 +456,14 @@
             v-model="editForm.adminLevel"
             label="Admin Level"
           >
-            <option :value="0">None</option>
-            <option v-for="level in availableAdminLevels" :key="level" :value="level">
+            <option :value="0">
+              None
+            </option>
+            <option
+              v-for="level in availableAdminLevels"
+              :key="level"
+              :value="level"
+            >
               Level {{ level }}{{ level === 1 ? ' (Basic)' : level === 2 ? ' (Full)' : level >= 3 ? ' (Super)' : '' }}
             </option>
           </UiSelect>
@@ -339,7 +486,7 @@
               step="0.01"
               placeholder="0.00"
               class="w-full pl-7 pr-16 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500"
-            />
+            >
             <span class="absolute right-3 top-2 text-gray-500 text-sm">/hour</span>
           </div>
           <p class="text-xs text-gray-500 mt-1">
@@ -355,17 +502,27 @@
       </form>
 
       <template #footer>
-        <UiButton variant="outline" @click="showEditModal = false">
+        <UiButton
+          variant="outline"
+          @click="showEditModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton @click="handleSaveUser" :is-loading="saving">
+        <UiButton
+          :is-loading="saving"
+          @click="handleSaveUser"
+        >
           {{ editingUser ? 'Save Changes' : 'Create User' }}
         </UiButton>
       </template>
     </UiModal>
 
     <!-- Delete Confirmation Modal -->
-    <UiModal v-model="showDeleteModal" title="Delete User" size="sm">
+    <UiModal
+      v-model="showDeleteModal"
+      title="Delete User"
+      size="sm"
+    >
       <div class="space-y-4">
         <p class="text-gray-700">
           Are you sure you want to delete <strong>{{ deletingUser?.firstName }} {{ deletingUser?.lastName }}</strong>?
@@ -378,10 +535,17 @@
       </div>
 
       <template #footer>
-        <UiButton variant="outline" @click="showDeleteModal = false">
+        <UiButton
+          variant="outline"
+          @click="showDeleteModal = false"
+        >
           Cancel
         </UiButton>
-        <UiButton variant="danger" @click="handleDeleteUser" :is-loading="deleting">
+        <UiButton
+          variant="danger"
+          :is-loading="deleting"
+          @click="handleDeleteUser"
+        >
           Delete User
         </UiButton>
       </template>
@@ -437,7 +601,7 @@ const uniqueStatuses = computed(() => {
 
 // Filtered users
 const filteredUsers = computed(() => {
-  return users.value.filter(user => {
+  return users.value.filter((user) => {
     if (roleFilter.value.size > 0 && !roleFilter.value.has(user.role)) {
       return false
     }
@@ -460,7 +624,8 @@ const hasActiveFilters = computed(() => {
 function toggleFilter(filterName: string) {
   if (activeFilter.value === filterName) {
     activeFilter.value = null
-  } else {
+  }
+  else {
     activeFilter.value = filterName
   }
 }
@@ -476,7 +641,8 @@ function toggleFilterValue(filterName: string, value: string | number) {
     const newSet = new Set(filter.value)
     if (newSet.has(value)) {
       newSet.delete(value)
-    } else {
+    }
+    else {
       newSet.add(value)
     }
     filter.value = newSet
@@ -568,9 +734,11 @@ async function fetchUsers() {
       adminLevel: user.admin_level ?? 0,
       defaultHourlyRate: user.default_hourly_rate ?? null
     }))
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to fetch users:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -634,16 +802,17 @@ async function handleSaveUser() {
 
       // Include defaultHourlyRate for LAWYER/STAFF roles (convert dollars to cents)
       if (isFirmRole.value) {
-        updateBody.defaultHourlyRate = editForm.value.defaultHourlyRateDollars !== null && editForm.value.defaultHourlyRateDollars >= 0
-          ? Math.round(editForm.value.defaultHourlyRateDollars * 100)
-          : null
+        updateBody.defaultHourlyRate = editForm.value.defaultHourlyRateDollars !== null && editForm.value.defaultHourlyRateDollars >= 0 ?
+            Math.round(editForm.value.defaultHourlyRateDollars * 100) :
+          null
       }
 
       await $fetch(`/api/users/${editingUser.value.id}`, {
         method: 'PUT',
         body: updateBody
       })
-    } else {
+    }
+    else {
       // Create new user
       const createBody: any = {
         email: editForm.value.email,
@@ -673,10 +842,12 @@ async function handleSaveUser() {
 
     showEditModal.value = false
     await fetchUsers()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to save user:', error)
     toast.error(error.data?.message || 'Failed to save user')
-  } finally {
+  }
+  finally {
     saving.value = false
   }
 }
@@ -686,17 +857,19 @@ async function sendPasswordReset(user: any) {
 
   sendingResetFor.value = user.id
   try {
-    const response = await $fetch<{ success: boolean; message: string }>(`/api/users/${user.id}/send-password-reset`, {
+    const response = await $fetch<{ success: boolean, message: string }>(`/api/users/${user.id}/send-password-reset`, {
       method: 'POST'
     })
 
     if (response.success) {
       toast.success(response.message)
     }
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to send password reset:', error)
     toast.error(error.data?.message || 'Failed to send password reset email')
-  } finally {
+  }
+  finally {
     sendingResetFor.value = null
   }
 }
@@ -717,10 +890,12 @@ async function handleDeleteUser() {
 
     showDeleteModal.value = false
     await fetchUsers()
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('Failed to delete user:', error)
     toast.error(error.data?.message || 'Failed to delete user')
-  } finally {
+  }
+  finally {
     deleting.value = false
   }
 }
@@ -745,9 +920,9 @@ function getRoleBadgeVariant(role: string) {
 }
 
 function getAdminLevelVariant(level: number) {
-  if (level >= 3) return 'danger'  // Super admin
+  if (level >= 3) return 'danger' // Super admin
   if (level === 2) return 'warning' // Full admin
-  if (level === 1) return 'info'    // Basic admin
+  if (level === 1) return 'info' // Basic admin
   return 'default'
 }
 
@@ -763,5 +938,4 @@ function getStatusBadgeVariant(status: string) {
       return 'default'
   }
 }
-
 </script>

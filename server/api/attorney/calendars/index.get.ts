@@ -2,7 +2,7 @@
 import { requireRole } from '../../../utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['LAWYER', 'ADMIN'])
+  const user = requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, and, desc } = await import('drizzle-orm')
@@ -35,4 +35,3 @@ export default defineEventHandler(async (event) => {
     calendars
   }
 })
-
