@@ -15,6 +15,8 @@ export type EntityType =
   | 'referral_partner'
   | 'service'
   | 'appointment'
+  | 'appointment_type'
+  | 'room'
   | 'note'
   | 'setting'
   | 'estate_plan'
@@ -103,11 +105,23 @@ export type ActivityType =
   | 'USER_RATE_UPDATED'
   | 'CLIENT_RATES_UPDATED'
   | 'MATTER_RATES_UPDATED'
+  // Appointment events
+  | 'APPOINTMENT_CREATED'
+  | 'APPOINTMENT_UPDATED'
+  | 'APPOINTMENT_CANCELLED'
+  // Appointment type events
+  | 'APPOINTMENT_TYPE_CREATED'
+  | 'APPOINTMENT_TYPE_UPDATED'
+  | 'APPOINTMENT_TYPE_DELETED'
+  // Room events
+  | 'ROOM_CREATED'
+  | 'ROOM_UPDATED'
+  | 'ROOM_DELETED'
   // Admin events
   | 'ADMIN_ACTION'
   | 'SETTINGS_CHANGED'
 
-export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan'
+export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room'
 
 export interface LogActivityParams {
   type: ActivityType
@@ -324,7 +338,7 @@ export function formatActivityDescription(
   actorName: string,
   targetName?: string
 ): string {
-  const descriptions: Record<ActivityType, string> = {
+  const descriptions: Partial<Record<ActivityType, string>> = {
     USER_LOGIN: `${actorName} logged in`,
     USER_LOGOUT: `${actorName} logged out`,
     USER_CREATED: `${actorName} account created`,
@@ -358,7 +372,16 @@ export function formatActivityDescription(
     SETTINGS_CHANGED: `${actorName} changed system settings`,
     NOTE_CREATED: targetName ? `${actorName} added a note to ${targetName}` : `${actorName} added a note`,
     NOTE_UPDATED: targetName ? `${actorName} updated a note on ${targetName}` : `${actorName} updated a note`,
-    NOTE_DELETED: targetName ? `${actorName} deleted a note from ${targetName}` : `${actorName} deleted a note`
+    NOTE_DELETED: targetName ? `${actorName} deleted a note from ${targetName}` : `${actorName} deleted a note`,
+    APPOINTMENT_CREATED: targetName ? `${actorName} scheduled "${targetName}"` : `${actorName} scheduled an appointment`,
+    APPOINTMENT_UPDATED: targetName ? `${actorName} updated appointment "${targetName}"` : `${actorName} updated an appointment`,
+    APPOINTMENT_CANCELLED: targetName ? `${actorName} cancelled appointment "${targetName}"` : `${actorName} cancelled an appointment`,
+    APPOINTMENT_TYPE_CREATED: targetName ? `${actorName} created appointment type "${targetName}"` : `${actorName} created an appointment type`,
+    APPOINTMENT_TYPE_UPDATED: targetName ? `${actorName} updated appointment type "${targetName}"` : `${actorName} updated an appointment type`,
+    APPOINTMENT_TYPE_DELETED: targetName ? `${actorName} deleted appointment type "${targetName}"` : `${actorName} deleted an appointment type`,
+    ROOM_CREATED: targetName ? `${actorName} created room "${targetName}"` : `${actorName} created a room`,
+    ROOM_UPDATED: targetName ? `${actorName} updated room "${targetName}"` : `${actorName} updated a room`,
+    ROOM_DELETED: targetName ? `${actorName} deleted room "${targetName}"` : `${actorName} deleted a room`
   }
 
   return descriptions[type] || `${actorName} performed ${type}`

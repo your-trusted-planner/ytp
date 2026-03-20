@@ -321,6 +321,27 @@ export async function resolveEntityNames(
     )
   }
 
+  // Appointment Types
+  const appointmentTypeIds = byType.get('appointment_type') || []
+  if (appointmentTypeIds.length > 0) {
+    promises.push(
+      (async () => {
+        const types = await db
+          .select({
+            id: schema.appointmentTypes.id,
+            name: schema.appointmentTypes.name
+          })
+          .from(schema.appointmentTypes)
+          .where(inArray(schema.appointmentTypes.id, appointmentTypeIds))
+          .all()
+
+        for (const type of types) {
+          results.set(`appointment_type:${type.id}`, type.name)
+        }
+      })()
+    )
+  }
+
   // Appointments
   const appointmentIds = byType.get('appointment') || []
   if (appointmentIds.length > 0) {
@@ -337,6 +358,27 @@ export async function resolveEntityNames(
 
         for (const appointment of appointments) {
           results.set(`appointment:${appointment.id}`, appointment.title)
+        }
+      })()
+    )
+  }
+
+  // Rooms
+  const roomIds = byType.get('room') || []
+  if (roomIds.length > 0) {
+    promises.push(
+      (async () => {
+        const roomRecords = await db
+          .select({
+            id: schema.rooms.id,
+            name: schema.rooms.name
+          })
+          .from(schema.rooms)
+          .where(inArray(schema.rooms.id, roomIds))
+          .all()
+
+        for (const room of roomRecords) {
+          results.set(`room:${room.id}`, room.name)
         }
       })()
     )
@@ -410,6 +452,8 @@ export function getEntityLink(type: EntityType, id: string): string | null {
     referral_partner: `/referral-partners/${id}`,
     service: `/services/${id}`,
     appointment: `/appointments/${id}`,
+    appointment_type: `/settings/appointment-types`,
+    room: `/settings/rooms`,
     note: null, // Notes don't have their own page
     setting: `/settings`, // Settings link to the settings page
     estate_plan: `/estate-plans/${id}`
@@ -433,6 +477,8 @@ export function getEntityTypeLabel(type: EntityType): string {
     referral_partner: 'Referral Partner',
     service: 'Service',
     appointment: 'Appointment',
+    appointment_type: 'Appointment Type',
+    room: 'Room',
     note: 'Note',
     setting: 'Setting',
     estate_plan: 'Estate Plan'

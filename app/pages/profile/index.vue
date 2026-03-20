@@ -30,10 +30,9 @@
             autocomplete="email"
             disabled
           />
-          <UiInput
+          <UiPhoneInput
             v-model="profile.phone"
             label="Phone"
-            autocomplete="tel"
           />
           <div class="flex justify-end space-x-3">
             <UiButton variant="outline" type="button" @click="resetProfile">
@@ -241,12 +240,74 @@
       </div>
     </UiCard>
 
-    <!-- My Calendars (for firm members) -->
-    <UiCard v-if="isFirmMember" title="My Calendars">
-      <template #header-actions>
-        <UiButton size="sm" @click="showAddCalendarModal = true">
-          Add Calendar
-        </UiButton>
+    <!-- Video Meetings (for firm members) -->
+    <ClientOnly>
+      <UiCard v-if="isFirmMember" title="Video Meetings">
+        <template #header-actions>
+          <span class="text-sm text-gray-500">Connect your video meeting account</span>
+        </template>
+
+        <div v-if="videoConnectionsLoading" class="text-sm text-gray-500">Loading...</div>
+        <div v-else class="space-y-4">
+          <!-- Zoom Connection -->
+          <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Video class="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 class="font-medium text-gray-900">Zoom</h3>
+                <p v-if="activeZoomConnection" class="text-sm text-green-600">
+                  Connected as {{ activeZoomConnection.providerEmail }}
+                </p>
+                <p v-else class="text-sm text-gray-500">Not connected</p>
+              </div>
+            </div>
+            <div>
+              <UiButton
+                v-if="activeZoomConnection"
+                variant="outline"
+                size="sm"
+                @click="disconnectZoom"
+                :is-loading="disconnectingZoom"
+              >
+                Disconnect
+              </UiButton>
+              <UiButton
+                v-else
+                size="sm"
+                @click="connectZoom"
+              >
+                Connect Zoom
+              </UiButton>
+            </div>
+          </div>
+
+          <!-- Google Meet (coming soon) -->
+          <div class="flex items-center justify-between py-3 opacity-60">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <Video class="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <h3 class="font-medium text-gray-900">Google Meet</h3>
+                <p class="text-sm text-gray-500">Coming soon</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </UiCard>
+    </ClientOnly>
+
+    <!-- My Calendars (for firm members, only when Google service account is configured) -->
+    <ClientOnly><UiCard v-if="isFirmMember && appConfig.isGoogleConfigured">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">My Calendars</h3>
+          <UiButton size="sm" @click="showAddCalendarModal = true">
+            Add Calendar
+          </UiButton>
+        </div>
       </template>
 
       <div v-if="calendars.length > 0" class="divide-y divide-gray-200">
@@ -265,29 +326,26 @@
               <p class="text-sm text-gray-500 mt-1">{{ calendar.calendar_email }}</p>
               <p class="text-xs text-gray-400 mt-1">Timezone: {{ calendar.timezone }}</p>
             </div>
-            <div class="flex items-center space-x-2 opacity-50">
+            <div class="flex items-center space-x-2">
               <UiButton
                 v-if="!calendar.is_primary"
                 variant="outline"
                 size="sm"
-                disabled
-                title="Not yet implemented"
+                @click="setPrimaryCalendar(calendar.id)"
               >
                 Set Primary
               </UiButton>
               <UiButton
                 variant="outline"
                 size="sm"
-                disabled
-                title="Not yet implemented"
+                @click="toggleCalendarActive(calendar.id, !calendar.is_active)"
               >
                 {{ calendar.is_active ? 'Deactivate' : 'Activate' }}
               </UiButton>
               <UiButton
                 variant="danger"
                 size="sm"
-                disabled
-                title="Not yet implemented"
+                @click="deleteCalendar(calendar.id)"
               >
                 Delete
               </UiButton>
@@ -301,7 +359,7 @@
         <h3 class="mt-2 text-sm font-medium text-gray-900">No calendars configured</h3>
         <p class="mt-1 text-sm text-gray-500">Add a calendar to enable appointment booking.</p>
       </div>
-    </UiCard>
+    </UiCard></ClientOnly>
 
     <!-- Add Calendar Modal -->
     <UiModal v-model="showAddCalendarModal" title="Add Google Calendar" size="md">
@@ -359,9 +417,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Calendar, Construction, Copy, Check, RefreshCw, Trash2, Plus } from 'lucide-vue-next'
+import { Calendar, Construction, Copy, Check, RefreshCw, Trash2, Plus, Video } from 'lucide-vue-next'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
 import type { DocumentViewPreference } from '~/stores/usePreferencesStore'
+import { useAppConfigStore } from '~/stores/appConfig'
 
 const toast = useToast()
 
@@ -373,6 +432,7 @@ definePageMeta({
 const { data: sessionData } = await useFetch('/api/auth/session')
 const currentUser = computed(() => sessionData.value?.user)
 const preferencesStore = usePreferencesStore()
+const appConfig = useAppConfigStore()
 
 // Check if user is a firm member (can manage calendars)
 const isFirmMember = computed(() => {
@@ -415,10 +475,10 @@ const setDocumentView = (view: DocumentViewPreference) => {
 
 const calendars = ref<any[]>([])
 const calendarForm = ref({
-  calendarName: '',
-  calendarId: '',
-  calendarEmail: '',
-  timezone: 'America/New_York',
+  calendarName: 'Main',
+  calendarId: sessionData.value?.user?.email,
+  calendarEmail: sessionData.value?.user?.email,
+  timezone: 'America/Denver',
   isPrimary: false,
 })
 
@@ -439,6 +499,20 @@ const savingPreferences = ref(false)
 const showAddCalendarModal = ref(false)
 const addingCalendar = ref(false)
 
+// Video meeting connections
+const videoConnections = ref<Array<{
+  id: string
+  provider: string
+  providerEmail: string | null
+  status: string
+}>>([])
+const videoConnectionsLoading = ref(false)
+const disconnectingZoom = ref(false)
+
+const activeZoomConnection = computed(() =>
+  videoConnections.value.find(c => c.provider === 'zoom' && c.status === 'ACTIVE')
+)
+
 onMounted(async () => {
   // Hydrate preferences from localStorage on client
   preferencesStore.hydrateFromStorage()
@@ -448,9 +522,20 @@ onMounted(async () => {
   // Load API token status
   await loadApiTokenStatus()
 
-  // Load calendars for firm members
+  // Load calendars and video connections for firm members
   if (isFirmMember.value) {
     await loadCalendars()
+    await loadVideoConnections()
+  }
+
+  // Check for Zoom connection result via query param
+  const route = useRoute()
+  if (route.query.zoom === 'connected') {
+    toast.success('Zoom connected successfully')
+    await loadVideoConnections()
+  } else if (route.query.zoom === 'error') {
+    const reason = route.query.reason as string || 'Unknown error'
+    toast.error(`Zoom connection failed: ${reason}`)
   }
 })
 
@@ -585,6 +670,39 @@ const formatTokenDate = (date: string | null) => {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+// Video connection functions
+const loadVideoConnections = async () => {
+  videoConnectionsLoading.value = true
+  try {
+    videoConnections.value = await $fetch('/api/profile/video-connections')
+  } catch {
+    // May not have video connections feature
+  } finally {
+    videoConnectionsLoading.value = false
+  }
+}
+
+const connectZoom = () => {
+  window.location.href = '/api/auth/zoom/authorize'
+}
+
+const disconnectZoom = async () => {
+  const connection = activeZoomConnection.value
+  if (!connection) return
+  if (!confirm('Disconnect Zoom? Existing meeting links will still work, but new Zoom meetings cannot be created.')) return
+
+  disconnectingZoom.value = true
+  try {
+    await $fetch(`/api/profile/video-connections/${connection.id}`, { method: 'DELETE' })
+    toast.success('Zoom disconnected')
+    await loadVideoConnections()
+  } catch {
+    toast.error('Failed to disconnect Zoom')
+  } finally {
+    disconnectingZoom.value = false
+  }
+}
+
 // Calendar functions
 const loadCalendars = async () => {
   try {
@@ -605,10 +723,10 @@ const addCalendar = async () => {
     await loadCalendars()
     showAddCalendarModal.value = false
     calendarForm.value = {
-      calendarName: '',
-      calendarId: '',
-      calendarEmail: '',
-      timezone: 'America/New_York',
+      calendarName: 'Main',
+      calendarId: sessionData.value?.user?.email,
+      calendarEmail: sessionData.value?.user?.email,
+      timezone: 'America/Denver',
       isPrimary: false,
     }
   } catch (error) {
@@ -620,19 +738,48 @@ const addCalendar = async () => {
 }
 
 const setPrimaryCalendar = async (calendarId: string) => {
-  // TODO: Implement API call
-  toast.info('Set primary functionality coming soon')
+  try {
+    await $fetch(`/api/attorney/calendars/${calendarId}`, {
+      method: 'PUT',
+      body: { isPrimary: true }
+    })
+    toast.success('Primary calendar updated')
+    await loadCalendars()
+  } catch {
+    toast.error('Failed to set primary calendar')
+  }
 }
 
-const toggleCalendarActive = async (calendarId: string, isActive: boolean) => {
-  // TODO: Implement API call
-  toast.info('Toggle active functionality coming soon')
+const toggleCalendarActive = async (calendarId: string, activate: boolean) => {
+  try {
+    if (activate) {
+      await $fetch(`/api/attorney/calendars/${calendarId}`, {
+        method: 'PUT',
+        body: { isActive: true }  // Re-use PUT to reactivate
+      })
+    } else {
+      await $fetch(`/api/attorney/calendars/${calendarId}`, {
+        method: 'DELETE'
+      })
+    }
+    toast.success(activate ? 'Calendar activated' : 'Calendar deactivated')
+    await loadCalendars()
+  } catch {
+    toast.error('Failed to update calendar')
+  }
 }
 
 const deleteCalendar = async (calendarId: string) => {
-  if (!confirm('Are you sure you want to delete this calendar?')) return
-  // TODO: Implement API call
-  toast.info('Delete functionality coming soon')
+  if (!confirm('Are you sure you want to remove this calendar?')) return
+  try {
+    await $fetch(`/api/attorney/calendars/${calendarId}`, {
+      method: 'DELETE'
+    })
+    toast.success('Calendar removed')
+    await loadCalendars()
+  } catch {
+    toast.error('Failed to remove calendar')
+  }
 }
 
 // Signature updated handler

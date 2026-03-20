@@ -40,17 +40,51 @@
         </UiCard>
       </NuxtLink>
 
-      <!-- Calendar Administration -->
-      <NuxtLink to="/settings/calendars" class="block">
+      <!-- Google Workspace -->
+      <NuxtLink to="/settings/google-workspace" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
           <div class="flex items-start space-x-4">
-            <div class="p-3 bg-green-50 rounded-lg">
-              <Calendar class="w-6 h-6 text-green-600" />
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <Building2 class="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 class="font-medium text-gray-900">Calendar Administration</h3>
+              <h3 class="font-medium text-gray-900">Google Workspace</h3>
               <p class="text-sm text-gray-500 mt-1">
-                Manage organization-wide calendar settings and scheduling rules
+                Service account, Drive sync, and Calendar integration
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
+      <!-- Appointment Types -->
+      <NuxtLink to="/settings/appointment-types" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-indigo-50 rounded-lg">
+              <CalendarClock class="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Appointment Types</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Configure bookable appointment types, durations, fees, and booking links
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
+      <!-- Rooms & Locations -->
+      <NuxtLink to="/settings/rooms" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-teal-50 rounded-lg">
+              <DoorOpen class="w-6 h-6 text-teal-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Rooms & Locations</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Manage conference rooms with calendar resource integration for availability tracking
               </p>
             </div>
           </div>
@@ -74,23 +108,6 @@
         </UiCard>
       </NuxtLink>
 
-      <!-- Google Drive Integration -->
-      <NuxtLink to="/settings/google-drive" class="block">
-        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
-          <div class="flex items-start space-x-4">
-            <div class="p-3 bg-blue-50 rounded-lg">
-              <IconsGoogleDrive :size="24" />
-            </div>
-            <div>
-              <h3 class="font-medium text-gray-900">Google Drive</h3>
-              <p class="text-sm text-gray-500 mt-1">
-                Configure automatic file sync to Google Drive Shared Drives
-              </p>
-            </div>
-          </div>
-        </UiCard>
-      </NuxtLink>
-
       <!-- Marketing Channels -->
       <NuxtLink to="/settings/marketing/channels" class="block">
         <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -102,6 +119,23 @@
               <h3 class="font-medium text-gray-900">Marketing Channels</h3>
               <p class="text-sm text-gray-500 mt-1">
                 Manage marketing consent channels and communication preferences
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
+      <!-- Video Providers -->
+      <NuxtLink to="/settings/video-providers" class="block">
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <Video class="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Video Providers</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Configure Zoom and video meeting integrations for appointments
               </p>
             </div>
           </div>
@@ -143,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Calendar, FolderOpen, Plug, Info, Mail } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Building2, FolderOpen, Plug, Info, Mail, CalendarClock, DoorOpen, Video } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',

@@ -1,0 +1,1 @@
+ALTER TABLE `appointment_types` ADD `staff_eligibility` text DEFAULT 'any' NOT NULL;

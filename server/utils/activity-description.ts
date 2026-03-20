@@ -304,6 +304,51 @@ export function generateDescription(
         ? `${actorName} applied payment to invoice for ${targetName}`
         : `${actorName} applied a payment`
 
+    // Appointment events
+    case 'APPOINTMENT_CREATED':
+      if (targetName && client?.name) {
+        return `${actorName} scheduled "${targetName}" with ${client.name}`
+      }
+      return targetName
+        ? `${actorName} scheduled "${targetName}"`
+        : `${actorName} scheduled an appointment`
+    case 'APPOINTMENT_UPDATED':
+      return targetName
+        ? `${actorName} updated appointment "${targetName}"`
+        : `${actorName} updated an appointment`
+    case 'APPOINTMENT_CANCELLED':
+      return targetName
+        ? `${actorName} cancelled appointment "${targetName}"`
+        : `${actorName} cancelled an appointment`
+
+    // Appointment type events
+    case 'APPOINTMENT_TYPE_CREATED':
+      return targetName
+        ? `${actorName} created appointment type "${targetName}"`
+        : `${actorName} created an appointment type`
+    case 'APPOINTMENT_TYPE_UPDATED':
+      return targetName
+        ? `${actorName} updated appointment type "${targetName}"`
+        : `${actorName} updated an appointment type`
+    case 'APPOINTMENT_TYPE_DELETED':
+      return targetName
+        ? `${actorName} deleted appointment type "${targetName}"`
+        : `${actorName} deleted an appointment type`
+
+    // Room events
+    case 'ROOM_CREATED':
+      return targetName
+        ? `${actorName} created room "${targetName}"`
+        : `${actorName} created a room`
+    case 'ROOM_UPDATED':
+      return targetName
+        ? `${actorName} updated room "${targetName}"`
+        : `${actorName} updated a room`
+    case 'ROOM_DELETED':
+      return targetName
+        ? `${actorName} deactivated room "${targetName}"`
+        : `${actorName} deactivated a room`
+
     // Admin events
     case 'ADMIN_ACTION':
       const actionName = details?.action as string | undefined
@@ -338,6 +383,8 @@ function formatEntityType(type: string): string {
     referral_partner: 'Referral Partner',
     service: 'Service',
     appointment: 'Appointment',
+    appointment_type: 'Appointment Type',
+    room: 'Room',
     note: 'Note',
     setting: 'Setting',
     estate_plan: 'Estate Plan',

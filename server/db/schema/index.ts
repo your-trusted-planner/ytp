@@ -36,7 +36,7 @@ export {
 } from './journeys'
 
 // Appointments
-export { appointments, attorneyCalendars, publicBookings } from './appointments'
+export { appointmentTypes, appointments, attorneyCalendars, publicBookings, rooms, videoMeetingConnections, videoMeetings } from './appointments'
 
 // Activities & Notes
 export { notes, activities } from './activities'

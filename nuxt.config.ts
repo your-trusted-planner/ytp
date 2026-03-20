@@ -61,6 +61,8 @@ export default defineNuxtConfig({
     // Google Calendar service account (domain-wide delegation)
     googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
     googleServiceAccountPrivateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+    // Zoom OAuth2 credentials are stored encrypted in the database via the integrations system.
+    // See: Settings > Video Providers to configure.
     // Firebase Admin SDK (server-only)
     firebaseServiceAccount: process.env.NUXT_FIREBASE_SERVICE_ACCOUNT || '',
     // Resend email service
