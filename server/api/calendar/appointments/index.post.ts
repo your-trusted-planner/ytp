@@ -92,9 +92,29 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Insert appointment first (video meeting FK references it)
+  await db.insert(schema.appointments).values({
+    id: appointmentId,
+    title: data.title,
+    description: data.description || null,
+    startTime: new Date(data.startTime),
+    endTime: new Date(data.endTime),
+    location: data.location || null,
+    locationConfig: data.locationConfig || null,
+    roomId: data.roomId || null,
+    clientId: data.clientId || null,
+    matterId: data.matterId || null,
+    appointmentType: data.appointmentType,
+    appointmentTypeId: data.appointmentTypeId || null,
+    attendeeIds: data.attendeeIds.length > 0 ? JSON.stringify(data.attendeeIds) : null,
+    createdById: user.id,
+    googleCalendarEventId,
+    googleCalendarEmail,
+    status: 'CONFIRMED'
+  })
+
   // Handle video meeting creation if locationConfig indicates video
   let videoMeetingId: string | null = null
-  let resolvedLocation = data.location || null
 
   if (data.locationConfig) {
     try {
@@ -116,7 +136,7 @@ export default defineEventHandler(async (event) => {
             event
           })
 
-          // Store video meeting record
+          // Store video meeting record (appointment exists now, FK is satisfied)
           const vmId = generateId()
           await db.insert(schema.videoMeetings).values({
             id: vmId,
@@ -134,37 +154,22 @@ export default defineEventHandler(async (event) => {
           })
 
           videoMeetingId = vmId
-          resolvedLocation = meeting.joinUrl
+
+          // Update appointment with video meeting link and ID
+          await db.update(schema.appointments)
+            .set({
+              videoMeetingId: vmId,
+              location: meeting.joinUrl
+            })
+            .where(eq(schema.appointments.id, appointmentId))
         }
         catch (err: any) {
           console.error('Failed to create video meeting:', err.message)
-          // Continue without video meeting — appointment still created
         }
       }
     }
     catch { /* ignore parse errors */ }
   }
-
-  await db.insert(schema.appointments).values({
-    id: appointmentId,
-    title: data.title,
-    description: data.description || null,
-    startTime: new Date(data.startTime),
-    endTime: new Date(data.endTime),
-    location: resolvedLocation,
-    locationConfig: data.locationConfig || null,
-    roomId: data.roomId || null,
-    videoMeetingId,
-    clientId: data.clientId || null,
-    matterId: data.matterId || null,
-    appointmentType: data.appointmentType,
-    appointmentTypeId: data.appointmentTypeId || null,
-    attendeeIds: data.attendeeIds.length > 0 ? JSON.stringify(data.attendeeIds) : null,
-    createdById: user.id,
-    googleCalendarEventId,
-    googleCalendarEmail,
-    status: 'CONFIRMED'
-  })
 
   await logActivity({
     type: 'APPOINTMENT_CREATED',

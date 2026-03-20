@@ -44,7 +44,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // Cancel video meeting if linked
-  console.log('[Cancel] videoMeetingId:', existing.videoMeetingId)
   if (existing.videoMeetingId) {
     try {
       const videoMeeting = await db
