@@ -19,6 +19,8 @@ const createSchema = z.object({
   appointmentType: z.enum(['CONSULTATION', 'MEETING', 'CALL', 'FOLLOW_UP', 'SIGNING', 'OTHER']).default('MEETING'),
   appointmentTypeId: z.string().optional(),
   attendeeIds: z.array(z.string()).default([]),
+  inviteeIds: z.array(z.string()).default([]),
+  checkAvailability: z.boolean().default(true),
   syncToGoogle: z.boolean().default(false)
 })
 
@@ -34,6 +36,63 @@ export default defineEventHandler(async (event) => {
   const data = parsed.data
   const db = useDrizzle()
   const appointmentId = generateId()
+
+  // Check staff availability if requested
+  if (data.checkAvailability && data.attendeeIds.length > 0) {
+    const { getMultiCalendarFreeBusy } = await import('../../../utils/google-calendar')
+    const { inArray } = await import('drizzle-orm')
+
+    // Get calendars for all staff attendees
+    const staffCalendars = await db
+      .select({
+        attorneyId: schema.attorneyCalendars.attorneyId,
+        calendarEmail: schema.attorneyCalendars.calendarEmail
+      })
+      .from(schema.attorneyCalendars)
+      .where(inArray(schema.attorneyCalendars.attorneyId, data.attendeeIds))
+      .all()
+
+    if (staffCalendars.length > 0) {
+      try {
+        const calendarEmails = staffCalendars.map(c => c.calendarEmail)
+        const busyPeriods = await getMultiCalendarFreeBusy(
+          calendarEmails[0]!,
+          calendarEmails,
+          data.startTime,
+          data.endTime
+        )
+
+        if (busyPeriods.length > 0) {
+          // Identify which staff members are busy
+          const busyStaff: string[] = []
+          for (const cal of staffCalendars) {
+            const calBusy = await import('../../../utils/google-calendar').then(m =>
+              m.getFreeBusy(cal.calendarEmail, data.startTime, data.endTime)
+            )
+            if (calBusy.length > 0) {
+              const staffUser = await db
+                .select({ firstName: schema.users.firstName, lastName: schema.users.lastName })
+                .from(schema.users)
+                .where(eq(schema.users.id, cal.attorneyId))
+                .get()
+              busyStaff.push(staffUser ? [staffUser.firstName, staffUser.lastName].filter(Boolean).join(' ') : cal.calendarEmail)
+            }
+          }
+
+          throw createError({
+            statusCode: 409,
+            message: busyStaff.length > 0
+              ? `Schedule conflict: ${busyStaff.join(', ')} ${busyStaff.length === 1 ? 'is' : 'are'} not available at this time`
+              : 'One or more staff members have a schedule conflict at this time'
+          })
+        }
+      } catch (err: any) {
+        if (err.statusCode === 409) throw err
+        console.error('Availability check failed:', err.message)
+        // Continue without check if calendar API fails
+      }
+    }
+  }
 
   let googleCalendarEventId: string | null = null
   let googleCalendarEmail: string | null = null

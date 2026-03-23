@@ -41,25 +41,105 @@
         </select>
       </div>
 
-      <!-- Date/Time -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Staff Attendees (moved up to inform slot picker) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Staff Attendees</label>
+        <div class="space-y-2">
+          <label
+            v-for="staff in staffList"
+            :key="staff.id"
+            class="flex items-center gap-2 text-sm"
+          >
+            <input
+              v-model="form.attendeeIds"
+              type="checkbox"
+              :value="staff.id"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            >
+            {{ staff.name }}
+          </label>
+        </div>
+      </div>
+
+      <!-- Duration (always visible, affects slot picker) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+        <select
+          v-model="form.durationMinutes"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        >
+          <option :value="15">15 min</option>
+          <option :value="30">30 min</option>
+          <option :value="60">1 hour</option>
+          <option :value="90">1.5 hours</option>
+          <option :value="120">2 hours</option>
+        </select>
+      </div>
+
+      <!-- Availability Slot Picker -->
+      <div v-if="showSlotPicker">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Available Times</label>
+        <p class="text-xs text-gray-500 mb-3">
+          Select a time slot based on attendee availability, or
+          <button
+            type="button"
+            class="text-blue-600 underline"
+            @click="onPickManually"
+          >set time manually</button>.
+        </p>
+        <InternalSlotPicker
+          :attendee-ids="form.attendeeIds"
+          :duration-minutes="form.durationMinutes"
+          :initial-date="slotPickerInitialDate"
+          @select="onSlotSelected"
+          @pick-manually="onPickManually"
+        />
+      </div>
+
+      <!-- Slot selected confirmation banner -->
+      <div
+        v-if="manualTimeMode && slotWasSelected && form.date && !editing"
+        class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2"
+      >
+        <span class="text-sm text-green-700">Time slot selected. Adjust below if needed.</span>
+        <button
+          type="button"
+          class="text-xs text-blue-600 underline"
+          @click="returnToSlotPicker"
+        >
+          Pick a different slot
+        </button>
+      </div>
+
+      <!-- Date/Time (manual mode or no slot picker) -->
+      <div
+        v-if="!showSlotPicker"
+        class="grid grid-cols-2 gap-4"
+      >
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Start *</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
           <input
-            v-model="form.startTime"
-            type="datetime-local"
+            v-model="form.date"
+            type="date"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           >
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">End *</label>
-          <input
-            v-model="form.endTime"
-            type="datetime-local"
+          <label class="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+          <select
+            v-model="form.time"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           >
+            <option
+              v-for="slot in timeSlots"
+              :key="slot.value"
+              :value="slot.value"
+            >
+              {{ slot.label }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -118,17 +198,55 @@
         />
       </div>
 
-      <!-- Client Search -->
+      <!-- Invitees -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Client (optional)</label>
-        <UiAutocomplete
-          v-model="form.clientId"
-          :options="clientOptions"
-          label-key="label"
-          value-key="value"
-          placeholder="Search clients..."
-          @search="searchClients"
-        />
+        <label class="block text-sm font-medium text-gray-700 mb-1">With (optional)</label>
+        <!-- Selected people chips -->
+        <div
+          v-if="selectedPeople.length > 0"
+          class="flex flex-wrap gap-1.5 mb-2"
+        >
+          <span
+            v-for="person in selectedPeople"
+            :key="person.id"
+            class="inline-flex items-center gap-1 px-2.5 py-1 bg-burgundy-50 text-burgundy-700 rounded-full text-sm"
+          >
+            {{ person.name }}
+            <button
+              type="button"
+              class="text-burgundy-400 hover:text-burgundy-600"
+              @click="removePerson(person.id)"
+            >
+              <X class="w-3 h-3" />
+            </button>
+          </span>
+        </div>
+        <!-- Search input -->
+        <div class="relative">
+          <input
+            v-model="personSearch"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            placeholder="Search people to add..."
+            @input="onPersonSearchInput"
+            @focus="showPersonDropdown = true"
+            @blur="hidePersonDropdown"
+          >
+          <div
+            v-if="showPersonDropdown && personOptions.length > 0"
+            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto"
+          >
+            <button
+              v-for="option in personOptions"
+              :key="option.value"
+              type="button"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @mousedown.prevent="addPerson(option)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Matter Select -->
@@ -151,38 +269,32 @@
         </select>
       </div>
 
-      <!-- Staff Attendees -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Staff Attendees</label>
-        <div class="space-y-2">
-          <label
-            v-for="staff in staffList"
-            :key="staff.id"
-            class="flex items-center gap-2 text-sm"
+      <!-- Options -->
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <input
+            id="checkAvailability"
+            v-model="form.checkAvailability"
+            type="checkbox"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           >
-            <input
-              v-model="form.attendeeIds"
-              type="checkbox"
-              :value="staff.id"
-              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            >
-            {{ staff.name }}
-          </label>
+          <label
+            for="checkAvailability"
+            class="text-sm text-gray-700"
+          >Check staff availability</label>
         </div>
-      </div>
-
-      <!-- Sync to Google -->
-      <div class="flex items-center gap-2">
-        <input
-          id="syncToGoogle"
-          v-model="form.syncToGoogle"
-          type="checkbox"
-          class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        >
-        <label
-          for="syncToGoogle"
-          class="text-sm text-gray-700"
-        >Sync to Google Calendar</label>
+        <div class="flex items-center gap-2">
+          <input
+            id="syncToGoogle"
+            v-model="form.syncToGoogle"
+            type="checkbox"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          >
+          <label
+            for="syncToGoogle"
+            class="text-sm text-gray-700"
+          >Sync to Google Calendar</label>
+        </div>
       </div>
     </form>
 
@@ -205,7 +317,9 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { X } from 'lucide-vue-next'
 import { useCalendarStore } from '~/stores/useCalendarStore'
+import InternalSlotPicker from './InternalSlotPicker.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -227,23 +341,59 @@ const isOpen = computed({
 
 const submitting = ref(false)
 const hasZoomConnection = ref(false)
-const clientOptions = ref<Array<{ label: string, value: string }>>([])
+const personOptions = ref<Array<{ label: string, value: string }>>([])
+const personSearch = ref('')
+const showPersonDropdown = ref(false)
+const selectedPeople = ref<Array<{ id: string, name: string }>>([])
 const matters = ref<Array<{ id: string, title: string }>>([])
+
+// Slot picker state
+const manualTimeMode = ref(false)
+const slotWasSelected = ref(false)
+const slotPickerInitialDate = ref<string | undefined>(undefined)
 
 // Use the store's shared staff list instead of fetching independently
 const staffList = computed(() => calendar.staffList)
 
+// Show slot picker when attendees selected, availability check on, not in manual mode, and not editing
+const showSlotPicker = computed(() =>
+  form.value.attendeeIds.length > 0 &&
+  form.value.checkAvailability &&
+  !manualTimeMode.value &&
+  !props.editing
+)
+
+const durationOptions = [15, 30, 60, 90, 120]
+
+// Generate 15-minute time slots for the picker
+const timeSlots = computed(() => {
+  const slots: Array<{ value: string, label: string }> = []
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const hh = String(h).padStart(2, '0')
+      const mm = String(m).padStart(2, '0')
+      const value = `${hh}:${mm}`
+      const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+      const ampm = h < 12 ? 'AM' : 'PM'
+      const label = `${hour12}:${mm} ${ampm}`
+      slots.push({ value, label })
+    }
+  }
+  return slots
+})
+
 const form = ref({
   title: '',
   description: '',
-  startTime: '',
-  endTime: '',
+  date: '',
+  time: '09:00',
+  durationMinutes: 60,
   location: '',
   locationType: 'none' as string,
   appointmentTypeId: '',
-  clientId: '',
   matterId: '',
   attendeeIds: [] as string[],
+  checkAvailability: true,
   syncToGoogle: true
 })
 
@@ -277,21 +427,53 @@ function parseLocationConfig(data: Record<string, any>): string {
   return 'none'
 }
 
-// Populate form when editing
+// Populate form when editing — derive date, time, duration from start/end
 watch(() => props.initialData, (data) => {
   if (data) {
+    let date = ''
+    let time = '09:00'
+    let durationMinutes = 60
+
+    if (data.startTime) {
+      const start = new Date(data.startTime)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      date = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`
+      // Snap to nearest 15-min interval
+      const snappedMin = Math.round(start.getMinutes() / 15) * 15
+      time = `${pad(start.getHours())}:${pad(snappedMin % 60)}`
+
+      if (data.endTime) {
+        const end = new Date(data.endTime)
+        const diffMs = end.getTime() - start.getTime()
+        const diffMin = Math.round(diffMs / 60000)
+        // Pick closest duration option, or use exact value
+        durationMinutes = durationOptions.includes(diffMin) ? diffMin : diffMin
+      }
+    }
+
     form.value = {
       title: data.title || '',
       description: data.description || '',
-      startTime: data.startTime ? toLocalDatetime(data.startTime) : '',
-      endTime: data.endTime ? toLocalDatetime(data.endTime) : '',
+      date,
+      time,
+      durationMinutes,
       location: data.location || '',
       locationType: parseLocationConfig(data),
       appointmentTypeId: data.appointmentTypeId || '',
-      clientId: data.clientId || '',
       matterId: data.matterId || '',
       attendeeIds: data.attendeeIds || [],
+      checkAvailability: true,
       syncToGoogle: true
+    }
+    // Populate selectedPeople from initialData if available
+    selectedPeople.value = data.invitees || []
+
+    // When editing, go straight to manual time mode
+    // When creating from a calendar slot click (has startTime but not editing), pre-select the date in the slot picker
+    if (props.editing) {
+      manualTimeMode.value = true
+    } else if (date) {
+      slotPickerInitialDate.value = date
     }
   }
 }, { immediate: true })
@@ -302,56 +484,92 @@ watch(isOpen, (open) => {
     form.value = {
       title: '',
       description: '',
-      startTime: '',
-      endTime: '',
+      date: '',
+      time: '09:00',
+      durationMinutes: 60,
       location: '',
       locationType: 'none',
       appointmentTypeId: '',
-      clientId: '',
       matterId: '',
       attendeeIds: [],
+      checkAvailability: true,
       syncToGoogle: true
     }
+    selectedPeople.value = []
+    personSearch.value = ''
+    manualTimeMode.value = false
+    slotWasSelected.value = false
+    slotPickerInitialDate.value = undefined
   }
 })
 
-function toLocalDatetime(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+// When attendees change, reset to slot picker mode (selection is no longer valid)
+watch(() => form.value.attendeeIds, () => {
+  if (!props.editing) {
+    manualTimeMode.value = false
+    slotWasSelected.value = false
+  }
+}, { deep: true })
+
+// Slot picker handlers
+function onSlotSelected(slot: { startTime: string, endTime: string, date: string, time: string }) {
+  form.value.date = slot.date
+  form.value.time = slot.time
+  manualTimeMode.value = true
+  slotWasSelected.value = true
 }
 
-async function searchClients(query: string) {
+function onPickManually() {
+  manualTimeMode.value = true
+  slotWasSelected.value = false
+}
+
+function returnToSlotPicker() {
+  manualTimeMode.value = false
+  slotWasSelected.value = false
+  slotPickerInitialDate.value = form.value.date || undefined
+  form.value.date = ''
+  form.value.time = '09:00'
+}
+
+async function onPersonSearchInput() {
+  const query = personSearch.value
   if (query.length < 2) {
-    clientOptions.value = []
+    personOptions.value = []
     return
   }
   try {
-    const results = await $fetch<any[]>(`/api/clients?search=${encodeURIComponent(query)}&limit=10`)
-    clientOptions.value = results.map((c: any) => ({
-      label: c.firstName && c.lastName ? `${c.firstName} ${c.lastName}` : c.email || c.id,
-      value: c.id
-    }))
+    const results = await $fetch<any>(`/api/people?search=${encodeURIComponent(query)}&page=1&limit=10`)
+    const people = results.people || results
+    const selectedIds = new Set(selectedPeople.value.map(p => p.id))
+    personOptions.value = (Array.isArray(people) ? people : [])
+      .filter((p: any) => !selectedIds.has(p.id))
+      .map((p: any) => ({
+        label: p.fullName || [p.firstName, p.lastName].filter(Boolean).join(' ') || p.email || p.id,
+        value: p.id
+      }))
   }
   catch {
-    clientOptions.value = []
+    personOptions.value = []
   }
 }
 
-// Load matters when clientId changes
-watch(() => form.value.clientId, async (clientId) => {
-  if (!clientId) {
-    matters.value = []
-    return
+function addPerson(option: { label: string, value: string }) {
+  if (!selectedPeople.value.some(p => p.id === option.value)) {
+    selectedPeople.value.push({ id: option.value, name: option.label })
   }
-  try {
-    const result = await $fetch<any[]>(`/api/matters?clientId=${clientId}`)
-    matters.value = result.map(m => ({ id: m.id, title: m.title }))
-  }
-  catch {
-    matters.value = []
-  }
-})
+  personSearch.value = ''
+  personOptions.value = []
+}
+
+function removePerson(id: string) {
+  selectedPeople.value = selectedPeople.value.filter(p => p.id !== id)
+}
+
+function hidePersonDropdown() {
+  setTimeout(() => { showPersonDropdown.value = false }, 200)
+}
+
 
 function onTypeChange() {
   const typeId = form.value.appointmentTypeId
@@ -359,12 +577,9 @@ function onTypeChange() {
   const type = calendar.getTypeById(typeId)
   if (!type) return
 
-  // Auto-fill duration (adjust end time) if start is set
-  if (form.value.startTime) {
-    const start = new Date(form.value.startTime)
-    const end = new Date(start.getTime() + type.defaultDurationMinutes * 60 * 1000)
-    const pad = (n: number) => String(n).padStart(2, '0')
-    form.value.endTime = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`
+  // Auto-fill duration from appointment type
+  if (durationOptions.includes(type.defaultDurationMinutes)) {
+    form.value.durationMinutes = type.defaultDurationMinutes
   }
 
   // Auto-fill location from defaultLocationConfig if available
@@ -416,11 +631,15 @@ function onLocationTypeChange() {
 }
 
 async function handleSubmit() {
-  if (!form.value.title || !form.value.startTime || !form.value.endTime) return
+  if (!form.value.title || !form.value.date || !form.value.time) return
 
   submitting.value = true
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+    // Compute start and end from date + time + duration
+    const startDate = new Date(`${form.value.date}T${form.value.time}:00`)
+    const endDate = new Date(startDate.getTime() + form.value.durationMinutes * 60 * 1000)
 
     // Build locationConfig from locationType
     let locationConfig: any = undefined
@@ -442,16 +661,17 @@ async function handleSubmit() {
     const payload: Record<string, any> = {
       title: form.value.title,
       description: form.value.description || undefined,
-      startTime: new Date(form.value.startTime).toISOString(),
-      endTime: new Date(form.value.endTime).toISOString(),
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
       location: form.value.location || undefined,
       locationConfig: locationConfig ? JSON.stringify(locationConfig) : undefined,
       roomId,
       timezone,
       appointmentTypeId: form.value.appointmentTypeId || undefined,
-      clientId: form.value.clientId || undefined,
+      inviteeIds: selectedPeople.value.map(p => p.id),
       matterId: form.value.matterId || undefined,
       attendeeIds: form.value.attendeeIds,
+      checkAvailability: form.value.checkAvailability,
       syncToGoogle: form.value.syncToGoogle
     }
 
