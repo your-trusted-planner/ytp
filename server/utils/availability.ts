@@ -2,6 +2,7 @@
  * Availability Calculator
  *
  * Generates available time slots from free/busy data within business hours.
+ * Supports both legacy single-window format and per-day multi-window schedules.
  */
 
 export interface TimeSlot {
@@ -10,11 +11,26 @@ export interface TimeSlot {
   available: boolean
 }
 
+/** Legacy format: single window applied to selected days */
 export interface BusinessHours {
   start: number // Hour in 24h format (e.g., 9)
   end: number // Hour in 24h format (e.g., 17)
   days: number[] // 0=Sunday, 1=Monday, ..., 6=Saturday
 }
+
+/** A single availability window with HH:MM precision */
+export interface TimeWindow {
+  start: string // "HH:MM" (e.g., "09:30")
+  end: string // "HH:MM" (e.g., "14:00")
+}
+
+/** Per-day multi-window schedule. Days without entries are unavailable. */
+export interface BusinessSchedule {
+  schedule: Record<string, TimeWindow[]> // key = day number ("0"-"6")
+}
+
+/** Either legacy or per-day format */
+export type BusinessHoursConfig = BusinessHours | BusinessSchedule
 
 export const HARDCODED_DEFAULT_BUSINESS_HOURS: BusinessHours = {
   start: 9,
@@ -23,17 +39,63 @@ export const HARDCODED_DEFAULT_BUSINESS_HOURS: BusinessHours = {
 }
 
 /**
+ * Type guard: check if config is the new per-day schedule format.
+ */
+export function isBusinessSchedule(config: BusinessHoursConfig): config is BusinessSchedule {
+  return 'schedule' in config && typeof config.schedule === 'object'
+}
+
+/**
+ * Get the active time windows for a specific day from either format.
+ */
+export function getWindowsForDay(config: BusinessHoursConfig, dayOfWeek: number): TimeWindow[] {
+  if (isBusinessSchedule(config)) {
+    return config.schedule[String(dayOfWeek)] || []
+  }
+  // Legacy format: single window for all listed days
+  if (!config.days.includes(dayOfWeek)) return []
+  const startH = String(Math.floor(config.start)).padStart(2, '0')
+  const endH = String(Math.floor(config.end)).padStart(2, '0')
+  const startM = String(Math.round((config.start % 1) * 60)).padStart(2, '0')
+  const endM = String(Math.round((config.end % 1) * 60)).padStart(2, '0')
+  return [{ start: `${startH}:${startM}`, end: `${endH}:${endM}` }]
+}
+
+/**
+ * Get all days that have any availability configured.
+ */
+export function getActiveDays(config: BusinessHoursConfig): number[] {
+  if (isBusinessSchedule(config)) {
+    return Object.entries(config.schedule)
+      .filter(([, windows]) => windows.length > 0)
+      .map(([day]) => Number(day))
+  }
+  return config.days
+}
+
+/**
+ * Parse "HH:MM" string to { hours, minutes }.
+ */
+function parseTime(time: string): { hours: number; minutes: number } {
+  const parts = time.split(':').map(Number)
+  return { hours: parts[0] || 0, minutes: parts[1] || 0 }
+}
+
+/**
  * Load the system-configured default business hours from the settings table.
  * Falls back to 9-5 M-F if no setting is configured.
  */
-export async function getDefaultBusinessHours(): Promise<BusinessHours> {
+export async function getDefaultBusinessHours(): Promise<BusinessHoursConfig> {
   try {
     const { getSetting } = await import('./settings')
     const raw = await getSetting('default_business_hours')
     if (raw) {
       const parsed = JSON.parse(raw)
+      // New format
+      if (parsed.schedule) return parsed as BusinessSchedule
+      // Legacy format
       if (parsed.start !== undefined && parsed.end !== undefined && Array.isArray(parsed.days)) {
-        return parsed
+        return parsed as BusinessHours
       }
     }
   }
@@ -50,7 +112,7 @@ export async function getDefaultBusinessHours(): Promise<BusinessHours> {
  * @param date - ISO date string (YYYY-MM-DD)
  * @param timezone - IANA timezone (e.g., 'America/New_York')
  * @param durationMinutes - Desired slot duration (default 60)
- * @param businessHours - Business hours config (pass null to use system default)
+ * @param businessHours - Business hours config (legacy or per-day schedule)
  * @returns Array of time slots with availability flags
  */
 export function calculateAvailableSlots(
@@ -58,28 +120,33 @@ export function calculateAvailableSlots(
   date: string,
   timezone: string,
   durationMinutes: number = 60,
-  businessHours: BusinessHours = HARDCODED_DEFAULT_BUSINESS_HOURS
+  businessHours: BusinessHoursConfig = HARDCODED_DEFAULT_BUSINESS_HOURS
 ): TimeSlot[] {
-  const slots: TimeSlot[] = []
-
-  // Parse the date and check if it's a business day
-  const dateObj = new Date(`${date}T12:00:00Z`) // noon UTC to avoid timezone edge cases
   const dayOfWeek = getDayOfWeekInTimezone(date, timezone)
+  const windows = getWindowsForDay(businessHours, dayOfWeek)
 
-  if (!businessHours.days.includes(dayOfWeek)) {
-    return slots // Not a business day
+  if (windows.length === 0) {
+    return [] // Not a business day / no windows configured
   }
 
-  // Generate slots at 30-min intervals within business hours
+  const slots: TimeSlot[] = []
   const intervalMinutes = 30
   const now = new Date()
 
-  for (let hour = businessHours.start; hour < businessHours.end; hour++) {
-    for (let minute = 0; minute < 60; minute += intervalMinutes) {
-      // Check if slot end would exceed business hours
-      const slotEndMinutes = hour * 60 + minute + durationMinutes
-      const businessEndMinutes = businessHours.end * 60
-      if (slotEndMinutes > businessEndMinutes) continue
+  for (const window of windows) {
+    const windowStart = parseTime(window.start)
+    const windowEnd = parseTime(window.end)
+    const windowStartMinutes = windowStart.hours * 60 + windowStart.minutes
+    const windowEndMinutes = windowEnd.hours * 60 + windowEnd.minutes
+
+    // Generate slots at 30-min intervals within this window
+    for (let totalMin = windowStartMinutes; totalMin < windowEndMinutes; totalMin += intervalMinutes) {
+      const hour = Math.floor(totalMin / 60)
+      const minute = totalMin % 60
+
+      // Check if slot end would exceed this window
+      const slotEndMinutes = totalMin + durationMinutes
+      if (slotEndMinutes > windowEndMinutes) continue
 
       const startISO = toISOInTimezone(date, hour, minute, timezone)
       const endISO = toISOInTimezone(date, hour, minute + durationMinutes, timezone)
@@ -88,9 +155,7 @@ export function calculateAvailableSlots(
       const slotEnd = new Date(endISO)
 
       // Skip past times
-      if (slotStart <= now) {
-        continue
-      }
+      if (slotStart <= now) continue
 
       // Check if slot overlaps with any busy period
       const isBusy = busyPeriods.some((busy) => {
@@ -106,6 +171,9 @@ export function calculateAvailableSlots(
       })
     }
   }
+
+  // Sort by start time (windows may not be in order)
+  slots.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
 
   return slots
 }

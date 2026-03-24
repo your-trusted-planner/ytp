@@ -26,11 +26,19 @@ const createSchema = z.object({
   serviceCatalogId: z.string().nullable().optional(),
   staffEligibility: z.enum(['any', 'attorneys_only', 'specific']).default('any'),
   assignedAttorneyIds: z.array(z.string()).nullable().optional(),
-  businessHours: z.object({
-    start: z.number().int().min(0).max(23),
-    end: z.number().int().min(1).max(24),
-    days: z.array(z.number().int().min(0).max(6))
-  }).nullable().optional(),
+  businessHours: z.union([
+    z.object({
+      start: z.number().int().min(0).max(23),
+      end: z.number().int().min(1).max(24),
+      days: z.array(z.number().int().min(0).max(6))
+    }),
+    z.object({
+      schedule: z.record(
+        z.string(),
+        z.array(z.object({ start: z.string(), end: z.string() }))
+      )
+    })
+  ]).nullable().optional(),
   defaultLocation: z.string().max(500).nullable().optional(),
   defaultLocationConfig: z.any().nullable().optional(),
   isPubliclyBookable: z.boolean().default(false),

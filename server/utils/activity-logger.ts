@@ -40,6 +40,8 @@ export type ActivityType =
   'USER_UPDATED' |
   'USER_PASSWORD_CHANGED' |
   'PASSWORD_RESET' |
+  // Person events
+  'PERSON_CREATED' |
   // Client events
   'CLIENT_CREATED' |
   'CLIENT_UPDATED' |
@@ -121,7 +123,7 @@ export type ActivityType =
   'ADMIN_ACTION' |
   'SETTINGS_CHANGED'
 
-export type TargetType = 'user' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room'
+export type TargetType = 'user' | 'person' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room'
 
 export interface LogActivityParams {
   type: ActivityType

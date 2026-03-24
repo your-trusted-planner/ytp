@@ -221,8 +221,20 @@
             </button>
           </span>
         </div>
+        <!-- Quick Add Person (inline, replaces search when active) -->
+        <PeopleQuickAddPerson
+          v-if="showQuickAdd"
+          :initial-first-name="quickAddFirstName"
+          :initial-last-name="quickAddLastName"
+          submit-label="Add to appointment"
+          @person-created="onQuickAddPersonCreated"
+          @cancel="showQuickAdd = false"
+        />
         <!-- Search input -->
-        <div class="relative">
+        <div
+          v-else
+          class="relative"
+        >
           <input
             v-model="personSearch"
             type="text"
@@ -233,7 +245,7 @@
             @blur="hidePersonDropdown"
           >
           <div
-            v-if="showPersonDropdown && personOptions.length > 0"
+            v-if="showPersonDropdown && (personOptions.length > 0 || (personSearch.length >= 2 && !personSearchLoading))"
             class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto"
           >
             <button
@@ -244,6 +256,14 @@
               @mousedown.prevent="addPerson(option)"
             >
               {{ option.label }}
+            </button>
+            <button
+              v-if="personOptions.length === 0 && personSearch.length >= 2 && !personSearchLoading"
+              type="button"
+              class="w-full px-3 py-2 text-left text-sm text-burgundy-600 hover:bg-gray-50 italic"
+              @mousedown.prevent="openQuickAdd"
+            >
+              Add "{{ personSearch }}" as a new person...
             </button>
           </div>
         </div>
@@ -344,8 +364,14 @@ const hasZoomConnection = ref(false)
 const personOptions = ref<Array<{ label: string, value: string }>>([])
 const personSearch = ref('')
 const showPersonDropdown = ref(false)
+const personSearchLoading = ref(false)
 const selectedPeople = ref<Array<{ id: string, name: string }>>([])
 const matters = ref<Array<{ id: string, title: string }>>([])
+
+// Quick add person state
+const showQuickAdd = ref(false)
+const quickAddFirstName = ref('')
+const quickAddLastName = ref('')
 
 // Slot picker state
 const manualTimeMode = ref(false)
@@ -497,6 +523,9 @@ watch(isOpen, (open) => {
     }
     selectedPeople.value = []
     personSearch.value = ''
+    showQuickAdd.value = false
+    quickAddFirstName.value = ''
+    quickAddLastName.value = ''
     manualTimeMode.value = false
     slotWasSelected.value = false
     slotPickerInitialDate.value = undefined
@@ -538,6 +567,7 @@ async function onPersonSearchInput() {
     personOptions.value = []
     return
   }
+  personSearchLoading.value = true
   try {
     const results = await $fetch<any>(`/api/people?search=${encodeURIComponent(query)}&page=1&limit=10`)
     const people = results.people || results
@@ -551,6 +581,9 @@ async function onPersonSearchInput() {
   }
   catch {
     personOptions.value = []
+  }
+  finally {
+    personSearchLoading.value = false
   }
 }
 
@@ -570,6 +603,20 @@ function hidePersonDropdown() {
   setTimeout(() => { showPersonDropdown.value = false }, 200)
 }
 
+function openQuickAdd() {
+  const parts = personSearch.value.trim().split(/\s+/)
+  quickAddFirstName.value = parts[0] || ''
+  quickAddLastName.value = parts.slice(1).join(' ')
+  showQuickAdd.value = true
+  showPersonDropdown.value = false
+}
+
+function onQuickAddPersonCreated(person: { id: string; name: string; email: string | null; phone: string | null }) {
+  addPerson({ label: person.name, value: person.id })
+  showQuickAdd.value = false
+  personSearch.value = ''
+  personOptions.value = []
+}
 
 function onTypeChange() {
   const typeId = form.value.appointmentTypeId

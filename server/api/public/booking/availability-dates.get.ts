@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 import { getFreeBusy, getMultiCalendarFreeBusy } from '../../../utils/google-calendar'
 import { calculateAvailableSlots, getDefaultBusinessHours } from '../../../utils/availability'
-import type { BusinessHours } from '../../../utils/availability'
+import type { BusinessHoursConfig } from '../../../utils/availability'
 
 const querySchema = z.object({
   attorneyId: z.string(),
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const calendarEmails = [calendar.calendarEmail]
 
   // Resolve business hours
-  let businessHours: BusinessHours | undefined = undefined
+  let businessHours: BusinessHoursConfig | undefined = undefined
 
   if (appointmentTypeId) {
     const apptType = await db

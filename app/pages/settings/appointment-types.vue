@@ -501,54 +501,94 @@
         <div class="border rounded-lg p-4 space-y-3">
           <UiToggle
             v-model="customBusinessHours"
-            label="Custom Business Hours"
-            description="Override the default 9 AM - 5 PM, Monday-Friday schedule"
+            label="Custom Availability Schedule"
+            description="Set specific availability windows per day of the week"
           />
           <div
             v-if="customBusinessHours"
-            class="space-y-3"
+            class="space-y-2"
           >
-            <div class="grid grid-cols-2 gap-4">
-              <UiSelect
-                v-model="form.businessHoursStart"
-                label="Start Hour"
-              >
-                <option
-                  v-for="h in 24"
-                  :key="h-1"
-                  :value="h-1"
+            <div
+              v-for="(dayName, dayIndex) in dayNames"
+              :key="dayIndex"
+              class="border rounded-lg p-3"
+              :class="getDayWindows(dayIndex).length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100'"
+            >
+              <div class="flex items-center justify-between">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 text-sm font-medium"
+                  :class="getDayWindows(dayIndex).length > 0 ? 'text-gray-900' : 'text-gray-400'"
+                  @click="toggleDay(dayIndex)"
                 >
-                  {{ formatHour(h-1) }}
-                </option>
-              </UiSelect>
-              <UiSelect
-                v-model="form.businessHoursEnd"
-                label="End Hour"
-              >
-                <option
-                  v-for="h in 24"
-                  :key="h"
-                  :value="h"
+                  <span
+                    class="w-5 h-5 rounded border flex items-center justify-center text-xs"
+                    :class="getDayWindows(dayIndex).length > 0
+                      ? 'bg-accent-600 border-accent-600 text-white'
+                      : 'bg-white border-gray-300'"
+                  >
+                    <span v-if="getDayWindows(dayIndex).length > 0">&#10003;</span>
+                  </span>
+                  {{ dayName }}
+                </button>
+                <button
+                  v-if="getDayWindows(dayIndex).length > 0"
+                  type="button"
+                  class="text-xs text-accent-600 hover:text-accent-700 font-medium"
+                  @click="addWindow(dayIndex)"
                 >
-                  {{ formatHour(h) }}
-                </option>
-              </UiSelect>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <label
-                v-for="(dayName, dayIndex) in dayNames"
-                :key="dayIndex"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm cursor-pointer transition-colors"
-                :class="form.businessHoursDays.includes(dayIndex) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600'"
+                  + Add window
+                </button>
+              </div>
+              <div
+                v-if="getDayWindows(dayIndex).length > 0"
+                class="mt-2 space-y-2"
               >
-                <input
-                  v-model="form.businessHoursDays"
-                  type="checkbox"
-                  :value="dayIndex"
-                  class="sr-only"
+                <div
+                  v-for="(window, wIdx) in getDayWindows(dayIndex)"
+                  :key="wIdx"
+                  class="flex items-center gap-2"
                 >
-                {{ dayName }}
-              </label>
+                  <select
+                    v-model="window.start"
+                    class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                  >
+                    <option
+                      v-for="opt in timeOptions"
+                      :key="'s' + opt.value"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <span class="text-gray-400 text-sm">to</span>
+                  <select
+                    v-model="window.end"
+                    class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                  >
+                    <option
+                      v-for="opt in timeOptions"
+                      :key="'e' + opt.value"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <button
+                    v-if="getDayWindows(dayIndex).length > 1"
+                    type="button"
+                    class="text-gray-400 hover:text-red-500 p-1"
+                    title="Remove window"
+                    @click="removeWindow(dayIndex, wIdx)"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                  <div
+                    v-else
+                    class="w-[26px]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -574,7 +614,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Calendar } from 'lucide-vue-next'
+import { Calendar, X } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -653,9 +693,15 @@ const form = ref({
   isPubliclyBookable: false,
   staffEligibility: 'any' as 'any' | 'attorneys_only' | 'specific',
   assignedAttorneyIds: [] as string[],
-  businessHoursStart: 9,
-  businessHoursEnd: 17,
-  businessHoursDays: [1, 2, 3, 4, 5] as number[]
+  daySchedule: {
+    0: [] as Array<{ start: string; end: string }>,
+    1: [{ start: '09:00', end: '17:00' }],
+    2: [{ start: '09:00', end: '17:00' }],
+    3: [{ start: '09:00', end: '17:00' }],
+    4: [{ start: '09:00', end: '17:00' }],
+    5: [{ start: '09:00', end: '17:00' }],
+    6: [] as Array<{ start: string; end: string }>
+  } as Record<number, Array<{ start: string; end: string }>>
 })
 
 const customBusinessHours = ref(false)
@@ -680,6 +726,110 @@ function formatHour(h: number): string {
   if (h === 12) return '12 PM'
   if (h === 24) return '12 AM (next day)'
   return h < 12 ? `${h} AM` : `${h - 12} PM`
+}
+
+// Half-hour time options for the per-day schedule editor
+const timeOptions = computed(() => {
+  const options: Array<{ value: string; label: string }> = []
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hh = String(h).padStart(2, '0')
+      const mm = String(m).padStart(2, '0')
+      const value = `${hh}:${mm}`
+      const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+      const ampm = h < 12 ? 'AM' : 'PM'
+      options.push({ value, label: `${hour12}:${mm} ${ampm}` })
+    }
+  }
+  // Add end-of-day option
+  options.push({ value: '24:00', label: '12:00 AM (end)' })
+  return options
+})
+
+function getDayWindows(day: number): Array<{ start: string; end: string }> {
+  return form.value.daySchedule[day] ?? []
+}
+
+function addWindow(day: number) {
+  const windows = getDayWindows(day)
+  const lastEnd = windows.length > 0 ? windows[windows.length - 1]!.end : '09:00'
+  if (!form.value.daySchedule[day]) form.value.daySchedule[day] = []
+  form.value.daySchedule[day]!.push({ start: lastEnd, end: '17:00' })
+}
+
+function removeWindow(day: number, index: number) {
+  form.value.daySchedule[day]?.splice(index, 1)
+}
+
+function toggleDay(day: number) {
+  const windows = getDayWindows(day)
+  if (windows.length > 0) {
+    form.value.daySchedule[day] = []
+  } else {
+    form.value.daySchedule[day] = [{ start: '09:00', end: '17:00' }]
+  }
+}
+
+function buildDefaultDaySchedule(): Record<number, Array<{ start: string; end: string }>> {
+  return {
+    0: [],
+    1: [{ start: '09:00', end: '17:00' }],
+    2: [{ start: '09:00', end: '17:00' }],
+    3: [{ start: '09:00', end: '17:00' }],
+    4: [{ start: '09:00', end: '17:00' }],
+    5: [{ start: '09:00', end: '17:00' }],
+    6: []
+  }
+}
+
+/**
+ * Build the business hours payload for the API from the per-day schedule editor.
+ */
+function buildBusinessHoursPayload(): { schedule: Record<string, Array<{ start: string; end: string }>> } {
+  const schedule: Record<string, Array<{ start: string; end: string }>> = {}
+  for (let d = 0; d <= 6; d++) {
+    const windows = form.value.daySchedule[d]
+    if (windows && windows.length > 0) {
+      schedule[String(d)] = windows.map(w => ({ start: w.start, end: w.end }))
+    }
+  }
+  return { schedule }
+}
+
+/**
+ * Parse business hours from DB into the per-day schedule editor format.
+ * Handles both legacy {start, end, days} and new {schedule: {...}} formats.
+ */
+function parseDaySchedule(bh: any): Record<number, Array<{ start: string; end: string }>> {
+  const defaultSched = buildDefaultDaySchedule()
+  if (!bh) return defaultSched
+
+  // New format: { schedule: { "1": [{start, end}], ... } }
+  if (bh.schedule && typeof bh.schedule === 'object') {
+    const result: Record<number, Array<{ start: string; end: string }>> = {}
+    for (let d = 0; d <= 6; d++) {
+      const windows = bh.schedule[String(d)]
+      result[d] = Array.isArray(windows) ? windows.map((w: any) => ({ start: w.start, end: w.end })) : []
+    }
+    return result
+  }
+
+  // Legacy format: { start: 9, end: 17, days: [1,2,3,4,5] }
+  if (bh.start !== undefined && bh.end !== undefined && Array.isArray(bh.days)) {
+    const startH = String(Math.floor(bh.start)).padStart(2, '0')
+    const startM = String(Math.round((bh.start % 1) * 60)).padStart(2, '0')
+    const endH = String(Math.floor(bh.end)).padStart(2, '0')
+    const endM = String(Math.round((bh.end % 1) * 60)).padStart(2, '0')
+    const window = { start: `${startH}:${startM}`, end: `${endH}:${endM}` }
+
+    const result: Record<number, Array<{ start: string; end: string }>> = {}
+    for (let d = 0; d <= 6; d++) {
+      result[d] = bh.days.includes(d) ? [{ ...window }] : []
+    }
+    return result
+  }
+
+  return defaultSched
 }
 
 async function fetchTypes() {
@@ -733,9 +883,7 @@ function openAddModal() {
     isPubliclyBookable: false,
     staffEligibility: 'any',
     assignedAttorneyIds: [],
-    businessHoursStart: 9,
-    businessHoursEnd: 17,
-    businessHoursDays: [1, 2, 3, 4, 5]
+    daySchedule: buildDefaultDaySchedule()
   }
   customBusinessHours.value = false
   showModal.value = true
@@ -783,9 +931,7 @@ function editType(type: AppointmentType) {
     isPubliclyBookable: type.isPubliclyBookable,
     staffEligibility: type.staffEligibility || 'any',
     assignedAttorneyIds: type.assignedAttorneyIds ? [...type.assignedAttorneyIds] : [],
-    businessHoursStart: type.businessHours?.start ?? 9,
-    businessHoursEnd: type.businessHours?.end ?? 17,
-    businessHoursDays: type.businessHours?.days ?? [1, 2, 3, 4, 5]
+    daySchedule: parseDaySchedule(type.businessHours)
   }
   customBusinessHours.value = !!type.businessHours
   showModal.value = true
@@ -831,11 +977,7 @@ async function handleSave() {
       staffEligibility: form.value.staffEligibility,
       assignedAttorneyIds: form.value.staffEligibility === 'specific' ? form.value.assignedAttorneyIds : null,
       businessHours: customBusinessHours.value ?
-          {
-            start: Number(form.value.businessHoursStart),
-            end: Number(form.value.businessHoursEnd),
-            days: form.value.businessHoursDays
-          } :
+          buildBusinessHoursPayload() :
         null
     }
 

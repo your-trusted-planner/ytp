@@ -3,7 +3,7 @@ import { useDrizzle, schema } from '../../db'
 
 // Create a new person
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['LAWYER', 'ADMIN'])
+  requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
 
   const body = await readBody(event)
   const {

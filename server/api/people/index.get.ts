@@ -4,7 +4,7 @@ import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calc
 
 // Get all people (with optional search and pagination)
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['LAWYER', 'ADMIN'])
+  requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
 
   const query = getQuery(event)
   const search = query.search as string | undefined

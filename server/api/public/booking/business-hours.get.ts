@@ -1,10 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
-import { getDefaultBusinessHours } from '../../../utils/availability'
+import { getDefaultBusinessHours, getActiveDays } from '../../../utils/availability'
+import type { BusinessHoursConfig } from '../../../utils/availability'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const appointmentTypeId = query.appointmentTypeId as string | undefined
+
+  let config: BusinessHoursConfig | undefined
 
   // Per-type override takes priority
   if (appointmentTypeId) {
@@ -17,10 +20,15 @@ export default defineEventHandler(async (event) => {
 
     if (apptType?.businessHours) {
       try {
-        return JSON.parse(apptType.businessHours)
+        config = JSON.parse(apptType.businessHours)
       } catch { /* fall through */ }
     }
   }
 
-  return await getDefaultBusinessHours()
+  if (!config) {
+    config = await getDefaultBusinessHours()
+  }
+
+  // Always include a `days` array so SlotPicker can disable non-business days
+  return { ...config, days: getActiveDays(config) }
 })
