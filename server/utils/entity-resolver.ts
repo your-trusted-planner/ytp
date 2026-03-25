@@ -456,7 +456,8 @@ export function getEntityLink(type: EntityType, id: string): string | null {
     room: `/settings/rooms`,
     note: null, // Notes don't have their own page
     setting: `/settings`, // Settings link to the settings page
-    estate_plan: `/estate-plans/${id}`
+    estate_plan: `/estate-plans/${id}`,
+    form: `/settings/forms`
   }
 
   return routes[type]
@@ -481,7 +482,8 @@ export function getEntityTypeLabel(type: EntityType): string {
     room: 'Room',
     note: 'Note',
     setting: 'Setting',
-    estate_plan: 'Estate Plan'
+    estate_plan: 'Estate Plan',
+    form: 'Form'
   }
 
   return labels[type]

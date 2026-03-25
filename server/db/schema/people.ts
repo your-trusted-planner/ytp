@@ -27,6 +27,7 @@ export const people = sqliteTable('people', {
   country: text('country'), // ISO 3166-1 alpha-2 (e.g., "US", "CH") or null
   // Additional Details
   dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
+  maritalStatus: text('marital_status'),
   ssnLast4: text('ssn_last_4'),
   // Notes
   notes: text('notes'),

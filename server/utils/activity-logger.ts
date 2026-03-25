@@ -19,7 +19,8 @@ export type EntityType =
   'room' |
   'note' |
   'setting' |
-  'estate_plan'
+  'estate_plan' |
+  'form'
 
 /**
  * Standardized entity reference for activity logging.
@@ -119,11 +120,16 @@ export type ActivityType =
   'ROOM_CREATED' |
   'ROOM_UPDATED' |
   'ROOM_DELETED' |
+  // Form events
+  'FORM_CREATED' |
+  'FORM_UPDATED' |
+  'FORM_DELETED' |
+  'FORM_SUBMITTED' |
   // Admin events
   'ADMIN_ACTION' |
   'SETTINGS_CHANGED'
 
-export type TargetType = 'user' | 'person' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room'
+export type TargetType = 'user' | 'person' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room' | 'form'
 
 export interface LogActivityParams {
   type: ActivityType

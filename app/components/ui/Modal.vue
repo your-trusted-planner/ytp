@@ -15,13 +15,13 @@
           <!-- Modal -->
           <div
             :class="modalClasses"
-            class="relative bg-white rounded-lg shadow-xl transform transition-all"
+            class="relative bg-white rounded-lg shadow-xl transform transition-all flex flex-col"
             @click.stop
           >
             <!-- Header -->
             <div
               v-if="title || $slots.header"
-              class="px-6 py-4 border-b border-gray-200"
+              class="px-6 py-4 border-b border-gray-200 flex-shrink-0"
             >
               <slot name="header">
                 <div class="flex items-center justify-between">
@@ -54,14 +54,14 @@
             </div>
 
             <!-- Content -->
-            <div class="px-6 py-4">
+            <div class="px-6 py-4 overflow-y-auto flex-1">
               <slot />
             </div>
 
             <!-- Footer -->
             <div
               v-if="$slots.footer"
-              class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3"
+              class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3 flex-shrink-0"
             >
               <slot name="footer" />
             </div>
@@ -79,7 +79,7 @@ import { cn } from '~/utils/cn'
 interface Props {
   modelValue: boolean
   title?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   showClose?: boolean
   closeOnBackdrop?: boolean
 }
@@ -99,7 +99,8 @@ const modalClasses = computed(() => {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
+    xl: 'max-w-4xl',
+    full: 'max-w-[95vw] h-[90vh]'
   }
 
   return cn('w-full', sizeClasses[props.size])

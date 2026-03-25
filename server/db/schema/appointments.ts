@@ -32,6 +32,7 @@ export const appointmentTypes = sqliteTable('appointment_types', {
   consultationFee: integer('consultation_fee').default(0), // In cents
   consultationFeeEnabled: integer('consultation_fee_enabled', { mode: 'boolean' }).notNull().default(false),
   questionnaireId: text('questionnaire_id').references(() => questionnaires.id),
+  formId: text('form_id'), // FK → forms.id (no .references() to avoid circular import)
   serviceCatalogId: text('service_catalog_id').references(() => serviceCatalog.id),
   staffEligibility: text('staff_eligibility', { enum: ['any', 'attorneys_only', 'specific'] }).notNull().default('any'),
   assignedAttorneyIds: text('assigned_attorney_ids'), // JSON array of user IDs (used when staffEligibility = 'specific')
@@ -100,7 +101,9 @@ export const publicBookings = sqliteTable('public_bookings', {
   phone: text('phone'),
   appointmentTypeId: text('appointment_type_id').references(() => appointmentTypes.id),
   questionnaireId: text('questionnaire_id').references(() => questionnaires.id),
-  questionnaireResponses: text('questionnaire_responses'), // JSON
+  questionnaireResponses: text('questionnaire_responses'), // JSON (legacy — new forms use formSubmissions table)
+  formId: text('form_id'), // FK → forms.id (no .references() to avoid circular import)
+  formSubmissionId: text('form_submission_id'), // FK → form_submissions.id
   consultationFeePaid: integer('consultation_fee_paid', { mode: 'boolean' }).notNull().default(false),
   paymentId: text('payment_id'),
   paymentAmount: integer('payment_amount'),

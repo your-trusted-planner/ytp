@@ -243,16 +243,29 @@
           </div>
         </div>
 
-        <!-- Questionnaire Configuration -->
+        <!-- Form Configuration -->
         <div
-          v-else-if="form.actionType === 'QUESTIONNAIRE'"
+          v-else-if="form.actionType === 'FORM' || form.actionType === 'QUESTIONNAIRE'"
           class="space-y-3"
         >
-          <UiInput
-            v-model="form.config.templateId"
-            label="Questionnaire Template ID"
-            placeholder="Optional: Link to specific template"
-          />
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Form</label>
+            <select
+              v-model="form.config.formId"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
+            >
+              <option value="">
+                Select a form...
+              </option>
+              <option
+                v-for="f in availableForms"
+                :key="f.id"
+                :value="f.id"
+              >
+                {{ f.name }}
+              </option>
+            </select>
+          </div>
           <UiInput
             v-model.number="form.config.estimatedMinutes"
             type="number"
@@ -474,6 +487,8 @@ const isOpen = computed({
 
 const saving = ref(false)
 const loadingDocuments = ref(false)
+const availableForms = ref<Array<{ id: string; name: string }>>([])
+const formsLoaded = ref(false)
 const availableDocuments = ref<Array<{ id: string, title: string, status: string }>>([])
 
 // Fetch documents when ESIGN action type is selected
@@ -494,7 +509,7 @@ async function fetchDocuments() {
 }
 
 const actionTypes = [
-  { value: 'QUESTIONNAIRE', label: 'Questionnaire', icon: FileText, description: 'Client fills out form' },
+  { value: 'FORM', label: 'Form', icon: FileText, description: 'Client fills out a form' },
   { value: 'UPLOAD', label: 'Upload', icon: Upload, description: 'Client uploads documents' },
   { value: 'REVIEW', label: 'Review', icon: Eye, description: 'Review documents/info' },
   { value: 'ESIGN', label: 'E-Signature', icon: PenTool, description: 'Electronic signature required' },
@@ -525,7 +540,7 @@ const availableActionTypes = computed(() => {
 })
 
 const form = ref({
-  actionType: 'QUESTIONNAIRE',
+  actionType: 'FORM',
   title: '',
   description: '',
   assignedTo: 'CLIENT',
@@ -536,12 +551,23 @@ const form = ref({
   config: {} as any
 })
 
-// Watch for ESIGN selection to load documents
+// Watch for ESIGN selection to load documents, FORM to load forms
 watch(() => form.value.actionType, (newType) => {
   if (newType === 'ESIGN' && availableDocuments.value.length === 0) {
     fetchDocuments()
   }
+  if ((newType === 'FORM' || newType === 'QUESTIONNAIRE') && !formsLoaded.value) {
+    fetchForms()
+  }
 })
+
+async function fetchForms() {
+  try {
+    const forms = await $fetch<Array<{ id: string; name: string; isActive: boolean }>>('/api/admin/forms')
+    availableForms.value = forms.filter(f => f.isActive).map(f => ({ id: f.id, name: f.name }))
+    formsLoaded.value = true
+  } catch { /* ignore */ }
+}
 
 // Initialize form when editing
 watch(() => props.editingItem, (item) => {
@@ -565,7 +591,7 @@ watch(() => props.editingItem, (item) => {
   else {
     // Reset form for new item
     form.value = {
-      actionType: 'QUESTIONNAIRE',
+      actionType: 'FORM',
       title: '',
       description: '',
       assignedTo: 'CLIENT',
@@ -583,7 +609,7 @@ watch(() => props.modelValue, (isOpen) => {
   if (isOpen && !props.editingItem) {
     // Clear form when opening modal for new item
     form.value = {
-      actionType: 'QUESTIONNAIRE',
+      actionType: 'FORM',
       title: '',
       description: '',
       assignedTo: 'CLIENT',

@@ -118,6 +118,7 @@ export interface TransformedPerson {
   zipCode: string | null
   country: string | null
   dateOfBirth: Date | null
+  maritalStatus: string | null
   notes: string | null
   importMetadata: string
   createdAt: Date
@@ -871,6 +872,7 @@ export function transformContactToPerson(
     zipCode: addressData.zipCode,
     country: addressData.country,
     dateOfBirth,
+    maritalStatus: contact.attributes.marital_status || null,
     notes: null,
     importMetadata: serializeImportMetadata(metadata),
     createdAt,

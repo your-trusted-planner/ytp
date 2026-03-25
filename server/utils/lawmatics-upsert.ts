@@ -579,7 +579,8 @@ export async function upsertPerson(
       state: transformed.state,
       zipCode: transformed.zipCode,
       country: transformed.country,
-      dateOfBirth: transformed.dateOfBirth
+      dateOfBirth: transformed.dateOfBirth,
+      maritalStatus: transformed.maritalStatus
     }
 
     // Filter out locally modified fields
@@ -617,6 +618,7 @@ export async function upsertPerson(
     zipCode: transformed.zipCode,
     country: transformed.country,
     dateOfBirth: transformed.dateOfBirth,
+    maritalStatus: transformed.maritalStatus,
     notes: transformed.notes,
     importMetadata: transformed.importMetadata,
     createdAt: transformed.createdAt,

@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../db'
 
 export default defineEventHandler(async (event) => {
@@ -21,9 +21,68 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Appointment type not found' })
   }
 
-  // Fetch linked questionnaire if present
+  // Fetch linked form if present (new system), fall back to legacy questionnaire
+  let form = null
   let questionnaire = null
-  if (type.questionnaireId) {
+
+  if (type.formId) {
+    const formRow = await db.select()
+      .from(schema.forms)
+      .where(and(eq(schema.forms.id, type.formId), eq(schema.forms.isActive, true)))
+      .get()
+
+    if (formRow) {
+      const sections = await db.select()
+        .from(schema.formSections)
+        .where(eq(schema.formSections.formId, formRow.id))
+        .orderBy(asc(schema.formSections.sectionOrder))
+        .all()
+
+      const fields = await db.select()
+        .from(schema.formFields)
+        .where(eq(schema.formFields.formId, formRow.id))
+        .orderBy(asc(schema.formFields.fieldOrder))
+        .all()
+
+      const fieldsBySection = new Map<string, typeof fields>()
+      for (const field of fields) {
+        const list = fieldsBySection.get(field.sectionId) || []
+        list.push(field)
+        fieldsBySection.set(field.sectionId, list)
+      }
+
+      form = {
+        id: formRow.id,
+        name: formRow.name,
+        slug: formRow.slug,
+        description: formRow.description,
+        formType: formRow.formType,
+        isMultiStep: formRow.isMultiStep,
+        isActive: formRow.isActive,
+        settings: formRow.settings ? JSON.parse(formRow.settings) : null,
+        sections: sections.map(s => ({
+          id: s.id,
+          title: s.title,
+          description: s.description,
+          sectionOrder: s.sectionOrder,
+          fields: (fieldsBySection.get(s.id) || []).map(f => ({
+            id: f.id,
+            fieldType: f.fieldType,
+            label: f.label,
+            fieldOrder: f.fieldOrder,
+            isRequired: f.isRequired,
+            colSpan: f.colSpan || 12,
+            config: f.config ? JSON.parse(f.config) : undefined,
+            conditionalLogic: f.conditionalLogic ? JSON.parse(f.conditionalLogic) : undefined,
+            personFieldMapping: f.personFieldMapping || undefined
+          }))
+        }))
+      }
+    }
+  }
+
+  // Legacy questionnaire fallback
+  if (!form && type.questionnaireId) {
     questionnaire = await db
       .select({
         id: schema.questionnaires.id,
@@ -112,6 +171,7 @@ export default defineEventHandler(async (event) => {
     consultationFeeEnabled: type.consultationFeeEnabled,
     defaultLocation: type.defaultLocation,
     businessHours: type.businessHours ? JSON.parse(type.businessHours) : null,
+    form,
     questionnaire,
     eligibleAttorneys
   }

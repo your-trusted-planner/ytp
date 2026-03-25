@@ -1,22 +1,94 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-03-18
+**Last Updated**: 2026-03-25
 
 ## 📍 Where We Are Now
 
 ### In Progress 🔧
 
-#### Google Calendar Integration — Phase 2/3 Refinements
-- **Status**: Phase 1 & 2 core complete, Phase 3 partially complete
+#### Form Builder System — Remaining Phases
+- **Status**: Core complete, 3 phases remaining
 - **Remaining work**:
-  - Public booking page (`/book/[bookingId]`) — SlotPicker and BookingConfirmation components are built but need end-to-end testing with a real booking flow
-  - Existing `/book.vue` questionnaire page needs to redirect to `/book/[bookingId]` after creating a booking (currently self-contained with hardcoded slots)
+  - **Phase F**: Public standalone form page (`/f/[slug]`) + UTM tracking on `formSubmissions`
+  - **Phase G**: Journey integration — wire FORM action items to FormRenderer, form picker in ActionItemModal
+  - **Phase H**: Legacy questionnaire migration utility
+
+#### Google Calendar Integration — Refinements
+- **Status**: Core complete, minor refinements remaining
+- **Remaining work**:
   - Month view event rendering — functional but not battle-tested with many events
-  - AppointmentModal client search depends on `/api/clients?search=` accepting a search param (verify this works)
-  - Matter select in AppointmentModal depends on `/api/matters?clientId=` accepting a clientId filter (verify this works)
   - Profile page calendar management buttons (Set Primary, Deactivate, Delete) are still disabled/TODO
 
 ### Recently Completed ✅
+
+#### Form Builder System (2026-03-24 / 2026-03-25)
+- **Status**: Complete ✅ (core system — standalone forms, journey integration, and migration utility are remaining phases)
+- **What**: Full form builder with visual editor, 14 field types, conditional logic, person field mappings, 12-column grid layout, multi-step sections, and rich text content blocks with TipTap editor.
+
+**Schema Changes** (`server/db/schema/forms.ts` — new file):
+  - `forms`: form definitions with name, slug, type, multi-step toggle, settings JSON
+  - `formSections`: ordered sections within forms (pages in multi-step mode)
+  - `formFields`: 14 field types with config JSON, conditional logic, person field mapping, colSpan (1-12 grid)
+  - `formSubmissions`: responses with context FKs to bookings, appointments, action items, matters, journeys, persons
+  - `formId` added to `appointmentTypes` and `publicBookings`
+  - `maritalStatus` added to `people` table
+
+**Core Logic** (`app/utils/form-logic.ts`):
+  - `evaluateConditions()` — 6 operators (eq, neq, contains, not_contains, is_empty, is_not_empty) with all/any matching and show/hide actions
+  - `validateField()` — required, email, phone, number min/max, select option validation
+  - `validateSection()` — validates only visible fields (hidden required fields don't block)
+  - `extractPersonFields()` — extracts mapped person data from responses
+  - 53 unit tests covering all logic paths
+
+**Admin APIs** (16 endpoints):
+  - Form CRUD: `GET/POST /api/admin/forms`, `GET/PUT/DELETE /api/admin/forms/[id]`
+  - Bulk definition save: `PUT /api/admin/forms/[id]/definition` — atomic replace of all sections + fields
+  - Section CRUD + reorder under `/api/admin/forms/[id]/sections/`
+  - Field CRUD + reorder under `/api/admin/form-fields/`
+
+**Field Components** (14 types in `app/components/form/fields/`):
+  - Registry pattern: `FieldType → Component` map for dynamic rendering
+  - Simple inputs: Text, Textarea, Email, Phone, Number, Date
+  - Choice fields: Select, MultiSelect, Radio, Checkbox, YesNo (button toggle)
+  - Special: FileUpload (drag-and-drop), Scheduler (embeds SlotPicker), Content (renders sanitized HTML)
+
+**FormRenderer** (`app/components/form/FormRenderer.vue`):
+  - Multi-step section navigation with progress indicator
+  - 12-column CSS grid layout with configurable colSpan per field
+  - Conditional field visibility evaluated reactively
+  - Per-section validation blocking Next until valid
+  - Person field extraction and scheduler slot capture on submit
+
+**FormBuilder** (`app/components/form/builder/`):
+  - `useFormBuilder` composable for local state management
+  - Two-column layout: section list + field config panel (450px)
+  - Drag-and-drop field reordering within and across sections
+  - FieldConfigPanel: label, required, width, placeholder, help text, options, conditions, person mapping, type-specific config
+  - Conditional logic builder with field-aware value dropdowns
+  - Fully interactive preview mode
+
+**Rich Text Editor** (`app/components/ui/RichTextEditor.vue`):
+  - TipTap-based WYSIWYG: bold, italic, underline, strikethrough, text color, highlight, headings, lists, horizontal rules, links, YouTube embeds
+  - Source mode toggle for raw HTML editing (branded content)
+  - HTML sanitization: scripts stripped, iframe domains whitelisted, event handlers removed
+
+**Settings & Booking Integration**:
+  - `/settings/forms` — card grid, create modal, full-screen edit modal with FormBuilder
+  - Form selector dropdown in appointment type settings
+  - `/book/[slug]` and `/book/[slug]/[staffSlug]` render FormRenderer when `formId` is set
+  - Person lookup/creation from form field mappings via record-matcher
+  - Legacy questionnaire path fully preserved
+
+**Additional Improvements** (2026-03-24):
+  - QuickAddPerson inline component with duplicate detection (`useDuplicateCheck` composable, `DuplicateWarning` component)
+  - Per-day multi-window business hours for appointment types (replaces single-window)
+  - InternalSlotPicker for appointment modal availability checking
+  - `POST /api/people/quick-add` endpoint (STAFF-accessible)
+  - STAFF role added to `GET/POST /api/people` endpoints
+  - Copy icon on appointment type slug cards
+
+**Test Coverage** (53 new tests):
+  - `tests/unit/forms/form-logic.test.ts` — condition evaluation, validation, person field extraction
 
 #### Google Calendar Integration — Phase 1 & 2 (2026-03-18)
 - **Status**: Complete ✅

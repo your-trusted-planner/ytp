@@ -12,6 +12,7 @@ const updateSchema = z.object({
   consultationFee: z.number().int().min(0).optional(),
   consultationFeeEnabled: z.boolean().optional(),
   questionnaireId: z.string().nullable().optional(),
+  formId: z.string().nullable().optional(),
   serviceCatalogId: z.string().nullable().optional(),
   staffEligibility: z.enum(['any', 'attorneys_only', 'specific']).optional(),
   assignedAttorneyIds: z.array(z.string()).nullable().optional(),
@@ -82,6 +83,7 @@ export default defineEventHandler(async (event) => {
   if (data.consultationFee !== undefined) updates.consultationFee = data.consultationFee
   if (data.consultationFeeEnabled !== undefined) updates.consultationFeeEnabled = data.consultationFeeEnabled
   if (data.questionnaireId !== undefined) updates.questionnaireId = data.questionnaireId
+  if (data.formId !== undefined) updates.formId = data.formId
   if (data.serviceCatalogId !== undefined) updates.serviceCatalogId = data.serviceCatalogId
   if (data.staffEligibility !== undefined) updates.staffEligibility = data.staffEligibility
   if (data.assignedAttorneyIds !== undefined) {

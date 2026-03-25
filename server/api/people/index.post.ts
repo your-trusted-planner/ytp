@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     zipCode,
     country,
     dateOfBirth,
+    maritalStatus,
     ssnLast4,
     notes
   } = body
@@ -60,6 +61,7 @@ export default defineEventHandler(async (event) => {
     zipCode: zipCode || null,
     country: country || null,
     dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+    maritalStatus: maritalStatus || null,
     ssnLast4: ssnLast4 || null,
     notes: notes || null
   }

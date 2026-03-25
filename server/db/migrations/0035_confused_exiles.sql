@@ -1,0 +1,1 @@
+ALTER TABLE `form_fields` ADD `col_span` integer DEFAULT 12 NOT NULL;

@@ -221,7 +221,7 @@
                   class="text-xs text-accent-600 hover:text-accent-800 ml-1 flex-shrink-0"
                   @click="copyLink(`/book/${type.slug}`)"
                 >
-                  Copy
+                  <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
               <!-- Per-staff links -->
@@ -236,7 +236,7 @@
                   class="text-xs text-accent-600 hover:text-accent-800 ml-1 flex-shrink-0"
                   @click="copyLink(`/book/${type.slug}/${staffSlug(staff)}`)"
                 >
-                  Copy
+                  <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -497,6 +497,29 @@
           </div>
         </div>
 
+        <!-- Linked Form -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Intake Form</label>
+          <select
+            v-model="form.formId"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent text-sm"
+          >
+            <option value="">
+              No form
+            </option>
+            <option
+              v-for="f in availableForms"
+              :key="f.id"
+              :value="f.id"
+            >
+              {{ f.name }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-gray-500">
+            Shown to prospects during the booking flow
+          </p>
+        </div>
+
         <!-- Business Hours Override -->
         <div class="border rounded-lg p-4 space-y-3">
           <UiToggle
@@ -614,7 +637,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Calendar, X } from 'lucide-vue-next'
+import { Calendar, X, Copy } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -634,6 +657,7 @@ interface AppointmentType {
   consultationFeeEnabled: boolean
   questionnaireId: string | null
   serviceCatalogId: string | null
+  formId: string | null
   staffEligibility: 'any' | 'attorneys_only' | 'specific'
   assignedAttorneyIds: string[] | null
   businessHours: { start: number, end: number, days: number[] } | null
@@ -660,6 +684,7 @@ interface StaffMember {
 const types = ref<AppointmentType[]>([])
 const staffList = ref<StaffMember[]>([])
 const activeRooms = ref<Room[]>([])
+const availableForms = ref<Array<{ id: string; name: string }>>([])
 const loading = ref(true)
 const saving = ref(false)
 const showModal = ref(false)
@@ -690,6 +715,7 @@ const form = ref({
   locationType: 'none' as 'none' | 'room' | 'video' | 'custom',
   locationRoomId: '',
   locationVideoProvider: 'zoom' as 'zoom' | 'google_meet',
+  formId: '' as string,
   isPubliclyBookable: false,
   staffEligibility: 'any' as 'any' | 'attorneys_only' | 'specific',
   assignedAttorneyIds: [] as string[],
@@ -880,6 +906,7 @@ function openAddModal() {
     locationType: 'none',
     locationRoomId: '',
     locationVideoProvider: 'zoom',
+    formId: '',
     isPubliclyBookable: false,
     staffEligibility: 'any',
     assignedAttorneyIds: [],
@@ -928,6 +955,7 @@ function editType(type: AppointmentType) {
     locationType,
     locationRoomId,
     locationVideoProvider,
+    formId: type.formId || '',
     isPubliclyBookable: type.isPubliclyBookable,
     staffEligibility: type.staffEligibility || 'any',
     assignedAttorneyIds: type.assignedAttorneyIds ? [...type.assignedAttorneyIds] : [],
@@ -973,6 +1001,7 @@ async function handleSave() {
         0,
       defaultLocation,
       defaultLocationConfig,
+      formId: form.value.formId || null,
       isPubliclyBookable: form.value.isPubliclyBookable,
       staffEligibility: form.value.staffEligibility,
       assignedAttorneyIds: form.value.staffEligibility === 'specific' ? form.value.assignedAttorneyIds : null,
@@ -1100,10 +1129,18 @@ async function fetchRooms() {
   }
 }
 
+async function fetchForms() {
+  try {
+    const forms = await $fetch<Array<{ id: string; name: string; isActive: boolean }>>('/api/admin/forms')
+    availableForms.value = forms.filter(f => f.isActive).map(f => ({ id: f.id, name: f.name }))
+  } catch { /* ignore */ }
+}
+
 onMounted(() => {
   fetchTypes()
   fetchStaff()
   fetchBusinessHours()
   fetchRooms()
+  fetchForms()
 })
 </script>

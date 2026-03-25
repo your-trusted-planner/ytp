@@ -68,6 +68,9 @@ export { notices, noticeRecipients } from './notifications'
 // Data Migration
 export { integrations, migrationRuns, migrationErrors, importDuplicates, personExternalIds } from './migrations'
 
+// Forms System
+export { forms, formSections, formFields, formSubmissions } from './forms'
+
 // Estate Plans
 export {
   estatePlans,

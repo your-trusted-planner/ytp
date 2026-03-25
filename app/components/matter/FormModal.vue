@@ -279,7 +279,7 @@ async function handleSubmit() {
 
     if (props.editingMatter) {
       // Update existing matter
-      await $fetch(`/api/matters/${props.editingMatter.id}`, {
+      await $fetch<void>(`/api/matters/${props.editingMatter.id}`, {
         method: 'PUT',
         body: {
           title: form.value.title,

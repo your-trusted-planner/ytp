@@ -130,6 +130,26 @@
         </UiCard>
       </NuxtLink>
 
+      <!-- Forms -->
+      <NuxtLink
+        to="/settings/forms"
+        class="block"
+      >
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-violet-50 rounded-lg">
+              <FileText class="w-6 h-6 text-violet-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Forms</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Build intake forms, questionnaires, and booking forms
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
       <!-- Integrations -->
       <NuxtLink
         to="/settings/integrations"
@@ -171,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Building2, FolderOpen, Plug, Info, Mail, Video } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Building2, FolderOpen, Plug, Info, Mail, Video, FileText } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',

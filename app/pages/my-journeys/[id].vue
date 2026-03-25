@@ -207,6 +207,23 @@
                     </span>
                   </div>
                 </div>
+
+                <!-- Action Items (forms, uploads, etc.) -->
+                <div
+                  v-if="stepActionItems[step.id]?.length > 0 && step.progress_status !== 'COMPLETE'"
+                  class="mt-4 space-y-3"
+                >
+                  <template
+                    v-for="item in stepActionItems[step.id]"
+                    :key="item.id"
+                  >
+                    <JourneyFormActionItem
+                      v-if="item.action_type === 'FORM' || item.action_type === 'QUESTIONNAIRE'"
+                      :action-item="item"
+                      @completed="onActionItemCompleted"
+                    />
+                  </template>
+                </div>
               </div>
             </div>
 
@@ -237,8 +254,9 @@ definePageMeta({
 
 const route = useRoute()
 const loading = ref(true)
-const clientJourney = ref(null)
-const steps = ref([])
+const clientJourney = ref<any>(null)
+const steps = ref<any[]>([])
+const stepActionItems = ref<Record<string, any[]>>({})
 
 // Computed stats
 const completedSteps = computed(() =>
@@ -284,7 +302,39 @@ function formatProgressStatus(status: string) {
   return map[status] || status
 }
 
-onMounted(() => {
-  fetchProgress()
+async function fetchActionItems() {
+  if (!clientJourney.value?.id) return
+  try {
+    const data = await $fetch<{ actionItems: any[] }>(
+      `/api/action-items/client-journey/${clientJourney.value.id}`
+    )
+    // Group action items by step_id
+    const grouped: Record<string, any[]> = {}
+    for (const item of data.actionItems) {
+      const stepId = item.step_id as string
+      if (!stepId) continue
+      if (!grouped[stepId]) grouped[stepId] = []
+      grouped[stepId]!.push(item)
+    }
+    stepActionItems.value = grouped
+  } catch {
+    // Action items may not be available for all journeys
+  }
+}
+
+function onActionItemCompleted(actionItemId: string) {
+  // Update local state to reflect completion
+  for (const items of Object.values(stepActionItems.value)) {
+    const item = items.find((i: any) => i.id === actionItemId)
+    if (item) {
+      item.status = 'COMPLETE'
+      break
+    }
+  }
+}
+
+onMounted(async () => {
+  await fetchProgress()
+  await fetchActionItems()
 })
 </script>

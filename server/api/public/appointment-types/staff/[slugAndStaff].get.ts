@@ -1,11 +1,18 @@
-import { eq, and, like } from 'drizzle-orm'
+import { eq, and, like, asc } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../../../db'
 
 export default defineEventHandler(async (event) => {
-  const slug = getRouterParam(event, 'slug')
-  const staffSlug = getRouterParam(event, 'staffSlug')
+  const slugAndStaff = getRouterParam(event, 'slugAndStaff')
+  if (!slugAndStaff || !slugAndStaff.includes('.')) {
+    throw createError({ statusCode: 400, message: 'URL must be in format: /staff/appointment-slug.staff-slug' })
+  }
+
+  const dotIndex = slugAndStaff.lastIndexOf('.')
+  const slug = slugAndStaff.slice(0, dotIndex)
+  const staffSlug = slugAndStaff.slice(dotIndex + 1)
+
   if (!slug || !staffSlug) {
-    throw createError({ statusCode: 400, message: 'Missing slug or staffSlug' })
+    throw createError({ statusCode: 400, message: 'Missing slug or staff slug' })
   }
 
   const db = useDrizzle()
@@ -26,8 +33,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find the staff member by matching slug against name
-  // Staff slug is "firstname-lastname" lowercased
-  const allStaff = await db
+  // Only search users with active calendars (the bookable staff)
+  const calendarStaff = await db
     .select({
       id: schema.users.id,
       firstName: schema.users.firstName,
@@ -35,9 +42,13 @@ export default defineEventHandler(async (event) => {
       email: schema.users.email
     })
     .from(schema.users)
+    .innerJoin(schema.attorneyCalendars, and(
+      eq(schema.attorneyCalendars.attorneyId, schema.users.id),
+      eq(schema.attorneyCalendars.isActive, true)
+    ))
     .all()
 
-  const staffMember = allStaff.find(s => {
+  const staffMember = calendarStaff.find(s => {
     const generatedSlug = [s.firstName, s.lastName].filter(Boolean).join('-').toLowerCase()
     return generatedSlug === staffSlug
   })
@@ -68,23 +79,69 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Verify staff has an active calendar
-  const calendar = await db
-    .select({ id: schema.attorneyCalendars.id })
-    .from(schema.attorneyCalendars)
-    .where(and(
-      eq(schema.attorneyCalendars.attorneyId, staffMember.id),
-      eq(schema.attorneyCalendars.isActive, true)
-    ))
-    .get()
+  // Calendar already verified via join above
 
-  if (!calendar) {
-    throw createError({ statusCode: 400, message: 'Staff member does not have an active calendar' })
+  // Fetch linked form (new system), fall back to legacy questionnaire
+  let form = null
+  let questionnaire = null
+
+  if (type.formId) {
+    const formRow = await db.select()
+      .from(schema.forms)
+      .where(and(eq(schema.forms.id, type.formId), eq(schema.forms.isActive, true)))
+      .get()
+
+    if (formRow) {
+      const sections = await db.select()
+        .from(schema.formSections)
+        .where(eq(schema.formSections.formId, formRow.id))
+        .orderBy(asc(schema.formSections.sectionOrder))
+        .all()
+
+      const fields = await db.select()
+        .from(schema.formFields)
+        .where(eq(schema.formFields.formId, formRow.id))
+        .orderBy(asc(schema.formFields.fieldOrder))
+        .all()
+
+      const fieldsBySection = new Map<string, typeof fields>()
+      for (const field of fields) {
+        const list = fieldsBySection.get(field.sectionId) || []
+        list.push(field)
+        fieldsBySection.set(field.sectionId, list)
+      }
+
+      form = {
+        id: formRow.id,
+        name: formRow.name,
+        slug: formRow.slug,
+        description: formRow.description,
+        formType: formRow.formType,
+        isMultiStep: formRow.isMultiStep,
+        isActive: formRow.isActive,
+        settings: formRow.settings ? JSON.parse(formRow.settings) : null,
+        sections: sections.map(s => ({
+          id: s.id,
+          title: s.title,
+          description: s.description,
+          sectionOrder: s.sectionOrder,
+          fields: (fieldsBySection.get(s.id) || []).map(f => ({
+            id: f.id,
+            fieldType: f.fieldType,
+            label: f.label,
+            fieldOrder: f.fieldOrder,
+            isRequired: f.isRequired,
+            colSpan: f.colSpan || 12,
+            config: f.config ? JSON.parse(f.config) : undefined,
+            conditionalLogic: f.conditionalLogic ? JSON.parse(f.conditionalLogic) : undefined,
+            personFieldMapping: f.personFieldMapping || undefined
+          }))
+        }))
+      }
+    }
   }
 
-  // Fetch linked questionnaire
-  let questionnaire = null
-  if (type.questionnaireId) {
+  if (!form && type.questionnaireId) {
     questionnaire = await db
       .select({
         id: schema.questionnaires.id,
@@ -114,6 +171,7 @@ export default defineEventHandler(async (event) => {
     consultationFeeEnabled: type.consultationFeeEnabled,
     defaultLocation: type.defaultLocation,
     businessHours: type.businessHours ? JSON.parse(type.businessHours) : null,
+    form,
     questionnaire,
     staff: {
       id: staffMember.id,

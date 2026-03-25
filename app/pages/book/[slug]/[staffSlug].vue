@@ -42,13 +42,13 @@
         </p>
       </div>
 
-      <!-- Error -->
+      <!-- Error / Not Found -->
       <div
         v-else-if="error"
         class="bg-white rounded-lg shadow-lg p-8 text-center"
       >
         <h2 class="text-xl font-bold text-gray-900 mb-2">
-          Not Available
+          Not Found
         </h2>
         <p class="text-gray-600 mb-4">
           {{ error }}
@@ -68,21 +68,42 @@
           <span>with {{ appointmentType.staff.name }}</span>
         </div>
 
-        <!-- Questionnaire -->
-        <div class="bg-white rounded-lg shadow-lg p-8">
+        <!-- New Form System -->
+        <div
+          v-if="appointmentType.form"
+          class="bg-white rounded-lg shadow-lg p-8"
+        >
+          <h2 class="text-2xl font-bold text-[#0A2540] mb-6">
+            {{ appointmentType.form.name || 'Pre-Consultation Questionnaire' }}
+          </h2>
+
+          <FormRenderer
+            :definition="appointmentType.form"
+            :scheduler-context="schedulerContext"
+            submit-label="Continue"
+            :submitting="submitting"
+            @submit="handleFormSubmit"
+          />
+        </div>
+
+        <!-- Legacy Questionnaire -->
+        <div
+          v-else
+          class="bg-white rounded-lg shadow-lg p-8"
+        >
           <h2 class="text-2xl font-bold text-[#0A2540] mb-6">
             Pre-Consultation Questionnaire
           </h2>
 
           <form
             class="space-y-6"
-            @submit.prevent="submitQuestionnaire"
+            @submit.prevent="submitLegacyQuestionnaire"
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">First Name *</label>
                 <input
-                  v-model="formData.firstName"
+                  v-model="legacyFormData.firstName"
                   type="text"
                   required
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
@@ -91,7 +112,7 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Last Name *</label>
                 <input
-                  v-model="formData.lastName"
+                  v-model="legacyFormData.lastName"
                   type="text"
                   required
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
@@ -103,7 +124,7 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Email Address *</label>
                 <input
-                  v-model="formData.email"
+                  v-model="legacyFormData.email"
                   type="email"
                   required
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
@@ -112,7 +133,7 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
                 <UiPhoneInput
-                  v-model="formData.phone"
+                  v-model="legacyFormData.phone"
                   class="focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
                 />
               </div>
@@ -138,7 +159,7 @@
 
                 <input
                   v-if="question.type === 'text'"
-                  v-model="responses[question.id || `q${index}`]"
+                  v-model="legacyResponses[question.id || `q${index}`]"
                   type="text"
                   :required="question.required"
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
@@ -146,7 +167,7 @@
 
                 <textarea
                   v-else-if="question.type === 'textarea'"
-                  v-model="responses[question.id || `q${index}`]"
+                  v-model="legacyResponses[question.id || `q${index}`]"
                   :required="question.required"
                   :rows="4"
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
@@ -154,7 +175,7 @@
 
                 <select
                   v-else-if="question.type === 'select'"
-                  v-model="responses[question.id || `q${index}`]"
+                  v-model="legacyResponses[question.id || `q${index}`]"
                   :required="question.required"
                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C41E3A] focus:border-transparent"
                 >
@@ -180,7 +201,7 @@
                     class="flex items-center space-x-2"
                   >
                     <input
-                      v-model="responses[question.id || `q${index}`]"
+                      v-model="legacyResponses[question.id || `q${index}`]"
                       type="radio"
                       :value="option"
                       :required="question.required"
@@ -209,7 +230,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import type { FormDefinition, FormSubmissionPayload, SchedulerContext } from '~/types/form'
 
 definePageMeta({
   layout: false
@@ -230,6 +252,7 @@ interface StaffSpecificType {
   consultationFee: number
   consultationFeeEnabled: boolean
   defaultLocation: string | null
+  form: FormDefinition | null
   questionnaire: { id: string, name: string, questions: any[] } | null
   staff: { id: string, name: string, slug: string }
 }
@@ -239,14 +262,15 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const submitting = ref(false)
 
-const formData = ref({
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: ''
-})
+// Legacy questionnaire state
+const legacyFormData = ref({ firstName: '', lastName: '', email: '', phone: '' })
+const legacyResponses = ref<Record<string, any>>({})
 
-const responses = ref<Record<string, any>>({})
+// Scheduler context — staff member is locked in
+const schedulerContext = computed<SchedulerContext>(() => ({
+  attorneyIds: appointmentType.value?.staff ? [appointmentType.value.staff.id] : [],
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+}))
 
 onMounted(async () => {
   try {
@@ -262,7 +286,52 @@ onMounted(async () => {
   }
 })
 
-async function submitQuestionnaire() {
+// ── New Form System Submit ───────────────────────────────────────────────────
+
+async function handleFormSubmit(payload: FormSubmissionPayload) {
+  if (!appointmentType.value) return
+  submitting.value = true
+
+  try {
+    const pf = payload.personFields
+    const email = pf.email || ''
+    const firstName = pf.firstName || ''
+    const lastName = pf.lastName || ''
+
+    if (!email || !firstName || !lastName) {
+      toast.error('Please fill in your name and email address.')
+      submitting.value = false
+      return
+    }
+
+    const response = await $fetch<{ bookingId: string }>('/api/public/booking/create', {
+      method: 'POST',
+      body: {
+        email,
+        firstName,
+        lastName,
+        phone: pf.phone || undefined,
+        appointmentTypeId: appointmentType.value.id,
+        formId: appointmentType.value.form!.id,
+        formData: payload.responses,
+        personFields: payload.personFields,
+        attorneyId: appointmentType.value.staff.id
+      }
+    })
+
+    await navigateTo(`/book/booking/${response.bookingId}`)
+  }
+  catch (err: any) {
+    toast.error(err.data?.message || 'An error occurred. Please try again.')
+  }
+  finally {
+    submitting.value = false
+  }
+}
+
+// ── Legacy Questionnaire Submit ──────────────────────────────────────────────
+
+async function submitLegacyQuestionnaire() {
   if (!appointmentType.value) return
   submitting.value = true
 
@@ -270,13 +339,13 @@ async function submitQuestionnaire() {
     const response = await $fetch<{ bookingId: string }>('/api/public/booking/create', {
       method: 'POST',
       body: {
-        email: formData.value.email,
-        firstName: formData.value.firstName,
-        lastName: formData.value.lastName,
-        phone: formData.value.phone,
+        email: legacyFormData.value.email,
+        firstName: legacyFormData.value.firstName,
+        lastName: legacyFormData.value.lastName,
+        phone: legacyFormData.value.phone,
         appointmentTypeId: appointmentType.value.id,
         questionnaireId: appointmentType.value.questionnaire?.id,
-        responses: responses.value,
+        responses: legacyResponses.value,
         attorneyId: appointmentType.value.staff.id
       }
     })
