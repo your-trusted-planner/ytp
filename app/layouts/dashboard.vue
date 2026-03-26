@@ -151,7 +151,9 @@ import {
   Landmark,
   Clock,
   CalendarClock,
-  DoorOpen
+  DoorOpen,
+  FileText,
+  Inbox
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -215,6 +217,7 @@ const navigationConfig = ref([
 
   // Standalone items - staff only
   { path: '/schedule', label: 'Schedule', icon: Calendar, roles: FIRM_ROLES },
+  { path: '/forms/submissions', label: 'Form Submissions', icon: Inbox, roles: FIRM_ROLES },
   { path: '/activity', label: 'Activity Log', icon: Activity, roles: FIRM_ROLES },
 
   // Configuration section - staff only
@@ -225,6 +228,7 @@ const navigationConfig = ref([
     roles: FIRM_ROLES,
     children: [
       { path: '/settings/appointment-types', label: 'Appointment Types', icon: CalendarClock, roles: FIRM_ROLES, minAdminLevel: 1 },
+      { path: '/settings/forms', label: 'Forms', icon: FileText, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/settings/rooms', label: 'Rooms & Locations', icon: DoorOpen, roles: FIRM_ROLES, minAdminLevel: 1 },
       { path: '/service-catalog', label: 'Service Catalog', icon: ShoppingBag, roles: FIRM_ROLES },
       { path: '/service-catalog/service-categories', label: 'Service Categories', icon: FolderOpen, roles: FIRM_ROLES, minAdminLevel: 1 },

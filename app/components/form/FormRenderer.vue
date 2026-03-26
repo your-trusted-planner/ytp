@@ -47,9 +47,24 @@
       </div>
     </div>
 
+    <!-- Draft restored banner -->
+    <div
+      v-if="draftRestored && persistence"
+      class="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700"
+    >
+      <span>Your previous progress has been restored.</span>
+    </div>
+
+    <!-- Turnstile (invisible, renders on last section) -->
+    <UiTurnstile
+      v-if="isLastSection && showTurnstile"
+      @verified="turnstileToken = $event"
+      @expired="turnstileToken = ''"
+    />
+
     <!-- Navigation -->
     <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-      <div>
+      <div class="flex items-center gap-3">
         <UiButton
           v-if="!isFirstSection"
           variant="outline"
@@ -58,6 +73,19 @@
         >
           Back
         </UiButton>
+        <!-- Draft save indicator -->
+        <span
+          v-if="persistence?.saving.value"
+          class="text-xs text-gray-400"
+        >
+          Saving...
+        </span>
+        <span
+          v-else-if="persistence?.lastSavedAt.value"
+          class="text-xs text-gray-400"
+        >
+          Draft saved
+        </span>
       </div>
       <div>
         <UiButton
@@ -84,6 +112,7 @@
 import { ref, computed } from 'vue'
 import { FIELD_REGISTRY } from './fields'
 import { evaluateConditions, validateField } from '~/utils/form-logic'
+import { useFormPersistence } from '~/composables/useFormPersistence'
 import type {
   FormDefinition,
   FormSection,
@@ -101,10 +130,19 @@ const props = withDefaults(defineProps<{
   submitLabel?: string
   submitting?: boolean
   disabled?: boolean
+  /** Persistence mode: 'server' for authenticated, 'local' for public, 'none' to disable */
+  persistenceMode?: 'server' | 'local' | 'none'
+  /** Context IDs for server-side draft persistence */
+  actionItemId?: string
+  clientJourneyId?: string
+  matterId?: string
+  /** Show Turnstile CAPTCHA on last section before submit */
+  showTurnstile?: boolean
 }>(), {
   submitLabel: 'Submit',
   submitting: false,
-  disabled: false
+  disabled: false,
+  persistenceMode: 'none'
 })
 
 const emit = defineEmits<{
@@ -112,12 +150,27 @@ const emit = defineEmits<{
   'section-change': [index: number]
 }>()
 
+// ── Persistence ──────────────────────────────────────────────────────────────
+
+const persistence = props.persistenceMode !== 'none'
+  ? useFormPersistence({
+    mode: props.persistenceMode,
+    formId: props.definition.id,
+    actionItemId: props.actionItemId,
+    clientJourneyId: props.clientJourneyId,
+    matterId: props.matterId
+  })
+  : null
+
+const draftRestored = ref(false)
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 const currentSectionIndex = ref(0)
 const values = ref<Record<string, FormFieldValue>>({})
 const errors = ref<Record<string, string>>({})
 const schedulerSlot = ref<SchedulerSlotValue | null>(null)
+const turnstileToken = ref('')
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 
@@ -161,6 +214,8 @@ function setValue(fieldId: string, value: FormFieldValue) {
   if (errors.value[fieldId]) {
     delete errors.value[fieldId]
   }
+  // Debounced auto-save
+  persistence?.debouncedSave(values.value, currentSectionIndex.value)
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────
@@ -189,6 +244,8 @@ function goNext() {
   if (currentSectionIndex.value < props.definition.sections.length - 1) {
     currentSectionIndex.value++
     emit('section-change', currentSectionIndex.value)
+    // Save draft on section navigation
+    persistence?.save(values.value, currentSectionIndex.value)
   }
 }
 
@@ -196,6 +253,7 @@ function goPrev() {
   if (currentSectionIndex.value > 0) {
     currentSectionIndex.value--
     emit('section-change', currentSectionIndex.value)
+    persistence?.save(values.value, currentSectionIndex.value)
   }
 }
 
@@ -260,10 +318,14 @@ function handleSubmit() {
     }
   }
 
+  // Clear draft on submission
+  persistence?.clear()
+
   emit('submit', {
     responses,
     personFields,
-    schedulerSlot: schedulerSlot.value || undefined
+    schedulerSlot: schedulerSlot.value || undefined,
+    turnstileToken: turnstileToken.value || undefined
   })
 }
 
@@ -274,5 +336,18 @@ watch(() => props.definition.id, () => {
   values.value = {}
   errors.value = {}
   schedulerSlot.value = null
+  draftRestored.value = false
+})
+
+// ── Restore draft on mount ───────────────────────────────────────────────────
+
+onMounted(async () => {
+  if (!persistence) return
+  const draft = await persistence.restore()
+  if (draft) {
+    values.value = draft.values
+    currentSectionIndex.value = draft.lastSectionIndex
+    draftRestored.value = true
+  }
 })
 </script>

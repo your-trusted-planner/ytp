@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate entity type
-  const validEntityTypes = ['client', 'matter', 'document', 'appointment', 'journey']
+  const validEntityTypes = ['client', 'matter', 'document', 'appointment', 'journey', 'formSubmission']
   if (!validEntityTypes.includes(entityType)) {
     throw createError({
       statusCode: 400,

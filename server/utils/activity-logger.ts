@@ -131,9 +131,17 @@ export type ActivityType =
 
 export type TargetType = 'user' | 'person' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room' | 'form'
 
+/**
+ * System user ID — used when logging activity for anonymous/automated operations.
+ * Falls back to this when no userId is provided. The 'system' user must exist
+ * in the users table (created by seed) with status INACTIVE.
+ */
+export const SYSTEM_USER_ID = 'system'
+
 export interface LogActivityParams {
   type: ActivityType
-  userId: string
+  /** User ID of the actor. Defaults to SYSTEM_USER_ID if omitted (for public/anonymous events). */
+  userId?: string
   userRole?: string
 
   // NEW: Structured entity references (preferred)
@@ -298,7 +306,7 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
   let description = params.description
   if (!description && params.target) {
     // Fetch actor name for description generation
-    const actorName = await getActorName(db, schema, params.userId)
+    const actorName = await getActorName(db, schema, params.userId || SYSTEM_USER_ID)
     description = generateDescription(
       params.type,
       actorName,
@@ -316,7 +324,7 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
     id,
     type: params.type,
     description,
-    userId: params.userId,
+    userId: params.userId || SYSTEM_USER_ID,
     userRole: params.userRole || null,
     targetType,
     targetId,

@@ -63,9 +63,9 @@ export default defineEventHandler(async (event) => {
   await db.delete(schema.formFields).where(eq(schema.formFields.formId, id))
   await db.delete(schema.formSections).where(eq(schema.formSections.formId, id))
 
-  // Recreate from submitted definition
+  // Recreate from submitted definition, preserving existing IDs where provided
   for (const section of parsed.data.sections) {
-    const sectionId = nanoid()
+    const sectionId = section.id || nanoid()
 
     await db.insert(schema.formSections).values({
       id: sectionId,
@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
     for (const field of section.fields) {
       await db.insert(schema.formFields).values({
-        id: nanoid(),
+        id: field.id || nanoid(),
         sectionId,
         formId: id,
         fieldType: field.fieldType,

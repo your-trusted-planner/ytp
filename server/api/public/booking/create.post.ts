@@ -15,6 +15,7 @@ const createBookingSchema = z.object({
   formId: z.string().optional(),
   formData: z.record(z.any()).optional(), // Form field responses keyed by field ID
   personFields: z.record(z.string()).optional(), // Extracted person fields from form mappings
+  turnstileToken: z.string().optional(),
   attorneyId: z.string().optional(), // If they selected specific attorney
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
@@ -33,7 +34,11 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const { email, firstName, lastName, phone, appointmentTypeId, questionnaireId, responses, formId, formData, personFields, attorneyId, utmSource, utmMedium, utmCampaign } = result.data
+  const { email, firstName, lastName, phone, appointmentTypeId, questionnaireId, responses, formId, formData, personFields, turnstileToken, attorneyId, utmSource, utmMedium, utmCampaign } = result.data
+
+  // Verify Turnstile CAPTCHA (skips in dev if not configured)
+  const { verifyTurnstileToken } = await import('../../../utils/turnstile')
+  await verifyTurnstileToken(turnstileToken, getRequestIP(event) || undefined)
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, and, ne } = await import('drizzle-orm')

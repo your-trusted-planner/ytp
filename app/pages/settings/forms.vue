@@ -61,6 +61,9 @@
               {{ form.isActive ? 'Active' : 'Inactive' }}
             </span>
           </div>
+          <p class="text-xs text-gray-400 font-mono mb-2">
+            /f/{{ form.slug }}
+          </p>
           <p
             v-if="form.description"
             class="text-sm text-gray-500 mb-3 line-clamp-2"
@@ -292,10 +295,12 @@ async function handleSave() {
       method: 'PUT',
       body: {
         sections: form.sections.map((s, si) => ({
+          id: s.id,
           title: s.title,
           description: s.description,
           sectionOrder: si,
           fields: s.fields.map((f, fi) => ({
+            id: f.id,
             fieldType: f.fieldType,
             label: f.label,
             fieldOrder: fi,

@@ -174,6 +174,8 @@ export interface FormSubmissionPayload {
   personFields: Partial<Record<PersonFieldTarget, string>>
   /** Slot selection if form contains a scheduler field */
   schedulerSlot?: SchedulerSlotValue
+  /** Turnstile CAPTCHA token (present on public forms) */
+  turnstileToken?: string
 }
 
 // ─── Scheduler Context (passed to FormRenderer when form has scheduler fields) ─

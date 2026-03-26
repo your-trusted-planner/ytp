@@ -560,6 +560,45 @@ Deployments are triggered on push to `main` or `stage` branches only.
 - **`.github/workflows/deploy.yml`** - CI/CD pipeline with NuxtHub 0.10.x workarounds
 - **`.output/server/wrangler.json`** - Generated at build time by Nitro (do not edit manually)
 
+### System User (Required)
+
+The database must contain a `system` user record for activity logging on anonymous/automated operations (public form submissions, webhooks, etc.). This user is created by the seed script and must exist in both production and preview databases.
+
+| Field | Value |
+|-------|-------|
+| `users.id` | `system` |
+| `users.email` | `system@internal` |
+| `users.role` | `ADMIN` |
+| `users.adminLevel` | `0` |
+| `users.status` | `INACTIVE` (cannot log in) |
+| `users.personId` | `system_person` |
+| `people.id` | `system_person` |
+
+The `logActivity()` utility defaults to `userId = 'system'` when no `userId` is provided. This means public endpoints can call `logActivity()` without a userId and the FK constraint on `activities.user_id → users.id` is satisfied.
+
+**If deploying to a new environment**, ensure the system user exists:
+```sql
+INSERT OR IGNORE INTO people (id, first_name, full_name, person_type)
+  VALUES ('system_person', 'System', 'System', 'individual');
+INSERT OR IGNORE INTO users (id, email, password, role, admin_level, first_name, last_name, person_id, status)
+  VALUES ('system', 'system@internal', 'nologin', 'ADMIN', 0, 'System', 'Automated', 'system_person', 'INACTIVE');
+```
+
+### Cloudflare Turnstile (CAPTCHA)
+
+Public form submissions and booking endpoints are protected by Cloudflare Turnstile (invisible CAPTCHA).
+
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `NUXT_PUBLIC_TURNSTILE_SITE_KEY` | Runtime config (public) | Turnstile widget site key |
+| `TURNSTILE_SECRET_KEY` | Wrangler secret | Server-side verification key |
+
+Create a Turnstile widget at [Cloudflare Dashboard → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile) with:
+- **Widget type**: Invisible
+- **Domains**: `app.trustandlegacy.com`, `app.businessandlegacy.com`, `app-preview.trustandlegacy.com`, `app-preview.businessandlegacy.com`, `localhost`
+
+In development, if `TURNSTILE_SECRET_KEY` is not set, verification is skipped with a console warning. The `UiTurnstile` component emits a bypass token so forms still work.
+
 ### Adding New Preview Environment Secrets
 When adding secrets for the preview environment:
 ```bash

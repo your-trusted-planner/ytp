@@ -51,9 +51,12 @@ export default defineNuxtConfig({
       // Firebase client configuration (public)
       firebaseApiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || '',
       firebaseAuthDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-      firebaseProjectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || ''
+      firebaseProjectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+      // Cloudflare Turnstile (public site key)
+      turnstileSiteKey: process.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || ''
     },
     // Private keys (only available on the server)
+    turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY || '',
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
     seedToken: process.env.NUXT_SEED_TOKEN || '',
     pandaDocApiKey: process.env.PANDADOC_API_KEY || '',

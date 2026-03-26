@@ -3,14 +3,16 @@
  * Creates a formSubmission record, optionally creates/matches a person from field mappings.
  */
 import { z } from 'zod'
-import { eq, and, asc } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { useDrizzle, schema } from '../../../../db'
 import { logActivity } from '../../../../utils/activity-logger'
+import { verifyTurnstileToken } from '../../../../utils/turnstile'
 
 const submitSchema = z.object({
   responses: z.record(z.any()),
   personFields: z.record(z.string()).optional(),
+  turnstileToken: z.string().optional(),
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
   utmCampaign: z.string().optional()
@@ -26,11 +28,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid submission data' })
   }
 
-  const { responses, personFields, utmSource, utmMedium, utmCampaign } = parsed.data
+  const { responses, personFields, turnstileToken, utmSource, utmMedium, utmCampaign } = parsed.data
+
+  // Verify Turnstile CAPTCHA (skips in dev if not configured)
+  await verifyTurnstileToken(turnstileToken, getRequestIP(event) || undefined)
+
   const db = useDrizzle()
 
-  // Verify form exists and is active
-  const form = await db.select({ id: schema.forms.id, name: schema.forms.name })
+  // Verify form exists and is active + public
+  const form = await db.select({ id: schema.forms.id, name: schema.forms.name, settings: schema.forms.settings })
     .from(schema.forms)
     .where(and(eq(schema.forms.slug, slug), eq(schema.forms.isActive, true), eq(schema.forms.isPublic, true)))
     .get()
@@ -84,6 +90,8 @@ export default defineEventHandler(async (event) => {
   await db.insert(schema.formSubmissions).values({
     id: submissionId,
     formId: form.id,
+    status: 'submitted' as const,
+    lastSectionIndex: 0,
     personId,
     data: JSON.stringify(responses),
     submitterEmail: email,
@@ -94,25 +102,20 @@ export default defineEventHandler(async (event) => {
     updatedAt: now
   })
 
-  // Log activity (use a system user ID since this is public)
+  // Log activity using system user
+  // userId omitted — logActivity defaults to SYSTEM_USER_ID for anonymous events
   await logActivity({
     type: 'FORM_SUBMITTED',
-    userId: 'system',
     target: { type: 'form', id: form.id, name: form.name },
     event,
     details: { submissionId, personId, source: 'public' }
   })
 
   // Return success message from form settings if configured
-  const formFull = await db.select({ settings: schema.forms.settings })
-    .from(schema.forms)
-    .where(eq(schema.forms.id, form.id))
-    .get()
-
   let successMessage = 'Thank you! Your response has been submitted.'
-  if (formFull?.settings) {
+  if (form.settings) {
     try {
-      const settings = JSON.parse(formFull.settings)
+      const settings = JSON.parse(form.settings)
       if (settings.successMessage) successMessage = settings.successMessage
     } catch { /* ignore */ }
   }

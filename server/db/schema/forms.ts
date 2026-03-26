@@ -85,6 +85,8 @@ export const formFields = sqliteTable('form_fields', {
 export const formSubmissions = sqliteTable('form_submissions', {
   id: text('id').primaryKey(),
   formId: text('form_id').notNull().references(() => forms.id),
+  status: text('status', { enum: ['draft', 'submitted'] }).notNull().default('submitted'),
+  lastSectionIndex: integer('last_section_index').notNull().default(0),
 
   // Context FKs — at most one context will be set per submission (app-enforced)
   publicBookingId: text('public_booking_id').references(() => publicBookings.id, { onDelete: 'set null' }),

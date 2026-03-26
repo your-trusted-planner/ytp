@@ -82,6 +82,8 @@
             :scheduler-context="schedulerContext"
             submit-label="Continue"
             :submitting="submitting"
+            persistence-mode="local"
+            :show-turnstile="true"
             @submit="handleFormSubmit"
           />
         </div>
@@ -315,6 +317,7 @@ async function handleFormSubmit(payload: FormSubmissionPayload) {
         formId: appointmentType.value.form!.id,
         formData: payload.responses,
         personFields: payload.personFields,
+        turnstileToken: payload.turnstileToken,
         attorneyId: appointmentType.value.staff.id
       }
     })

@@ -65,6 +65,8 @@
           :definition="formDefinition"
           submit-label="Submit"
           :submitting="submitting"
+          persistence-mode="local"
+          :show-turnstile="true"
           @submit="handleSubmit"
         />
       </div>
@@ -114,6 +116,7 @@ async function handleSubmit(payload: FormSubmissionPayload) {
       body: {
         responses: payload.responses,
         personFields: payload.personFields,
+        turnstileToken: payload.turnstileToken,
         utmSource,
         utmMedium,
         utmCampaign

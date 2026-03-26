@@ -3,6 +3,10 @@
 // instead of creating duplicates
 
 export const SEED_IDS = {
+  // System user (for anonymous/automated activity logging)
+  systemUser: 'system',
+  systemPerson: 'system_person',
+
   // Users
   users: {
     admin: 'seed_user_admin',

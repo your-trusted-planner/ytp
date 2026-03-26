@@ -41,6 +41,9 @@
           :definition="formDefinition"
           submit-label="Submit"
           :submitting="submitting"
+          persistence-mode="server"
+          :action-item-id="actionItem.id"
+          :client-journey-id="actionItem.client_journey_id"
           @submit="handleSubmit"
         />
       </div>

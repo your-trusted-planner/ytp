@@ -43,6 +43,28 @@ export async function seedUsers(db: SeedDb): Promise<SeedUserIds> {
   const hashedPassword = await hashPassword('password123')
   const ids = SEED_IDS.users
 
+  // System user — for anonymous/automated activity logging (public form submissions, etc.)
+  await db.insert(schema.people).values({
+    id: SEED_IDS.systemPerson,
+    firstName: 'System',
+    lastName: null,
+    fullName: 'System',
+    personType: 'individual'
+  }).onConflictDoNothing()
+
+  await db.insert(schema.users).values({
+    id: SEED_IDS.systemUser,
+    email: 'system@internal',
+    password: hashedPassword,
+    role: 'ADMIN',
+    adminLevel: 0,
+    firstName: 'System',
+    lastName: 'Automated',
+    personId: SEED_IDS.systemPerson,
+    status: 'INACTIVE' // Cannot be used to log in
+  }).onConflictDoNothing()
+  console.log('  Created system user')
+
   // Admin user
   const adminId = await upsertUser(db, ids.admin, 'admin@trustandlegacy.test', {
     password: hashedPassword,

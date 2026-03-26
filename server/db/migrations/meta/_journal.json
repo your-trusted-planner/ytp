@@ -260,6 +260,13 @@
       "when": 1774475030664,
       "tag": "0036_yielding_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1774478289376,
+      "tag": "0037_slow_gargoyle",
+      "breakpoints": true
     }
   ]
 }
