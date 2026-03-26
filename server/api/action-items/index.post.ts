@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       // Validate action type for ENGAGEMENT journeys
       const ALLOWED_ENGAGEMENT_ACTIONS = [
         'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
-        'REVIEW', 'UPLOAD', 'DECISION'
+        'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE'
       ]
 
       if (journey.journeyType === 'ENGAGEMENT' &&
@@ -45,6 +45,42 @@ export default defineEventHandler(async (event) => {
           message: `Action type ${body.actionType} is not allowed for ENGAGEMENT journeys. Allowed types: ${ALLOWED_ENGAGEMENT_ACTIONS.join(', ')}`
         })
       }
+    }
+  }
+
+  // Validate MEETING action items require appointmentTypeId and completionTrigger
+  if (body.actionType === 'MEETING') {
+    const config = body.config || {}
+    if (!config.appointmentTypeId) {
+      throw createError({
+        statusCode: 400,
+        message: 'MEETING action items require an appointmentTypeId in config'
+      })
+    }
+    if (!config.completionTrigger || !['SCHEDULED', 'COMPLETED'].includes(config.completionTrigger)) {
+      throw createError({
+        statusCode: 400,
+        message: 'MEETING action items require a completionTrigger in config (SCHEDULED or COMPLETED)'
+      })
+    }
+
+    // Validate the appointment type exists
+    const { eq } = await import('drizzle-orm')
+    const appointmentType = await db.select()
+      .from(schema.appointmentTypes)
+      .where(eq(schema.appointmentTypes.id, config.appointmentTypeId))
+      .get()
+
+    if (!appointmentType) {
+      throw createError({
+        statusCode: 400,
+        message: 'Appointment type not found'
+      })
+    }
+
+    // Auto-set systemIntegrationType for MEETING
+    if (!body.systemIntegrationType) {
+      body.systemIntegrationType = 'calendar'
     }
   }
 

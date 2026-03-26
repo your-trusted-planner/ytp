@@ -282,6 +282,18 @@
                             >
                               {{ actionItem.description }}
                             </p>
+                            <!-- MEETING details -->
+                            <div
+                              v-if="actionItem.actionType === 'MEETING' && parseMeetingConfig(actionItem.config)"
+                              class="flex items-center gap-2 ml-6 mt-1.5"
+                            >
+                              <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                {{ getAppointmentTypeName(parseMeetingConfig(actionItem.config)!.appointmentTypeId) }}
+                              </span>
+                              <span class="text-xs px-2 py-0.5 rounded-full" :class="parseMeetingConfig(actionItem.config)!.completionTrigger === 'SCHEDULED' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'">
+                                {{ parseMeetingConfig(actionItem.config)!.completionTrigger === 'SCHEDULED' ? 'Requires scheduling' : 'Requires completion' }}
+                              </span>
+                            </div>
                             <div class="flex items-center space-x-3 ml-6 mt-1 text-xs text-gray-500">
                               <span>Assigned: {{ actionItem.assignedTo }}</span>
                               <span>Priority: {{ actionItem.priority }}</span>
@@ -435,6 +447,27 @@
           :rows="3"
         />
 
+        <!-- Insert Position (only when adding, not editing) -->
+        <UiSelect
+          v-if="!editingStep && steps.length > 0"
+          v-model.number="stepForm.insertPosition"
+          label="Position"
+        >
+          <option
+            v-for="step in steps"
+            :key="step.id"
+            :value="step.step_order"
+          >
+            Before "{{ step.name }}"{{ step.is_final_step ? ' (final)' : '' }}
+          </option>
+          <option
+            :value="-1"
+            :disabled="steps.some(s => s.is_final_step)"
+          >
+            At the end
+          </option>
+        </UiSelect>
+
         <UiSelect
           v-model="stepForm.responsibleParty"
           label="Responsible Party"
@@ -575,11 +608,12 @@ const stepForm = ref({
   name: '',
   description: '',
   responsibleParty: 'CLIENT',
-  expectedDurationDays: null,
+  expectedDurationDays: null as number | null,
   helpContent: '',
   allowMultipleIterations: true,
   isFinalStep: false,
-  requiresVerification: false
+  requiresVerification: false,
+  insertPosition: -1 // -1 = end, 0+ = before step at that index
 })
 
 // Fetch journey and steps
@@ -629,6 +663,7 @@ async function validateJourney() {
 // Add step
 function addStep() {
   editingStep.value = null
+  const finalStep = steps.value.find(s => s.is_final_step)
   stepForm.value = {
     stepType: 'MILESTONE',
     name: '',
@@ -638,7 +673,9 @@ function addStep() {
     helpContent: '',
     allowMultipleIterations: true,
     isFinalStep: false,
-    requiresVerification: false
+    requiresVerification: false,
+    // Default to inserting before the final step if one exists, otherwise at the end
+    insertPosition: finalStep ? finalStep.step_order : -1
   }
   showStepModal.value = true
 }
@@ -686,12 +723,26 @@ async function saveStep() {
       })
     }
     else {
-      // Check if there's already a final step when creating a new step
-      const existingFinalStep = steps.value.find(s => s.is_final_step)
-      if (existingFinalStep) {
-        toast.warning(`Cannot add a new step after the final step "${existingFinalStep.name}". Please remove the "final step" designation first.`)
-        savingStep.value = false
-        return
+      // Determine step order based on insert position
+      const insertPos = stepForm.value.insertPosition
+      let newStepOrder: number
+
+      if (insertPos === -1) {
+        // Append at end
+        newStepOrder = steps.value.length
+      } else {
+        // Insert at the specified position, bump subsequent steps
+        newStepOrder = insertPos
+        const stepsToReorder = steps.value
+          .filter(s => s.step_order >= insertPos)
+          .map(s => ({ id: s.id, order: s.step_order + 1 }))
+
+        if (stepsToReorder.length > 0) {
+          await $fetch('/api/journey-steps/reorder', {
+            method: 'POST',
+            body: { steps: stepsToReorder }
+          })
+        }
       }
 
       // Create new step
@@ -700,7 +751,7 @@ async function saveStep() {
         body: {
           journeyId: route.params.id,
           ...stepForm.value,
-          stepOrder: steps.value.length
+          stepOrder: newStepOrder
         }
       })
     }
@@ -897,8 +948,40 @@ function getActionTypeIcon(type: string) {
   return iconMap[type] || IconCheckSquare
 }
 
+// MEETING action item helpers
+const appointmentTypesCache = ref<Record<string, string>>({})
+const appointmentTypesFetched = ref(false)
+
+async function fetchAppointmentTypesForDisplay() {
+  if (appointmentTypesFetched.value) return
+  try {
+    const types = await $fetch<Array<{ id: string; name: string }>>('/api/appointment-types')
+    for (const t of types) {
+      appointmentTypesCache.value[t.id] = t.name
+    }
+    appointmentTypesFetched.value = true
+  } catch { /* ignore */ }
+}
+
+function parseMeetingConfig(config: string | null): { appointmentTypeId: string; completionTrigger: string } | null {
+  if (!config) return null
+  try {
+    const parsed = JSON.parse(config)
+    if (parsed.appointmentTypeId) return parsed
+    return null
+  } catch { return null }
+}
+
+function getAppointmentTypeName(id: string): string {
+  if (!appointmentTypesFetched.value) {
+    fetchAppointmentTypesForDisplay()
+  }
+  return appointmentTypesCache.value[id] || 'Loading...'
+}
+
 onMounted(() => {
   fetchJourney()
   fetchServiceCatalog()
+  fetchAppointmentTypesForDisplay()
 })
 </script>

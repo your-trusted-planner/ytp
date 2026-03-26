@@ -70,6 +70,54 @@ export default defineEventHandler(async (event) => {
 
   await db.update(schema.appointments).set(updates).where(eq(schema.appointments.id, id))
 
+  // Auto-complete or reset linked MEETING action items on status change
+  if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
+    try {
+      const { and } = await import('drizzle-orm')
+
+      const linkedItems = await db.select({
+        id: schema.actionItems.id,
+        config: schema.actionItems.config,
+        status: schema.actionItems.status
+      })
+        .from(schema.actionItems)
+        .where(and(
+          eq(schema.actionItems.resourceId, id),
+          eq(schema.actionItems.actionType, 'MEETING')
+        ))
+        .all()
+
+      const now = new Date()
+      for (const item of linkedItems) {
+        let itemConfig: any = {}
+        try { itemConfig = item.config ? JSON.parse(item.config) : {} } catch { /* skip */ }
+
+        if (data.status === 'COMPLETED' && itemConfig.completionTrigger === 'COMPLETED' && item.status !== 'COMPLETE') {
+          await db.update(schema.actionItems)
+            .set({
+              status: 'COMPLETE',
+              completedAt: now,
+              completedBy: user.id,
+              updatedAt: now
+            })
+            .where(eq(schema.actionItems.id, item.id))
+        } else if (data.status === 'CANCELLED') {
+          await db.update(schema.actionItems)
+            .set({
+              status: 'PENDING',
+              resourceId: null,
+              completedAt: null,
+              completedBy: null,
+              updatedAt: now
+            })
+            .where(eq(schema.actionItems.id, item.id))
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to update linked MEETING action items:', err.message)
+    }
+  }
+
   // Sync changes to Google Calendar if linked
   if (existing.googleCalendarEventId && existing.googleCalendarEmail) {
     try {

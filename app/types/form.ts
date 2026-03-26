@@ -54,6 +54,41 @@ export const PERSON_FIELD_OPTIONS: Array<{ value: PersonFieldTarget; label: stri
   { value: 'maritalStatus', label: 'Marital Status' }
 ]
 
+/**
+ * Which field types each person field is compatible with.
+ * Controls which person fields appear in the mapping dropdown for a given field type.
+ */
+export const PERSON_FIELD_COMPATIBLE_TYPES: Record<PersonFieldTarget, FieldType[]> = {
+  firstName: ['text'],
+  lastName: ['text'],
+  email: ['email'],
+  phone: ['phone'],
+  address: ['text', 'textarea'],
+  city: ['text'],
+  state: ['text', 'select', 'radio'],
+  zipCode: ['text'],
+  country: ['text', 'select', 'radio'],
+  dateOfBirth: ['date'],
+  maritalStatus: ['select', 'radio']
+}
+
+/**
+ * Predefined option values for person fields that have constrained choices.
+ * When a field is mapped to one of these, its options are auto-set and locked.
+ */
+export const PERSON_FIELD_OPTIONS_VALUES: Partial<Record<PersonFieldTarget, string[]>> = {
+  maritalStatus: ['Single', 'Married', 'Divorced', 'Widowed', 'Separated', 'Domestic Partnership']
+}
+
+/**
+ * Returns the person field options compatible with a given field type.
+ */
+export function getCompatiblePersonFields(fieldType: FieldType): Array<{ value: PersonFieldTarget; label: string }> {
+  return PERSON_FIELD_OPTIONS.filter(pf =>
+    PERSON_FIELD_COMPATIBLE_TYPES[pf.value].includes(fieldType)
+  )
+}
+
 // ─── Conditional Logic ───────────────────────────────────────────────────────
 
 export type ConditionalOperator = 'eq' | 'neq' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty'

@@ -230,6 +230,62 @@ export default defineEventHandler(async (event) => {
     catch { /* ignore parse errors */ }
   }
 
+  // Auto-link to MEETING action items on active client journeys
+  if (data.clientId && data.appointmentTypeId) {
+    try {
+      const { and, inArray } = await import('drizzle-orm')
+
+      // Find pending MEETING action items on this client's active journeys
+      // that reference the same appointment type
+      const pendingMeetingItems = await db.select({
+        id: schema.actionItems.id,
+        config: schema.actionItems.config
+      })
+        .from(schema.actionItems)
+        .innerJoin(schema.clientJourneys, eq(schema.actionItems.clientJourneyId, schema.clientJourneys.id))
+        .where(and(
+          eq(schema.clientJourneys.clientId, data.clientId),
+          eq(schema.actionItems.actionType, 'MEETING'),
+          inArray(schema.actionItems.status, ['PENDING', 'IN_PROGRESS']),
+          inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
+        ))
+        .all()
+
+      // Filter by matching appointmentTypeId in config and no existing link
+      const now = new Date()
+      for (const item of pendingMeetingItems) {
+        if (!item.config) continue
+        try {
+          const itemConfig = JSON.parse(item.config)
+          if (itemConfig.appointmentTypeId !== data.appointmentTypeId) continue
+
+          // Link the appointment to this action item
+          const updates: any = {
+            resourceId: appointmentId,
+            updatedAt: now
+          }
+
+          // If completionTrigger is SCHEDULED, mark complete immediately
+          if (itemConfig.completionTrigger === 'SCHEDULED') {
+            updates.status = 'COMPLETE'
+            updates.completedAt = now
+            updates.completedBy = user.id
+          }
+
+          await db.update(schema.actionItems)
+            .set(updates)
+            .where(eq(schema.actionItems.id, item.id))
+
+          // Only link to the first matching action item
+          break
+        } catch { /* skip items with unparseable config */ }
+      }
+    } catch (err: any) {
+      console.error('Failed to auto-link MEETING action item:', err.message)
+      // Non-fatal — appointment was still created successfully
+    }
+  }
+
   await logActivity({
     type: 'APPOINTMENT_CREATED',
     userId: user.id,

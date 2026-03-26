@@ -77,6 +77,12 @@
     <!-- Options (for select, multi_select, radio, checkbox) -->
     <div v-if="hasOptions" class="space-y-2">
       <label class="block text-sm font-medium text-gray-700">Options</label>
+      <p
+        v-if="optionsLockedByMapping"
+        class="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-2 py-1.5"
+      >
+        Options are set by the "{{ personFieldOptions.find(pf => pf.value === field.personFieldMapping)?.label }}" person field mapping
+      </p>
       <div
         v-for="(option, idx) in options"
         :key="idx"
@@ -85,11 +91,13 @@
         <input
           :value="option"
           type="text"
+          :disabled="!!optionsLockedByMapping"
           class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+          :class="optionsLockedByMapping ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''"
           @input="updateOption(idx, ($event.target as HTMLInputElement).value)"
         >
         <button
-          v-if="options.length > 1"
+          v-if="options.length > 1 && !optionsLockedByMapping"
           type="button"
           class="text-gray-400 hover:text-red-500 p-1"
           @click="removeOption(idx)"
@@ -98,6 +106,7 @@
         </button>
       </div>
       <button
+        v-if="!optionsLockedByMapping"
         type="button"
         class="text-xs text-accent-600 hover:text-accent-700 font-medium"
         @click="addOption"
@@ -176,13 +185,13 @@
       </select>
     </div>
 
-    <!-- Person Field Mapping (not for content blocks) -->
-    <div v-if="field.fieldType !== 'content'">
+    <!-- Person Field Mapping (not for content blocks, only if compatible fields exist) -->
+    <div v-if="field.fieldType !== 'content' && personFieldOptions.length > 0">
       <label class="block text-sm font-medium text-gray-700 mb-1">Person Field Mapping</label>
       <select
         :value="field.personFieldMapping || ''"
         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-        @change="update({ personFieldMapping: (($event.target as HTMLSelectElement).value || undefined) as any })"
+        @change="onPersonFieldMappingChange(($event.target as HTMLSelectElement).value)"
       >
         <option value="">
           None
@@ -330,8 +339,8 @@
 
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
-import { PERSON_FIELD_OPTIONS } from '~/types/form'
-import type { FormField, ConditionalLogic, ConditionalRule } from '~/types/form'
+import { getCompatiblePersonFields, PERSON_FIELD_OPTIONS_VALUES } from '~/types/form'
+import type { FormField, ConditionalLogic, ConditionalRule, PersonFieldTarget } from '~/types/form'
 
 const props = defineProps<{
   field: FormField
@@ -344,7 +353,15 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const personFieldOptions = PERSON_FIELD_OPTIONS
+const personFieldOptions = computed(() =>
+  getCompatiblePersonFields(props.field.fieldType)
+)
+
+/** Whether this field's options are locked by a person field mapping with predefined values */
+const optionsLockedByMapping = computed(() => {
+  const mapping = props.field.personFieldMapping as PersonFieldTarget | undefined
+  return mapping ? PERSON_FIELD_OPTIONS_VALUES[mapping] || null : null
+})
 
 const hasOptions = computed(() =>
   ['select', 'multi_select', 'radio', 'checkbox'].includes(props.field.fieldType)
@@ -375,6 +392,18 @@ function getRuleFieldOptions(fieldId: string): string[] {
 }
 
 function update(updates: Partial<FormField>) {
+  emit('update-field', updates)
+}
+
+function onPersonFieldMappingChange(value: string) {
+  const mapping = (value || undefined) as PersonFieldTarget | undefined
+  const updates: Partial<FormField> = { personFieldMapping: mapping }
+
+  // If the mapped person field has predefined options, auto-set them
+  if (mapping && PERSON_FIELD_OPTIONS_VALUES[mapping]) {
+    updates.config = { ...config.value, options: [...PERSON_FIELD_OPTIONS_VALUES[mapping]!] }
+  }
+
   emit('update-field', updates)
 }
 

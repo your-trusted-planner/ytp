@@ -122,43 +122,53 @@
         <!-- Meeting Configuration -->
         <div
           v-if="form.actionType === 'MEETING'"
-          class="space-y-3"
+          class="space-y-4"
         >
           <UiSelect
-            v-model="form.config.meetingType"
-            label="Meeting Type"
+            v-model="form.config.appointmentTypeId"
+            label="Appointment Type"
+            required
           >
-            <option value="PHONE">
-              Phone Call
+            <option value="">
+              Select appointment type...
             </option>
-            <option value="VIDEO">
-              Video Call
-            </option>
-            <option value="IN_PERSON">
-              In Person
+            <option
+              v-for="at in availableAppointmentTypes"
+              :key="at.id"
+              :value="at.id"
+            >
+              {{ at.name }}
             </option>
           </UiSelect>
-          <UiInput
-            v-model.number="form.config.durationMinutes"
-            type="number"
-            label="Duration (minutes)"
-            placeholder="30"
-          />
-          <div class="flex items-center">
-            <input
-              id="calendar-integration"
-              v-model="form.systemIntegrationType"
-              type="checkbox"
-              true-value="calendar"
-              false-value=""
-              class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-            >
-            <label
-              for="calendar-integration"
-              class="ml-2 block text-sm text-gray-900"
-            >
-              Integrate with calendar system
-            </label>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Satisfied When</label>
+            <div class="space-y-2">
+              <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" :class="form.config.completionTrigger === 'SCHEDULED' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-200'">
+                <input
+                  v-model="form.config.completionTrigger"
+                  type="radio"
+                  value="SCHEDULED"
+                  class="mt-0.5 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300"
+                >
+                <div>
+                  <span class="font-medium text-gray-900 text-sm">Appointment Scheduled</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Satisfied once an appointment of this type is created for the client</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" :class="form.config.completionTrigger === 'COMPLETED' ? 'border-burgundy-500 bg-burgundy-50' : 'border-gray-200'">
+                <input
+                  v-model="form.config.completionTrigger"
+                  type="radio"
+                  value="COMPLETED"
+                  class="mt-0.5 h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300"
+                >
+                <div>
+                  <span class="font-medium text-gray-900 text-sm">Appointment Completed</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Satisfied only after the appointment has actually occurred</p>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -490,6 +500,8 @@ const loadingDocuments = ref(false)
 const availableForms = ref<Array<{ id: string; name: string }>>([])
 const formsLoaded = ref(false)
 const availableDocuments = ref<Array<{ id: string, title: string, status: string }>>([])
+const availableAppointmentTypes = ref<Array<{ id: string; name: string }>>([])
+const appointmentTypesLoaded = ref(false)
 
 // Fetch documents when ESIGN action type is selected
 async function fetchDocuments() {
@@ -527,7 +539,7 @@ const actionTypes = [
 // Filter action types based on journey type
 const ALLOWED_ENGAGEMENT_ACTIONS = [
   'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
-  'REVIEW', 'UPLOAD', 'DECISION'
+  'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE'
 ]
 
 const availableActionTypes = computed(() => {
@@ -551,13 +563,19 @@ const form = ref({
   config: {} as any
 })
 
-// Watch for ESIGN selection to load documents, FORM to load forms
+// Watch for action type selection to load related data
 watch(() => form.value.actionType, (newType) => {
   if (newType === 'ESIGN' && availableDocuments.value.length === 0) {
     fetchDocuments()
   }
   if ((newType === 'FORM' || newType === 'QUESTIONNAIRE') && !formsLoaded.value) {
     fetchForms()
+  }
+  if (newType === 'MEETING' && !appointmentTypesLoaded.value) {
+    fetchAppointmentTypes()
+  }
+  if (newType === 'MEETING') {
+    form.value.systemIntegrationType = 'calendar'
   }
 })
 
@@ -566,6 +584,14 @@ async function fetchForms() {
     const forms = await $fetch<Array<{ id: string; name: string; isActive: boolean }>>('/api/admin/forms')
     availableForms.value = forms.filter(f => f.isActive).map(f => ({ id: f.id, name: f.name }))
     formsLoaded.value = true
+  } catch { /* ignore */ }
+}
+
+async function fetchAppointmentTypes() {
+  try {
+    const types = await $fetch<Array<{ id: string; name: string }>>('/api/appointment-types')
+    availableAppointmentTypes.value = types
+    appointmentTypesLoaded.value = true
   } catch { /* ignore */ }
 }
 
@@ -583,9 +609,12 @@ watch(() => props.editingItem, (item) => {
       verificationCriteriaText: item.verificationCriteria ? JSON.parse(item.verificationCriteria) : '',
       config: item.config ? JSON.parse(item.config) : {}
     }
-    // Fetch documents if editing an ESIGN action
+    // Fetch related data when editing
     if (item.actionType === 'ESIGN') {
       fetchDocuments()
+    }
+    if (item.actionType === 'MEETING') {
+      fetchAppointmentTypes()
     }
   }
   else {
@@ -639,12 +668,26 @@ async function handleSubmit() {
     return
   }
 
+  // Validate MEETING requires appointmentTypeId and completionTrigger
+  if (form.value.actionType === 'MEETING') {
+    if (!form.value.config.appointmentTypeId) {
+      toast.warning('Please select an appointment type')
+      return
+    }
+    if (!form.value.config.completionTrigger) {
+      toast.warning('Please select when this action item is satisfied')
+      return
+    }
+  }
+
   saving.value = true
   try {
-    // For ESIGN actions, ensure systemIntegrationType is set
-    const systemIntegrationType = form.value.actionType === 'ESIGN' ?
-      'document' :
-      form.value.systemIntegrationType
+    // Set systemIntegrationType based on action type
+    const systemIntegrationType = form.value.actionType === 'ESIGN'
+      ? 'document'
+      : form.value.actionType === 'MEETING'
+        ? 'calendar'
+        : form.value.systemIntegrationType
 
     const payload = {
       stepId: props.step.id,
