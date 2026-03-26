@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       // Validate action type for ENGAGEMENT journeys
       const ALLOWED_ENGAGEMENT_ACTIONS = [
         'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
-        'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE'
+        'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE', 'WET_SIGN'
       ]
 
       if (journey.journeyType === 'ENGAGEMENT' &&
@@ -81,6 +81,28 @@ export default defineEventHandler(async (event) => {
     // Auto-set systemIntegrationType for MEETING
     if (!body.systemIntegrationType) {
       body.systemIntegrationType = 'calendar'
+    }
+  }
+
+  // Validate WET_SIGN action items require at least one document
+  if (body.actionType === 'WET_SIGN') {
+    const config = body.config || {}
+    if (!Array.isArray(config.documents) || config.documents.length === 0) {
+      throw createError({
+        statusCode: 400,
+        message: 'WET_SIGN action items require at least one document in config'
+      })
+    }
+    for (const doc of config.documents) {
+      if (!doc.label || typeof doc.label !== 'string') {
+        throw createError({
+          statusCode: 400,
+          message: 'Each WET_SIGN document must have a label'
+        })
+      }
+    }
+    if (!body.systemIntegrationType) {
+      body.systemIntegrationType = 'document'
     }
   }
 

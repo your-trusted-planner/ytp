@@ -172,6 +172,86 @@
           </div>
         </div>
 
+        <!-- Wet Sign Configuration -->
+        <div
+          v-else-if="form.actionType === 'WET_SIGN'"
+          class="space-y-4"
+        >
+          <!-- Document List -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">Documents to Sign</label>
+            <div
+              v-for="(doc, idx) in (form.config.documents || [])"
+              :key="idx"
+              class="flex items-center gap-2"
+            >
+              <input
+                :value="doc.label"
+                type="text"
+                class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
+                placeholder="Document name"
+                @input="updateWetSignDoc(idx, ($event.target as HTMLInputElement).value)"
+              >
+              <button
+                type="button"
+                class="text-gray-400 hover:text-red-500 p-1"
+                @click="removeWetSignDoc(idx)"
+              >
+                <IconX class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <button
+              type="button"
+              class="text-xs text-burgundy-600 hover:text-burgundy-700 font-medium"
+              @click="addWetSignDoc('')"
+            >
+              + Add document
+            </button>
+          </div>
+
+          <!-- Quick-add Suggestions -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">Quick Add</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="suggestion in wetSignSuggestions"
+                :key="suggestion"
+                type="button"
+                :disabled="(form.config.documents || []).some((d: any) => d.label === suggestion)"
+                class="px-2.5 py-1 text-xs rounded-full border transition-colors"
+                :class="(form.config.documents || []).some((d: any) => d.label === suggestion)
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-burgundy-500 hover:text-burgundy-600'"
+                @click="addWetSignDoc(suggestion)"
+              >
+                {{ suggestion }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Notarization Toggle -->
+          <div class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <input
+              id="requires-notarization"
+              v-model="form.config.requiresNotarization"
+              type="checkbox"
+              class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+            >
+            <label for="requires-notarization" class="flex-1">
+              <span class="text-sm font-medium text-gray-900">Requires notarization</span>
+              <p class="text-xs text-gray-500 mt-0.5">Documents must be signed in the presence of a notary public</p>
+            </label>
+          </div>
+
+          <!-- Notes -->
+          <UiTextarea
+            v-model="form.config.notes"
+            label="Instructions for Staff"
+            placeholder="e.g., Client should bring valid photo ID..."
+            :rows="2"
+          />
+        </div>
+
         <!-- Upload Configuration -->
         <div
           v-else-if="form.actionType === 'UPLOAD'"
@@ -468,7 +548,8 @@
 <script setup lang="ts">
 import {
   FileText, CheckSquare, Upload, Eye, PenTool, UserCheck, CreditCard, Calendar,
-  Zap, Users, ClipboardList, DollarSign, FormInput as FormInputIcon, FilePenLine
+  Zap, Users, ClipboardList, DollarSign, FormInput as FormInputIcon, FilePenLine,
+  Signature, X as IconX
 } from 'lucide-vue-next'
 
 const toast = useToast()
@@ -533,13 +614,14 @@ const actionTypes = [
   { value: 'AUTOMATION', label: 'Automation', icon: Zap, description: 'Automated task' },
   { value: 'THIRD_PARTY', label: 'Third Party', icon: Users, description: 'External service' },
   { value: 'OFFLINE_TASK', label: 'Offline Task', icon: ClipboardList, description: 'Manual offline work' },
-  { value: 'EXPENSE', label: 'Expense', icon: DollarSign, description: 'Expense/fee tracking' }
+  { value: 'EXPENSE', label: 'Expense', icon: DollarSign, description: 'Expense/fee tracking' },
+  { value: 'WET_SIGN', label: 'Wet Signature', icon: Signature, description: 'Physical document signing' }
 ]
 
 // Filter action types based on journey type
 const ALLOWED_ENGAGEMENT_ACTIONS = [
   'DRAFT_DOCUMENT', 'ESIGN', 'PAYMENT', 'MEETING',
-  'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE'
+  'REVIEW', 'UPLOAD', 'DECISION', 'FORM', 'QUESTIONNAIRE', 'WET_SIGN'
 ]
 
 const availableActionTypes = computed(() => {
@@ -577,6 +659,12 @@ watch(() => form.value.actionType, (newType) => {
   if (newType === 'MEETING') {
     form.value.systemIntegrationType = 'calendar'
   }
+  if (newType === 'WET_SIGN') {
+    if (!form.value.config.documents) {
+      form.value.config.documents = []
+    }
+    form.value.systemIntegrationType = 'document'
+  }
 })
 
 async function fetchForms() {
@@ -593,6 +681,39 @@ async function fetchAppointmentTypes() {
     availableAppointmentTypes.value = types
     appointmentTypesLoaded.value = true
   } catch { /* ignore */ }
+}
+
+// ── WET_SIGN helpers ────────────────────────────────────────────────────
+
+const wetSignSuggestions = [
+  'Engagement Agreement',
+  'Last Will and Testament',
+  'Revocable Living Trust',
+  'Irrevocable Trust',
+  'Durable Power of Attorney',
+  'Healthcare Power of Attorney',
+  'Living Will / Advance Directive',
+  'HIPAA Authorization',
+  'Deed / Transfer Document',
+  'Beneficiary Designation',
+  'Guardian Nomination',
+  'Community Property Agreement'
+]
+
+function addWetSignDoc(label: string) {
+  const docs = form.value.config.documents || []
+  form.value.config.documents = [...docs, { label, documentId: null }]
+}
+
+function updateWetSignDoc(idx: number, label: string) {
+  const docs = [...(form.value.config.documents || [])]
+  docs[idx] = { ...docs[idx], label }
+  form.value.config.documents = docs
+}
+
+function removeWetSignDoc(idx: number) {
+  const docs = (form.value.config.documents || []).filter((_: any, i: number) => i !== idx)
+  form.value.config.documents = docs
 }
 
 // Initialize form when editing
@@ -680,10 +801,19 @@ async function handleSubmit() {
     }
   }
 
+  // Validate WET_SIGN requires at least one document
+  if (form.value.actionType === 'WET_SIGN') {
+    const docs = form.value.config.documents || []
+    if (docs.length === 0 || !docs.some((d: any) => d.label?.trim())) {
+      toast.warning('Please add at least one document to sign')
+      return
+    }
+  }
+
   saving.value = true
   try {
     // Set systemIntegrationType based on action type
-    const systemIntegrationType = form.value.actionType === 'ESIGN'
+    const systemIntegrationType = form.value.actionType === 'ESIGN' || form.value.actionType === 'WET_SIGN'
       ? 'document'
       : form.value.actionType === 'MEETING'
         ? 'calendar'

@@ -294,6 +294,21 @@
                                 {{ parseMeetingConfig(actionItem.config)!.completionTrigger === 'SCHEDULED' ? 'Requires scheduling' : 'Requires completion' }}
                               </span>
                             </div>
+                            <!-- WET_SIGN details -->
+                            <div
+                              v-if="actionItem.actionType === 'WET_SIGN' && parseWetSignConfig(actionItem.config)"
+                              class="flex items-center gap-2 ml-6 mt-1.5"
+                            >
+                              <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                {{ parseWetSignConfig(actionItem.config)!.documents.length }} document{{ parseWetSignConfig(actionItem.config)!.documents.length !== 1 ? 's' : '' }}
+                              </span>
+                              <span
+                                v-if="parseWetSignConfig(actionItem.config)!.requiresNotarization"
+                                class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
+                              >
+                                Notarization required
+                              </span>
+                            </div>
                             <div class="flex items-center space-x-3 ml-6 mt-1 text-xs text-gray-500">
                               <span>Assigned: {{ actionItem.assignedTo }}</span>
                               <span>Priority: {{ actionItem.priority }}</span>
@@ -571,7 +586,8 @@ import {
   Trash as IconTrash, FileText as IconFileText, Upload as IconUpload, Eye as IconEye, PenTool as IconPenTool,
   CreditCard as IconCreditCard, Calendar as IconCalendar, UserCheck as IconUserCheck, Zap as IconZap,
   Users as IconUsers, ClipboardList as IconClipboardList, DollarSign as IconDollarSign, FormInput as IconFormInput,
-  AlertTriangle as IconAlertTriangle, FilePenLine as IconFilePenLine, Info as IconInfo
+  AlertTriangle as IconAlertTriangle, FilePenLine as IconFilePenLine, Info as IconInfo,
+  Signature as IconSignature
 } from 'lucide-vue-next'
 import draggable from 'vuedraggable'
 
@@ -922,7 +938,8 @@ function formatActionType(type: string): string {
     OFFLINE_TASK: 'Offline Task',
     EXPENSE: 'Expense',
     FORM: 'Form',
-    DRAFT_DOCUMENT: 'Draft Document'
+    DRAFT_DOCUMENT: 'Draft Document',
+    WET_SIGN: 'Wet Signature'
   }
   return typeMap[type] || type
 }
@@ -943,7 +960,8 @@ function getActionTypeIcon(type: string) {
     OFFLINE_TASK: IconClipboardList,
     EXPENSE: IconDollarSign,
     FORM: IconFormInput,
-    DRAFT_DOCUMENT: IconFilePenLine
+    DRAFT_DOCUMENT: IconFilePenLine,
+    WET_SIGN: IconSignature
   }
   return iconMap[type] || IconCheckSquare
 }
@@ -977,6 +995,16 @@ function getAppointmentTypeName(id: string): string {
     fetchAppointmentTypesForDisplay()
   }
   return appointmentTypesCache.value[id] || 'Loading...'
+}
+
+// WET_SIGN action item helpers
+function parseWetSignConfig(config: string | null): { documents: Array<{ label: string }>; requiresNotarization: boolean } | null {
+  if (!config) return null
+  try {
+    const parsed = JSON.parse(config)
+    if (Array.isArray(parsed.documents)) return parsed
+    return null
+  } catch { return null }
 }
 
 onMounted(() => {

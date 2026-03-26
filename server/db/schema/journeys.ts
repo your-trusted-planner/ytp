@@ -102,7 +102,8 @@ export const actionItems = sqliteTable('action_items', {
     enum: [
       'QUESTIONNAIRE', 'DECISION', 'UPLOAD', 'REVIEW', 'ESIGN',
       'NOTARY', 'PAYMENT', 'MEETING', 'KYC',
-      'AUTOMATION', 'THIRD_PARTY', 'OFFLINE_TASK', 'EXPENSE', 'FORM', 'DRAFT_DOCUMENT'
+      'AUTOMATION', 'THIRD_PARTY', 'OFFLINE_TASK', 'EXPENSE', 'FORM', 'DRAFT_DOCUMENT',
+      'WET_SIGN'
     ]
   }).notNull(),
   title: text('title').notNull(),

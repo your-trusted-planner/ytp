@@ -222,6 +222,48 @@
                       :action-item="item"
                       @completed="onActionItemCompleted"
                     />
+                    <!-- Wet signature: read-only status for clients -->
+                    <div
+                      v-else-if="item.action_type === 'WET_SIGN'"
+                      class="border rounded-lg bg-white overflow-hidden"
+                    >
+                      <div class="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <IconSignature class="w-4 h-4 text-gray-600" />
+                          <h4 class="text-sm font-semibold text-gray-800">{{ item.title }}</h4>
+                        </div>
+                        <span
+                          v-if="item.status === 'COMPLETE'"
+                          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                        >
+                          Signed
+                        </span>
+                        <span
+                          v-else
+                          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"
+                        >
+                          Awaiting signature
+                        </span>
+                      </div>
+                      <div class="p-4">
+                        <ul class="space-y-1.5">
+                          <li
+                            v-for="(doc, dIdx) in parseWetSignDocs(item.config)"
+                            :key="dIdx"
+                            class="flex items-center gap-2 text-sm text-gray-700"
+                          >
+                            <IconFileText class="w-3.5 h-3.5 text-gray-400" />
+                            {{ doc.label }}
+                          </li>
+                        </ul>
+                        <p
+                          v-if="parseWetSignNotarization(item.config)"
+                          class="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5"
+                        >
+                          These documents require notarization
+                        </p>
+                      </div>
+                    </div>
                   </template>
                 </div>
               </div>
@@ -244,7 +286,8 @@
 <script setup lang="ts">
 import {
   ArrowLeft as IconArrowLeft, Loader as IconLoader, Check as IconCheck, CircleDot as IconCircleDot, Repeat as IconRepeat,
-  HelpCircle as IconHelpCircle, CheckCircle as IconCheckCircle, ArrowDown as IconArrowDown
+  HelpCircle as IconHelpCircle, CheckCircle as IconCheckCircle, ArrowDown as IconArrowDown,
+  Signature as IconSignature, FileText as IconFileText
 } from 'lucide-vue-next'
 
 definePageMeta({
@@ -331,6 +374,22 @@ function onActionItemCompleted(actionItemId: string) {
       break
     }
   }
+}
+
+// WET_SIGN helpers for client view
+function parseWetSignDocs(config: string | null): Array<{ label: string }> {
+  if (!config) return []
+  try {
+    const parsed = JSON.parse(config)
+    return Array.isArray(parsed.documents) ? parsed.documents : []
+  } catch { return [] }
+}
+
+function parseWetSignNotarization(config: string | null): boolean {
+  if (!config) return false
+  try {
+    return JSON.parse(config).requiresNotarization === true
+  } catch { return false }
 }
 
 onMounted(async () => {
