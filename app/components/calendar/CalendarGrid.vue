@@ -28,28 +28,39 @@
         class="overflow-y-auto"
         style="max-height: 600px;"
       >
-        <div
-          v-for="hour in hours"
-          :key="hour"
-          class="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-100 min-h-[60px]"
-        >
-          <!-- Time label -->
-          <div class="p-1 text-xs text-gray-400 text-right pr-2 pt-0">
-            {{ formatHour(hour) }}
+        <div class="grid grid-cols-[60px_repeat(7,1fr)]">
+          <!-- Time labels column -->
+          <div>
+            <div
+              v-for="hour in hours"
+              :key="hour"
+              class="h-[60px] p-1 text-xs text-gray-400 text-right pr-2"
+            >
+              {{ formatHour(hour) }}
+            </div>
           </div>
 
-          <!-- Day cells -->
+          <!-- Day columns with absolute-positioned events -->
           <div
             v-for="day in weekDays"
-            :key="`${day.toISOString()}-${hour}`"
-            class="border-l border-gray-100 p-0.5 min-h-[60px] min-w-0 overflow-hidden hover:bg-gray-50 cursor-pointer relative"
-            @click="$emit('slotClick', day, hour)"
+            :key="day.toISOString()"
+            class="border-l border-gray-100 relative"
           >
+            <!-- Hour grid lines (clickable) -->
+            <div
+              v-for="hour in hours"
+              :key="hour"
+              class="h-[60px] border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+              @click="$emit('slotClick', day, hour)"
+            />
+
+            <!-- Events overlay -->
             <CalendarEventCard
-              v-for="evt in getEventsForHour(day, hour)"
+              v-for="evt in getEventsForDay(day)"
               :key="evt.id"
               :event="evt"
-              class="mb-0.5"
+              class="absolute overflow-hidden"
+              :style="getEventStyle(evt, day)"
               @select="$emit('eventClick', evt)"
             />
           </div>
@@ -119,6 +130,101 @@ const props = defineProps<{
   getEventsForDay: (day: Date) => CalendarEvent[]
   getEventsForHour: (day: Date, hour: number) => CalendarEvent[]
 }>()
+
+const HOUR_HEIGHT = 60 // px per hour row
+const GRID_START_HOUR = 7 // first hour shown in the grid
+
+// Compute layout for overlapping events — assigns each event a column and total columns count
+const dayEventLayouts = computed(() => {
+  const layouts = new Map<string, Map<string, { column: number; totalColumns: number }>>()
+
+  for (const day of props.weekDays) {
+    const dayKey = day.toISOString()
+    const events = props.getEventsForDay(day)
+      .map(e => ({
+        id: e.id,
+        start: new Date(e.startTime).getHours() * 60 + new Date(e.startTime).getMinutes(),
+        end: new Date(e.endTime).getHours() * 60 + new Date(e.endTime).getMinutes()
+      }))
+      .sort((a, b) => a.start - b.start || a.end - b.end)
+
+    // Assign columns using a greedy approach
+    const columns: Array<number> = [] // tracks end-time of last event in each column
+    const assignments = new Map<string, { column: number; totalColumns: number }>()
+
+    // Group overlapping events into clusters
+    const clusters: Array<Array<typeof events[number]>> = []
+    let currentCluster: Array<typeof events[number]> = []
+    let clusterEnd = 0
+
+    for (const evt of events) {
+      if (currentCluster.length === 0 || evt.start < clusterEnd) {
+        currentCluster.push(evt)
+        clusterEnd = Math.max(clusterEnd, evt.end)
+      } else {
+        clusters.push(currentCluster)
+        currentCluster = [evt]
+        clusterEnd = evt.end
+      }
+    }
+    if (currentCluster.length > 0) clusters.push(currentCluster)
+
+    // Assign columns within each cluster
+    for (const cluster of clusters) {
+      const clusterColumns: Array<number> = []
+      const clusterAssignments: Array<{ id: string; column: number }> = []
+
+      for (const evt of cluster) {
+        // Find first column where event fits (no overlap)
+        let col = 0
+        while (col < clusterColumns.length && clusterColumns[col]! > evt.start) {
+          col++
+        }
+        if (col >= clusterColumns.length) clusterColumns.push(0)
+        clusterColumns[col] = evt.end
+        clusterAssignments.push({ id: evt.id, column: col })
+      }
+
+      const totalCols = clusterColumns.length
+      for (const a of clusterAssignments) {
+        assignments.set(a.id, { column: a.column, totalColumns: totalCols })
+      }
+    }
+
+    layouts.set(dayKey, assignments)
+  }
+
+  return layouts
+})
+
+function getEventStyle(event: CalendarEvent, day: Date) {
+  const start = new Date(event.startTime)
+  const end = new Date(event.endTime)
+  const startMinutes = start.getHours() * 60 + start.getMinutes()
+  const endMinutes = end.getHours() * 60 + end.getMinutes()
+  const durationMinutes = Math.max(endMinutes - startMinutes, 15)
+
+  const topPx = ((startMinutes - GRID_START_HOUR * 60) / 60) * HOUR_HEIGHT
+  const heightPx = (durationMinutes / 60) * HOUR_HEIGHT
+
+  // Get column layout for overlapping events
+  const dayKey = day.toISOString()
+  const dayLayout = dayEventLayouts.value.get(dayKey)
+  const layout = dayLayout?.get(event.id)
+  const column = layout?.column ?? 0
+  const totalColumns = layout?.totalColumns ?? 1
+
+  const widthPercent = 100 / totalColumns
+  const leftPercent = column * widthPercent
+
+  return {
+    top: `${Math.max(topPx, 0)}px`,
+    height: `${heightPx}px`,
+    left: `${leftPercent}%`,
+    width: `${widthPercent - 1}%`, // slight gap between columns
+    zIndex: 10 + column
+  }
+}
 
 defineEmits<{
   slotClick: [day: Date, hour: number]

@@ -31,6 +31,8 @@ const updateSchema = z.object({
   ]).nullable().optional(),
   defaultLocation: z.string().max(500).nullable().optional(),
   defaultLocationConfig: z.any().nullable().optional(),
+  journeyTemplateId: z.string().nullable().optional(),
+  isClientFacing: z.boolean().optional(),
   isPubliclyBookable: z.boolean().optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().min(0).optional()
@@ -96,6 +98,8 @@ export default defineEventHandler(async (event) => {
   if (data.defaultLocationConfig !== undefined) {
     updates.defaultLocationConfig = data.defaultLocationConfig ? JSON.stringify(data.defaultLocationConfig) : null
   }
+  if (data.journeyTemplateId !== undefined) updates.journeyTemplateId = data.journeyTemplateId
+  if (data.isClientFacing !== undefined) updates.isClientFacing = data.isClientFacing
   if (data.isPubliclyBookable !== undefined) updates.isPubliclyBookable = data.isPubliclyBookable
   if (data.isActive !== undefined) updates.isActive = data.isActive
   if (data.displayOrder !== undefined) updates.displayOrder = data.displayOrder

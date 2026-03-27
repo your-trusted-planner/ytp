@@ -78,33 +78,28 @@ export default defineEventHandler(async (event) => {
 
   await db.insert(schema.matters).values(newMatter)
 
-  // If engagement journey template is selected, create a clientJourney instance
-  if (result.data.engagementJourneyTemplateId) {
-    const clientJourneyId = generateId()
+  // If engagement journey template is selected, initiate the engagement journey
+  if (result.data.engagementJourneyTemplateId && resolved) {
+    try {
+      const { initiateEngagementJourney } = await import('../../utils/journey-initiator')
+      const journeyResult = await initiateEngagementJourney({
+        personId: resolved.personId,
+        journeyTemplateId: result.data.engagementJourneyTemplateId,
+        matterId: newMatter.id,
+        initiatedBy: user.id,
+        event
+      })
 
-    await db.insert(schema.clientJourneys).values({
-      id: clientJourneyId,
-      clientId: legacyClientId,
-      matterId: newMatter.id,
-      catalogId: null, // Engagement journeys are not tied to a specific service
-      journeyId: result.data.engagementJourneyTemplateId,
-      currentStepId: null,
-      status: 'NOT_STARTED',
-      priority: 'MEDIUM',
-      startedAt: null,
-      completedAt: null,
-      pausedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
+      // Update matter with clientJourney reference
+      await db.update(schema.matters)
+        .set({ engagementJourneyId: journeyResult.clientJourneyId })
+        .where(eq(schema.matters.id, newMatter.id))
 
-    // Update matter with clientJourney reference
-    await db.update(schema.matters)
-      .set({ engagementJourneyId: clientJourneyId })
-      .where(eq(schema.matters.id, newMatter.id))
-
-    // Update the returned matter object to include the engagement journey ID
-    newMatter.engagementJourneyId = clientJourneyId
+      newMatter.engagementJourneyId = journeyResult.clientJourneyId
+    } catch (err: any) {
+      console.error('Failed to initiate engagement journey:', err.message)
+      // Non-fatal — matter was still created
+    }
   }
 
   // Create Google Drive folder for matter

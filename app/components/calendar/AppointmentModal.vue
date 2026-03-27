@@ -8,18 +8,6 @@
       class="space-y-4"
       @submit.prevent="handleSubmit"
     >
-      <!-- Title -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-        <input
-          v-model="form.title"
-          type="text"
-          required
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          placeholder="Appointment title"
-        >
-      </div>
-
       <!-- Type -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -39,6 +27,18 @@
             {{ t.name }}
           </option>
         </select>
+      </div>
+
+      <!-- Title -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+        <input
+          v-model="form.title"
+          type="text"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          placeholder="Appointment title"
+        >
       </div>
 
       <!-- Staff Attendees (moved up to inform slot picker) -->
@@ -200,7 +200,10 @@
 
       <!-- Invitees -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">With (optional)</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          With{{ selectedTypeIsClientFacing ? '' : ' (optional)' }}
+          <span v-if="selectedTypeIsClientFacing" class="text-red-500 ml-0.5">*</span>
+        </label>
         <!-- Selected people chips -->
         <div
           v-if="selectedPeople.length > 0"
@@ -341,6 +344,8 @@ import { X } from 'lucide-vue-next'
 import { useCalendarStore } from '~/stores/useCalendarStore'
 import InternalSlotPicker from './InternalSlotPicker.vue'
 
+const toast = useToast()
+
 const props = defineProps<{
   modelValue: boolean
   initialData?: Record<string, any>
@@ -361,6 +366,13 @@ const isOpen = computed({
 
 const submitting = ref(false)
 const hasZoomConnection = ref(false)
+const previousAutoTitle = ref('')
+
+const selectedTypeIsClientFacing = computed(() => {
+  if (!form.value.appointmentTypeId) return false
+  const type = calendar.getTypeById(form.value.appointmentTypeId)
+  return type?.isClientFacing ?? false
+})
 const personOptions = ref<Array<{ label: string, value: string }>>([])
 const personSearch = ref('')
 const showPersonDropdown = ref(false)
@@ -507,6 +519,7 @@ watch(() => props.initialData, (data) => {
 // Reset form when modal opens fresh (no initialData)
 watch(isOpen, (open) => {
   if (open && !props.initialData) {
+    previousAutoTitle.value = ''
     form.value = {
       title: '',
       description: '',
@@ -624,6 +637,12 @@ function onTypeChange() {
   const type = calendar.getTypeById(typeId)
   if (!type) return
 
+  // Auto-fill title from appointment type name (only if empty or was previously auto-filled)
+  if (!form.value.title || form.value.title === previousAutoTitle.value) {
+    form.value.title = type.name
+    previousAutoTitle.value = type.name
+  }
+
   // Auto-fill duration from appointment type
   if (durationOptions.includes(type.defaultDurationMinutes)) {
     form.value.durationMinutes = type.defaultDurationMinutes
@@ -679,6 +698,11 @@ function onLocationTypeChange() {
 
 async function handleSubmit() {
   if (!form.value.title || !form.value.date || !form.value.time) return
+
+  if (selectedTypeIsClientFacing.value && selectedPeople.value.length === 0) {
+    toast.warning('This appointment type is client-facing — please add at least one person')
+    return
+  }
 
   submitting.value = true
   try {

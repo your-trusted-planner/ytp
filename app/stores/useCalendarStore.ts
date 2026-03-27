@@ -41,6 +41,7 @@ export interface AppointmentType {
   consultationFeeEnabled: boolean
   defaultLocation: string | null
   defaultLocationConfig: string | null
+  isClientFacing: boolean
   isPubliclyBookable: boolean
   displayOrder: number
 }

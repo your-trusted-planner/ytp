@@ -15,6 +15,9 @@
 
           <!-- User Menu -->
           <div class="flex items-center space-x-2">
+            <!-- Quick Create -->
+            <NavigationQuickCreate />
+
             <!-- Notification Bell -->
             <NoticesNotificationBell />
 

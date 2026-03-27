@@ -39,6 +39,8 @@ export const appointmentTypes = sqliteTable('appointment_types', {
   businessHours: text('business_hours'), // JSON BusinessHours | null, null = system default 9-5 M-F
   defaultLocation: text('default_location'),
   defaultLocationConfig: text('default_location_config'), // JSON LocationConfig
+  journeyTemplateId: text('journey_template_id'), // FK → journeys.id (no .references() to avoid circular import). Links to engagement journey template for auto-initiation.
+  isClientFacing: integer('is_client_facing', { mode: 'boolean' }).notNull().default(false), // Requires at least one non-staff attendee (client/prospect)
   isPubliclyBookable: integer('is_publicly_bookable', { mode: 'boolean' }).notNull().default(false),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   displayOrder: integer('display_order').notNull().default(0),

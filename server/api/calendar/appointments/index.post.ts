@@ -37,6 +37,88 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   const appointmentId = generateId()
 
+  // Resolve clientId from invitees for client-facing appointment types
+  if (data.appointmentTypeId && !data.clientId && data.inviteeIds.length > 0) {
+    const apptType = await db.select({ isClientFacing: schema.appointmentTypes.isClientFacing })
+      .from(schema.appointmentTypes)
+      .where(eq(schema.appointmentTypes.id, data.appointmentTypeId))
+      .get()
+
+    if (apptType?.isClientFacing) {
+      // First invitee is the client — resolve their person ID to a user ID
+      const personId = data.inviteeIds[0]
+
+      // Check if person has a user account
+      const existingUser = await db.select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.personId, personId))
+        .get()
+
+      if (existingUser) {
+        data.clientId = existingUser.id
+      } else {
+        // Create user + client records via the journey initiator's pattern
+        const person = await db.select()
+          .from(schema.people)
+          .where(eq(schema.people.id, personId))
+          .get()
+
+        if (person) {
+          const { nanoid } = await import('nanoid')
+          const { hashPassword } = await import('../../../utils/auth')
+          const userId = nanoid()
+          const hashedPw = await hashPassword(nanoid(32))
+
+          await db.insert(schema.users).values({
+            id: userId,
+            personId,
+            email: person.email || `${userId}@placeholder.internal`,
+            firstName: person.firstName || '',
+            lastName: person.lastName || '',
+            phone: person.phone || null,
+            password: hashedPw,
+            role: 'CLIENT',
+            status: 'ACTIVE',
+            adminLevel: 0
+          })
+
+          // Ensure client record exists
+          const existingClient = await db.select({ id: schema.clients.id })
+            .from(schema.clients)
+            .where(eq(schema.clients.personId, personId))
+            .get()
+
+          if (!existingClient) {
+            await db.insert(schema.clients).values({
+              id: nanoid(),
+              personId,
+              status: 'PROSPECTIVE',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+          }
+
+          data.clientId = userId
+        }
+      }
+    }
+  }
+
+  // Validate client-facing appointment types have a client after resolution
+  if (data.appointmentTypeId && !data.clientId) {
+    const apptType = await db.select({ isClientFacing: schema.appointmentTypes.isClientFacing })
+      .from(schema.appointmentTypes)
+      .where(eq(schema.appointmentTypes.id, data.appointmentTypeId))
+      .get()
+
+    if (apptType?.isClientFacing) {
+      throw createError({
+        statusCode: 400,
+        message: 'This appointment type is client-facing and requires a client or invitee'
+      })
+    }
+  }
+
   // Check staff availability if requested
   if (data.checkAvailability && data.attendeeIds.length > 0) {
     const { getMultiCalendarFreeBusy } = await import('../../../utils/google-calendar')
@@ -282,6 +364,82 @@ export default defineEventHandler(async (event) => {
       }
     } catch (err: any) {
       console.error('Failed to auto-link MEETING action item:', err.message)
+      // Non-fatal — appointment was still created successfully
+    }
+  }
+
+  // Auto-initiate engagement journey if appointment type has a journeyTemplateId
+  if (data.appointmentTypeId) {
+    try {
+      const appointmentType = await db.select({
+        journeyTemplateId: schema.appointmentTypes.journeyTemplateId
+      })
+        .from(schema.appointmentTypes)
+        .where(eq(schema.appointmentTypes.id, data.appointmentTypeId))
+        .get()
+
+      if (appointmentType?.journeyTemplateId) {
+        // Determine personId from clientId
+        let personId: string | null = null
+        if (data.clientId) {
+          const clientUser = await db.select({ personId: schema.users.personId })
+            .from(schema.users)
+            .where(eq(schema.users.id, data.clientId))
+            .get()
+          personId = clientUser?.personId || null
+        }
+
+        if (personId) {
+          const { initiateEngagementJourney } = await import('../../../utils/journey-initiator')
+          const result = await initiateEngagementJourney({
+            personId,
+            journeyTemplateId: appointmentType.journeyTemplateId,
+            appointmentId,
+            initiatedBy: user.id,
+            event
+          })
+
+          // If journey was just created (actionItemsCreated > 0), link any MEETING items
+          // that match this appointment type to this appointment
+          if (result.actionItemsCreated > 0) {
+            const { and: andOp, inArray: inArrayOp } = await import('drizzle-orm')
+            const newMeetingItems = await db.select({
+              id: schema.actionItems.id,
+              config: schema.actionItems.config
+            })
+              .from(schema.actionItems)
+              .where(andOp(
+                eq(schema.actionItems.clientJourneyId, result.clientJourneyId),
+                eq(schema.actionItems.actionType, 'MEETING'),
+                inArrayOp(schema.actionItems.status, ['PENDING', 'IN_PROGRESS'])
+              ))
+              .all()
+
+            const now = new Date()
+            for (const item of newMeetingItems) {
+              if (!item.config) continue
+              try {
+                const itemConfig = JSON.parse(item.config)
+                if (itemConfig.appointmentTypeId !== data.appointmentTypeId) continue
+
+                const updates: any = { resourceId: appointmentId, updatedAt: now }
+                if (itemConfig.completionTrigger === 'SCHEDULED') {
+                  updates.status = 'COMPLETE'
+                  updates.completedAt = now
+                  updates.completedBy = user.id
+                }
+
+                await db.update(schema.actionItems)
+                  .set(updates)
+                  .where(eq(schema.actionItems.id, item.id))
+                break
+              } catch { /* skip */ }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to auto-initiate engagement journey:', err.message)
       // Non-fatal — appointment was still created successfully
     }
   }

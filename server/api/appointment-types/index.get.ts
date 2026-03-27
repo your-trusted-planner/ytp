@@ -15,6 +15,8 @@ export default defineEventHandler(async () => {
       consultationFee: schema.appointmentTypes.consultationFee,
       consultationFeeEnabled: schema.appointmentTypes.consultationFeeEnabled,
       defaultLocation: schema.appointmentTypes.defaultLocation,
+      defaultLocationConfig: schema.appointmentTypes.defaultLocationConfig,
+      isClientFacing: schema.appointmentTypes.isClientFacing,
       isPubliclyBookable: schema.appointmentTypes.isPubliclyBookable,
       displayOrder: schema.appointmentTypes.displayOrder
     })

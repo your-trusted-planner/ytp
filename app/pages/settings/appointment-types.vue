@@ -280,248 +280,281 @@
     <UiModal
       v-model="showModal"
       :title="editing ? 'Edit Appointment Type' : 'Add Appointment Type'"
-      size="lg"
+      size="xl"
     >
       <form
-        class="space-y-4"
+        class="grid grid-cols-1 md:grid-cols-2 gap-6"
         @submit.prevent="handleSave"
       >
-        <UiInput
-          v-model="form.name"
-          label="Name"
-          placeholder="e.g., Initial WYDAPT Consultation"
-          required
-        />
-
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Left Column: Core Details -->
+        <div class="space-y-4">
           <UiInput
-            v-model="form.slug"
-            label="URL Slug"
-            placeholder="Auto-generated from name"
+            v-model="form.name"
+            label="Name"
+            placeholder="e.g., Initial WYDAPT Consultation"
+            required
           />
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model="form.color"
-                type="color"
-                class="w-10 h-10 rounded border border-gray-300 cursor-pointer"
-              >
-              <div class="flex gap-1 flex-wrap">
-                <button
-                  v-for="swatch in colorSwatches"
-                  :key="swatch"
-                  type="button"
-                  class="w-6 h-6 rounded-full border-2 transition-transform"
-                  :class="form.color === swatch ? 'border-gray-800 scale-110' : 'border-transparent'"
-                  :style="{ backgroundColor: swatch }"
-                  @click="form.color = swatch"
-                />
+
+          <div class="grid grid-cols-2 gap-4">
+            <UiInput
+              v-model="form.slug"
+              label="URL Slug"
+              placeholder="Auto-generated from name"
+            />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="form.color"
+                  type="color"
+                  class="w-10 h-10 rounded border border-gray-300 cursor-pointer"
+                >
+                <div class="flex gap-1 flex-wrap">
+                  <button
+                    v-for="swatch in colorSwatches"
+                    :key="swatch"
+                    type="button"
+                    class="w-6 h-6 rounded-full border-2 transition-transform"
+                    :class="form.color === swatch ? 'border-gray-800 scale-110' : 'border-transparent'"
+                    :style="{ backgroundColor: swatch }"
+                    @click="form.color = swatch"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <UiTextarea
-          v-model="form.description"
-          label="Description"
-          placeholder="Describe this appointment type for prospects..."
-          :rows="3"
-        />
-
-        <UiInput
-          v-model="form.defaultDurationMinutes"
-          label="Duration (minutes)"
-          type="number"
-          min="5"
-          max="480"
-        />
-
-        <!-- Default Location -->
-        <div class="border rounded-lg p-4 space-y-3">
-          <label class="block text-sm font-medium text-gray-700">Default Location</label>
-          <select
-            v-model="form.locationType"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          >
-            <option value="none">
-              No default location
-            </option>
-            <option value="room">
-              Room
-            </option>
-            <option value="video">
-              Video Meeting
-            </option>
-            <option value="custom">
-              Custom Text
-            </option>
-          </select>
-
-          <!-- Room Selector -->
-          <div v-if="form.locationType === 'room'">
-            <select
-              v-model="form.locationRoomId"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            >
-              <option value="">
-                Select a room...
-              </option>
-              <option
-                v-for="room in activeRooms"
-                :key="room.id"
-                :value="room.id"
-              >
-                {{ room.name }}{{ room.building ? ` (${room.building})` : '' }}
-              </option>
-            </select>
-            <p
-              v-if="activeRooms.length === 0"
-              class="text-xs text-gray-400 mt-1"
-            >
-              No rooms configured. <NuxtLink
-                to="/settings/rooms"
-                class="text-accent-600 underline"
-              >Add rooms</NuxtLink>
-            </p>
-          </div>
-
-          <!-- Video Provider Selector -->
-          <div v-if="form.locationType === 'video'">
-            <select
-              v-model="form.locationVideoProvider"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            >
-              <option value="zoom">
-                Zoom
-              </option>
-              <option
-                value="google_meet"
-                disabled
-              >
-                Google Meet (coming soon)
-              </option>
-            </select>
-          </div>
-
-          <!-- Custom Text -->
-          <UiInput
-            v-if="form.locationType === 'custom'"
-            v-model="form.defaultLocation"
-            placeholder="e.g., Zoom, Office"
+          <UiTextarea
+            v-model="form.description"
+            label="Description"
+            placeholder="Describe this appointment type for prospects..."
+            :rows="3"
           />
-        </div>
 
-        <!-- Consultation Fee -->
-        <div class="border rounded-lg p-4 space-y-3">
-          <UiToggle
-            v-model="form.consultationFeeEnabled"
-            label="Consultation Fee"
-            description="Require payment before booking"
-          />
           <UiInput
-            v-if="form.consultationFeeEnabled"
-            v-model="form.consultationFeeDisplay"
-            label="Fee Amount ($)"
+            v-model="form.defaultDurationMinutes"
+            label="Duration (minutes)"
             type="number"
-            step="0.01"
-            min="0"
-            placeholder="375.00"
+            min="5"
+            max="480"
           />
-        </div>
 
-        <!-- Visibility -->
-        <div class="border rounded-lg p-4 space-y-3">
-          <UiToggle
-            v-model="form.isPubliclyBookable"
-            label="Publicly Bookable"
-            description="Show on public booking page with a shareable link"
-          />
-        </div>
+          <!-- Default Location -->
+          <div class="border rounded-lg p-4 space-y-3">
+            <label class="block text-sm font-medium text-gray-700">Default Location</label>
+            <select
+              v-model="form.locationType"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            >
+              <option value="none">
+                No default location
+              </option>
+              <option value="room">
+                Room
+              </option>
+              <option value="video">
+                Video Meeting
+              </option>
+              <option value="custom">
+                Custom Text
+              </option>
+            </select>
 
-        <!-- Eligible Staff -->
-        <div class="border rounded-lg p-4 space-y-3">
-          <label class="block text-sm font-medium text-gray-700">Eligible Staff</label>
-          <div class="space-y-2">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                v-model="form.staffEligibility"
-                type="radio"
-                value="any"
-                class="text-accent-600 focus:ring-accent-500"
+            <!-- Room Selector -->
+            <div v-if="form.locationType === 'room'">
+              <select
+                v-model="form.locationRoomId"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
-              <span class="text-sm text-gray-700">Any staff member with a calendar</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                v-model="form.staffEligibility"
-                type="radio"
-                value="attorneys_only"
-                class="text-accent-600 focus:ring-accent-500"
-              >
-              <span class="text-sm text-gray-700">Attorneys only</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                v-model="form.staffEligibility"
-                type="radio"
-                value="specific"
-                class="text-accent-600 focus:ring-accent-500"
-              >
-              <span class="text-sm text-gray-700">Specific people</span>
-            </label>
-          </div>
-          <div
-            v-if="form.staffEligibility === 'specific'"
-            class="space-y-2 pt-2"
-          >
-            <p class="text-sm text-gray-600">
-              Select eligible staff members:
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <label
-                v-for="staff in staffList"
-                :key="staff.id"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm cursor-pointer transition-colors"
-                :class="form.assignedAttorneyIds.includes(staff.id) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
-              >
-                <input
-                  v-model="form.assignedAttorneyIds"
-                  type="checkbox"
-                  :value="staff.id"
-                  class="sr-only"
+                <option value="">
+                  Select a room...
+                </option>
+                <option
+                  v-for="room in activeRooms"
+                  :key="room.id"
+                  :value="room.id"
                 >
-                {{ staff.name }}
+                  {{ room.name }}{{ room.building ? ` (${room.building})` : '' }}
+                </option>
+              </select>
+              <p
+                v-if="activeRooms.length === 0"
+                class="text-xs text-gray-400 mt-1"
+              >
+                No rooms configured. <NuxtLink
+                  to="/settings/rooms"
+                  class="text-accent-600 underline"
+                >Add rooms</NuxtLink>
+              </p>
+            </div>
+
+            <!-- Video Provider Selector -->
+            <div v-if="form.locationType === 'video'">
+              <select
+                v-model="form.locationVideoProvider"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="zoom">
+                  Zoom
+                </option>
+                <option
+                  value="google_meet"
+                  disabled
+                >
+                  Google Meet (coming soon)
+                </option>
+              </select>
+            </div>
+
+            <!-- Custom Text -->
+            <UiInput
+              v-if="form.locationType === 'custom'"
+              v-model="form.defaultLocation"
+              placeholder="e.g., Zoom, Office"
+            />
+          </div>
+
+          <!-- Consultation Fee -->
+          <div class="border rounded-lg p-4 space-y-3">
+            <UiToggle
+              v-model="form.consultationFeeEnabled"
+              label="Consultation Fee"
+              description="Require payment before booking"
+            />
+            <UiInput
+              v-if="form.consultationFeeEnabled"
+              v-model="form.consultationFeeDisplay"
+              label="Fee Amount ($)"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="375.00"
+            />
+          </div>
+        </div>
+
+        <!-- Right Column: Configuration & Integrations -->
+        <div class="space-y-4">
+          <!-- Eligible Staff -->
+          <div class="border rounded-lg p-4 space-y-3">
+            <label class="block text-sm font-medium text-gray-700">Eligible Staff</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="form.staffEligibility"
+                  type="radio"
+                  value="any"
+                  class="text-accent-600 focus:ring-accent-500"
+                >
+                <span class="text-sm text-gray-700">Any staff member with a calendar</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="form.staffEligibility"
+                  type="radio"
+                  value="attorneys_only"
+                  class="text-accent-600 focus:ring-accent-500"
+                >
+                <span class="text-sm text-gray-700">Attorneys only</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="form.staffEligibility"
+                  type="radio"
+                  value="specific"
+                  class="text-accent-600 focus:ring-accent-500"
+                >
+                <span class="text-sm text-gray-700">Specific people</span>
               </label>
             </div>
-          </div>
-        </div>
-
-        <!-- Linked Form -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Intake Form</label>
-          <select
-            v-model="form.formId"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent text-sm"
-          >
-            <option value="">
-              No form
-            </option>
-            <option
-              v-for="f in availableForms"
-              :key="f.id"
-              :value="f.id"
+            <div
+              v-if="form.staffEligibility === 'specific'"
+              class="space-y-2 pt-2"
             >
-              {{ f.name }}
-            </option>
-          </select>
-          <p class="mt-1 text-xs text-gray-500">
-            Shown to prospects during the booking flow
-          </p>
-        </div>
+              <p class="text-sm text-gray-600">
+                Select eligible staff members:
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <label
+                  v-for="staff in staffList"
+                  :key="staff.id"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm cursor-pointer transition-colors"
+                  :class="form.assignedAttorneyIds.includes(staff.id) ? 'bg-accent-50 border-accent-300 text-accent-700' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'"
+                >
+                  <input
+                    v-model="form.assignedAttorneyIds"
+                    type="checkbox"
+                    :value="staff.id"
+                    class="sr-only"
+                  >
+                  {{ staff.name }}
+                </label>
+              </div>
+            </div>
+          </div>
 
-        <!-- Business Hours Override -->
-        <div class="border rounded-lg p-4 space-y-3">
+          <!-- Visibility & Access -->
+          <div class="border rounded-lg p-4 space-y-3">
+            <UiToggle
+              v-model="form.isClientFacing"
+              label="Client-Facing"
+              description="Requires a client or prospect — cannot be scheduled without one"
+            />
+            <UiToggle
+              v-model="form.isPubliclyBookable"
+              label="Publicly Bookable"
+              description="Show on public booking page with a shareable link"
+            />
+          </div>
+
+          <!-- Linked Form -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Intake Form</label>
+            <select
+              v-model="form.formId"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent text-sm"
+            >
+              <option value="">
+                No form
+              </option>
+              <option
+                v-for="f in availableForms"
+                :key="f.id"
+                :value="f.id"
+              >
+                {{ f.name }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">
+              Shown to prospects during the booking flow
+            </p>
+          </div>
+
+          <!-- Engagement Journey Template -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Engagement Journey</label>
+            <select
+              v-model="form.journeyTemplateId"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent text-sm"
+            >
+              <option value="">
+                No journey
+              </option>
+              <option
+                v-for="j in engagementJourneys"
+                :key="j.id"
+                :value="j.id"
+              >
+                {{ j.name }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">
+              Automatically start this engagement journey when an appointment of this type is booked
+            </p>
+          </div>
+
+          <!-- Business Hours Override -->
+          <div class="border rounded-lg p-4 space-y-3">
           <UiToggle
             v-model="customBusinessHours"
             label="Custom Availability Schedule"
@@ -615,6 +648,7 @@
             </div>
           </div>
         </div>
+        </div>
       </form>
 
       <template #footer>
@@ -658,11 +692,13 @@ interface AppointmentType {
   questionnaireId: string | null
   serviceCatalogId: string | null
   formId: string | null
+  journeyTemplateId: string | null
   staffEligibility: 'any' | 'attorneys_only' | 'specific'
   assignedAttorneyIds: string[] | null
   businessHours: { start: number, end: number, days: number[] } | null
   defaultLocation: string | null
   defaultLocationConfig: any | null
+  isClientFacing: boolean
   isPubliclyBookable: boolean
   isActive: boolean
   displayOrder: number
@@ -685,6 +721,7 @@ const types = ref<AppointmentType[]>([])
 const staffList = ref<StaffMember[]>([])
 const activeRooms = ref<Room[]>([])
 const availableForms = ref<Array<{ id: string; name: string }>>([])
+const engagementJourneys = ref<Array<{ id: string; name: string }>>([])
 const loading = ref(true)
 const saving = ref(false)
 const showModal = ref(false)
@@ -716,6 +753,8 @@ const form = ref({
   locationRoomId: '',
   locationVideoProvider: 'zoom' as 'zoom' | 'google_meet',
   formId: '' as string,
+  journeyTemplateId: '' as string,
+  isClientFacing: false,
   isPubliclyBookable: false,
   staffEligibility: 'any' as 'any' | 'attorneys_only' | 'specific',
   assignedAttorneyIds: [] as string[],
@@ -907,6 +946,8 @@ function openAddModal() {
     locationRoomId: '',
     locationVideoProvider: 'zoom',
     formId: '',
+    journeyTemplateId: '',
+    isClientFacing: false,
     isPubliclyBookable: false,
     staffEligibility: 'any',
     assignedAttorneyIds: [],
@@ -956,6 +997,8 @@ function editType(type: AppointmentType) {
     locationRoomId,
     locationVideoProvider,
     formId: type.formId || '',
+    journeyTemplateId: type.journeyTemplateId || '',
+    isClientFacing: type.isClientFacing ?? false,
     isPubliclyBookable: type.isPubliclyBookable,
     staffEligibility: type.staffEligibility || 'any',
     assignedAttorneyIds: type.assignedAttorneyIds ? [...type.assignedAttorneyIds] : [],
@@ -1002,6 +1045,8 @@ async function handleSave() {
       defaultLocation,
       defaultLocationConfig,
       formId: form.value.formId || null,
+      journeyTemplateId: form.value.journeyTemplateId || null,
+      isClientFacing: form.value.isClientFacing,
       isPubliclyBookable: form.value.isPubliclyBookable,
       staffEligibility: form.value.staffEligibility,
       assignedAttorneyIds: form.value.staffEligibility === 'specific' ? form.value.assignedAttorneyIds : null,
@@ -1136,11 +1181,19 @@ async function fetchForms() {
   } catch { /* ignore */ }
 }
 
+async function fetchEngagementJourneys() {
+  try {
+    const data = await $fetch<{ engagementJourneys: Array<{ id: string; name: string }> }>('/api/journeys/engagement-templates')
+    engagementJourneys.value = data.engagementJourneys
+  } catch { /* ignore */ }
+}
+
 onMounted(() => {
   fetchTypes()
   fetchStaff()
   fetchBusinessHours()
   fetchRooms()
   fetchForms()
+  fetchEngagementJourneys()
 })
 </script>

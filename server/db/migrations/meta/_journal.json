@@ -267,6 +267,20 @@
       "when": 1774478289376,
       "tag": "0037_slow_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1774573029161,
+      "tag": "0038_cute_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1774577049342,
+      "tag": "0039_dry_nomad",
+      "breakpoints": true
     }
   ]
 }

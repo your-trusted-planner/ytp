@@ -396,20 +396,29 @@
 
         <!-- Active Journeys -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-              Active Journeys
-            </h3>
-            <p class="text-sm text-gray-500 mt-1">
-              Journeys are automatically created when services with journey templates are added to matters
-            </p>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">
+                Active Journeys
+              </h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Track client engagement and service delivery progress
+              </p>
+            </div>
+            <button
+              v-if="engagementJourneyTemplates.length > 0"
+              class="px-3 py-1.5 text-sm font-medium text-burgundy-700 bg-burgundy-50 border border-burgundy-200 rounded-lg hover:bg-burgundy-100 transition-colors"
+              @click="showStartJourneyModal = true"
+            >
+              + Start Engagement Journey
+            </button>
           </div>
 
           <div
             v-if="journeys.length === 0"
             class="text-center py-8 text-gray-500"
           >
-            No active journeys yet. Add a service to a matter to begin.
+            No active journeys yet. Start an engagement journey or add a service to a matter.
           </div>
 
           <div
@@ -787,6 +796,49 @@
         </div>
       </form>
     </UiModal>
+
+    <!-- Start Engagement Journey Modal -->
+    <UiModal
+      v-model="showStartJourneyModal"
+      title="Start Engagement Journey"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600">
+          Select an engagement journey to start for this client. This will create a guided workflow for the engagement process.
+        </p>
+        <UiSelect
+          v-model="selectedJourneyTemplateId"
+          label="Engagement Journey"
+          required
+        >
+          <option value="">
+            Select a journey...
+          </option>
+          <option
+            v-for="j in engagementJourneyTemplates"
+            :key="j.id"
+            :value="j.id"
+          >
+            {{ j.name }}
+          </option>
+        </UiSelect>
+      </div>
+      <template #footer>
+        <UiButton
+          variant="outline"
+          @click="showStartJourneyModal = false"
+        >
+          Cancel
+        </UiButton>
+        <UiButton
+          :is-loading="startingJourney"
+          :disabled="!selectedJourneyTemplateId"
+          @click="startEngagementJourney"
+        >
+          Start Journey
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -822,6 +874,12 @@ const journeys = ref<any[]>([])
 const documents = ref<any[]>([])
 const relationships = ref<any[]>([])
 const availablePeople = ref<any[]>([])
+
+// Engagement journey state
+const engagementJourneyTemplates = ref<Array<{ id: string; name: string }>>([])
+const showStartJourneyModal = ref(false)
+const selectedJourneyTemplateId = ref('')
+const startingJourney = ref(false)
 
 // Billing state
 const trustBalance = ref(0)
@@ -1139,7 +1197,35 @@ function handleDriveSynced(data: { folderId: string, folderUrl: string }) {
   }
 }
 
+async function fetchEngagementJourneyTemplates() {
+  try {
+    const data = await $fetch<{ engagementJourneys: Array<{ id: string; name: string }> }>('/api/journeys/engagement-templates')
+    engagementJourneyTemplates.value = data.engagementJourneys
+  } catch { /* ignore */ }
+}
+
+async function startEngagementJourney() {
+  if (!selectedJourneyTemplateId.value) return
+  startingJourney.value = true
+  try {
+    await $fetch(`/api/clients/${route.params.id}/start-journey`, {
+      method: 'POST',
+      body: { journeyTemplateId: selectedJourneyTemplateId.value }
+    })
+    toast.success('Engagement journey started')
+    showStartJourneyModal.value = false
+    selectedJourneyTemplateId.value = ''
+    // Refresh client data to show the new journey
+    await fetchClient()
+  } catch (err: any) {
+    toast.error(err.data?.message || 'Failed to start journey')
+  } finally {
+    startingJourney.value = false
+  }
+}
+
 onMounted(() => {
   fetchClient()
+  fetchEngagementJourneyTemplates()
 })
 </script>

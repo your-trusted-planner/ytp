@@ -42,6 +42,8 @@ const createSchema = z.object({
   ]).nullable().optional(),
   defaultLocation: z.string().max(500).nullable().optional(),
   defaultLocationConfig: z.any().nullable().optional(),
+  journeyTemplateId: z.string().nullable().optional(),
+  isClientFacing: z.boolean().default(false),
   isPubliclyBookable: z.boolean().default(false),
   isActive: z.boolean().default(true),
   displayOrder: z.number().int().min(0).default(0)
@@ -85,6 +87,8 @@ export default defineEventHandler(async (event) => {
     businessHours: data.businessHours ? JSON.stringify(data.businessHours) : null,
     defaultLocation: data.defaultLocation || null,
     defaultLocationConfig: data.defaultLocationConfig ? JSON.stringify(data.defaultLocationConfig) : null,
+    journeyTemplateId: data.journeyTemplateId || null,
+    isClientFacing: data.isClientFacing,
     isPubliclyBookable: data.isPubliclyBookable,
     isActive: data.isActive,
     displayOrder: data.displayOrder,

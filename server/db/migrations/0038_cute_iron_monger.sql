@@ -1,0 +1,1 @@
+ALTER TABLE `appointment_types` ADD `journey_template_id` text;

@@ -108,6 +108,37 @@ The `users` table has a `role` column with these values:
 
 **Note**: User roles (`LEAD`, `PROSPECT`) are distinct from **client status** (`PROSPECTIVE`, `ACTIVE`, `FORMER`). Client status is derived from matter activity via the `clients_with_status` SQL view.
 
+### Client Classification & Ethical Obligations
+
+Client status is a **legal classification**, not just a workflow state. It maps directly to Colorado Rules of Professional Conduct and determines the firm's ethical obligations to each person.
+
+#### The Three Classes
+
+| Status | Rule | Ethical Obligation | System Trigger |
+|--------|------|-------------------|----------------|
+| **PROSPECTIVE** | Rule 1.18 | Duty to protect confidential information shared during consultation, even if no representation results. Cannot represent adverse party in same/substantially related matter if confidential info was shared. | Client record exists but no OPEN matter. Engagement journey may exist. |
+| **ACTIVE** | Rules 1.6, 1.7, 1.8 | Full duty of loyalty, confidentiality, and conflict avoidance. Cannot represent adverse parties (concurrent conflicts). Special rules for business transactions, aggregate settlements, etc. | Has at least one OPEN matter. |
+| **FORMER** | Rule 1.9 | Cannot represent someone adverse to a former client in the same or substantially related matter. Continuing duty of confidentiality. | Has matters, but all are CLOSED. |
+
+#### Key Principles
+
+1. **A person who has ever had a matter cannot go back to PROSPECTIVE.** Per Rule 1.18(a), "prospective client" means someone who "consults with a lawyer about the *possibility* of forming a client-lawyer relationship." Once a matter has existed, the relationship was formed. They are either ACTIVE or FORMER.
+
+2. **The engagement journey captures the Rule 1.18 moment.** When someone books a consultation (e.g., Life & Legacy Planning Session), an engagement journey starts. This is the system's record that a consultation occurred and confidential information may have been shared — even if no matter is ever created. The engagement journey serves as the audit trail for Rule 1.18 obligations.
+
+3. **The matter is the boundary between PROSPECTIVE and ACTIVE.** Creating an OPEN matter means the firm has undertaken representation. This is the client-lawyer relationship forming, triggering the full duties of Rules 1.6-1.8.
+
+4. **Client record creation = ethical obligations attach.** A client record should be created when the firm's ethical duties begin — at the start of an engagement journey (consultation), not just when a matter is created. A person without a client record is just a human in the system (spouse, beneficiary, referral contact) with no ethical obligations.
+
+#### Conflict Checking Implications
+
+When running conflict checks, the system must consider:
+- **ACTIVE clients**: Full conflict check under Rules 1.7/1.8 — cannot take adverse representation
+- **FORMER clients**: Check under Rule 1.9 — cannot take adverse representation in same/substantially related matter
+- **PROSPECTIVE clients**: Check under Rule 1.18 — if confidential information was shared during consultation (engagement journey exists), cannot take adverse representation in same matter
+
+The `clients_with_status` view provides the authoritative classification. The engagement journey provides the audit trail of when and why the relationship began.
+
 ### Key Entity Tables
 
 | Entity | Table | Name Resolution |

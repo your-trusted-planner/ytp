@@ -21,6 +21,8 @@ export default defineEventHandler(async () => {
       businessHours: schema.appointmentTypes.businessHours,
       defaultLocation: schema.appointmentTypes.defaultLocation,
       defaultLocationConfig: schema.appointmentTypes.defaultLocationConfig,
+      journeyTemplateId: schema.appointmentTypes.journeyTemplateId,
+      isClientFacing: schema.appointmentTypes.isClientFacing,
       isPubliclyBookable: schema.appointmentTypes.isPubliclyBookable,
       isActive: schema.appointmentTypes.isActive,
       displayOrder: schema.appointmentTypes.displayOrder,

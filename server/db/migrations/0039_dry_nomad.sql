@@ -1,0 +1,1 @@
+ALTER TABLE `appointment_types` ADD `is_client_facing` integer DEFAULT false NOT NULL;
