@@ -15,19 +15,11 @@
           Manage your client list
         </p>
       </div>
-      <div class="flex gap-2">
-        <UiButton
-          variant="outline"
-          @click="showAddModal = true"
-        >
-          Quick Add
+      <NuxtLink to="/clients/new">
+        <UiButton>
+          New Client Intake
         </UiButton>
-        <NuxtLink to="/clients/new">
-          <UiButton>
-            New Client Intake
-          </UiButton>
-        </NuxtLink>
-      </div>
+      </NuxtLink>
     </div>
 
     <!-- Status Filter -->
@@ -140,12 +132,22 @@
 
         <!-- Actions column -->
         <template #cell-actions="{ row }">
-          <NuxtLink
-            :to="`/clients/${row.id}`"
-            class="text-accent-600 hover:text-accent-900"
-          >
-            View Details
-          </NuxtLink>
+          <div class="flex items-center gap-3">
+            <NuxtLink
+              :to="`/clients/${row.id}`"
+              class="text-accent-600 hover:text-accent-900 text-sm"
+            >
+              View
+            </NuxtLink>
+            <button
+              v-if="row.userId"
+              class="text-gray-400 hover:text-amber-600 transition-colors"
+              title="View as Client"
+              @click.stop="impersonateClient(row.userId)"
+            >
+              <Eye class="w-4 h-4" />
+            </button>
+          </div>
         </template>
       </UiDataTable>
     </UiCard>
@@ -207,7 +209,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { CheckCircle, AlertTriangle, X } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, X, Eye } from 'lucide-vue-next'
 import type { Column, PaginationMeta } from '~/components/ui/DataTable.vue'
 
 const toast = useToast()
@@ -437,6 +439,19 @@ const handleAddClient = async () => {
 // Navigate to client details
 const navigateToClient = (client: any) => {
   router.push(`/clients/${client.id}`)
+}
+
+async function impersonateClient(userId: string) {
+  try {
+    await $fetch('/api/admin/impersonate', {
+      method: 'POST',
+      body: { userId }
+    })
+    window.location.href = '/my-journeys'
+  } catch (err: any) {
+    const toast = useToast()
+    toast.error(err.data?.message || 'Failed to impersonate client')
+  }
 }
 
 // Format date for display

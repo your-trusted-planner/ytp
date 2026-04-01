@@ -119,6 +119,28 @@ export default defineEventHandler(async (event) => {
     }
 
     attachUserContext(dbUser)
+
+    // Handle impersonation: swap user context to the impersonated client
+    // Skip for /api/admin/* routes so staff can still stop impersonating
+    const session = await getUserSession(event)
+    if (session.impersonating && !path.startsWith('/api/admin/')) {
+      const impersonated = session.impersonating as any
+      event.context.realUser = { ...event.context.user }
+      event.context.isImpersonating = true
+      event.context.user = {
+        id: impersonated.userId,
+        personId: impersonated.personId || null,
+        email: impersonated.email,
+        role: impersonated.role || 'CLIENT',
+        adminLevel: 0,
+        firstName: impersonated.firstName,
+        lastName: impersonated.lastName
+      }
+      event.context.userId = impersonated.userId
+      event.context.personId = impersonated.personId || null
+      event.context.userRole = impersonated.role || 'CLIENT'
+      event.context.adminLevel = 0
+    }
   }
   catch (error: any) {
     // Re-throw if already an H3 error (like our 403 above)

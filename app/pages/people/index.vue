@@ -426,6 +426,10 @@ function formatDate(timestamp?: number) {
 // On mount
 onMounted(() => {
   fetchPeople()
+  const route = useRoute()
+  if (route.query.add === 'true') {
+    showAddModal.value = true
+  }
 })
 </script>
 

@@ -49,6 +49,16 @@
           <Edit class="w-4 h-4 mr-1" />
           Edit Client
         </UiButton>
+        <UiButton
+          v-if="clientUserId"
+          variant="outline"
+          size="sm"
+          :is-loading="impersonating"
+          @click="impersonateClient"
+        >
+          <Eye class="w-4 h-4 mr-1" />
+          View as Client
+        </UiButton>
       </div>
     </div>
 
@@ -843,7 +853,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, DollarSign } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, DollarSign, Eye } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 
 const toast = useToast()
@@ -874,6 +884,10 @@ const journeys = ref<any[]>([])
 const documents = ref<any[]>([])
 const relationships = ref<any[]>([])
 const availablePeople = ref<any[]>([])
+
+// Impersonation state
+const clientUserId = ref<string | null>(null)
+const impersonating = ref(false)
 
 // Engagement journey state
 const engagementJourneyTemplates = ref<Array<{ id: string; name: string }>>([])
@@ -928,6 +942,7 @@ async function fetchClient() {
 
     client.value = data.client
     clientProfile.value = data.profile
+    clientUserId.value = data.client?.userId || null
     matters.value = data.matters || []
     journeys.value = data.journeys || []
     documents.value = data.documents || []
@@ -1194,6 +1209,22 @@ function handleDriveSynced(data: { folderId: string, folderUrl: string }) {
     clientProfile.value.google_drive_sync_status = 'SYNCED'
     clientProfile.value.google_drive_sync_error = null
     clientProfile.value.google_drive_last_sync_at = Math.floor(Date.now() / 1000)
+  }
+}
+
+async function impersonateClient() {
+  if (!clientUserId.value) return
+  impersonating.value = true
+  try {
+    await $fetch('/api/admin/impersonate', {
+      method: 'POST',
+      body: { userId: clientUserId.value }
+    })
+    // Full page reload to /my-journeys so the session refreshes completely
+    window.location.href = '/my-journeys'
+  } catch (err: any) {
+    toast.error(err.data?.message || 'Failed to impersonate client')
+    impersonating.value = false
   }
 }
 

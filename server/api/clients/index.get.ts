@@ -111,6 +111,23 @@ export default defineEventHandler(async (event) => {
   const clientsData = await clientsQuery.all()
 
   // Transform to match frontend expectations
+  // Batch resolve userIds for impersonation (find CLIENT user accounts by personId)
+  const personIds = clientsData.map(c => c.personId).filter(Boolean) as string[]
+  const userMap = new Map<string, string>()
+  if (personIds.length > 0) {
+    const { inArray } = await import('drizzle-orm')
+    const clientUsers = await db.select({ id: schema.users.id, personId: schema.users.personId })
+      .from(schema.users)
+      .where(and(
+        inArray(schema.users.personId, personIds),
+        eq(schema.users.role, 'CLIENT')
+      ))
+      .all()
+    for (const u of clientUsers) {
+      if (u.personId) userMap.set(u.personId, u.id)
+    }
+  }
+
   const clients = clientsData.map(client => ({
     id: client.id,
     personId: client.personId,
@@ -124,6 +141,7 @@ export default defineEventHandler(async (event) => {
     status: client.status,
     createdAt: client.createdAt instanceof Date ? client.createdAt.getTime() : client.createdAt,
     updatedAt: client.updatedAt instanceof Date ? client.updatedAt.getTime() : client.updatedAt,
+    userId: client.personId ? userMap.get(client.personId) || null : null,
     // Inline profile data from clients table (replaces separate clientProfiles join)
     profile: {
       address: client.address,

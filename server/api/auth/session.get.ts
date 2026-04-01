@@ -29,6 +29,42 @@ export default defineEventHandler(async (event) => {
     return { user: null }
   }
 
+  // Check for impersonation
+  if (session.impersonating) {
+    const imp = session.impersonating as any
+    const impUser = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, imp.userId))
+      .get()
+
+    if (impUser && impUser.status !== 'INACTIVE') {
+      return {
+        user: {
+          id: impUser.id,
+          email: impUser.email,
+          role: impUser.role,
+          adminLevel: 0,
+          firstName: imp.firstName || impUser.firstName,
+          lastName: imp.lastName || impUser.lastName,
+          avatar: impUser.avatar,
+          status: impUser.status,
+          hasPassword: !!impUser.password,
+          hasFirebaseAuth: !!impUser.firebaseUid
+        },
+        impersonating: true,
+        realUser: {
+          id: dbUser.id,
+          firstName: dbUser.firstName,
+          lastName: dbUser.lastName,
+          role: dbUser.role
+        }
+      }
+    }
+    // If impersonated user is gone/inactive, clear impersonation
+    await setUserSession(event, { user: session.user, loggedInAt: session.loggedInAt })
+  }
+
   // Return current user data from database
   return {
     user: {

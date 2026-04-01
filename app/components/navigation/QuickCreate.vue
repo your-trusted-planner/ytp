@@ -111,7 +111,7 @@ const dropdownPosition = computed(() => {
 
 const createItems = [
   { label: 'New Appointment', icon: Calendar, action: 'appointment' },
-  { label: 'New Person', icon: UserPlus, action: 'navigate', path: '/clients/new?type=person' },
+  { label: 'New Person', icon: UserPlus, action: 'navigate', path: '/people?add=true' },
   { label: 'New Client', icon: Users, action: 'navigate', path: '/clients/new' },
   { label: 'New Matter', icon: Briefcase, action: 'matter' },
   { label: 'New Time Entry', icon: Clock, action: 'timeEntry' },

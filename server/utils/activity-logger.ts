@@ -127,7 +127,10 @@ export type ActivityType =
   'FORM_SUBMITTED' |
   // Admin events
   'ADMIN_ACTION' |
-  'SETTINGS_CHANGED'
+  'SETTINGS_CHANGED' |
+  // Impersonation events
+  'USER_IMPERSONATION_STARTED' |
+  'USER_IMPERSONATION_STOPPED'
 
 export type TargetType = 'user' | 'person' | 'client' | 'matter' | 'document' | 'journey' | 'template' | 'referral_partner' | 'setting' | 'note' | 'estate_plan' | 'appointment_type' | 'room' | 'form'
 
@@ -274,6 +277,17 @@ export async function logActivity(params: LogActivityParams): Promise<string> {
       country: ctx.country,
       city: ctx.city,
       requestId: ctx.requestId
+    }
+  }
+
+  // If impersonating, record the real user who is acting
+  if (params.event?.context?.isImpersonating && params.event?.context?.realUser) {
+    const realUser = params.event.context.realUser
+    params.details = {
+      ...(params.details || {}),
+      impersonatedBy: realUser.id,
+      impersonatedByName: `${realUser.firstName} ${realUser.lastName}`.trim(),
+      impersonatedByRole: realUser.role
     }
   }
 

@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Impersonation Banner -->
+    <NavigationImpersonationBanner />
+
     <!-- Top Navigation -->
     <nav class="bg-navy-900 border-b border-navy-800">
       <div class="mx-auto px-4 sm:px-6 lg:px-8">
