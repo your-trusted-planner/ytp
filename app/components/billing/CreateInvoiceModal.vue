@@ -14,22 +14,72 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">
           Matter <span class="text-red-500">*</span>
         </label>
-        <UiAutocomplete
-          v-model="form.matterId"
-          :options="matters"
-          :label-key="getMatterLabel"
-          value-key="id"
-          :sublabel-key="getMatterSublabel"
-          placeholder="Search for a matter..."
-          :loading="loadingMatters"
-          @select="handleMatterSelect"
-        />
-        <p
-          v-if="matters.length === 0 && !loadingMatters"
-          class="text-xs text-amber-600 mt-1"
+        <!-- Selected matter chip -->
+        <div
+          v-if="selectedMatter"
+          class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
         >
-          No matters found. Create a matter first before creating an invoice.
-        </p>
+          <div class="flex-1 min-w-0">
+            <span class="text-sm text-gray-900">{{ selectedMatter.title }}</span>
+            <span
+              v-if="selectedMatter.sublabel"
+              class="text-xs text-gray-500 ml-2"
+            >{{ selectedMatter.sublabel }}</span>
+          </div>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 flex-shrink-0"
+            @click="clearMatter"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+        <!-- Search input -->
+        <div
+          v-else
+          class="relative"
+        >
+          <input
+            ref="matterSearchRef"
+            v-model="matterSearch"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+            placeholder="Search for a matter..."
+            @input="onMatterSearchInput"
+            @focus="showMatterDropdown = true"
+            @blur="hideMatterDropdown"
+          >
+          <div
+            v-if="matterSearchLoading"
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+          >
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
+          </div>
+          <div
+            v-if="showMatterDropdown && (matterOptions.length > 0 || (matterSearch.length >= 2 && !matterSearchLoading))"
+            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+          >
+            <button
+              v-for="option in matterOptions"
+              :key="option.id"
+              type="button"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @mousedown.prevent="selectMatter(option)"
+            >
+              <div class="font-medium text-gray-900">{{ option.title }}</div>
+              <div
+                v-if="option.sublabel"
+                class="text-xs text-gray-500"
+              >{{ option.sublabel }}</div>
+            </button>
+            <div
+              v-if="matterOptions.length === 0 && matterSearch.length >= 2 && !matterSearchLoading"
+              class="px-3 py-4 text-sm text-gray-500 text-center"
+            >
+              No matters found for "{{ matterSearch }}"
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Line Items -->
@@ -301,12 +351,82 @@ const form = ref({
   notes: ''
 })
 
-const matters = ref<any[]>([])
 const catalogItems = ref<CatalogItem[]>([])
 const clientTrustBalance = ref(0)
 const submitting = ref(false)
-const loadingMatters = ref(true)
 const loadingCatalog = ref(true)
+
+// Matter search state
+interface MatterOption {
+  id: string
+  title: string
+  sublabel: string
+  clientId?: string
+  raw: any
+}
+const matterSearchRef = ref<HTMLInputElement>()
+const matterSearch = ref('')
+const matterOptions = ref<MatterOption[]>([])
+const showMatterDropdown = ref(false)
+const matterSearchLoading = ref(false)
+const selectedMatter = ref<MatterOption | null>(null)
+let matterSearchTimeout: ReturnType<typeof setTimeout> | null = null
+
+function buildMatterSublabel(matter: any): string {
+  const clientName = matter.clientName || matter.client_name || ''
+  const matterNumber = matter.matterNumber || matter.matter_number || ''
+  const parts = []
+  if (clientName) parts.push(clientName)
+  if (matterNumber) parts.push(`#${matterNumber}`)
+  return parts.join(' \u2022 ')
+}
+
+function onMatterSearchInput() {
+  if (matterSearchTimeout) clearTimeout(matterSearchTimeout)
+  if (matterSearch.value.length < 2) {
+    matterOptions.value = []
+    return
+  }
+  matterSearchLoading.value = true
+  matterSearchTimeout = setTimeout(async () => {
+    try {
+      const response = await $fetch<{ matters: any[] }>(`/api/matters?search=${encodeURIComponent(matterSearch.value)}&page=1&limit=10`)
+      const matters = response.matters || []
+      matterOptions.value = matters.map((m: any) => ({
+        id: m.id,
+        title: m.title || 'Untitled Matter',
+        sublabel: buildMatterSublabel(m),
+        clientId: m.clientId || m.client_id,
+        raw: m
+      }))
+    } catch {
+      matterOptions.value = []
+    } finally {
+      matterSearchLoading.value = false
+    }
+  }, 300)
+}
+
+function selectMatter(option: MatterOption) {
+  selectedMatter.value = option
+  form.value.matterId = option.id
+  matterSearch.value = ''
+  matterOptions.value = []
+  showMatterDropdown.value = false
+  handleMatterSelect(option)
+}
+
+function clearMatter() {
+  selectedMatter.value = null
+  form.value.matterId = ''
+  clientTrustBalance.value = 0
+  matterSearch.value = ''
+  nextTick(() => matterSearchRef.value?.focus())
+}
+
+function hideMatterDropdown() {
+  setTimeout(() => { showMatterDropdown.value = false }, 200)
+}
 
 // Check if quantity should be disabled for this line item
 function isQuantityDisabled(item: LineItem): boolean {
@@ -342,46 +462,8 @@ function handleCatalogSelect(item: LineItem, catalogId: string | null) {
   }
 }
 
-// Helper to get matter label for autocomplete
-function getMatterLabel(matter: any): string {
-  return matter.title || matter.name || 'Untitled Matter'
-}
-
-// Helper to get matter sublabel (client name + matter number)
-function getMatterSublabel(matter: any): string {
-  const clientName = matter.clientName || matter.client_name || ''
-  const matterNumber = matter.matterNumber || matter.matter_number || ''
-  const parts = []
-  if (clientName) parts.push(clientName)
-  if (matterNumber) parts.push(`#${matterNumber}`)
-  return parts.join(' • ')
-}
-
-// Fetch matters and catalog items on mount
+// Fetch catalog items on mount
 onMounted(async () => {
-  // Fetch matters
-  try {
-    loadingMatters.value = true
-    const response = await $fetch<any>('/api/matters')
-    // Handle both array and object response formats
-    if (Array.isArray(response)) {
-      matters.value = response
-    }
-    else if (response?.matters) {
-      matters.value = response.matters
-    }
-    else {
-      matters.value = []
-    }
-  }
-  catch (error) {
-    console.error('Failed to fetch matters:', error)
-    matters.value = []
-  }
-  finally {
-    loadingMatters.value = false
-  }
-
   // Fetch service catalog items
   try {
     loadingCatalog.value = true
@@ -446,14 +528,9 @@ function removeLineItem(index: number) {
   form.value.lineItems.splice(index, 1)
 }
 
-async function handleMatterSelect(matter: any) {
-  if (!matter) {
-    clientTrustBalance.value = 0
-    return
-  }
-
+async function handleMatterSelect(option: MatterOption) {
   // Get client trust balance for the selected matter's client
-  const clientId = matter.clientId || matter.client_id
+  const clientId = option.clientId
   if (clientId) {
     try {
       const response = await $fetch<{ totalBalance: number }>(`/api/trust/clients/${clientId}/balance`)

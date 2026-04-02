@@ -14,23 +14,70 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">
           Client <span class="text-red-500">*</span>
         </label>
-        <select
-          v-model="form.clientId"
-          required
-          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          @change="handleClientChange"
+        <!-- Selected client chip -->
+        <div
+          v-if="selectedClient"
+          class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
         >
-          <option value="">
-            Select a client...
-          </option>
-          <option
-            v-for="client in clients"
-            :key="client.id"
-            :value="client.id"
+          <span class="text-sm text-gray-900 flex-1">{{ selectedClient.name }}</span>
+          <span
+            v-if="selectedClient.email"
+            class="text-xs text-gray-500"
+          >{{ selectedClient.email }}</span>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600"
+            @click="clearClient"
           >
-            {{ client.firstName || client.first_name }} {{ client.lastName || client.last_name }}
-          </option>
-        </select>
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+        <!-- Search input -->
+        <div
+          v-else
+          class="relative"
+        >
+          <input
+            ref="clientSearchRef"
+            v-model="clientSearch"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+            placeholder="Search for a client..."
+            @input="onClientSearchInput"
+            @focus="showClientDropdown = true"
+            @blur="hideClientDropdown"
+          >
+          <div
+            v-if="clientSearchLoading"
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+          >
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
+          </div>
+          <div
+            v-if="showClientDropdown && (clientOptions.length > 0 || (clientSearch.length >= 2 && !clientSearchLoading))"
+            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+          >
+            <button
+              v-for="option in clientOptions"
+              :key="option.id"
+              type="button"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @mousedown.prevent="selectClient(option)"
+            >
+              <div class="font-medium text-gray-900">{{ option.name }}</div>
+              <div
+                v-if="option.email"
+                class="text-xs text-gray-500"
+              >{{ option.email }}</div>
+            </button>
+            <div
+              v-if="clientOptions.length === 0 && clientSearch.length >= 2 && !clientSearchLoading"
+              class="px-3 py-4 text-sm text-gray-500 text-center"
+            >
+              No clients found for "{{ clientSearch }}"
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Client Balance Display -->
@@ -249,7 +296,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, X } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -270,11 +317,68 @@ const form = ref({
   transactionDate: new Date().toISOString().split('T')[0]
 })
 
-const clients = ref<any[]>([])
 const clientMatters = ref<any[]>([])
 const clientInvoices = ref<any[]>([])
 const clientBalance = ref<number | null>(null)
 const submitting = ref(false)
+
+// Client search state
+const clientSearchRef = ref<HTMLInputElement>()
+const clientSearch = ref('')
+const clientOptions = ref<Array<{ id: string, name: string, email: string | null }>>([])
+const showClientDropdown = ref(false)
+const clientSearchLoading = ref(false)
+const selectedClient = ref<{ id: string, name: string, email: string | null } | null>(null)
+let clientSearchTimeout: ReturnType<typeof setTimeout> | null = null
+
+function onClientSearchInput() {
+  if (clientSearchTimeout) clearTimeout(clientSearchTimeout)
+  if (clientSearch.value.length < 2) {
+    clientOptions.value = []
+    return
+  }
+  clientSearchLoading.value = true
+  clientSearchTimeout = setTimeout(async () => {
+    try {
+      const response = await $fetch<{ clients: any[] }>(`/api/clients?search=${encodeURIComponent(clientSearch.value)}&page=1&limit=10`)
+      const clients = response.clients || []
+      clientOptions.value = clients.map((c: any) => ({
+        id: c.id,
+        name: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.fullName || c.email || c.id,
+        email: c.email || null
+      }))
+    } catch {
+      clientOptions.value = []
+    } finally {
+      clientSearchLoading.value = false
+    }
+  }, 300)
+}
+
+function selectClient(option: { id: string, name: string, email: string | null }) {
+  selectedClient.value = option
+  form.value.clientId = option.id
+  clientSearch.value = ''
+  clientOptions.value = []
+  showClientDropdown.value = false
+  handleClientChange()
+}
+
+function clearClient() {
+  selectedClient.value = null
+  form.value.clientId = ''
+  form.value.matterId = ''
+  form.value.invoiceId = ''
+  clientMatters.value = []
+  clientInvoices.value = []
+  clientBalance.value = null
+  clientSearch.value = ''
+  nextTick(() => clientSearchRef.value?.focus())
+}
+
+function hideClientDropdown() {
+  setTimeout(() => { showClientDropdown.value = false }, 200)
+}
 
 const amountExceedsBalance = computed(() => {
   if (!form.value.amountDollars || clientBalance.value === null) return false
@@ -300,16 +404,6 @@ function formatCurrency(cents: number): string {
     style: 'currency',
     currency: 'USD'
   }).format(cents / 100)
-}
-
-async function fetchClients() {
-  try {
-    const response = await $fetch<{ clients: any[] }>('/api/clients')
-    clients.value = response.clients
-  }
-  catch (error) {
-    console.error('Failed to fetch clients:', error)
-  }
 }
 
 async function handleClientChange() {
@@ -386,7 +480,4 @@ async function handleSubmit() {
   }
 }
 
-onMounted(() => {
-  fetchClients()
-})
 </script>

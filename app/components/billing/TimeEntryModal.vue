@@ -14,22 +14,72 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">
           Matter <span class="text-red-500">*</span>
         </label>
-        <UiAutocomplete
-          v-model="form.matterId"
-          :options="matters"
-          :label-key="getMatterLabel"
-          value-key="id"
-          :sublabel-key="getMatterSublabel"
-          placeholder="Search for a matter..."
-          :loading="loadingMatters"
-          @select="handleMatterSelect"
-        />
-        <p
-          v-if="matters.length === 0 && !loadingMatters"
-          class="text-xs text-amber-600 mt-1"
+        <!-- Selected matter chip -->
+        <div
+          v-if="selectedMatter"
+          class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
         >
-          No matters found. Create a matter first before logging time.
-        </p>
+          <div class="flex-1 min-w-0">
+            <span class="text-sm text-gray-900">{{ selectedMatter.title }}</span>
+            <span
+              v-if="selectedMatter.sublabel"
+              class="text-xs text-gray-500 ml-2"
+            >{{ selectedMatter.sublabel }}</span>
+          </div>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600 flex-shrink-0"
+            @click="clearMatter"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+        <!-- Search input -->
+        <div
+          v-else
+          class="relative"
+        >
+          <input
+            ref="matterSearchRef"
+            v-model="matterSearch"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
+            placeholder="Search for a matter..."
+            @input="onMatterSearchInput"
+            @focus="showMatterDropdown = true"
+            @blur="hideMatterDropdown"
+          >
+          <div
+            v-if="matterSearchLoading"
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+          >
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
+          </div>
+          <div
+            v-if="showMatterDropdown && (matterOptions.length > 0 || (matterSearch.length >= 2 && !matterSearchLoading))"
+            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+          >
+            <button
+              v-for="option in matterOptions"
+              :key="option.id"
+              type="button"
+              class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @mousedown.prevent="selectMatter(option)"
+            >
+              <div class="font-medium text-gray-900">{{ option.title }}</div>
+              <div
+                v-if="option.sublabel"
+                class="text-xs text-gray-500"
+              >{{ option.sublabel }}</div>
+            </button>
+            <div
+              v-if="matterOptions.length === 0 && matterSearch.length >= 2 && !matterSearchLoading"
+              class="px-3 py-4 text-sm text-gray-500 text-center"
+            >
+              No matters found for "{{ matterSearch }}"
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Work Date -->
@@ -152,13 +202,13 @@
 </template>
 
 <script setup lang="ts">
-interface Matter {
+import { X } from 'lucide-vue-next'
+
+interface MatterOption {
   id: string
   title: string
-  matterNumber: string
-  matter_number?: string
-  clientName?: string
-  client_name?: string
+  sublabel: string
+  raw: any
 }
 
 interface TimeEntry {
@@ -211,11 +261,73 @@ const form = reactive({
 })
 
 // UI state
-const loadingMatters = ref(true)
 const loadingRate = ref(false)
 const submitting = ref(false)
-const matters = ref<Matter[]>([])
 const ratePreview = ref<RatePreview | null>(null)
+
+// Matter search state
+const matterSearchRef = ref<HTMLInputElement>()
+const matterSearch = ref('')
+const matterOptions = ref<MatterOption[]>([])
+const showMatterDropdown = ref(false)
+const matterSearchLoading = ref(false)
+const selectedMatter = ref<MatterOption | null>(null)
+let matterSearchTimeout: ReturnType<typeof setTimeout> | null = null
+
+function buildMatterSublabel(matter: any): string {
+  const clientName = matter.clientName || matter.client_name || ''
+  const matterNumber = matter.matterNumber || matter.matter_number || ''
+  const parts = []
+  if (clientName) parts.push(clientName)
+  if (matterNumber) parts.push(`#${matterNumber}`)
+  return parts.join(' \u2022 ')
+}
+
+function onMatterSearchInput() {
+  if (matterSearchTimeout) clearTimeout(matterSearchTimeout)
+  if (matterSearch.value.length < 2) {
+    matterOptions.value = []
+    return
+  }
+  matterSearchLoading.value = true
+  matterSearchTimeout = setTimeout(async () => {
+    try {
+      const response = await $fetch<{ matters: any[] }>(`/api/matters?search=${encodeURIComponent(matterSearch.value)}&page=1&limit=10`)
+      const matters = response.matters || []
+      matterOptions.value = matters.map((m: any) => ({
+        id: m.id,
+        title: m.title || 'Untitled Matter',
+        sublabel: buildMatterSublabel(m),
+        raw: m
+      }))
+    } catch {
+      matterOptions.value = []
+    } finally {
+      matterSearchLoading.value = false
+    }
+  }, 300)
+}
+
+function selectMatter(option: MatterOption) {
+  selectedMatter.value = option
+  form.matterId = option.id
+  matterSearch.value = ''
+  matterOptions.value = []
+  showMatterDropdown.value = false
+  resolveRate()
+}
+
+function clearMatter() {
+  selectedMatter.value = null
+  form.matterId = ''
+  ratePreview.value = null
+  matterSearch.value = ''
+  nextTick(() => matterSearchRef.value?.focus())
+}
+
+function hideMatterDropdown() {
+  setTimeout(() => { showMatterDropdown.value = false }, 200)
+}
 
 // Computed
 const isFormValid = computed(() => {
@@ -240,19 +352,21 @@ else if (props.defaultMatterId) {
   form.matterId = props.defaultMatterId
 }
 
-// Fetch matters
-async function fetchMatters() {
-  loadingMatters.value = true
+// Resolve a matter ID to a display option (for editing/default)
+async function resolveMatterId(matterId: string) {
   try {
-    const response = await $fetch<{ matters: Matter[] }>('/api/matters')
-    matters.value = response.matters || []
-  }
-  catch (error) {
-    console.error('Failed to fetch matters:', error)
-    matters.value = []
-  }
-  finally {
-    loadingMatters.value = false
+    const response = await $fetch<any>(`/api/matters/${matterId}`)
+    const m = response.matter || response
+    if (m) {
+      selectedMatter.value = {
+        id: m.id,
+        title: m.title || 'Untitled Matter',
+        sublabel: buildMatterSublabel(m),
+        raw: m
+      }
+    }
+  } catch {
+    // Matter not found — leave selectedMatter null
   }
 }
 
@@ -283,23 +397,7 @@ async function resolveRate() {
   }
 }
 
-// Matter selection handlers
-function getMatterLabel(matter: Matter): string {
-  return matter.title
-}
-
-function getMatterSublabel(matter: Matter): string {
-  const num = matter.matterNumber || matter.matter_number
-  const client = matter.clientName || matter.client_name
-  return client ? `#${num} - ${client}` : `#${num}`
-}
-
-function handleMatterSelect(matter: Matter) {
-  form.matterId = matter.id
-  resolveRate()
-}
-
-// Watch for matter changes
+// Watch for matter changes (covers programmatic updates)
 watch(() => form.matterId, (newMatterId) => {
   if (newMatterId) {
     resolveRate()
@@ -371,11 +469,11 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
-// Initial data fetch
+// Initial data fetch — resolve matter name if editing or default
 onMounted(() => {
-  fetchMatters()
-  // Resolve rate if we have a matter (from editing or default)
-  if (props.editingEntry?.matterId || props.defaultMatterId) {
+  const matterId = props.editingEntry?.matterId || props.defaultMatterId
+  if (matterId) {
+    resolveMatterId(matterId)
     resolveRate()
   }
 })

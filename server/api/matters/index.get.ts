@@ -1,4 +1,4 @@
-import { desc, asc, sql, eq } from 'drizzle-orm'
+import { desc, asc, sql, eq, or, like, and } from 'drizzle-orm'
 import { isDatabaseAvailable } from '../../db'
 import { requireRole } from '../../utils/rbac'
 import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calculateOffset } from '../../utils/pagination'
@@ -21,14 +21,37 @@ export default defineEventHandler(async (event) => {
   // Client filter (for AppointmentModal matter select)
   const clientId = typeof query.clientId === 'string' ? query.clientId : null
 
+  // Search filter (searches title, matter number, client name)
+  const search = typeof query.search === 'string' ? query.search.trim() : null
+
+  // Build WHERE conditions shared between count and data queries
+  const conditions = []
+  if (clientId) {
+    conditions.push(eq(schema.matters.clientId, clientId))
+  }
+  if (search) {
+    const pattern = `%${search}%`
+    conditions.push(
+      or(
+        like(schema.matters.title, pattern),
+        like(schema.matters.matterNumber, pattern),
+        like(schema.people.firstName, pattern),
+        like(schema.people.lastName, pattern),
+        like(schema.people.fullName, pattern)
+      )!
+    )
+  }
+
   // Get total count for pagination
   let totalCount = 0
   if (usePagination) {
     let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(schema.matters)
-    if (clientId) {
-      countQuery = countQuery.where(eq(schema.matters.clientId, clientId)) as typeof countQuery
+      .leftJoin(schema.users, eq(schema.matters.clientId, schema.users.id))
+      .leftJoin(schema.people, eq(schema.users.personId, schema.people.id))
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions)) as typeof countQuery
     }
     const countResult = await countQuery.get()
     totalCount = countResult?.count ?? 0
@@ -71,9 +94,9 @@ export default defineEventHandler(async (event) => {
     .leftJoin(schema.users, eq(schema.matters.clientId, schema.users.id))
     .leftJoin(schema.people, eq(schema.users.personId, schema.people.id))
 
-  // Apply client filter
-  if (clientId) {
-    mattersQuery = mattersQuery.where(eq(schema.matters.clientId, clientId)) as typeof mattersQuery
+  // Apply filters
+  if (conditions.length > 0) {
+    mattersQuery = mattersQuery.where(and(...conditions)) as typeof mattersQuery
   }
 
   mattersQuery = mattersQuery.orderBy(sortDirection === 'asc' ? asc(sortColumn) : desc(sortColumn)) as typeof mattersQuery
@@ -123,6 +146,11 @@ export default defineEventHandler(async (event) => {
       matters: mattersData,
       pagination: buildPaginationMeta(page, limit, totalCount)
     }
+  }
+
+  // When search is used, return wrapped format for consistency
+  if (search) {
+    return { matters: mattersData }
   }
 
   // Return raw array for backward compatibility
