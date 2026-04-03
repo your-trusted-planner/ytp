@@ -4,6 +4,7 @@ import { useDrizzle, schema } from '../../../db'
 import { generateId } from '../../../utils/auth'
 import { getFreeBusy, getMultiCalendarFreeBusy } from '../../../utils/google-calendar'
 import { createCalendarEvent } from '../../../utils/google-calendar'
+import { triggerBookingConfirmation } from '../../../utils/message-triggers'
 
 const bookSchema = z.object({
   bookingId: z.string(),
@@ -202,6 +203,16 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     .where(eq(schema.publicBookings.id, bookingId))
+
+  // Send booking confirmation email (fire-and-forget)
+  triggerBookingConfirmation({
+    bookingId,
+    appointmentId,
+    startTime,
+    endTime,
+    timezone,
+    event
+  })
 
   return {
     success: true,

@@ -408,6 +408,8 @@
               <UiButton
                 v-else
                 size="sm"
+                :disabled="!zoomConfigured"
+                :title="zoomConfigured ? 'Connect your Zoom account' : 'Zoom is not configured. Ask an administrator to set it up in Settings > Video Providers.'"
                 @click="connectZoom"
               >
                 Connect Zoom
@@ -708,6 +710,7 @@ const videoConnections = ref<Array<{
 }>>([])
 const videoConnectionsLoading = ref(false)
 const disconnectingZoom = ref(false)
+const zoomConfigured = ref(false)
 
 const activeZoomConnection = computed(() =>
   videoConnections.value.find(c => c.provider === 'zoom' && c.status === 'ACTIVE')
@@ -891,6 +894,16 @@ const loadVideoConnections = async () => {
   }
   catch {
     // May not have video connections feature
+  }
+  // Check if Zoom is configured via a lightweight preflight
+  try {
+    const providers = await $fetch<Array<{ id: string, configured: boolean }>>('/api/admin/video-providers')
+    const zoom = providers.find(p => p.id === 'zoom')
+    zoomConfigured.value = !!zoom?.configured
+  }
+  catch {
+    // Non-admins can't access admin endpoint — fall back to optimistic (let authorize endpoint handle it)
+    zoomConfigured.value = true
   }
   finally {
     videoConnectionsLoading.value = false

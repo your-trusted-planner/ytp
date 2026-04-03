@@ -13,11 +13,23 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
 
   // Get Zoom credentials from encrypted integrations store
-  const { clientId, redirectUri } = await getZoomConfig(event)
+  let clientId: string
+  let redirectUri: string | undefined
+  try {
+    const config = await getZoomConfig(event)
+    clientId = config.clientId
+    redirectUri = config.redirectUri
+  }
+  catch {
+    throw createError({
+      statusCode: 400,
+      message: 'Zoom is not configured. An administrator needs to set up Zoom in Settings > Video Providers first.'
+    })
+  }
 
   if (!redirectUri) {
     throw createError({
-      statusCode: 500,
+      statusCode: 400,
       message: 'Zoom redirect URI not configured. Go to Settings > Video Providers to complete setup.'
     })
   }

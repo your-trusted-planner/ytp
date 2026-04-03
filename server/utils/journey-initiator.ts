@@ -12,6 +12,7 @@ import { eq, and, inArray, asc, ne } from 'drizzle-orm'
 import { useDrizzle, schema } from '../db'
 import { logActivity } from './activity-logger'
 import { hashPassword } from './auth'
+import { triggerAccountInvitation, triggerJourneyStarted, triggerActionItemAssigned } from './message-triggers'
 
 interface InitiateOptions {
   personId: string
@@ -105,6 +106,15 @@ export async function initiateEngagementJourney(options: InitiateOptions): Promi
         adminLevel: 0
       })
       created.user = true
+
+      // Send account invitation email with set-password link (fire-and-forget)
+      if (person.email) {
+        triggerAccountInvitation({
+          userId,
+          personId: options.personId,
+          event: options.event
+        })
+      }
     }
   }
 
@@ -177,6 +187,14 @@ export async function initiateEngagementJourney(options: InitiateOptions): Promi
     updatedAt: now
   })
 
+  // 7b. Send journey started notification (fire-and-forget)
+  triggerJourneyStarted({
+    journeyName: journey.name,
+    personId: options.personId,
+    clientJourneyId,
+    event: options.event
+  })
+
   // 8. Create step progress for the first step
   if (firstStep) {
     await db.insert(schema.journeyStepProgress).values({
@@ -232,6 +250,17 @@ export async function initiateEngagementJourney(options: InitiateOptions): Promi
         updatedAt: now
       })
       actionItemsCreated++
+
+      // Notify client about assigned action items (fire-and-forget)
+      if (item.assignedTo === 'CLIENT' && person.email) {
+        triggerActionItemAssigned({
+          actionItemTitle: item.title,
+          actionType: item.actionType,
+          personId: options.personId,
+          clientJourneyId,
+          event: options.event
+        })
+      }
     }
   }
 

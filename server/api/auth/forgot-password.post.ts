@@ -12,7 +12,8 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
-import { sendEmail, emailTemplates } from '../../utils/email'
+import { emailTemplates } from '../../utils/email'
+import { sendMessage } from '../../utils/message-service'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address')
@@ -78,21 +79,21 @@ export default defineEventHandler(async (event) => {
         expiresAt
       })
 
-      // Send email
-      const emailResult = await sendEmail({
-        to: user.email!,
+      // Send email via message service
+      const messageResult = await sendMessage({
+        recipientAddress: user.email!,
+        channel: 'EMAIL',
+        category: 'TRANSACTIONAL',
+        templateSlug: 'password-reset',
         subject: 'Reset Your Password - Your Trusted Planner',
-        html: template.html,
-        text: template.text,
+        body: template.html,
+        bodyFormat: 'HTML',
+        contextType: 'user',
+        contextId: user.id,
         event
       })
 
-      if (!emailResult.success) {
-        console.error('[ForgotPassword] Failed to send email:', emailResult.error)
-      }
-      else {
-        console.log('[ForgotPassword] Reset email sent to:', user.email)
-      }
+      console.log('[ForgotPassword] Reset email queued:', user.email, 'messageId:', messageResult.messageId)
     }
     catch (error) {
       console.error('[ForgotPassword] Error processing request:', error)

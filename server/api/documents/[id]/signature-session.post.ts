@@ -191,11 +191,12 @@ export default defineEventHandler(async (event) => {
   // Send email notification if requested
   let emailSent = false
   if (sendEmail) {
-    const { sendEmail: sendEmailFn, emailTemplates } = await import('../../../utils/email')
+    const { emailTemplates } = await import('../../../utils/email')
+    const { sendMessage: sendMsg } = await import('../../../utils/message-service')
     const signerName = `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || 'there'
     const senderName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Your Trusted Planner'
 
-    const { html, text } = emailTemplates.signatureRequest({
+    const { html } = emailTemplates.signatureRequest({
       recipientName: signerName,
       documentTitle: document.title,
       senderName,
@@ -204,24 +205,25 @@ export default defineEventHandler(async (event) => {
       message
     })
 
-    const emailResult = await sendEmailFn({
-      to: signer.email,
-      subject: `Document Ready for Signature: ${document.title}`,
-      html,
-      text,
-      tags: [
-        { name: 'type', value: 'signature-request' },
-        { name: 'document_id', value: documentId },
-        { name: 'session_id', value: sessionId }
-      ]
-    })
-
-    emailSent = emailResult.success
-    if (!emailResult.success) {
-      console.error('[Signature Session] Failed to send email:', emailResult.error)
+    try {
+      await sendMsg({
+        recipientAddress: signer.email,
+        channel: 'EMAIL',
+        category: 'TRANSACTIONAL',
+        templateSlug: 'signature-request',
+        subject: `Document Ready for Signature: ${document.title}`,
+        body: html,
+        bodyFormat: 'HTML',
+        senderUserId: user.id,
+        contextType: 'document',
+        contextId: documentId,
+        event
+      })
+      emailSent = true
+      console.log('[Signature Session] Email queued for', signer.email)
     }
-    else {
-      console.log('[Signature Session] Email sent to', signer.email)
+    catch (err) {
+      console.error('[Signature Session] Failed to queue email:', err)
     }
   }
 

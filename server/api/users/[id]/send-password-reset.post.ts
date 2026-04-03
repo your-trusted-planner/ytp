@@ -8,7 +8,8 @@
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { useDrizzle, schema } from '../../../db'
-import { sendEmail, emailTemplates } from '../../../utils/email'
+import { emailTemplates } from '../../../utils/email'
+import { sendMessage } from '../../../utils/message-service'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -95,25 +96,23 @@ export default defineEventHandler(async (event) => {
     expiresAt
   })
 
-  // Send email
-  const emailResult = await sendEmail({
-    to: targetUser.email,
+  // Send email via message service
+  const messageResult = await sendMessage({
+    recipientAddress: targetUser.email,
+    channel: 'EMAIL',
+    category: 'TRANSACTIONAL',
+    templateSlug: 'password-reset',
     subject: 'Reset Your Password - Your Trusted Planner',
-    html: template.html,
-    text: template.text,
+    body: template.html,
+    bodyFormat: 'HTML',
+    senderUserId: user.id,
+    contextType: 'user',
+    contextId: targetUser.id,
     event
   })
 
-  if (!emailResult.success) {
-    console.error('[AdminPasswordReset] Failed to send email:', emailResult.error)
-    throw createError({
-      statusCode: 500,
-      message: 'Failed to send password reset email'
-    })
-  }
-
   const adminName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
-  console.log(`[AdminPasswordReset] ${adminName} sent password reset to ${targetUser.email}`)
+  console.log(`[AdminPasswordReset] ${adminName} queued password reset to ${targetUser.email} (messageId: ${messageResult.messageId})`)
 
   return {
     success: true,

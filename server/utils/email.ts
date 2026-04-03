@@ -17,6 +17,7 @@ interface EmailOptions {
   from?: string
   replyTo?: string
   tags?: Array<{ name: string, value: string }>
+  attachments?: Array<{ filename: string, content: string, type?: string }>
   event?: H3Event // Optional H3 event for accessing encrypted credentials
 }
 
@@ -104,7 +105,8 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: true,
         html: options.html,
         text: options.text,
         reply_to: options.replyTo,
-        tags: options.tags
+        tags: options.tags,
+        ...(options.attachments?.length ? { attachments: options.attachments } : {})
       })
     })
 

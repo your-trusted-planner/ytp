@@ -14,6 +14,7 @@ import { seedRelationships } from './seed/relationships'
 import { seedDocuments } from './seed/documents'
 import { seedQuestionnaires } from './seed/questionnaires'
 import { seedBilling } from './seed/billing'
+import { seedMessageTemplates } from './seed/message-templates'
 
 export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: any) {
   console.log('Seeding database...')
@@ -60,6 +61,9 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
 
   // Phase 10: Questionnaires
   await seedQuestionnaires(db)
+
+  // Phase 11: Message Templates
+  await seedMessageTemplates(db as any)
 
   // Summary
   console.log('')

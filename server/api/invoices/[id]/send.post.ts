@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { logActivity } from '../../../utils/activity-logger'
 import { resolveEntityName } from '../../../utils/entity-resolver'
 import { generateInvoicePdf, type InvoicePdfOptions } from '../../../utils/invoice-pdf-generator'
-import { sendEmail } from '../../../utils/email'
+import { sendMessage } from '../../../utils/message-service'
 
 const sendInvoiceSchema = z.object({
   recipientEmail: z.string().email().optional(), // Override client email
@@ -224,10 +224,13 @@ export default defineEventHandler(async (event) => {
     `<p style="margin-bottom: 20px;">${parsed.data.message}</p>` :
     ''
 
-  await sendEmail({
-    to: recipientEmail,
+  await sendMessage({
+    recipientAddress: recipientEmail,
+    channel: 'EMAIL',
+    category: 'TRANSACTIONAL',
+    templateSlug: 'invoice-sent',
     subject: `Invoice ${invoice.invoiceNumber} - ${formattedTotal}`,
-    html: `
+    body: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #0A2540;">Invoice ${invoice.invoiceNumber}</h2>
         ${customMessage}
@@ -241,7 +244,12 @@ export default defineEventHandler(async (event) => {
         <p>Thank you for your business.</p>
       </div>
     `,
-    attachments
+    bodyFormat: 'HTML',
+    senderUserId: user.id,
+    contextType: 'invoice',
+    contextId: invoiceId,
+    metadata: attachments.length ? { attachments } : undefined,
+    event
   })
 
   // Update invoice status

@@ -71,6 +71,9 @@ export { integrations, migrationRuns, migrationErrors, importDuplicates, personE
 // Forms System
 export { forms, formSections, formFields, formSubmissions } from './forms'
 
+// Messaging
+export { messages, messageTemplates } from './messaging'
+
 // Estate Plans
 export {
   estatePlans,

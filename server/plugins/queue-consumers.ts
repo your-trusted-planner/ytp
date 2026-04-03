@@ -43,6 +43,12 @@ export default defineNitroPlugin((nitroApp) => {
         await templateHandler.default.queue(batch, env)
       }
     }
+    else if (queueName.includes('message-send')) {
+      const messageSendHandler = await import('../queue/message-send')
+      if (messageSendHandler.default?.queue) {
+        await messageSendHandler.default.queue(batch, env)
+      }
+    }
     else {
       console.warn(`[Queue Plugin] No handler registered for queue: ${queueName}`)
     }

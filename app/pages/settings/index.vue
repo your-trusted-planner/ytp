@@ -150,6 +150,26 @@
         </UiCard>
       </NuxtLink>
 
+      <!-- Message Templates -->
+      <NuxtLink
+        to="/settings/message-templates"
+        class="block"
+      >
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-green-50 rounded-lg">
+              <MessageSquare class="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Message Templates</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Customize email and SMS templates for notifications and client communications
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
       <!-- Integrations -->
       <NuxtLink
         to="/settings/integrations"
@@ -191,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCircle, KeyRound, Building2, FolderOpen, Plug, Info, Mail, Video, FileText } from 'lucide-vue-next'
+import { UserCircle, KeyRound, Building2, FolderOpen, Plug, Info, Mail, Video, FileText, MessageSquare } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',

@@ -22,6 +22,13 @@ export default defineNitroPlugin((nitroApp) => {
       catch (error) {
         console.error('⚠️ Auto-seed failed:', error)
         // Don't throw - let the server continue anyway
+        // Still try to seed message templates even if main seed fails
+        try {
+          const { useDrizzle } = await import('../db')
+          const { seedMessageTemplates } = await import('../db/seed/message-templates')
+          await seedMessageTemplates(useDrizzle() as any)
+        }
+        catch { /* ignore */ }
       }
     })
   }

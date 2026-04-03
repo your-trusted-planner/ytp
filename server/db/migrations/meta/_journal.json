@@ -281,6 +281,20 @@
       "when": 1774577049342,
       "tag": "0039_dry_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1775151256829,
+      "tag": "0040_blue_maggott",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1775157029675,
+      "tag": "0041_careless_orphan",
+      "breakpoints": true
     }
   ]
 }

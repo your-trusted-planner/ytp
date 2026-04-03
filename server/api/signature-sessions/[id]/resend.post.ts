@@ -123,12 +123,13 @@ export default defineEventHandler(async (event) => {
   const baseUrl = config.public?.appUrl || 'http://localhost:3000'
   const signingUrl = `${baseUrl}/sign/${session.signingToken}`
 
-  // Send email
-  const { sendEmail, emailTemplates } = await import('../../../utils/email')
+  // Send email via message service
+  const { emailTemplates } = await import('../../../utils/email')
+  const { sendMessage } = await import('../../../utils/message-service')
   const signerName = `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || 'there'
   const senderName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Your Trusted Planner'
 
-  const { html, text } = emailTemplates.signatureRequest({
+  const { html } = emailTemplates.signatureRequest({
     recipientName: signerName,
     documentTitle: document.title,
     senderName,
@@ -137,24 +138,19 @@ export default defineEventHandler(async (event) => {
     message: message || 'This is a reminder to sign the document at your earliest convenience.'
   })
 
-  const emailResult = await sendEmail({
-    to: signer.email,
+  await sendMessage({
+    recipientAddress: signer.email,
+    channel: 'EMAIL',
+    category: 'TRANSACTIONAL',
+    templateSlug: 'signature-request',
     subject: `Reminder: Document Ready for Signature - ${document.title}`,
-    html,
-    text,
-    tags: [
-      { name: 'type', value: 'signature-reminder' },
-      { name: 'document_id', value: document.id },
-      { name: 'session_id', value: sessionId }
-    ]
+    body: html,
+    bodyFormat: 'HTML',
+    senderUserId: user.id,
+    contextType: 'document',
+    contextId: document.id,
+    event
   })
-
-  if (!emailResult.success) {
-    throw createError({
-      statusCode: 500,
-      message: `Failed to send reminder email: ${emailResult.error}`
-    })
-  }
 
   return {
     success: true,
