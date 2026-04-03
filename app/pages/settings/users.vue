@@ -23,6 +23,17 @@
       </UiButton>
     </div>
 
+    <!-- Search -->
+    <div class="relative">
+      <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search by name, email..."
+        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
+      >
+    </div>
+
     <!-- Users List -->
     <UiCard>
       <!-- Filter Summary -->
@@ -554,7 +565,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Search } from 'lucide-vue-next'
 
 const toast = useToast()
 
@@ -578,6 +589,7 @@ const deletingUser = ref<any>(null)
 const sendingResetFor = ref<string | null>(null)
 
 // Filter state
+const searchQuery = ref('')
 const activeFilter = ref<string | null>(null)
 const roleFilter = ref<Set<string>>(new Set())
 const adminLevelFilter = ref<Set<number>>(new Set())
@@ -602,6 +614,15 @@ const uniqueStatuses = computed(() => {
 // Filtered users
 const filteredUsers = computed(() => {
   return users.value.filter((user) => {
+    // Search filter
+    if (searchQuery.value) {
+      const q = searchQuery.value.toLowerCase()
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase()
+      const email = (user.email || '').toLowerCase()
+      if (!name.includes(q) && !email.includes(q)) {
+        return false
+      }
+    }
     if (roleFilter.value.size > 0 && !roleFilter.value.has(user.role)) {
       return false
     }
@@ -617,7 +638,7 @@ const filteredUsers = computed(() => {
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
-  return roleFilter.value.size > 0 || adminLevelFilter.value.size > 0 || statusFilter.value.size > 0
+  return searchQuery.value || roleFilter.value.size > 0 || adminLevelFilter.value.size > 0 || statusFilter.value.size > 0
 })
 
 // Filter functions
@@ -663,6 +684,7 @@ function clearFilter(filterName: string) {
 }
 
 function clearAllFilters() {
+  searchQuery.value = ''
   roleFilter.value = new Set()
   adminLevelFilter.value = new Set()
   statusFilter.value = new Set()

@@ -22,7 +22,20 @@
       </NuxtLink>
     </div>
 
-    <!-- Status Filter -->
+    <!-- Search + Status Filter -->
+    <div class="space-y-3">
+      <div class="relative">
+        <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by name, email, phone..."
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
+          @input="handleSearchInput"
+        >
+      </div>
+    </div>
+
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-2">
         <span class="text-sm text-gray-600">Status:</span>
@@ -209,7 +222,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { CheckCircle, AlertTriangle, X, Eye } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, X, Eye, Search } from 'lucide-vue-next'
 import type { Column, PaginationMeta } from '~/components/ui/DataTable.vue'
 
 const toast = useToast()
@@ -230,6 +243,17 @@ const currentPage = ref(1)
 const currentLimit = ref(25)
 const sortBy = ref<string>('createdAt')
 const sortDirection = ref<'asc' | 'desc'>('desc')
+
+// Search
+const searchQuery = ref('')
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+function handleSearchInput() {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchClients()
+  }, 300)
+}
 
 // Status filter
 const availableStatuses = ['ACTIVE', 'PROSPECTIVE', 'FORMER']
@@ -340,6 +364,9 @@ const fetchClients = async () => {
     }
     if (statusFilter.value) {
       params.status = statusFilter.value
+    }
+    if (searchQuery.value) {
+      params.search = searchQuery.value
     }
     const response = await $fetch<{ clients: any[], pagination?: PaginationMeta }>('/api/clients', {
       params
