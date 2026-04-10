@@ -1,4 +1,13 @@
 import { defineStore } from 'pinia'
+import { usePreferencesStore } from './usePreferencesStore'
+
+/**
+ * Get the offset to reach the start of the week from a given day,
+ * respecting the user's week-start preference (0=Sunday, 1=Monday).
+ */
+function weekStartOffset(dayOfWeek: number, weekStart: number): number {
+  return (dayOfWeek - weekStart + 7) % 7
+}
 
 interface StaffAttendee {
   userId: string
@@ -117,9 +126,10 @@ export const useCalendarStore = defineStore('calendar', {
   getters: {
     dateRange(): { timeMin: string, timeMax: string } {
       const d = this.currentDate
+      const prefs = usePreferencesStore()
       if (this.viewMode === 'week') {
         const start = new Date(d)
-        start.setDate(d.getDate() - d.getDay())
+        start.setDate(d.getDate() - weekStartOffset(d.getDay(), prefs.weekStart))
         start.setHours(0, 0, 0, 0)
         const end = new Date(start)
         end.setDate(start.getDate() + 7)
@@ -141,9 +151,10 @@ export const useCalendarStore = defineStore('calendar', {
 
     dateLabel(): string {
       const d = this.currentDate
+      const prefs = usePreferencesStore()
       if (this.viewMode === 'week') {
         const start = new Date(d)
-        start.setDate(d.getDate() - d.getDay())
+        start.setDate(d.getDate() - weekStartOffset(d.getDay(), prefs.weekStart))
         const end = new Date(start)
         end.setDate(start.getDate() + 6)
         const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -155,8 +166,9 @@ export const useCalendarStore = defineStore('calendar', {
 
     weekDays(): Date[] {
       const d = this.currentDate
+      const prefs = usePreferencesStore()
       const start = new Date(d)
-      start.setDate(d.getDate() - d.getDay())
+      start.setDate(d.getDate() - weekStartOffset(d.getDay(), prefs.weekStart))
       const days: Date[] = []
       for (let i = 0; i < 7; i++) {
         const day = new Date(start)

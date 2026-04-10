@@ -23,6 +23,6 @@ export const DEFAULT_MATCH_CONFIG: MatchConfig = {
     shared_email_different_name: 0.40,
     known_spouse: 1.0, // Definitive non-match
     different_dob: 0.30,
-    different_ssn: 1.0 // Definitive non-match
+    different_tin: 1.0 // Definitive non-match
   }
 }

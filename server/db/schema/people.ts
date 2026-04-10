@@ -6,17 +6,21 @@ import { users } from './auth'
 import { matters } from './matters'
 
 // People - Separates identity from authentication
-// Every human in the system is a person (Belly Button Principle)
+// Every human AND legal entity in the system is a person (Belly Button Principle)
+// personType discriminates: 'individual' (natural person), 'trust' (Title 15/UTC),
+// 'entity' (Title 7 — LLCs, corporations, partnerships, etc.)
+// Detail tables: trusts (estate-plans.ts) for trust-specific data,
+//                entities (below) for state-formed entity data
 export const people = sqliteTable('people', {
   id: text('id').primaryKey(),
-  // Person type: individual or entity (trust, corporation, etc.)
-  personType: text('person_type', { enum: ['individual', 'entity'] }).notNull().default('individual'),
-  // Personal Information
+  personType: text('person_type', { enum: ['individual', 'trust', 'entity'] }).notNull().default('individual'),
+  // Personal Information (individuals only — null for trusts/entities)
   firstName: text('first_name'),
   lastName: text('last_name'),
   middleNames: jsonArray('middle_names'), // Custom type handles serialization
+  // Universal display name: derived from parts for individuals, entered directly for trusts/entities
   fullName: text('full_name'),
-  // Contact Information
+  // Contact Information (shared across all person types)
   email: text('email'),
   phone: text('phone'),
   address: text('address'),
@@ -25,10 +29,13 @@ export const people = sqliteTable('people', {
   state: text('state'),
   zipCode: text('zip_code'),
   country: text('country'), // ISO 3166-1 alpha-2 (e.g., "US", "CH") or null
-  // Additional Details
+  // Individual-specific details (null for trusts/entities)
   dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
   maritalStatus: text('marital_status'),
-  ssnLast4: text('ssn_last_4'),
+  // Tax ID — unified field for SSN (individuals) and EIN (trusts/entities)
+  // See sensitive field obfuscation pattern in CLAUDE.md
+  tinEncrypted: text('tin_encrypted'), // AES-GCM ciphertext via server/utils/encryption.ts
+  tinLast4: text('tin_last_4'),        // Last 4 digits plaintext for masked display
   // Notes
   notes: text('notes'),
   // Marketing consent
@@ -48,6 +55,30 @@ export const people = sqliteTable('people', {
   phoneIdx: index('idx_people_phone').on(table.phone),
   lastNameIdx: index('idx_people_last_name').on(table.lastName),
   createdAtIdx: index('idx_people_created_at').on(table.createdAt)
+}))
+
+// Entities - Detail table for state-formed legal entities (Title 7)
+// LLCs, corporations, partnerships, etc. Each row links to a people record via personId.
+export const entities = sqliteTable('entities', {
+  id: text('id').primaryKey(),
+  personId: text('person_id').notNull().unique().references(() => people.id, { onDelete: 'cascade' }),
+
+  entityType: text('entity_type', {
+    enum: ['LLC', 'CORPORATION', 'PARTNERSHIP', 'PUBLIC_BENEFIT_CORPORATION', 'FOUNDATION', 'OTHER']
+  }),
+
+  jurisdiction: text('jurisdiction'),         // State of formation (e.g., "CO")
+  formationDate: integer('formation_date', { mode: 'timestamp' }),
+  stateFileNumber: text('state_file_number'), // Secretary of State filing number
+  managementType: text('management_type', {
+    enum: ['MEMBER_MANAGED', 'MANAGER_MANAGED', 'BOARD_MANAGED', 'OTHER']
+  }),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+}, table => ({
+  personIdIdx: index('idx_entities_person_id').on(table.personId),
+  entityTypeIdx: index('idx_entities_entity_type').on(table.entityType)
 }))
 
 // Relationships - Unified relationship tracking (Belly Button Principle)

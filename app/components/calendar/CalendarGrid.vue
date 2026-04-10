@@ -73,7 +73,7 @@
       <!-- Day headers -->
       <div class="grid grid-cols-7 border-b border-gray-200">
         <div
-          v-for="name in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
+          v-for="name in dayNames"
           :key="name"
           class="p-2 text-center text-xs font-medium text-gray-500 uppercase"
         >
@@ -122,6 +122,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CalendarEvent, ViewMode } from '~/stores/useCalendarStore'
+
+const ALL_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const prefs = usePreferencesStore()
+const dayNames = computed(() => {
+  const start = prefs.weekStart
+  return [...ALL_DAY_NAMES.slice(start), ...ALL_DAY_NAMES.slice(0, start)]
+})
 
 const props = defineProps<{
   viewMode: ViewMode
@@ -258,8 +265,8 @@ const monthDays = computed(() => {
 
   const days: Array<{ date: Date, currentMonth: boolean }> = []
 
-  // Fill in days from previous month
-  const startDay = firstOfMonth.getDay()
+  // Fill in days from previous month (offset from preferred week start)
+  const startDay = (firstOfMonth.getDay() - prefs.weekStart + 7) % 7
   for (let i = startDay - 1; i >= 0; i--) {
     const date = new Date(firstOfMonth)
     date.setDate(date.getDate() - i - 1)

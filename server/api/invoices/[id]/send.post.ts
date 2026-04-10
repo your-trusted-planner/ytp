@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { logActivity } from '../../../utils/activity-logger'
 import { resolveEntityName } from '../../../utils/entity-resolver'
 import { generateInvoicePdf, type InvoicePdfOptions } from '../../../utils/invoice-pdf-generator'
-import { sendMessage } from '../../../utils/message-service'
+import { sendTemplatedMessage } from '../../../utils/send-templated-message'
 
 const sendInvoiceSchema = z.object({
   recipientEmail: z.string().email().optional(), // Override client email
@@ -66,6 +66,7 @@ export default defineEventHandler(async (event) => {
       terms: schema.invoices.terms,
       pdfBlobKey: schema.invoices.pdfBlobKey,
       // Client info
+      clientPersonId: schema.people.id,
       clientFirstName: schema.people.firstName,
       clientLastName: schema.people.lastName,
       clientFullName: schema.people.fullName,
@@ -220,31 +221,30 @@ export default defineEventHandler(async (event) => {
     }]
   }
 
-  const customMessage = parsed.data.message ?
-    `<p style="margin-bottom: 20px;">${parsed.data.message}</p>` :
-    ''
+  if (!invoice.clientPersonId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Client has no linked person record — cannot send invoice'
+    })
+  }
 
-  await sendMessage({
-    recipientAddress: recipientEmail,
-    channel: 'EMAIL',
-    category: 'TRANSACTIONAL',
+  // Pre-wrap optional custom message so it slots cleanly into the template body
+  const customMessageHtml = parsed.data.message
+    ? `<p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">${parsed.data.message}</p>`
+    : ''
+
+  await sendTemplatedMessage({
     templateSlug: 'invoice-sent',
-    subject: `Invoice ${invoice.invoiceNumber} - ${formattedTotal}`,
-    body: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #0A2540;">Invoice ${invoice.invoiceNumber}</h2>
-        ${customMessage}
-        <p>Dear ${clientName},</p>
-        <p>Please find attached your invoice for <strong>${invoice.matterTitle}</strong>.</p>
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0;"><strong>Amount Due:</strong> ${formattedTotal}</p>
-          <p style="margin: 10px 0 0;"><strong>Due Date:</strong> ${formattedDueDate}</p>
-        </div>
-        <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
-        <p>Thank you for your business.</p>
-      </div>
-    `,
-    bodyFormat: 'HTML',
+    recipientPersonId: invoice.clientPersonId,
+    variables: {
+      invoiceNumber: invoice.invoiceNumber,
+      amountDue: formattedTotal,
+      dueDate: formattedDueDate,
+      matterTitle: invoice.matterTitle,
+      customMessage: customMessageHtml
+    },
+    // Honor override (e.g. send to billing contact instead of client's primary email)
+    recipientAddressOverride: parsed.data.recipientEmail,
     senderUserId: user.id,
     contextType: 'invoice',
     contextId: invoiceId,

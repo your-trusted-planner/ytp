@@ -135,13 +135,13 @@ export function applyAntiSignals(
     })
   }
 
-  // 4. Different SSN (definitive)
-  if (input.ssnLast4 && candidate.ssnLast4 && input.ssnLast4 !== candidate.ssnLast4) {
+  // 4. Different TIN (definitive)
+  if (input.tinLast4 && candidate.tinLast4 && input.tinLast4 !== candidate.tinLast4) {
     const penalty = config.antiSignalPenalties.different_ssn ?? 1.0
     antiSignals.push({
-      type: 'different_ssn',
+      type: 'different_tin',
       penalty,
-      description: `Different SSN last 4 digits`
+      description: `Different TIN last 4 digits`
     })
   }
 

@@ -1,18 +1,17 @@
 import { defineStore } from 'pinia'
 
 export type DocumentViewPreference = 'local' | 'drive'
+export type WeekStartPreference = 0 | 1 // 0 = Sunday, 1 = Monday
 
 interface PreferencesState {
   // Document viewing preferences
   matterDocumentsDefaultView: DocumentViewPreference
 
+  // Calendar / date picker preferences
+  weekStartDay: WeekStartPreference // 0 = Sunday (US default), 1 = Monday (ISO 8601)
+
   // Track if we've hydrated from localStorage
   _hydrated: boolean
-
-  // Add more preferences here as needed
-  // sidebarCollapsed: boolean
-  // tablePageSize: number
-  // etc.
 }
 
 const STORAGE_KEY = 'ytp-user-preferences'
@@ -36,6 +35,7 @@ function saveToStorage(state: PreferencesState) {
 export const usePreferencesStore = defineStore('preferences', {
   state: (): PreferencesState => ({
     matterDocumentsDefaultView: 'local',
+    weekStartDay: 0, // Sunday
     _hydrated: false
   }),
 
@@ -43,7 +43,8 @@ export const usePreferencesStore = defineStore('preferences', {
     /**
      * Get the default view for matter documents tab
      */
-    documentsDefaultView: state => state.matterDocumentsDefaultView
+    documentsDefaultView: state => state.matterDocumentsDefaultView,
+    weekStart: state => state.weekStartDay
   },
 
   actions: {
@@ -59,6 +60,9 @@ export const usePreferencesStore = defineStore('preferences', {
           const prefs = JSON.parse(stored)
           if (prefs.matterDocumentsDefaultView) {
             this.matterDocumentsDefaultView = prefs.matterDocumentsDefaultView
+          }
+          if (prefs.weekStartDay !== undefined) {
+            this.weekStartDay = prefs.weekStartDay
           }
         }
       }
@@ -78,10 +82,19 @@ export const usePreferencesStore = defineStore('preferences', {
     },
 
     /**
+     * Set the week start day (0 = Sunday, 1 = Monday)
+     */
+    setWeekStartDay(day: WeekStartPreference) {
+      this.weekStartDay = day
+      saveToStorage(this.$state)
+    },
+
+    /**
      * Reset all preferences to defaults
      */
     resetToDefaults() {
       this.matterDocumentsDefaultView = 'local'
+      this.weekStartDay = 0
       saveToStorage(this.$state)
     }
   }

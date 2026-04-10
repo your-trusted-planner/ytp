@@ -11,7 +11,9 @@ const SCOPE = 'https://www.googleapis.com/auth/calendar'
 
 const testSchema = z.object({
   serviceAccountEmail: z.string().email().optional(),
-  serviceAccountPrivateKey: z.string().optional()
+  serviceAccountPrivateKey: z.string().optional(),
+  /** If provided, also tests domain-wide delegation by impersonating this user */
+  impersonateEmail: z.string().email().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -58,7 +60,7 @@ export default defineEventHandler(async (event) => {
     return { success: false, error: 'No credentials provided or stored.' }
   }
 
-  // Attempt to get an access token — this validates the credentials
+  // Step 1: Test basic service account auth (no impersonation)
   try {
     const jwt = await createTestJWT(email, privateKey)
 
@@ -79,29 +81,70 @@ export default defineEventHandler(async (event) => {
         errorMessage = errorData.error_description || errorData.error || errorMessage
       }
       catch {}
-      return { success: false, error: errorMessage }
+      return { success: false, error: `Service account auth failed: ${errorMessage}` }
     }
-
-    return { success: true, email }
   }
   catch (err: any) {
-    return { success: false, error: err.message || 'Failed to authenticate' }
+    return { success: false, error: err.message || 'Failed to authenticate service account' }
   }
+
+  // Step 2: If impersonateEmail provided, test domain-wide delegation
+  const impersonateEmail = parsed.data.impersonateEmail
+  if (impersonateEmail) {
+    try {
+      const jwt = await createTestJWT(email, privateKey, impersonateEmail)
+
+      const response = await fetch(GOOGLE_TOKEN_URI, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: jwt
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorMessage = 'Impersonation failed'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error_description || errorData.error || errorMessage
+        }
+        catch {}
+        return {
+          success: false,
+          serviceAccountOk: true,
+          error: `Service account authenticated, but domain-wide delegation failed for ${impersonateEmail}: ${errorMessage}. Check Google Workspace Admin > Security > API controls > Domain-wide delegation.`
+        }
+      }
+
+      return { success: true, email, impersonateEmail, delegationVerified: true }
+    }
+    catch (err: any) {
+      return { success: false, serviceAccountOk: true, error: `Delegation test failed: ${err.message}` }
+    }
+  }
+
+  return { success: true, email, delegationVerified: false }
 })
 
 /**
- * Minimal JWT creation for testing (no impersonation needed).
+ * JWT creation for testing — optionally with impersonation (sub claim).
  */
-async function createTestJWT(serviceAccountEmail: string, privateKey: string): Promise<string> {
+async function createTestJWT(serviceAccountEmail: string, privateKey: string, impersonateEmail?: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
 
   const header = { alg: 'RS256', typ: 'JWT' }
-  const claims = {
+  const claims: Record<string, any> = {
     iss: serviceAccountEmail,
     scope: SCOPE,
     aud: GOOGLE_TOKEN_URI,
     exp: now + 300,
     iat: now
+  }
+
+  if (impersonateEmail) {
+    claims.sub = impersonateEmail
   }
 
   const base64url = (data: object): string =>

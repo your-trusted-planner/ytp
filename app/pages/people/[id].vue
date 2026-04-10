@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
-import { ArrowLeft, Edit, Trash2, User, Building2, Plus, Minus, Loader, Mail, Phone, MapPin, Calendar, Lock, Link2, Users } from 'lucide-vue-next'
+import { ref, reactive, computed } from 'vue'
+import { ArrowLeft, Edit, Trash2, User, Building2, Landmark, Loader, Mail, Phone, MapPin, Calendar, Lock, Link2, Users } from 'lucide-vue-next'
 import type { AddressValue } from '~/components/ui/AddressInput.vue'
+import type { PersonFormData } from '~/components/people/PersonFormFields.vue'
 
 const toast = useToast()
 const route = useRoute()
@@ -16,7 +17,7 @@ const personId = route.params.id as string
 
 interface PersonDetail {
   id: string
-  personType: string
+  personType: 'individual' | 'trust' | 'entity'
   firstName?: string
   lastName?: string
   middleNames?: string[]
@@ -30,13 +31,17 @@ interface PersonDetail {
   zipCode?: string
   country?: string
   dateOfBirth?: number
-  ssnLast4?: string
+  maritalStatus?: string
+  tinLast4?: string
+  tinMasked?: string
   notes?: string
   importMetadata?: string
   createdAt: number
   updatedAt: number
   linkedClient: { id: string, status: string } | null
   linkedUser: { id: string, role: string, status: string } | null
+  trustProfile: any | null
+  entityProfile: any | null
   relationships: Relationship[]
 }
 
@@ -62,63 +67,47 @@ const editingNotes = ref(false)
 const notesEditValue = ref('')
 const savingNotes = ref(false)
 
-const personForm = reactive({
-  mode: 'person' as 'person' | 'entity',
+// ---------------------------------------------------------------------------
+// Shared form state (reuses PersonFormFields component)
+// ---------------------------------------------------------------------------
+const emptyForm = (): PersonFormData => ({
+  mode: 'person',
   firstName: '',
   lastName: '',
   middleName: '',
-  middleNames: [] as string[],
+  middleNames: [],
   useMultipleMiddleNames: false,
+  dateOfBirth: '',
+  fullName: '',
+  tin: '',
+  trustType: '',
+  isRevocable: true,
+  isJoint: false,
+  entityType: '',
+  stateFileNumber: '',
+  managementType: '',
+  jurisdiction: '',
+  formationDate: '',
   email: '',
   phone: '',
-  address: '',
-  address2: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  country: '',
-  dateOfBirth: '',
-  ssnLast4: '',
-  entityName: '',
-  entityType: '',
-  entityEin: '',
   notes: ''
 })
 
+const personForm = reactive<PersonFormData>(emptyForm())
+
 const addressValue = ref<AddressValue>({
-  address: '',
-  address2: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  country: ''
+  address: '', address2: '', city: '', state: '', zipCode: '', country: ''
 })
 
-// Sync addressValue with personForm
-watch(addressValue, (newVal) => {
-  personForm.address = newVal.address
-  personForm.address2 = newVal.address2 || ''
-  personForm.city = newVal.city
-  personForm.state = newVal.state
-  personForm.zipCode = newVal.zipCode
-  personForm.country = newVal.country || ''
-}, { deep: true })
-
-// Middle names management
+// Middle name helpers
 function enableMultipleMiddleNames() {
-  if (personForm.middleName.trim()) {
-    personForm.middleNames = [personForm.middleName.trim()]
-  }
-  else {
-    personForm.middleNames = ['']
-  }
+  personForm.middleNames = personForm.middleName.trim()
+    ? [personForm.middleName.trim()]
+    : ['']
   personForm.useMultipleMiddleNames = true
 }
-
-function addMiddleName() {
-  personForm.middleNames.push('')
-}
-
+function addMiddleName() { personForm.middleNames.push('') }
+function updateMiddleName(index: number, value: string) { personForm.middleNames[index] = value }
 function removeMiddleName(index: number) {
   personForm.middleNames.splice(index, 1)
   if (personForm.middleNames.length <= 1) {
@@ -127,8 +116,61 @@ function removeMiddleName(index: number) {
     personForm.useMultipleMiddleNames = false
   }
 }
+function handleFieldUpdate(field: string, value: any) { (personForm as any)[field] = value }
 
+// ---------------------------------------------------------------------------
+// Build API payload from form state (same logic as people/index.vue)
+// ---------------------------------------------------------------------------
+function buildPayload(): Record<string, any> {
+  const shared: Record<string, any> = {
+    email: personForm.email || undefined,
+    phone: personForm.phone || undefined,
+    address: addressValue.value.address || undefined,
+    address2: addressValue.value.address2 || undefined,
+    city: addressValue.value.city || undefined,
+    state: addressValue.value.state || undefined,
+    zipCode: addressValue.value.zipCode || undefined,
+    country: addressValue.value.country || undefined,
+    notes: personForm.notes || undefined
+  }
+  if (personForm.tin) shared.tin = personForm.tin
+
+  if (personForm.mode === 'person') {
+    return {
+      ...shared,
+      firstName: personForm.firstName,
+      lastName: personForm.lastName,
+      middleNames: personForm.useMultipleMiddleNames
+        ? personForm.middleNames.filter(n => n.trim())
+        : personForm.middleName.trim() ? [personForm.middleName.trim()] : [],
+      dateOfBirth: personForm.dateOfBirth ? new Date(personForm.dateOfBirth).getTime() : undefined
+    }
+  }
+  if (personForm.mode === 'trust') {
+    return {
+      ...shared,
+      fullName: personForm.fullName,
+      trustType: personForm.trustType || undefined,
+      isRevocable: personForm.isRevocable,
+      isJoint: personForm.isJoint,
+      jurisdiction: personForm.jurisdiction || undefined,
+      formationDate: personForm.formationDate || undefined
+    }
+  }
+  return {
+    ...shared,
+    fullName: personForm.fullName,
+    entityType: personForm.entityType || undefined,
+    jurisdiction: personForm.jurisdiction || undefined,
+    formationDate: personForm.formationDate || undefined,
+    stateFileNumber: personForm.stateFileNumber || undefined,
+    managementType: personForm.managementType || undefined
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Computed
+// ---------------------------------------------------------------------------
 const formattedAddress = computed(() => {
   if (!person.value) return null
   const p = person.value
@@ -136,19 +178,30 @@ const formattedAddress = computed(() => {
   if (p.address) parts.push(p.address)
   if (p.address2) parts.push(p.address2)
   const cityStateZip = [p.city, p.state].filter(Boolean).join(', ')
-  if (cityStateZip || p.zipCode) {
-    parts.push([cityStateZip, p.zipCode].filter(Boolean).join(' '))
-  }
+  if (cityStateZip || p.zipCode) parts.push([cityStateZip, p.zipCode].filter(Boolean).join(' '))
   if (p.country && p.country !== 'US') parts.push(p.country)
   return parts.length > 0 ? parts : null
 })
 
-// Fetch person data
+const personTypeIcon = computed(() =>
+  person.value?.personType === 'trust' ? Landmark
+    : person.value?.personType === 'entity' ? Building2
+      : User
+)
+
+const personTypeBadge = computed(() => {
+  if (person.value?.personType === 'trust') return { label: 'Trust', variant: 'info' as const }
+  if (person.value?.personType === 'entity') return { label: 'Entity', variant: 'info' as const }
+  return { label: 'Individual', variant: 'success' as const }
+})
+
+// ---------------------------------------------------------------------------
+// CRUD
+// ---------------------------------------------------------------------------
 async function fetchPerson() {
   loading.value = true
   try {
-    const data = await $fetch<PersonDetail>(`/api/people/${personId}`)
-    person.value = data
+    person.value = await $fetch<PersonDetail>(`/api/people/${personId}`)
   }
   catch (error: any) {
     console.error('Error fetching person:', error)
@@ -162,47 +215,26 @@ async function fetchPerson() {
   }
 }
 
-// Format date
 function formatDate(timestamp?: number) {
   if (!timestamp) return 'N/A'
-  return new Date(timestamp).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+  return new Date(timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-// Format relationship type
 function formatRelationshipType(type: string): string {
   const typeMap: Record<string, string> = {
-    SPOUSE: 'Spouse',
-    EX_SPOUSE: 'Ex-Spouse',
-    PARTNER: 'Partner',
-    CHILD: 'Child',
-    STEPCHILD: 'Stepchild',
-    GRANDCHILD: 'Grandchild',
-    PARENT: 'Parent',
-    SIBLING: 'Sibling',
-    FINANCIAL_ADVISOR: 'Financial Advisor',
-    ACCOUNTANT: 'Accountant',
-    INSURANCE_AGENT: 'Insurance Agent',
-    ATTORNEY: 'Attorney',
-    BUSINESS_PARTNER: 'Business Partner',
-    BUSINESS_ASSOCIATE: 'Business Associate',
-    TRUSTEE: 'Trustee',
-    CO_TRUSTEE: 'Co-Trustee',
-    SUCCESSOR_TRUSTEE: 'Successor Trustee',
-    BENEFICIARY: 'Beneficiary',
-    EXECUTOR: 'Executor',
-    AGENT: 'Agent',
-    GUARDIAN: 'Guardian',
-    POWER_OF_ATTORNEY: 'Power of Attorney',
-    HEALTHCARE_PROXY: 'Healthcare Proxy'
+    SPOUSE: 'Spouse', EX_SPOUSE: 'Ex-Spouse', PARTNER: 'Partner',
+    CHILD: 'Child', STEPCHILD: 'Stepchild', GRANDCHILD: 'Grandchild',
+    PARENT: 'Parent', SIBLING: 'Sibling',
+    FINANCIAL_ADVISOR: 'Financial Advisor', ACCOUNTANT: 'Accountant',
+    INSURANCE_AGENT: 'Insurance Agent', ATTORNEY: 'Attorney',
+    BUSINESS_PARTNER: 'Business Partner', BUSINESS_ASSOCIATE: 'Business Associate',
+    TRUSTEE: 'Trustee', CO_TRUSTEE: 'Co-Trustee', SUCCESSOR_TRUSTEE: 'Successor Trustee',
+    BENEFICIARY: 'Beneficiary', EXECUTOR: 'Executor', AGENT: 'Agent',
+    GUARDIAN: 'Guardian', POWER_OF_ATTORNEY: 'Power of Attorney', HEALTHCARE_PROXY: 'Healthcare Proxy'
   }
   return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-// Format context
 function formatContext(context: string | null): string {
   if (!context) return 'General'
   return context.charAt(0).toUpperCase() + context.slice(1)
@@ -213,164 +245,117 @@ function startEditNotes() {
   notesEditValue.value = person.value?.notes || ''
   editingNotes.value = true
 }
-
 function cancelEditNotes() {
   editingNotes.value = false
   notesEditValue.value = ''
 }
-
 async function saveNotes() {
   savingNotes.value = true
   try {
     await $fetch(`/api/people/${personId}`, {
       method: 'PUT',
-      body: {
-        firstName: person.value?.firstName,
-        lastName: person.value?.lastName,
-        notes: notesEditValue.value || undefined
-      }
+      body: { notes: notesEditValue.value || undefined }
     })
-    if (person.value) {
-      person.value.notes = notesEditValue.value
-    }
+    if (person.value) person.value.notes = notesEditValue.value
     editingNotes.value = false
     toast.success('Notes updated')
   }
-  catch (error) {
-    console.error('Error saving notes:', error)
-    toast.error('Failed to save notes')
-  }
-  finally {
-    savingNotes.value = false
-  }
+  catch { toast.error('Failed to save notes') }
+  finally { savingNotes.value = false }
 }
 
-// Open edit modal
+// Open edit modal — populate form from current person data
 function openEditModal() {
   if (!person.value) return
   const p = person.value
+  Object.assign(personForm, emptyForm())
 
-  personForm.mode = p.personType === 'entity' ? 'entity' : 'person'
+  // Set mode from personType
+  personForm.mode = p.personType === 'trust' ? 'trust'
+    : p.personType === 'entity' ? 'entity'
+      : 'person'
 
   if (personForm.mode === 'person') {
     personForm.firstName = p.firstName || ''
     personForm.lastName = p.lastName || ''
-
     const middleNames = p.middleNames || []
     if (middleNames.length > 1) {
       personForm.useMultipleMiddleNames = true
       personForm.middleNames = [...middleNames]
-      personForm.middleName = ''
     }
     else {
-      personForm.useMultipleMiddleNames = false
       personForm.middleName = middleNames[0] || ''
-      personForm.middleNames = []
     }
-
     personForm.dateOfBirth = p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : ''
-    personForm.ssnLast4 = p.ssnLast4 || ''
+  }
+  else {
+    personForm.fullName = p.fullName || ''
   }
 
+  // Trust-specific fields from profile
+  if (personForm.mode === 'trust' && p.trustProfile) {
+    personForm.trustType = p.trustProfile.trustType || ''
+    personForm.isRevocable = p.trustProfile.isRevocable ?? true
+    personForm.isJoint = p.trustProfile.isJoint ?? false
+    personForm.jurisdiction = p.trustProfile.jurisdiction || ''
+    personForm.formationDate = p.trustProfile.formationDate
+      ? new Date(p.trustProfile.formationDate).toISOString().split('T')[0]
+      : ''
+  }
+
+  // Entity-specific fields from profile
+  if (personForm.mode === 'entity' && p.entityProfile) {
+    personForm.entityType = p.entityProfile.entityType || ''
+    personForm.jurisdiction = p.entityProfile.jurisdiction || ''
+    personForm.formationDate = p.entityProfile.formationDate
+      ? new Date(p.entityProfile.formationDate).toISOString().split('T')[0]
+      : ''
+    personForm.stateFileNumber = p.entityProfile.stateFileNumber || ''
+    personForm.managementType = p.entityProfile.managementType || ''
+  }
+
+  // Shared fields
   personForm.email = p.email || ''
   personForm.phone = p.phone || ''
-  personForm.address = p.address || ''
-  personForm.address2 = p.address2 || ''
-  personForm.city = p.city || ''
-  personForm.state = p.state || ''
-  personForm.zipCode = p.zipCode || ''
-  personForm.country = p.country || ''
   personForm.notes = p.notes || ''
 
   addressValue.value = {
-    address: p.address || '',
-    address2: p.address2 || '',
-    city: p.city || '',
-    state: p.state || '',
-    zipCode: p.zipCode || '',
-    country: p.country || ''
+    address: p.address || '', address2: p.address2 || '',
+    city: p.city || '', state: p.state || '',
+    zipCode: p.zipCode || '', country: p.country || ''
   }
 
   showEditModal.value = true
 }
 
-// Save person
 async function savePerson() {
   savingPerson.value = true
   try {
-    const payload: any = {
-      email: personForm.email || undefined,
-      phone: personForm.phone || undefined,
-      address: personForm.address || undefined,
-      address2: personForm.address2 || undefined,
-      city: personForm.city || undefined,
-      state: personForm.state || undefined,
-      zipCode: personForm.zipCode || undefined,
-      country: personForm.country || undefined,
-      notes: personForm.notes || undefined
-    }
-
-    if (personForm.mode === 'person') {
-      payload.firstName = personForm.firstName
-      payload.lastName = personForm.lastName
-      if (personForm.useMultipleMiddleNames) {
-        payload.middleNames = personForm.middleNames.filter(name => name.trim() !== '')
-      }
-      else {
-        payload.middleNames = personForm.middleName.trim() ? [personForm.middleName.trim()] : []
-      }
-      if (personForm.dateOfBirth) {
-        payload.dateOfBirth = new Date(personForm.dateOfBirth).getTime()
-      }
-      payload.ssnLast4 = personForm.ssnLast4 || undefined
-    }
-    else {
-      payload.entityName = personForm.entityName
-      payload.entityType = personForm.entityType || undefined
-      payload.entityEin = personForm.entityEin || undefined
-    }
-
-    await $fetch(`/api/people/${personId}`, {
-      method: 'PUT',
-      body: payload
-    })
-
+    await $fetch(`/api/people/${personId}`, { method: 'PUT', body: buildPayload() })
     showEditModal.value = false
     await fetchPerson()
     toast.success('Person updated')
   }
-  catch (error) {
-    console.error('Error updating person:', error)
-    toast.error('Failed to update person')
+  catch (error: any) {
+    toast.error(error?.data?.message || 'Failed to update person')
   }
-  finally {
-    savingPerson.value = false
-  }
+  finally { savingPerson.value = false }
 }
 
-// Delete person
 async function deletePerson() {
   if (!person.value) return
-  if (!confirm(`Are you sure you want to delete ${person.value.fullName}? This will also remove all relationships with this person.`)) {
-    return
-  }
-
+  if (!confirm(`Are you sure you want to delete ${person.value.fullName}? This will also remove all relationships.`)) return
   try {
-    await $fetch(`/api/people/${personId}`, {
-      method: 'DELETE'
-    })
+    await $fetch(`/api/people/${personId}`, { method: 'DELETE' })
     toast.success('Person deleted')
     router.push('/people')
   }
   catch (error: any) {
-    console.error('Error deleting person:', error)
     toast.error(error.data?.message || 'Failed to delete person')
   }
 }
 
-onMounted(() => {
-  fetchPerson()
-})
+onMounted(() => fetchPerson())
 </script>
 
 <template>
@@ -400,8 +385,8 @@ onMounted(() => {
         v-if="person"
         class="flex items-center space-x-3"
       >
-        <UiBadge :variant="person.personType === 'entity' ? 'info' : 'success'">
-          {{ person.personType === 'entity' ? 'Entity' : 'Individual' }}
+        <UiBadge :variant="personTypeBadge.variant">
+          {{ personTypeBadge.label }}
         </UiBadge>
         <UiButton
           variant="outline"
@@ -435,12 +420,12 @@ onMounted(() => {
       v-else-if="person"
       class="grid grid-cols-1 lg:grid-cols-3 gap-6"
     >
-      <!-- Left Column: Info Cards -->
+      <!-- Left Column -->
       <div class="lg:col-span-1 space-y-6">
         <!-- Contact Info Card -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Contact Information
+            {{ person.personType === 'individual' ? 'Contact Information' : 'Details' }}
           </h3>
           <div class="space-y-3 text-sm">
             <div
@@ -496,20 +481,99 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+            <!-- TIN (uses sensitive field component) -->
             <div
-              v-if="person.ssnLast4"
+              v-if="person.tinLast4"
               class="flex items-start"
             >
               <Lock class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
               <div>
-                <span class="text-gray-600">SSN Last 4</span>
+                <span class="text-gray-600">{{ person.personType === 'individual' ? 'SSN' : 'EIN' }}</span>
                 <div class="font-medium">
-                  ***-**-{{ person.ssnLast4 }}
+                  <UiSensitiveField
+                    :person-id="person.id"
+                    field="tin"
+                    :last4="person.tinLast4"
+                    :masked="person.tinMasked"
+                    :label="person.personType === 'individual' ? 'SSN' : 'EIN'"
+                  />
                 </div>
               </div>
             </div>
+
+            <!-- Trust-specific info -->
+            <template v-if="person.trustProfile">
+              <div
+                v-if="person.trustProfile.trustType"
+                class="flex items-start"
+              >
+                <Landmark class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <span class="text-gray-600">Trust Type</span>
+                  <div class="font-medium">
+                    {{ person.trustProfile.trustType.replace(/_/g, ' ') }}
+                    <span v-if="person.trustProfile.isRevocable !== null" class="text-xs text-gray-500 ml-1">
+                      ({{ person.trustProfile.isRevocable ? 'Revocable' : 'Irrevocable' }}{{ person.trustProfile.isJoint ? ', Joint' : '' }})
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="person.trustProfile.jurisdiction"
+                class="flex items-start"
+              >
+                <MapPin class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <span class="text-gray-600">Jurisdiction</span>
+                  <div class="font-medium">
+                    {{ person.trustProfile.jurisdiction }}
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Entity-specific info -->
+            <template v-if="person.entityProfile">
+              <div
+                v-if="person.entityProfile.entityType"
+                class="flex items-start"
+              >
+                <Building2 class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <span class="text-gray-600">Entity Type</span>
+                  <div class="font-medium">
+                    {{ person.entityProfile.entityType.replace(/_/g, ' ') }}
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="person.entityProfile.jurisdiction"
+                class="flex items-start"
+              >
+                <MapPin class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <span class="text-gray-600">Jurisdiction</span>
+                  <div class="font-medium">
+                    {{ person.entityProfile.jurisdiction }}
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="person.entityProfile.stateFileNumber"
+                class="flex items-start"
+              >
+                <Lock class="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                <div>
+                  <span class="text-gray-600">State Filing #</span>
+                  <div class="font-medium">
+                    {{ person.entityProfile.stateFileNumber }}
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <div
-              v-if="!person.email && !person.phone && !formattedAddress && !person.dateOfBirth && !person.ssnLast4"
+              v-if="!person.email && !person.phone && !formattedAddress && !person.dateOfBirth && !person.tinLast4"
               class="text-gray-500"
             >
               No contact information on file
@@ -592,7 +656,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Right Column: Notes + Relationships -->
+      <!-- Right Column -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Notes Card -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -608,7 +672,6 @@ onMounted(() => {
               {{ person.notes ? 'Edit' : 'Add Notes' }}
             </button>
           </div>
-
           <div v-if="editingNotes">
             <textarea
               v-model="notesEditValue"
@@ -657,14 +720,12 @@ onMounted(() => {
               Relationships
             </h3>
           </div>
-
           <div
             v-if="person.relationships.length === 0"
             class="text-center py-8 text-gray-500 text-sm"
           >
             No relationships found
           </div>
-
           <table
             v-else
             class="w-full"
@@ -726,7 +787,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Edit Person Modal -->
+    <!-- Edit Person Modal (uses shared component) -->
     <UiModal
       v-model="showEditModal"
       title="Edit Person"
@@ -736,185 +797,18 @@ onMounted(() => {
         class="space-y-4"
         @submit.prevent="savePerson"
       >
-        <!-- Type Display (read-only) -->
-        <div class="border-b pb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
-          <div class="flex items-center text-sm text-gray-600">
-            <Building2
-              v-if="personForm.mode === 'entity'"
-              class="w-4 h-4 mr-2"
-            />
-            <User
-              v-else
-              class="w-4 h-4 mr-2"
-            />
-            {{ personForm.mode === 'entity' ? 'Business Entity' : 'Individual Person' }}
-          </div>
-        </div>
-
-        <!-- Person Fields -->
-        <div
-          v-if="personForm.mode === 'person'"
-          class="space-y-4"
-        >
-          <div class="grid grid-cols-2 gap-4">
-            <UiInput
-              v-model="personForm.firstName"
-              label="First Name"
-              required
-            />
-            <UiInput
-              v-model="personForm.lastName"
-              label="Last Name"
-              required
-            />
-          </div>
-
-          <!-- Middle Names -->
-          <div class="space-y-2">
-            <div v-if="!personForm.useMultipleMiddleNames">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Middle Name (optional)</label>
-              <input
-                v-model="personForm.middleName"
-                type="text"
-                placeholder="Middle name"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-              >
-              <button
-                type="button"
-                class="mt-1 text-sm text-burgundy-600 hover:text-burgundy-800"
-                @click="enableMultipleMiddleNames"
-              >
-                + Add another middle name
-              </button>
-            </div>
-
-            <div
-              v-else
-              class="space-y-2"
-            >
-              <div class="flex items-center justify-between">
-                <label class="block text-sm font-medium text-gray-700">Middle Names</label>
-                <button
-                  type="button"
-                  class="text-sm text-burgundy-600 hover:text-burgundy-800 flex items-center"
-                  @click="addMiddleName"
-                >
-                  <Plus class="w-4 h-4 mr-1" />
-                  Add Another
-                </button>
-              </div>
-              <div
-                v-for="(middleName, index) in personForm.middleNames"
-                :key="index"
-                class="flex items-center gap-2"
-              >
-                <input
-                  v-model="personForm.middleNames[index]"
-                  type="text"
-                  :placeholder="`Middle Name ${index + 1}`"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-burgundy-500 focus:border-transparent"
-                >
-                <button
-                  type="button"
-                  class="p-2 text-red-600 hover:text-red-800"
-                  title="Remove middle name"
-                  @click="removeMiddleName(index)"
-                >
-                  <Minus class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <UiInput
-              v-model="personForm.dateOfBirth"
-              label="Date of Birth"
-              type="date"
-            />
-            <UiInput
-              v-model="personForm.ssnLast4"
-              label="SSN Last 4"
-              maxlength="4"
-            />
-          </div>
-        </div>
-
-        <!-- Entity Fields -->
-        <div
-          v-if="personForm.mode === 'entity'"
-          class="space-y-4"
-        >
-          <UiInput
-            v-model="personForm.entityName"
-            label="Entity Name"
-            required
-          />
-          <div class="grid grid-cols-2 gap-4">
-            <UiSelect
-              v-model="personForm.entityType"
-              label="Entity Type"
-            >
-              <option value="">
-                -- Select Type --
-              </option>
-              <option value="LLC">
-                LLC
-              </option>
-              <option value="Corporation">
-                Corporation
-              </option>
-              <option value="Partnership">
-                Partnership
-              </option>
-              <option value="Trust">
-                Trust
-              </option>
-              <option value="Non-Profit">
-                Non-Profit
-              </option>
-              <option value="Other">
-                Other
-              </option>
-            </UiSelect>
-            <UiInput
-              v-model="personForm.entityEin"
-              label="EIN"
-            />
-          </div>
-        </div>
-
-        <!-- Contact Information -->
-        <div class="border-t pt-4 space-y-4">
-          <h4 class="font-semibold text-gray-900">
-            Contact Information
-          </h4>
-          <div class="grid grid-cols-2 gap-4">
-            <UiInput
-              v-model="personForm.email"
-              label="Email"
-              type="email"
-            />
-            <UiPhoneInput
-              v-model="personForm.phone"
-              label="Phone"
-            />
-          </div>
-          <UiAddressInput
-            v-model="addressValue"
-            label="Address"
-          />
-        </div>
-
-        <!-- Notes -->
-        <UiTextarea
-          v-model="personForm.notes"
-          label="Notes (optional)"
-          :rows="3"
+        <PeoplePersonFormFields
+          :form="personForm"
+          :address-value="addressValue"
+          is-edit
+          @update:field="handleFieldUpdate"
+          @update:mode="personForm.mode = $event"
+          @update:address="addressValue = $event"
+          @enable-multiple-middle-names="enableMultipleMiddleNames"
+          @add-middle-name="addMiddleName"
+          @update-middle-name="updateMiddleName"
+          @remove-middle-name="removeMiddleName"
         />
-
-        <!-- Actions -->
         <div class="flex justify-end gap-2 pt-4">
           <UiButton
             type="button"

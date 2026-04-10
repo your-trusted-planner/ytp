@@ -85,9 +85,12 @@ export const planVersions = sqliteTable('plan_versions', {
 })
 
 // Trusts - Trust-specific data
+// Serves dual duty: estate-plan artifact (planId set) AND standalone trust identity (planId null).
+// Links to a people record (personType='trust') via personId for Belly Button Principle compliance.
 export const trusts = sqliteTable('trusts', {
   id: text('id').primaryKey(),
-  planId: text('plan_id').notNull().references(() => estatePlans.id, { onDelete: 'cascade' }),
+  planId: text('plan_id').references(() => estatePlans.id, { onDelete: 'cascade' }), // nullable for standalone trusts
+  personId: text('person_id').references(() => people.id), // bridge to people record
 
   // Trust identification
   trustName: text('trust_name').notNull(),

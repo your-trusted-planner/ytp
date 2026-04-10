@@ -123,29 +123,40 @@ export default defineEventHandler(async (event) => {
   const baseUrl = config.public?.appUrl || 'http://localhost:3000'
   const signingUrl = `${baseUrl}/sign/${session.signingToken}`
 
-  // Send email via message service
-  const { emailTemplates } = await import('../../../utils/email')
-  const { sendMessage } = await import('../../../utils/message-service')
-  const signerName = `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || 'there'
+  // Send email via DB template
+  const { sendTemplatedMessage } = await import('../../../utils/send-templated-message')
   const senderName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Your Trusted Planner'
 
-  const { html } = emailTemplates.signatureRequest({
-    recipientName: signerName,
-    documentTitle: document.title,
-    senderName,
-    signingUrl,
-    expiresAt: new Date(newExpiresAt),
-    message: message || 'This is a reminder to sign the document at your earliest convenience.'
+  const expiresAtDate = newExpiresAt instanceof Date ? newExpiresAt : new Date(newExpiresAt ?? Date.now())
+  const formattedExpiresAt = expiresAtDate.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
   })
 
-  await sendMessage({
-    recipientAddress: signer.email,
-    channel: 'EMAIL',
-    category: 'TRANSACTIONAL',
+  if (!signer.personId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Signer has no linked person record — cannot send email'
+    })
+  }
+
+  await sendTemplatedMessage({
     templateSlug: 'signature-request',
-    subject: `Reminder: Document Ready for Signature - ${document.title}`,
-    body: html,
-    bodyFormat: 'HTML',
+    recipientPersonId: signer.personId,
+    variables: {
+      documentTitle: document.title,
+      senderName,
+      signingUrl,
+      expiresAt: formattedExpiresAt,
+      message: message || 'This is a reminder to sign the document at your earliest convenience.'
+    },
+    // Prepend "Reminder:" to the template's subject for resend flows
+    subjectOverride: 'Reminder: {{documentTitle}} — Document Ready for Signature',
     senderUserId: user.id,
     contextType: 'document',
     contextId: document.id,

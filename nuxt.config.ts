@@ -113,5 +113,23 @@ export default defineNuxtConfig({
   // Tailwind
   tailwindcss: {
     configPath: 'tailwind.config.ts'
+  },
+
+  // Pre-bundle heavy deps to avoid dev page reloads
+  vite: {
+    optimizeDeps: {
+      include: [
+        'vue-toastification',
+        'firebase/app',
+        'firebase/auth',
+        'lucide-vue-next',
+        '@vuepic/vue-datepicker',
+        'clsx',
+        'tailwind-merge',
+        'libphonenumber-js',
+        'date-fns',
+        'maska/vue'
+      ]
+    }
   }
 })

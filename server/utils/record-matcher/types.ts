@@ -16,7 +16,7 @@ export interface PersonRecord {
   city?: string
   state?: string
   zipCode?: string
-  ssnLast4?: string
+  tinLast4?: string
 }
 
 /** Result of comparing a single field */

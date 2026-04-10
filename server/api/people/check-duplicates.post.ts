@@ -12,7 +12,7 @@ const checkDuplicatesSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
-  ssnLast4: z.string().max(4).optional()
+  tinLast4: z.string().max(4).optional()
 })
 
 /**
@@ -37,7 +37,7 @@ function countInputFields(data: z.infer<typeof checkDuplicatesSchema>): number {
   if (data.phone) count++
   if (data.dateOfBirth) count++
   if (data.address || data.city || data.zipCode) count++
-  if (data.ssnLast4) count++
+  if (data.tinLast4) count++
   return count
 }
 

@@ -292,6 +292,64 @@ export async function triggerJourneyStarted(params: {
 }
 
 /**
+ * Trigger: Signature completed
+ * Called from: server/api/signature/[token]/sign.post.ts after a signer successfully signs a document
+ *
+ * Sends a confirmation email to the signer with certificate details.
+ */
+export async function triggerSignatureComplete(params: {
+  signerUserId: string
+  documentId: string
+  documentTitle: string
+  signedAt: Date
+  certificateId: string
+  event?: H3Event
+}): Promise<void> {
+  try {
+    const { useDrizzle, schema } = await import('../db')
+    const { eq } = await import('drizzle-orm')
+    const db = useDrizzle()
+
+    // Look up the signer's personId
+    const signer = await db.select({ personId: schema.users.personId })
+      .from(schema.users)
+      .where(eq(schema.users.id, params.signerUserId))
+      .get()
+
+    if (!signer?.personId) {
+      console.warn(`[Trigger] Signature complete: signer ${params.signerUserId} has no personId, skipping`)
+      return
+    }
+
+    const formattedSignedAt = params.signedAt.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })
+
+    await sendTemplatedMessage({
+      templateSlug: 'signature-complete',
+      recipientPersonId: signer.personId,
+      variables: {
+        documentTitle: params.documentTitle,
+        signedAt: formattedSignedAt,
+        certificateId: params.certificateId
+      },
+      contextType: 'document',
+      contextId: params.documentId,
+      event: params.event
+    })
+  }
+  catch (err) {
+    console.error('[Trigger] Signature complete failed:', err)
+  }
+}
+
+/**
  * Format action type enum to human-readable label
  */
 function formatActionType(actionType: string): string {

@@ -21,6 +21,7 @@ import {
 import { generateSignedPdf } from '../../../utils/signed-pdf-generator'
 import { captureRequestContext } from '../../../utils/request-context'
 import { logActivity } from '../../../utils/activity-logger'
+import { triggerSignatureComplete } from '../../../utils/message-triggers'
 
 const signRequestSchema = z.object({
   signatureData: z.string().min(100), // Base64 PNG should be substantial
@@ -335,6 +336,16 @@ export default defineEventHandler(async (event) => {
       console.error('[Signature] Failed to auto-complete action item:', actionErr)
     }
   }
+
+  // Fire-and-forget signature confirmation email
+  triggerSignatureComplete({
+    signerUserId: signer.id,
+    documentId: document.id,
+    documentTitle: document.title,
+    signedAt: now,
+    certificateId: certificate.certificateId,
+    event
+  })
 
   return {
     success: true,

@@ -158,7 +158,7 @@ export default defineEventHandler(async (event) => {
           state: person.state,
           zipCode: person.zipCode,
           dateOfBirth: person.dateOfBirth,
-          ssnLast4: person.ssnLast4,
+          tinLast4: person.tinLast4,
           notes: person.notes,
           importMetadata: person.importMetadata
         })
@@ -316,11 +316,21 @@ export default defineEventHandler(async (event) => {
         importMetadata: plan.importMetadata
       })
 
-      // Insert trust if present
+      // Insert trust if present — also create a people record (Belly Button Principle)
       if (trust) {
+        const trustPersonId = `person_trust_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+        await db.insert(schema.people).values({
+          id: trustPersonId,
+          personType: 'trust',
+          fullName: trust.trustName,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+
         await db.insert(schema.trusts).values({
           id: trust.id,
           planId: trust.planId,
+          personId: trustPersonId,
           trustName: trust.trustName,
           trustType: trust.trustType as any,
           isJoint: trust.isJoint,

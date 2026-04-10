@@ -129,23 +129,23 @@ describe('applyAntiSignals', () => {
     expect(dobAntiSignal).toBeDefined()
   })
 
-  it('gives definitive non-match for different SSN', () => {
+  it('gives definitive non-match for different TIN', () => {
     const input: PersonRecord = {
       firstName: 'John',
       lastName: 'Smith',
-      ssnLast4: '1234'
+      tinLast4: '1234'
     }
     const candidate: PersonRecord = {
       firstName: 'John',
       lastName: 'Smith',
-      ssnLast4: '5678'
+      tinLast4: '5678'
     }
 
     const { rawScore, fieldScores } = scoreRecordPair(input, candidate)
     const { adjustedScore, antiSignals } = applyAntiSignals(input, candidate, rawScore, fieldScores)
 
-    const ssnAntiSignal = antiSignals.find(s => s.type === 'different_ssn')
-    expect(ssnAntiSignal).toBeDefined()
+    const tinAntiSignal = antiSignals.find(s => s.type === 'different_tin')
+    expect(tinAntiSignal).toBeDefined()
     expect(adjustedScore).toBe(0)
   })
 

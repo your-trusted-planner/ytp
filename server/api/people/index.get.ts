@@ -6,21 +6,36 @@ import { parsePaginationParams, buildPaginationMeta, isPaginationRequested, calc
 export default defineEventHandler(async (event) => {
   requireRole(event, ['LAWYER', 'ADMIN', 'STAFF'])
 
+  const { eq, and } = await import('drizzle-orm')
+
   const query = getQuery(event)
   const search = query.search as string | undefined
+  const personType = query.personType as string | undefined
   const usePagination = isPaginationRequested(query)
   const { page, limit, sortBy, sortDirection } = parsePaginationParams(query)
 
   const db = useDrizzle()
 
-  // Build where clause for search
-  const searchCondition = search ?
+  // Build conditions array
+  const conditions = []
+
+  if (search) {
+    conditions.push(
       or(
         like(schema.people.fullName, `%${search}%`),
         like(schema.people.email, `%${search}%`),
         like(schema.people.phone, `%${search}%`)
-      ) :
-    undefined
+      )
+    )
+  }
+
+  if (personType && ['individual', 'trust', 'entity'].includes(personType)) {
+    conditions.push(eq(schema.people.personType, personType))
+  }
+
+  const searchCondition = conditions.length > 0
+    ? (conditions.length === 1 ? conditions[0] : and(...conditions))
+    : undefined
 
   // Get total count for pagination
   let totalCount = 0
@@ -71,6 +86,7 @@ export default defineEventHandler(async (event) => {
   const result = {
     people: people.map(p => ({
       id: p.id,
+      personType: p.personType,
       // camelCase (keep for backwards compatibility)
       firstName: p.firstName,
       lastName: p.lastName,
@@ -85,7 +101,7 @@ export default defineEventHandler(async (event) => {
       zipCode: p.zipCode,
       country: p.country,
       dateOfBirth: p.dateOfBirth ? p.dateOfBirth.getTime() : null,
-      ssnLast4: p.ssnLast4,
+      tinLast4: p.tinLast4,
       notes: p.notes,
       createdAt: p.createdAt ? p.createdAt.getTime() : Date.now(),
       updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now(),
@@ -96,7 +112,7 @@ export default defineEventHandler(async (event) => {
       full_name: p.fullName,
       zip_code: p.zipCode,
       date_of_birth: p.dateOfBirth ? p.dateOfBirth.getTime() : null,
-      ssn_last_4: p.ssnLast4,
+      tin_last_4: p.tinLast4,
       created_at: p.createdAt ? p.createdAt.getTime() : Date.now(),
       updated_at: p.updatedAt ? p.updatedAt.getTime() : Date.now()
     }))

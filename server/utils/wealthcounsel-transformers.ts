@@ -27,7 +27,7 @@ export interface WCTransformedPerson {
   state?: string
   zipCode?: string
   dateOfBirth?: Date
-  ssnLast4?: string
+  tinLast4?: string
   notes?: string
   importMetadata?: string
 }
@@ -218,7 +218,7 @@ function transformPerson(wcPerson: WealthCounselPerson, role: string): WCTransfo
     city: wcPerson.city,
     zipCode: wcPerson.zipCode,
     dateOfBirth: wcPerson.dateOfBirth ? new Date(wcPerson.dateOfBirth) : undefined,
-    ssnLast4: wcPerson.ssn ? wcPerson.ssn.slice(-4) : undefined,
+    tinLast4: wcPerson.ssn ? wcPerson.ssn.slice(-4) : undefined,
     importMetadata: JSON.stringify({
       source: 'WEALTHCOUNSEL',
       role,

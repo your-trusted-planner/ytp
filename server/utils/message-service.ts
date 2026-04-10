@@ -141,12 +141,41 @@ async function deliverMessageSync(messageId: string, params: SendMessageParams):
         }).where(eq(schema.messages.id, messageId))
       }
     }
+    else if (params.channel === 'SMS' || params.channel === 'MMS') {
+      const { sendZoomPhoneSms, ZoomPhoneApiError } = await import('./zoom-phone-sms')
+
+      try {
+        const result = await sendZoomPhoneSms({
+          to: params.recipientAddress,
+          body: params.body,
+          event: params.event,
+          maxLength: 1600
+        })
+
+        console.log(
+          `[MessageService] SMS ${result.dryRun ? '(dry-run) ' : ''}sent: ${messageId} → ${params.recipientAddress} (provider: ${result.messageId})`
+        )
+        await db.update(schema.messages).set({
+          status: 'SENT',
+          providerMessageId: result.messageId,
+          sentAt: new Date()
+        }).where(eq(schema.messages.id, messageId))
+      }
+      catch (smsErr) {
+        const reason = smsErr instanceof Error ? smsErr.message : 'Unknown SMS error'
+        console.error(`[MessageService] SMS failed: ${messageId} → ${params.recipientAddress}: ${reason}`)
+        await db.update(schema.messages).set({
+          status: 'FAILED',
+          failureReason: reason,
+          failedAt: new Date()
+        }).where(eq(schema.messages.id, messageId))
+      }
+    }
     else {
-      // SMS/MMS — no provider yet, mark as failed
-      console.warn(`[MessageService] SMS/MMS delivery not available in sync mode`)
+      console.warn(`[MessageService] Unsupported channel: ${params.channel}`)
       await db.update(schema.messages).set({
         status: 'FAILED',
-        failureReason: 'SMS provider not configured',
+        failureReason: `Unsupported channel: ${params.channel}`,
         failedAt: new Date()
       }).where(eq(schema.messages.id, messageId))
     }

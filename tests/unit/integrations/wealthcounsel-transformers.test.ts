@@ -73,12 +73,12 @@ describe('extractPeople', () => {
       expect(client?.zipCode).toBe('12345')
     })
 
-    it('extracts SSN last 4 digits', () => {
+    it('extracts TIN last 4 digits', () => {
       const parsed = parseWealthCounselXml(singleClientWillXml)
       const people = extractPeople(parsed)
 
       const client = people.find(p => p.fullName === 'Sandra Lynn Jenkins')
-      expect(client?.ssnLast4).toBe('6789')
+      expect(client?.tinLast4).toBe('6789')
     })
 
     it('converts date of birth to Date object', () => {

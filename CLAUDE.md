@@ -636,6 +636,67 @@ When adding secrets for the preview environment:
 wrangler secret put SECRET_NAME --env preview
 ```
 
+## Sensitive Field Obfuscation Pattern
+
+Certain fields (SSN, EIN, bank account numbers) must be stored encrypted and only revealed to authorized users via an audited action. This pattern is **mandatory** for any PII field where casual exposure is unacceptable.
+
+### Architecture
+
+Every sensitive field gets **two columns** on the relevant table:
+- `{field}Encrypted` (text) — full value encrypted via `server/utils/encryption.ts` (AES-256-GCM). **Never returned in normal API responses.**
+- `{field}Last4` (text) — last 4 characters in plaintext for masked display.
+
+Example: `people.tinEncrypted` + `people.tinLast4` for Tax ID (SSN or EIN).
+
+### Developer Configuration
+
+`server/config/sensitive-fields.ts` is the **single source of truth** for all sensitive fields. Each entry defines:
+- Which table/columns store the encrypted and display values
+- The mask format (e.g., `•••-••-{last4}`)
+- Which roles can reveal the full value
+- The audit event type logged on reveal
+
+Adding a new sensitive field = adding a config entry + schema columns. No new endpoints or components needed.
+
+### Generic Reveal Endpoint
+
+`POST /api/sensitive/reveal` — single endpoint for all sensitive fields.
+
+Request body: `{ table, recordId, field }`
+
+The endpoint:
+1. Validates the field exists in sensitive-fields config
+2. Checks caller's role against the field's `revealRoles`
+3. Decrypts server-side — **decryption NEVER happens on the client**
+4. Logs the reveal via `logActivity()` (who, what, when, IP)
+5. Returns the plaintext
+
+### Key Rules
+
+1. **Server-side only**: The API returns either the masked display column OR the decrypted plaintext. No ciphertext is ever sent to the client.
+2. **Explicit reveal**: Full values are only sent when a user takes affirmative action (clicks a reveal button). Never included in list views, search results, or bulk exports.
+3. **Audited**: Every reveal is logged as an activity with the requesting user, target record, field name, timestamp, and IP address.
+4. **Role-gated**: The config defines which roles can reveal each field. The UI hides the reveal button for unauthorized roles.
+5. **Configurable**: The mask format, reveal roles, and audit event are all defined in config, not hardcoded.
+
+### Reusable UI Component
+
+`UiSensitiveField` component handles display and reveal:
+- Shows masked value by default
+- Eye icon / "Reveal" button (hidden for unauthorized roles)
+- Calls `POST /api/sensitive/reveal` on click
+- Auto-masks after ~30 seconds
+- Copy-to-clipboard support
+
+### When Creating New Sensitive Fields
+
+1. Add `{field}Encrypted` and `{field}Last4` columns to the schema
+2. Add an entry to `server/config/sensitive-fields.ts`
+3. Use the `storeSensitiveField()` helper in write endpoints (encrypts + extracts last4)
+4. Return only the `Last4` column in read endpoints
+5. Use `UiSensitiveField` component in the UI
+6. Do NOT create a custom reveal endpoint — use the generic one
+
 ## Code Patterns
 
 ### Attribute Case Conventions

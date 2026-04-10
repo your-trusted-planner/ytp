@@ -145,11 +145,49 @@ async function sendEmailMessage(messageId: string, msg: any): Promise<void> {
 }
 
 /**
- * Send an SMS/MMS message. Placeholder until Phase 3 (Zoom Phone SMS).
+ * Send an SMS/MMS message via the Zoom Phone API.
+ * Honors dry-run mode — in dry-run the message is marked SENT with a
+ * synthetic provider ID without hitting Zoom.
  */
 async function sendSmsMessage(messageId: string, msg: any): Promise<void> {
-  // Phase 3 will implement Zoom Phone SMS here
-  await markFailed(messageId, 'SMS provider not yet configured')
+  const { useDrizzle, schema } = await import('../db')
+  const { eq } = await import('drizzle-orm')
+  const { sendZoomPhoneSms, ZoomPhoneApiError } = await import('../utils/zoom-phone-sms')
+  const db = useDrizzle()
+
+  try {
+    // NOTE: queue consumers don't have an H3 event. The Zoom Phone client
+    // needs one for credential decryption, so production delivery is
+    // currently only supported via the sync path (dev) or via dry-run.
+    // When we move to the queue in production, we'll either need to
+    // pass event context through the queue message or pre-load the token.
+    const result = await sendZoomPhoneSms({
+      to: msg.recipientAddress,
+      body: msg.body,
+      maxLength: 1600
+    })
+
+    await db.update(schema.messages).set({
+      status: 'SENT',
+      providerMessageId: result.messageId,
+      sentAt: new Date()
+    }).where(eq(schema.messages.id, messageId))
+
+    console.log(
+      `[MessageSend] SMS ${result.dryRun ? '(dry-run) ' : ''}sent: ${messageId} → ${msg.recipientAddress} (provider: ${result.messageId})`
+    )
+  }
+  catch (err) {
+    if (err instanceof ZoomPhoneApiError) {
+      if (err.classification === 'permanent') {
+        await markFailed(messageId, err.message)
+        return
+      }
+      // Transient — rethrow so the queue retries
+      throw err
+    }
+    throw err
+  }
 }
 
 /**

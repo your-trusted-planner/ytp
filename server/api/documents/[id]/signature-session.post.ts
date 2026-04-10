@@ -191,39 +191,45 @@ export default defineEventHandler(async (event) => {
   // Send email notification if requested
   let emailSent = false
   if (sendEmail) {
-    const { emailTemplates } = await import('../../../utils/email')
-    const { sendMessage: sendMsg } = await import('../../../utils/message-service')
-    const signerName = `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || 'there'
+    const { sendTemplatedMessage } = await import('../../../utils/send-templated-message')
     const senderName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Your Trusted Planner'
 
-    const { html } = emailTemplates.signatureRequest({
-      recipientName: signerName,
-      documentTitle: document.title,
-      senderName,
-      signingUrl,
-      expiresAt: tokenExpiresAt,
-      message
+    const formattedExpiresAt = tokenExpiresAt.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
     })
 
-    try {
-      await sendMsg({
-        recipientAddress: signer.email,
-        channel: 'EMAIL',
-        category: 'TRANSACTIONAL',
-        templateSlug: 'signature-request',
-        subject: `Document Ready for Signature: ${document.title}`,
-        body: html,
-        bodyFormat: 'HTML',
-        senderUserId: user.id,
-        contextType: 'document',
-        contextId: documentId,
-        event
-      })
-      emailSent = true
-      console.log('[Signature Session] Email queued for', signer.email)
+    if (!signer.personId) {
+      console.warn('[Signature Session] Signer has no personId, cannot send templated email:', signer.email)
     }
-    catch (err) {
-      console.error('[Signature Session] Failed to queue email:', err)
+    else {
+      try {
+        await sendTemplatedMessage({
+          templateSlug: 'signature-request',
+          recipientPersonId: signer.personId,
+          variables: {
+            documentTitle: document.title,
+            senderName,
+            signingUrl,
+            expiresAt: formattedExpiresAt,
+            message: message || ''
+          },
+          senderUserId: user.id,
+          contextType: 'document',
+          contextId: documentId,
+          event
+        })
+        emailSent = true
+        console.log('[Signature Session] Email queued for', signer.email)
+      }
+      catch (err) {
+        console.error('[Signature Session] Failed to queue email:', err)
+      }
     }
   }
 

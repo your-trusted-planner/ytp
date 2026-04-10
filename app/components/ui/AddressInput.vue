@@ -16,16 +16,27 @@
         >*</span>
       </label>
       <div class="relative">
+        <!-- Search icon to signal autocomplete availability -->
+        <MapPin
+          v-if="!manualEntry && !loading && !addressVerified"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+        />
+        <!-- Verified checkmark after selecting a suggestion -->
+        <CheckCircle2
+          v-else-if="addressVerified && !loading"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500 pointer-events-none"
+        />
         <input
           ref="inputRef"
           v-model="streetQuery"
           type="text"
-          :placeholder="manualEntry ? 'Street Address' : 'Start typing an address...'"
+          :placeholder="manualEntry ? 'Street Address' : 'Search for an address...'"
           :disabled="disabled"
           :class="[
-            'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+            'w-full py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500',
+            manualEntry ? 'px-3' : 'pl-9 pr-3',
             disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white',
-            error ? 'border-red-500' : 'border-gray-300'
+            error ? 'border-red-500' : addressVerified ? 'border-green-300' : 'border-gray-300'
           ]"
           @input="handleInput"
           @focus="handleFocus"
@@ -35,10 +46,41 @@
         <!-- Loading indicator -->
         <div
           v-if="loading"
-          class="absolute right-3 top-1/2 -translate-y-1/2"
+          class="absolute left-3 top-1/2 -translate-y-1/2"
         >
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-burgundy-600" />
         </div>
+      </div>
+      <!-- Helper text + manual entry toggle -->
+      <div class="flex items-center justify-between mt-1">
+        <p
+          v-if="addressVerified"
+          class="text-xs text-green-600"
+        >
+          Address matched
+        </p>
+        <p
+          v-else-if="!manualEntry"
+          class="text-xs text-gray-400"
+        >
+          Type to search — address will auto-fill from results
+        </p>
+        <p
+          v-else
+          class="text-xs text-gray-400"
+        >
+          Manual entry
+        </p>
+        <label
+          v-if="allowManualEntry"
+          class="flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+        >
+          <span class="text-xs text-gray-500">Manual</span>
+          <UiToggle
+            :model-value="manualEntry"
+            @update:model-value="manualEntry = $event; handleManualEntryChange()"
+          />
+        </label>
       </div>
 
       <!-- Suggestions dropdown -->
@@ -219,26 +261,6 @@
       </div>
     </div>
 
-    <!-- Manual entry checkbox -->
-    <div
-      v-if="allowManualEntry"
-      class="flex items-center"
-    >
-      <input
-        id="manual-entry"
-        v-model="manualEntry"
-        type="checkbox"
-        class="h-4 w-4 text-burgundy-600 focus:ring-burgundy-500 border-gray-300 rounded"
-        @change="handleManualEntryChange"
-      >
-      <label
-        for="manual-entry"
-        class="ml-2 text-sm text-gray-600"
-      >
-        Enter address manually
-      </label>
-    </div>
-
     <p
       v-if="error"
       class="text-sm text-red-600"
@@ -255,6 +277,7 @@
 </template>
 
 <script setup lang="ts">
+import { MapPin, CheckCircle2 } from 'lucide-vue-next'
 import { US_STATES } from '~/utils/us-states'
 import { COUNTRIES, isUSOrTerritory } from '~/utils/countries'
 
@@ -318,6 +341,7 @@ const suggestions = ref<AddressSuggestion[]>([])
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 const loading = ref(false)
+const addressVerified = ref(false)
 
 // If localCountry is set to a value not in COUNTRIES, treat as OTHER
 if (localCountry.value && localCountry.value !== 'OTHER' && !COUNTRIES.find(c => c.code === localCountry.value)) {
@@ -383,6 +407,7 @@ function handleBlur() {
 
 function handleInput() {
   highlightedIndex.value = -1
+  addressVerified.value = false
   emitUpdate()
 
   // Don't fetch if manual entry is enabled
@@ -478,6 +503,7 @@ function selectSuggestion(suggestion: AddressSuggestion) {
 
   showDropdown.value = false
   suggestions.value = []
+  addressVerified.value = true
 
   emitUpdate()
   emit('place-selected', suggestion)

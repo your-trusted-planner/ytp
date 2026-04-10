@@ -113,6 +113,7 @@ const templates: TemplateData[] = [
     triggerEvent: 'INVOICE_SENT',
     emailSubject: 'Invoice {{invoiceNumber}} - {{amountDue}}',
     emailBody: `<p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">Dear {{recipientName}},</p>
+{{customMessage}}
 <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">Please find attached your invoice for <strong>{{matterTitle}}</strong>.</p>
 <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
   <p style="margin: 0;"><strong>Amount Due:</strong> {{amountDue}}</p>
@@ -130,7 +131,8 @@ const templates: TemplateData[] = [
       { key: 'invoiceNumber', label: 'Invoice Number', sampleValue: 'INV-2026-0042' },
       { key: 'amountDue', label: 'Amount Due', sampleValue: '$2,500.00' },
       { key: 'dueDate', label: 'Due Date', sampleValue: 'April 30, 2026' },
-      { key: 'matterTitle', label: 'Matter Title', sampleValue: 'Smith Family Estate Plan' }
+      { key: 'matterTitle', label: 'Matter Title', sampleValue: 'Smith Family Estate Plan' },
+      { key: 'customMessage', label: 'Custom Message (HTML, optional)', sampleValue: '' }
     ]),
     channelConfig: JSON.stringify({ email: true, sms: false })
   },

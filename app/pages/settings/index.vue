@@ -130,6 +130,26 @@
         </UiCard>
       </NuxtLink>
 
+      <!-- Zoom Phone SMS -->
+      <NuxtLink
+        to="/settings/zoom-phone"
+        class="block"
+      >
+        <UiCard class="hover:shadow-md transition-shadow cursor-pointer h-full">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <MessageSquare class="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">Zoom Phone SMS</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                Configure outbound SMS delivery via Zoom Phone API
+              </p>
+            </div>
+          </div>
+        </UiCard>
+      </NuxtLink>
+
       <!-- Forms -->
       <NuxtLink
         to="/settings/forms"

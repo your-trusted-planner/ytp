@@ -1,5 +1,6 @@
 import { eq, or } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
+import { formatSensitiveDisplay } from '../../utils/sensitive-fields'
 
 // Get a specific person by ID
 export default defineEventHandler(async (event) => {
@@ -24,8 +25,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Fetch linked records and relationships in parallel
-  const [linkedClient, linkedUser, rawRelationships] = await Promise.all([
+  // Fetch linked records, detail profiles, and relationships in parallel
+  const [linkedClient, linkedUser, trustProfile, entityProfile, rawRelationships] = await Promise.all([
     db.select({
       id: schema.clients.id,
       status: schema.clients.status
@@ -42,6 +43,16 @@ export default defineEventHandler(async (event) => {
       .from(schema.users)
       .where(eq(schema.users.personId, personId))
       .get(),
+
+    // Trust profile (only if personType is 'trust')
+    person.personType === 'trust'
+      ? db.select().from(schema.trusts).where(eq(schema.trusts.personId, personId)).get()
+      : Promise.resolve(null),
+
+    // Entity profile (only if personType is 'entity')
+    person.personType === 'entity'
+      ? db.select().from(schema.entities).where(eq(schema.entities.personId, personId)).get()
+      : Promise.resolve(null),
 
     db.select()
       .from(schema.relationships)
@@ -84,9 +95,10 @@ export default defineEventHandler(async (event) => {
       ordinal: r.ordinal,
       notes: r.notes,
       otherPersonId,
-      otherPersonName: otherPerson?.fullName || otherPerson?.firstName && otherPerson?.lastName ?
-        `${otherPerson.firstName} ${otherPerson.lastName}` :
-        'Unknown',
+      otherPersonName: otherPerson?.fullName
+        || (otherPerson?.firstName && otherPerson?.lastName
+          ? `${otherPerson.firstName} ${otherPerson.lastName}`
+          : 'Unknown'),
       direction: r.fromPersonId === personId ? 'outgoing' : 'incoming'
     }
   })
@@ -94,7 +106,7 @@ export default defineEventHandler(async (event) => {
   return {
     id: person.id,
     personType: person.personType,
-    // camelCase (keep for backwards compatibility)
+    // camelCase
     firstName: person.firstName,
     lastName: person.lastName,
     middleNames: person.middleNames,
@@ -108,7 +120,9 @@ export default defineEventHandler(async (event) => {
     zipCode: person.zipCode,
     country: person.country,
     dateOfBirth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
-    ssnLast4: person.ssnLast4,
+    maritalStatus: person.maritalStatus,
+    tinLast4: person.tinLast4,
+    tinMasked: formatSensitiveDisplay('tin', person.tinLast4),
     notes: person.notes,
     importMetadata: person.importMetadata || null,
     createdAt: person.createdAt ? person.createdAt.getTime() : Date.now(),
@@ -116,6 +130,9 @@ export default defineEventHandler(async (event) => {
     // Linked records
     linkedClient: linkedClient || null,
     linkedUser: linkedUser || null,
+    // Detail profiles (only one will be non-null based on personType)
+    trustProfile: trustProfile || null,
+    entityProfile: entityProfile || null,
     relationships,
     // snake_case versions for API compatibility
     first_name: person.firstName,
@@ -124,7 +141,7 @@ export default defineEventHandler(async (event) => {
     full_name: person.fullName,
     zip_code: person.zipCode,
     date_of_birth: person.dateOfBirth ? person.dateOfBirth.getTime() : null,
-    ssn_last_4: person.ssnLast4,
+    tin_last_4: person.tinLast4,
     created_at: person.createdAt ? person.createdAt.getTime() : Date.now(),
     updated_at: person.updatedAt ? person.updatedAt.getTime() : Date.now()
   }

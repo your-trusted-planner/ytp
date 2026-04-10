@@ -31,6 +31,37 @@ export default defineEventHandler(async (event) => {
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
+  const { and } = await import('drizzle-orm')
+
+  // Check for existing calendar with same calendarId for this attorney
+  const existing = await db.select({ id: schema.attorneyCalendars.id })
+    .from(schema.attorneyCalendars)
+    .where(and(
+      eq(schema.attorneyCalendars.attorneyId, user.id),
+      eq(schema.attorneyCalendars.calendarId, calendarId)
+    ))
+    .get()
+
+  if (existing) {
+    // Reactivate if it was deactivated, update fields
+    await db.update(schema.attorneyCalendars)
+      .set({
+        calendarName,
+        calendarEmail,
+        isPrimary: isPrimary || false,
+        timezone: timezone || 'America/New_York',
+        isActive: true,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.attorneyCalendars.id, existing.id))
+
+    return {
+      success: true,
+      calendarId: existing.id,
+      message: 'Calendar updated (already existed)'
+    }
+  }
+
   // If setting as primary, unset other primary calendars for this attorney
   if (isPrimary) {
     await db.update(schema.attorneyCalendars)
@@ -50,7 +81,7 @@ export default defineEventHandler(async (event) => {
     calendarEmail,
     isPrimary: isPrimary || false,
     timezone: timezone || 'America/New_York',
-    serviceAccountKey: serviceAccountKey || null, // TODO: Encrypt before storing
+    serviceAccountKey: serviceAccountKey || null,
     isActive: true,
     createdAt: now,
     updatedAt: now

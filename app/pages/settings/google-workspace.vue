@@ -490,12 +490,17 @@ async function testServiceAccount() {
   testingSA.value = true
   saTestResult.value = null
   try {
+    const authStore = useAuthStore()
     const body: Record<string, any> = {}
     if (saForm.value.serviceAccountEmail) {
       body.serviceAccountEmail = saForm.value.serviceAccountEmail
     }
     if (saForm.value.serviceAccountPrivateKey) {
       body.serviceAccountPrivateKey = saForm.value.serviceAccountPrivateKey
+    }
+    // Also test domain-wide delegation by impersonating the current user
+    if (authStore.user?.email) {
+      body.impersonateEmail = authStore.user.email
     }
     const res = await $fetch<any>('/api/admin/google-workspace/test-credentials', { method: 'POST', body })
     saTestResult.value = res

@@ -43,6 +43,7 @@ export type ActivityType =
   'PASSWORD_RESET' |
   // Person events
   'PERSON_CREATED' |
+  'SENSITIVE_FIELD_REVEALED' |
   // Client events
   'CLIENT_CREATED' |
   'CLIENT_UPDATED' |

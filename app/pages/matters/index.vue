@@ -96,26 +96,6 @@
           </select>
         </div>
 
-        <!-- Client Filter -->
-        <div class="w-48">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Client</label>
-          <select
-            v-model="clientFilter"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-burgundy-500 focus:border-burgundy-500"
-          >
-            <option value="">
-              All Clients
-            </option>
-            <option
-              v-for="name in uniqueClientNames"
-              :key="name"
-              :value="name"
-            >
-              {{ name }}
-            </option>
-          </select>
-        </div>
-
         <!-- Clear Filters -->
         <button
           v-if="hasActiveFilters"

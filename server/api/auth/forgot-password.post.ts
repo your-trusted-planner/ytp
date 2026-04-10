@@ -12,8 +12,7 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
-import { emailTemplates } from '../../utils/email'
-import { sendMessage } from '../../utils/message-service'
+import { sendTemplatedMessage } from '../../utils/send-templated-message'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address')
@@ -37,6 +36,7 @@ export default defineEventHandler(async (event) => {
   const user = await db
     .select({
       id: schema.users.id,
+      personId: schema.users.personId,
       firstName: schema.users.firstName,
       lastName: schema.users.lastName,
       email: schema.users.email,
@@ -70,30 +70,35 @@ export default defineEventHandler(async (event) => {
       const baseUrl = config.public?.appUrl || getRequestURL(event).origin
       const resetUrl = `${baseUrl}/reset-password?token=${token}`
 
-      // Prepare email
-      const recipientName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'there'
-      const template = emailTemplates.passwordReset({
-        recipientName,
-        recipientEmail: user.email!,
-        resetUrl,
-        expiresAt
+      // Format expiration for email display
+      const formattedExpiresAt = expiresAt.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
       })
 
-      // Send email via message service
-      const messageResult = await sendMessage({
-        recipientAddress: user.email!,
-        channel: 'EMAIL',
-        category: 'TRANSACTIONAL',
-        templateSlug: 'password-reset',
-        subject: 'Reset Your Password - Your Trusted Planner',
-        body: template.html,
-        bodyFormat: 'HTML',
-        contextType: 'user',
-        contextId: user.id,
-        event
-      })
-
-      console.log('[ForgotPassword] Reset email queued:', user.email, 'messageId:', messageResult.messageId)
+      // Send via DB template (fire-and-forget — caller always returns success)
+      if (user.personId) {
+        const result = await sendTemplatedMessage({
+          templateSlug: 'password-reset',
+          recipientPersonId: user.personId,
+          variables: {
+            resetUrl,
+            expiresAt: formattedExpiresAt
+          },
+          contextType: 'user',
+          contextId: user.id,
+          event
+        })
+        console.log('[ForgotPassword] Reset email queued:', user.email, 'messageIds:', result.messageIds)
+      }
+      else {
+        console.warn('[ForgotPassword] User has no personId, skipping reset email:', user.email)
+      }
     }
     catch (error) {
       console.error('[ForgotPassword] Error processing request:', error)

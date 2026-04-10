@@ -111,8 +111,8 @@
       <SignatureImageManager @updated="handleSignatureUpdated" />
     </UiCard>
 
-    <!-- API Token -->
-    <ClientOnly>
+    <!-- API Token (firm only) -->
+    <ClientOnly v-if="authStore.isFirmUser">
       <UiCard title="API Token">
         <template #header-actions>
           <span class="text-sm text-gray-500">For programmatic access</span>
@@ -255,13 +255,33 @@
     <!-- Preferences -->
     <UiCard title="Preferences">
       <div class="space-y-4">
-        <!-- UI Preferences (stored locally - client only) -->
-        <div class="pb-4 border-b border-gray-200">
-          <h4 class="text-sm font-medium text-gray-700 mb-3">
-            Display Preferences
-          </h4>
+        <!-- UI Preferences (stored locally - firm only) -->
+        <div
+          v-if="authStore.isFirmUser"
+          class="pb-4 border-b border-gray-200"
+        >
+          <div class="flex items-center gap-2 mb-3">
+            <h4 class="text-sm font-medium text-gray-700">
+              Display Preferences
+            </h4>
+            <Transition
+              enter-active-class="transition ease-out duration-200"
+              enter-from-class="opacity-0 translate-x-1"
+              enter-to-class="opacity-100 translate-x-0"
+              leave-active-class="transition ease-in duration-150"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <span
+                v-if="prefSaved"
+                class="text-xs text-green-600 font-medium"
+              >
+                Saved
+              </span>
+            </Transition>
+          </div>
           <ClientOnly>
-            <div class="space-y-3">
+            <div class="space-y-4">
               <div>
                 <label class="block text-sm text-gray-600 mb-1">Default Document View</label>
                 <div class="flex items-center gap-3">
@@ -290,6 +310,36 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-1">
                   Choose which view to show by default on the Matter Documents tab
+                </p>
+              </div>
+              <div>
+                <label class="block text-sm text-gray-600 mb-1">Week Starts On</label>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="weekStart"
+                      :value="0"
+                      :checked="preferencesStore.weekStart === 0"
+                      class="text-burgundy-600 focus:ring-burgundy-500"
+                      @change="setWeekStart(0)"
+                    >
+                    <span class="text-sm text-gray-700">Sunday</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="weekStart"
+                      :value="1"
+                      :checked="preferencesStore.weekStart === 1"
+                      class="text-burgundy-600 focus:ring-burgundy-500"
+                      @change="setWeekStart(1)"
+                    >
+                    <span class="text-sm text-gray-700">Monday</span>
+                  </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                  Applies to date pickers and calendar views
                 </p>
               </div>
             </div>
@@ -341,11 +391,6 @@
                 Spanish
               </option>
             </UiSelect>
-            <div class="flex justify-end">
-              <UiButton disabled>
-                Save Preferences
-              </UiButton>
-            </div>
           </div>
         </div>
       </div>
@@ -354,7 +399,7 @@
     <!-- Video Meetings (for firm members) -->
     <ClientOnly>
       <UiCard
-        v-if="isFirmMember"
+        v-if="authStore.isFirmUser"
         title="Video Meetings"
       >
         <template #header-actions>
@@ -439,7 +484,7 @@
 
     <!-- My Calendars (for firm members, only when Google service account is configured) -->
     <ClientOnly>
-      <UiCard v-if="isFirmMember && appConfig.isGoogleConfigured">
+      <UiCard v-if="authStore.isFirmUser && appConfig.isGoogleConfigured">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">
@@ -631,16 +676,10 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+const authStore = useAuthStore()
 const { data: sessionData } = await useFetch('/api/auth/session')
-const currentUser = computed(() => sessionData.value?.user)
 const preferencesStore = usePreferencesStore()
 const appConfig = useAppConfigStore()
-
-// Check if user is a firm member (can manage calendars)
-const isFirmMember = computed(() => {
-  const role = currentUser.value?.role
-  return ['ADMIN', 'LAWYER', 'STAFF'].includes(role)
-})
 
 // Computed for password section - derived from session data (stable)
 const hasPassword = computed(() => !!sessionData.value?.user?.hasPassword)
@@ -669,10 +708,24 @@ const accountPreferences = ref({
 
 // Local document view preference (client-only, backed by localStorage)
 const localDocumentView = ref<DocumentViewPreference>('local')
+const prefSaved = ref(false)
+let prefSavedTimer: ReturnType<typeof setTimeout> | null = null
+
+function flashPrefSaved() {
+  prefSaved.value = true
+  if (prefSavedTimer) clearTimeout(prefSavedTimer)
+  prefSavedTimer = setTimeout(() => { prefSaved.value = false }, 2000)
+}
 
 const setDocumentView = (view: DocumentViewPreference) => {
   localDocumentView.value = view
   preferencesStore.setDocumentsDefaultView(view)
+  flashPrefSaved()
+}
+
+const setWeekStart = (day: 0 | 1) => {
+  preferencesStore.setWeekStartDay(day)
+  flashPrefSaved()
 }
 
 const calendars = ref<any[]>([])
@@ -726,7 +779,7 @@ onMounted(async () => {
   await loadApiTokenStatus()
 
   // Load calendars and video connections for firm members
-  if (isFirmMember.value) {
+  if (authStore.isFirmUser) {
     await loadCalendars()
     await loadVideoConnections()
   }

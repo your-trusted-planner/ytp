@@ -72,7 +72,7 @@ export async function buildMatchIndex(config?: MatchConfig): Promise<MatchIndex>
     city: schema.people.city,
     state: schema.people.state,
     zipCode: schema.people.zipCode,
-    ssnLast4: schema.people.ssnLast4
+    tinLast4: schema.people.tinLast4
   })
     .from(schema.people)
     .all()
@@ -108,7 +108,7 @@ export async function buildMatchIndex(config?: MatchConfig): Promise<MatchIndex>
     city: p.city || undefined,
     state: p.state || undefined,
     zipCode: p.zipCode || undefined,
-    ssnLast4: p.ssnLast4 || undefined
+    tinLast4: p.tinLast4 || undefined
   }))
 
   // Build blocking index

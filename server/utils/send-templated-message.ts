@@ -20,6 +20,12 @@ export interface SendTemplatedMessageParams {
   contextType?: string
   contextId?: string
   senderUserId?: string
+  /** Override the rendered subject (e.g. to add a "Reminder:" prefix on resend) */
+  subjectOverride?: string
+  /** Metadata passed through to the message row and delivery provider (e.g. attachments) */
+  metadata?: Record<string, any>
+  /** Override the delivery address (e.g. send an invoice to a billing contact instead of the client's primary email) */
+  recipientAddressOverride?: string
   event?: H3Event
 }
 
@@ -89,11 +95,16 @@ export async function sendTemplatedMessage(params: SendTemplatedMessageParams): 
 
   const messageIds: string[] = []
 
-  // Send email if enabled and person has email
-  if (channelConfig.email && person.email && template.emailBody) {
-    const subjectResult = template.emailSubject
-      ? renderTemplateString(template.emailSubject, allVariables)
-      : { rendered: template.name, unresolvedVariables: [] }
+  // Resolve delivery address (override takes precedence over person.email)
+  const deliveryEmail = params.recipientAddressOverride || person.email
+
+  // Send email if enabled and there's an address to send to
+  if (channelConfig.email && deliveryEmail && template.emailBody) {
+    const subjectResult = params.subjectOverride
+      ? { rendered: renderTemplateString(params.subjectOverride, allVariables).rendered, unresolvedVariables: [] }
+      : template.emailSubject
+        ? renderTemplateString(template.emailSubject, allVariables)
+        : { rendered: template.name, unresolvedVariables: [] }
 
     const bodyResult = renderTemplateString(template.emailBody, allVariables, { escapeHtml: false })
 
@@ -117,7 +128,7 @@ export async function sendTemplatedMessage(params: SendTemplatedMessageParams): 
 
     const result = await sendMessage({
       recipientPersonId: params.recipientPersonId,
-      recipientAddress: person.email,
+      recipientAddress: deliveryEmail,
       channel: 'EMAIL',
       category: template.category as 'TRANSACTIONAL' | 'OPERATIONAL' | 'MARKETING',
       templateSlug: params.templateSlug,
@@ -127,6 +138,7 @@ export async function sendTemplatedMessage(params: SendTemplatedMessageParams): 
       contextType: params.contextType,
       contextId: params.contextId,
       senderUserId: params.senderUserId,
+      metadata: params.metadata,
       event: params.event
     })
 
@@ -149,6 +161,7 @@ export async function sendTemplatedMessage(params: SendTemplatedMessageParams): 
       contextType: params.contextType,
       contextId: params.contextId,
       senderUserId: params.senderUserId,
+      metadata: params.metadata,
       event: params.event
     })
 

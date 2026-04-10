@@ -18,8 +18,8 @@
 
           <!-- User Menu -->
           <div class="flex items-center space-x-2">
-            <!-- Quick Create -->
-            <NavigationQuickCreate />
+            <!-- Quick Create (firm staff only) -->
+            <NavigationQuickCreate v-if="authStore.isFirmUser" />
 
             <!-- Notification Bell -->
             <NoticesNotificationBell />
@@ -164,14 +164,15 @@ import {
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+// useFetch forwards cookies during SSR; $fetch in a store does not
 const { data: sessionData } = await useFetch('/api/auth/session')
-const user = computed(() => sessionData.value?.user)
+authStore.setUser(sessionData.value?.user ?? null)
+const user = computed(() => authStore.user)
 const isSidebarCollapsed = ref(false)
 
-// Role groups for easier configuration
-// FIRM_ROLES: Internal firm employees with broad access (admins, attorneys, paralegals, secretaries, etc.)
+// Role groups for navigation configuration
 const FIRM_ROLES = ['ADMIN', 'LAWYER', 'STAFF']
-// ADVISOR: External third-parties (CPAs, investment advisors, insurance brokers) with limited access to specific clients/matters
 const ADVISOR_ROLES = ['ADVISOR']
 const CLIENT_ROLES = ['CLIENT']
 const PROSPECT_ROLES = ['PROSPECT', 'LEAD']
@@ -323,11 +324,12 @@ const toggleSection = (label: string) => {
   }
 }
 
-// Watch for invalid session and redirect to login
-watch(user, (newUser) => {
+// Keep store in sync with session data and redirect on invalidation
+watch(() => sessionData.value?.user, (newUser) => {
+  authStore.setUser(newUser ?? null)
   if (!newUser) {
     console.warn('Session invalidated, redirecting to login')
     router.push('/login?reason=invalid')
   }
-}, { immediate: true })
+})
 </script>
