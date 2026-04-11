@@ -1,5 +1,4 @@
--- ALTER TABLE `people` ADD `tin_encrypted` text; -- skipped: column already exists from prior push
---> statement-breakpoint
+ALTER TABLE `people` ADD `tin_encrypted` text;--> statement-breakpoint
 CREATE TABLE `entities` (
 	`id` text PRIMARY KEY NOT NULL,
 	`person_id` text NOT NULL,
@@ -16,7 +15,7 @@ CREATE TABLE `entities` (
 CREATE UNIQUE INDEX `entities_person_id_unique` ON `entities` (`person_id`);--> statement-breakpoint
 CREATE INDEX `idx_entities_person_id` ON `entities` (`person_id`);--> statement-breakpoint
 CREATE INDEX `idx_entities_entity_type` ON `entities` (`entity_type`);--> statement-breakpoint
--- ALTER TABLE `people` ADD `tin_last_4` text; -- skipped: column already exists from prior push
+ALTER TABLE `people` ADD `tin_last_4` text;--> statement-breakpoint
 UPDATE `people` SET `tin_last_4` = `ssn_last_4` WHERE `ssn_last_4` IS NOT NULL AND `tin_last_4` IS NULL;--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_messages` (
