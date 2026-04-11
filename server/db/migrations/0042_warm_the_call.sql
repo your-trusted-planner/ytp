@@ -50,6 +50,7 @@ CREATE INDEX `idx_messages_recipient` ON `messages` (`recipient_person_id`);--> 
 CREATE INDEX `idx_messages_status` ON `messages` (`status`);--> statement-breakpoint
 CREATE INDEX `idx_messages_context` ON `messages` (`context_type`,`context_id`);--> statement-breakpoint
 CREATE INDEX `idx_messages_created_at` ON `messages` (`created_at`);--> statement-breakpoint
+PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_trusts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`plan_id` text,
@@ -72,4 +73,5 @@ CREATE TABLE `__new_trusts` (
 --> statement-breakpoint
 INSERT INTO `__new_trusts`("id", "plan_id", "trust_name", "trust_type", "is_joint", "is_revocable", "jurisdiction", "formation_date", "funding_date", "pour_over_will_id", "wealthcounsel_trust_id", "trust_settings", "created_at", "updated_at") SELECT "id", "plan_id", "trust_name", "trust_type", "is_joint", "is_revocable", "jurisdiction", "formation_date", "funding_date", "pour_over_will_id", "wealthcounsel_trust_id", "trust_settings", "created_at", "updated_at" FROM `trusts`;--> statement-breakpoint
 DROP TABLE `trusts`;--> statement-breakpoint
-ALTER TABLE `__new_trusts` RENAME TO `trusts`;
+ALTER TABLE `__new_trusts` RENAME TO `trusts`;--> statement-breakpoint
+PRAGMA foreign_keys=ON;
