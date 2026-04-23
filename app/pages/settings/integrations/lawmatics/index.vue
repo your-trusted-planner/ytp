@@ -399,7 +399,7 @@
               size="sm"
               :is-loading="cleanupRunning"
               :disabled="!cleanupPreview"
-              @click="cleanupImports"
+              @click="promptCleanup"
             >
               Clean Up
             </UiButton>
@@ -445,7 +445,7 @@
           <UiButton
             variant="danger"
             :is-loading="deleting"
-            @click="deleteIntegration"
+            @click="showDeleteDialog = true"
           >
             Delete Integration
           </UiButton>
@@ -453,6 +453,28 @@
       </div>
     </UiCard>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeleteDialog"
+    title="Delete Integration"
+    message="Are you sure you want to delete this integration? This cannot be undone."
+    confirm-text="Delete"
+    variant="danger"
+    :loading="deleting"
+    @confirm="deleteIntegration"
+    @cancel="showDeleteDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showCleanupDialog"
+    title="Delete Imported Records"
+    :message="cleanupDialogMessage"
+    confirm-text="Delete"
+    variant="danger"
+    :loading="cleanupRunning"
+    @confirm="cleanupImports"
+    @cancel="showCleanupDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -497,6 +519,9 @@ const syncOverrideDate = ref('')
 const cleanupPreviewing = ref(false)
 const cleanupRunning = ref(false)
 const cleanupPreview = ref<Record<string, number> | null>(null)
+const showDeleteDialog = ref(false)
+const showCleanupDialog = ref(false)
+const cleanupDialogMessage = ref('')
 
 // Sync health summary
 const syncSummary = ref<{
@@ -750,7 +775,6 @@ async function testConnection() {
 
 async function deleteIntegration() {
   if (!integration.value?.id) return
-  if (!confirm('Are you sure you want to delete this integration? This cannot be undone.')) return
 
   deleting.value = true
   try {
@@ -759,6 +783,7 @@ async function deleteIntegration() {
     })
     integration.value = null
     apiKey.value = ''
+    showDeleteDialog.value = false
     toast.success('Integration deleted')
   }
   catch (error: any) {
@@ -788,11 +813,15 @@ async function previewCleanup() {
   }
 }
 
+function promptCleanup() {
+  if (!cleanupPreview.value) return
+  const total = Object.values(cleanupPreview.value).reduce((a, b) => a + b, 0)
+  cleanupDialogMessage.value = `Are you sure you want to delete ${total} imported records? This cannot be undone.`
+  showCleanupDialog.value = true
+}
+
 async function cleanupImports() {
   if (!cleanupPreview.value) return
-
-  const total = Object.values(cleanupPreview.value).reduce((a, b) => a + b, 0)
-  if (!confirm(`Are you sure you want to delete ${total} imported records? This cannot be undone.`)) return
 
   cleanupRunning.value = true
 
@@ -804,6 +833,7 @@ async function cleanupImports() {
     const deletedTotal = Object.values(result.deleted).reduce((a, b) => a + b, 0)
     toast.success(`Successfully deleted ${deletedTotal} imported records`)
     cleanupPreview.value = null
+    showCleanupDialog.value = false
     await loadImportStats()
   }
   catch (error: any) {

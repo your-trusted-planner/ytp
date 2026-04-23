@@ -342,14 +342,14 @@
               <button
                 v-if="invoice.status !== 'DRAFT'"
                 class="block text-sm text-red-600 hover:text-red-800"
-                @click="voidInvoice"
+                @click="showVoidDialog = true"
               >
                 Void Invoice
               </button>
               <button
                 v-if="invoice.status === 'DRAFT'"
                 class="block text-sm text-red-600 hover:text-red-800"
-                @click="deleteInvoice"
+                @click="showDeleteDialog = true"
               >
                 Delete Invoice
               </button>
@@ -395,6 +395,26 @@
       @recorded="handlePaymentRecorded"
     />
   </div>
+
+  <UiConfirmDialog
+    v-model="showVoidDialog"
+    title="Void Invoice"
+    message="Are you sure you want to void this invoice? This action cannot be undone."
+    confirm-text="Void Invoice"
+    variant="danger"
+    @confirm="voidInvoice"
+    @cancel="showVoidDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showDeleteDialog"
+    title="Delete Invoice"
+    message="Are you sure you want to delete this invoice?"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="deleteInvoice"
+    @cancel="showDeleteDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -415,6 +435,8 @@ const clientTrustBalance = ref(0)
 const showApplyTrustModal = ref(false)
 const showPaymentModal = ref(false)
 const showEditModal = ref(false)
+const showVoidDialog = ref(false)
+const showDeleteDialog = ref(false)
 
 const isOverdue = computed(() => {
   if (!invoice.value) return false
@@ -533,14 +555,13 @@ async function sendInvoice() {
 }
 
 async function voidInvoice() {
-  if (!confirm('Are you sure you want to void this invoice? This action cannot be undone.')) return
-
   try {
     await $fetch(`/api/invoices/${route.params.id}`, {
       method: 'DELETE',
       query: { void: 'true' }
     })
     toast.success('Invoice voided')
+    showVoidDialog.value = false
     fetchInvoice()
   }
   catch (error: any) {
@@ -549,11 +570,10 @@ async function voidInvoice() {
 }
 
 async function deleteInvoice() {
-  if (!confirm('Are you sure you want to delete this invoice?')) return
-
   try {
     await $fetch(`/api/invoices/${route.params.id}`, { method: 'DELETE' })
     toast.success('Invoice deleted')
+    showDeleteDialog.value = false
     navigateTo('/billing')
   }
   catch (error: any) {

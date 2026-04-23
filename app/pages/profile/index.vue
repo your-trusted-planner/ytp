@@ -175,7 +175,7 @@
                 size="sm"
                 :is-loading="apiToken.revoking"
                 title="Revoke token"
-                @click="revokeToken"
+                @click="showRevokeTokenDialog = true"
               >
                 <Trash2 class="w-4 h-4" />
               </UiButton>
@@ -446,7 +446,7 @@
                 variant="outline"
                 size="sm"
                 :is-loading="disconnectingZoom"
-                @click="disconnectZoom"
+                @click="showDisconnectZoomDialog = true"
               >
                 Disconnect
               </UiButton>
@@ -660,6 +660,49 @@
       </template>
     </UiModal>
   </div>
+
+  <UiConfirmDialog
+    v-model="showReplaceTokenDialog"
+    title="Replace API Token"
+    message="This will replace your existing API token. The old token will stop working immediately. Continue?"
+    confirm-text="Replace Token"
+    variant="danger"
+    :loading="apiToken.loading"
+    @confirm="doGenerateToken"
+    @cancel="showReplaceTokenDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showRevokeTokenDialog"
+    title="Revoke API Token"
+    message="Revoke your API token? Any scripts using it will stop working."
+    confirm-text="Revoke"
+    variant="danger"
+    :loading="apiToken.revoking"
+    @confirm="revokeToken"
+    @cancel="showRevokeTokenDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showDisconnectZoomDialog"
+    title="Disconnect Zoom"
+    message="Disconnect Zoom? Existing meeting links will still work, but new Zoom meetings cannot be created."
+    confirm-text="Disconnect"
+    variant="danger"
+    :loading="disconnectingZoom"
+    @confirm="disconnectZoom"
+    @cancel="showDisconnectZoomDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showDeleteCalendarDialog"
+    title="Remove Calendar"
+    message="Are you sure you want to remove this calendar?"
+    confirm-text="Remove"
+    variant="danger"
+    @confirm="confirmDeleteCalendar"
+    @cancel="showDeleteCalendarDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -764,6 +807,11 @@ const videoConnections = ref<Array<{
 const videoConnectionsLoading = ref(false)
 const disconnectingZoom = ref(false)
 const zoomConfigured = ref(false)
+const showReplaceTokenDialog = ref(false)
+const showRevokeTokenDialog = ref(false)
+const showDisconnectZoomDialog = ref(false)
+const showDeleteCalendarDialog = ref(false)
+const deletingCalendarId = ref<string | null>(null)
 
 const activeZoomConnection = computed(() =>
   videoConnections.value.find(c => c.provider === 'zoom' && c.status === 'ACTIVE')
@@ -883,9 +931,14 @@ const loadApiTokenStatus = async () => {
 }
 
 const generateToken = async () => {
-  if (apiToken.value.hasToken && !confirm('This will replace your existing API token. The old token will stop working immediately. Continue?')) {
+  if (apiToken.value.hasToken) {
+    showReplaceTokenDialog.value = true
     return
   }
+  await doGenerateToken()
+}
+
+const doGenerateToken = async () => {
   apiToken.value.loading = true
   try {
     const data = await $fetch('/api/profile/api-token', { method: 'POST' })
@@ -894,6 +947,7 @@ const generateToken = async () => {
     apiToken.value.hasToken = true
     apiToken.value.createdAt = new Date().toISOString()
     apiToken.value.copied = false
+    showReplaceTokenDialog.value = false
     toast.success('API token generated')
   }
   catch (error) {
@@ -905,7 +959,6 @@ const generateToken = async () => {
 }
 
 const revokeToken = async () => {
-  if (!confirm('Revoke your API token? Any scripts using it will stop working.')) return
   apiToken.value.revoking = true
   try {
     await $fetch('/api/profile/api-token', { method: 'DELETE' })
@@ -913,6 +966,7 @@ const revokeToken = async () => {
     apiToken.value.createdAt = null
     apiToken.value.revealed = false
     apiToken.value.plaintext = ''
+    showRevokeTokenDialog.value = false
     toast.success('API token revoked')
   }
   catch (error) {
@@ -970,12 +1024,12 @@ const connectZoom = () => {
 const disconnectZoom = async () => {
   const connection = activeZoomConnection.value
   if (!connection) return
-  if (!confirm('Disconnect Zoom? Existing meeting links will still work, but new Zoom meetings cannot be created.')) return
 
   disconnectingZoom.value = true
   try {
     await $fetch(`/api/profile/video-connections/${connection.id}`, { method: 'DELETE' })
     toast.success('Zoom disconnected')
+    showDisconnectZoomDialog.value = false
     await loadVideoConnections()
   }
   catch {
@@ -1058,13 +1112,20 @@ const toggleCalendarActive = async (calendarId: string, activate: boolean) => {
   }
 }
 
-const deleteCalendar = async (calendarId: string) => {
-  if (!confirm('Are you sure you want to remove this calendar?')) return
+const deleteCalendar = (calendarId: string) => {
+  deletingCalendarId.value = calendarId
+  showDeleteCalendarDialog.value = true
+}
+
+const confirmDeleteCalendar = async () => {
+  if (!deletingCalendarId.value) return
   try {
-    await $fetch(`/api/attorney/calendars/${calendarId}`, {
+    await $fetch(`/api/attorney/calendars/${deletingCalendarId.value}`, {
       method: 'DELETE'
     })
     toast.success('Calendar removed')
+    showDeleteCalendarDialog.value = false
+    deletingCalendarId.value = null
     await loadCalendars()
   }
   catch {

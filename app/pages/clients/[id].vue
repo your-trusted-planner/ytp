@@ -1,64 +1,66 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <button
-          class="text-gray-600 hover:text-gray-900"
-          @click="$router.back()"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </button>
-        <div>
-          <h1
-            v-if="client"
-            class="text-2xl font-bold text-gray-900"
+    <div class="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm -mx-8 px-8 pb-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <button
+            class="text-gray-600 hover:text-gray-900"
+            @click="$router.back()"
           >
-            {{ client.first_name }} {{ client.last_name }}
-          </h1>
-          <p
-            v-if="client"
-            class="text-gray-600 mt-1"
-          >
-            {{ client.email }}
-          </p>
+            <ArrowLeft class="w-5 h-5" />
+          </button>
+          <div>
+            <h1
+              v-if="client"
+              class="text-2xl font-bold text-gray-900"
+            >
+              {{ client.first_name }} {{ client.last_name }}
+            </h1>
+            <p
+              v-if="client"
+              class="text-gray-600 mt-1"
+            >
+              {{ client.email }}
+            </p>
+          </div>
         </div>
-      </div>
-      <div
-        v-if="client"
-        class="flex items-center space-x-3"
-      >
-        <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : client.status === 'PROSPECTIVE' ? 'warning' : 'default'">
-          {{ client.status }}
-        </UiBadge>
-        <DriveStatusBadge
-          v-if="clientProfile && isDriveConfigured"
-          :status="clientProfile.google_drive_sync_status"
-          :folder-url="clientProfile.google_drive_folder_url"
-          :show-label="true"
-        />
-        <UiSyncStatusBadge
-          v-if="client?.importMetadata"
-          :import-metadata="client.importMetadata"
-        />
-        <UiButton
-          variant="outline"
-          size="sm"
-          @click="openEditModal"
+        <div
+          v-if="client"
+          class="flex items-center space-x-3"
         >
-          <Edit class="w-4 h-4 mr-1" />
-          Edit Client
-        </UiButton>
-        <UiButton
-          v-if="clientUserId"
-          variant="outline"
-          size="sm"
-          :is-loading="impersonating"
-          @click="impersonateClient"
-        >
-          <Eye class="w-4 h-4 mr-1" />
-          View as Client
-        </UiButton>
+          <UiBadge :variant="client.status === 'ACTIVE' ? 'success' : client.status === 'PROSPECTIVE' ? 'warning' : 'default'">
+            {{ client.status }}
+          </UiBadge>
+          <DriveStatusBadge
+            v-if="clientProfile && isDriveConfigured"
+            :status="clientProfile.google_drive_sync_status"
+            :folder-url="clientProfile.google_drive_folder_url"
+            :show-label="true"
+          />
+          <UiSyncStatusBadge
+            v-if="client?.importMetadata"
+            :import-metadata="client.importMetadata"
+          />
+          <UiButton
+            variant="outline"
+            size="sm"
+            @click="openEditModal"
+          >
+            <Edit class="w-4 h-4 mr-1" />
+            Edit Client
+          </UiButton>
+          <UiButton
+            v-if="clientUserId"
+            variant="outline"
+            size="sm"
+            :is-loading="impersonating"
+            @click="impersonateClient"
+          >
+            <Eye class="w-4 h-4 mr-1" />
+            View as Client
+          </UiButton>
+        </div>
       </div>
     </div>
 

@@ -66,6 +66,7 @@ const savingPerson = ref(false)
 const showAddRelationshipModal = ref(false)
 
 // Remove relationship dialog state
+const showDeletePersonDialog = ref(false)
 const showRemoveRelationshipDialog = ref(false)
 const removingRelationshipId = ref<string | null>(null)
 const removingRelationship = ref<Relationship | null>(null)
@@ -359,9 +360,9 @@ async function savePerson() {
 
 async function deletePerson() {
   if (!person.value) return
-  if (!confirm(`Are you sure you want to delete ${person.value.fullName}? This will also remove all relationships.`)) return
   try {
     await $fetch(`/api/people/${personId}`, { method: 'DELETE' })
+    showDeletePersonDialog.value = false
     toast.success('Person deleted')
     router.push('/people')
   }
@@ -419,49 +420,51 @@ onMounted(() => fetchPerson())
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <NuxtLink
-          to="/people"
-          class="text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </NuxtLink>
-        <div v-if="person">
-          <h1 class="text-2xl font-bold text-gray-900">
-            {{ person.fullName }}
-          </h1>
-          <p
-            v-if="person.email"
-            class="text-gray-600 mt-1"
+    <div class="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm -mx-8 px-8 pb-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <NuxtLink
+            to="/people"
+            class="text-gray-600 hover:text-gray-900"
           >
-            {{ person.email }}
-          </p>
+            <ArrowLeft class="w-5 h-5" />
+          </NuxtLink>
+          <div v-if="person">
+            <h1 class="text-2xl font-bold text-gray-900">
+              {{ person.fullName }}
+            </h1>
+            <p
+              v-if="person.email"
+              class="text-gray-600 mt-1"
+            >
+              {{ person.email }}
+            </p>
+          </div>
         </div>
-      </div>
-      <div
-        v-if="person"
-        class="flex items-center space-x-3"
-      >
-        <UiBadge :variant="personTypeBadge.variant">
-          {{ personTypeBadge.label }}
-        </UiBadge>
-        <UiButton
-          variant="outline"
-          size="sm"
-          @click="openEditModal"
+        <div
+          v-if="person"
+          class="flex items-center space-x-3"
         >
-          <Edit class="w-4 h-4 mr-1" />
-          Edit
-        </UiButton>
-        <UiButton
-          variant="danger"
-          size="sm"
-          @click="deletePerson"
-        >
-          <Trash2 class="w-4 h-4 mr-1" />
-          Delete
-        </UiButton>
+          <UiBadge :variant="personTypeBadge.variant">
+            {{ personTypeBadge.label }}
+          </UiBadge>
+          <UiButton
+            variant="outline"
+            size="sm"
+            @click="openEditModal"
+          >
+            <Edit class="w-4 h-4 mr-1" />
+            Edit
+          </UiButton>
+          <UiButton
+            variant="danger"
+            size="sm"
+            @click="showDeletePersonDialog = true"
+          >
+            <Trash2 class="w-4 h-4 mr-1" />
+            Delete
+          </UiButton>
+        </div>
       </div>
     </div>
 
@@ -925,4 +928,14 @@ onMounted(() => fetchPerson())
       </form>
     </UiModal>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeletePersonDialog"
+    title="Delete Person"
+    :message="person ? `Are you sure you want to delete ${person.fullName}? This will also remove all relationships.` : 'Are you sure?'"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="deletePerson"
+    @cancel="showDeletePersonDialog = false"
+  />
 </template>

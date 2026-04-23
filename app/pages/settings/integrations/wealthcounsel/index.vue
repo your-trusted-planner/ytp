@@ -112,7 +112,7 @@
               <button
                 class="text-sm text-red-600 hover:underline"
                 :disabled="discarding === pending.parseId"
-                @click="discardPending(pending.parseId)"
+                @click="promptDiscard(pending.parseId)"
               >
                 {{ discarding === pending.parseId ? 'Discarding...' : 'Discard' }}
               </button>
@@ -223,6 +223,17 @@
       </ol>
     </UiCard>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDiscardDialog"
+    title="Discard Import"
+    message="Are you sure you want to discard this pending import? The parsed data will be deleted."
+    confirm-text="Discard"
+    variant="danger"
+    :loading="!!discarding"
+    @confirm="confirmDiscard"
+    @cancel="showDiscardDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -257,6 +268,8 @@ const recentImports = ref<ImportRecord[]>([])
 const pendingImports = ref<PendingImport[]>([])
 const loading = ref(true)
 const discarding = ref<string | null>(null)
+const showDiscardDialog = ref(false)
+const pendingDiscardId = ref<string | null>(null)
 
 async function fetchData() {
   loading.value = true
@@ -281,18 +294,22 @@ async function fetchData() {
   }
 }
 
-async function discardPending(parseId: string) {
-  if (!confirm('Are you sure you want to discard this pending import? The parsed data will be deleted.')) {
-    return
-  }
+function promptDiscard(parseId: string) {
+  pendingDiscardId.value = parseId
+  showDiscardDialog.value = true
+}
 
-  discarding.value = parseId
+async function confirmDiscard() {
+  if (!pendingDiscardId.value) return
+
+  discarding.value = pendingDiscardId.value
   try {
-    await $fetch(`/api/admin/integrations/wealthcounsel/pending/${parseId}`, {
+    await $fetch(`/api/admin/integrations/wealthcounsel/pending/${pendingDiscardId.value}`, {
       method: 'DELETE'
     })
-    // Remove from list
-    pendingImports.value = pendingImports.value.filter(p => p.parseId !== parseId)
+    pendingImports.value = pendingImports.value.filter(p => p.parseId !== pendingDiscardId.value)
+    showDiscardDialog.value = false
+    pendingDiscardId.value = null
   }
   catch (error: any) {
     toast.error(`Failed to discard: ${error.data?.message || error.message || 'Unknown error'}`)

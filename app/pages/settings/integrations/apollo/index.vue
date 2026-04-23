@@ -248,13 +248,24 @@
         <UiButton
           variant="danger"
           :is-loading="deleting"
-          @click="deleteIntegration"
+          @click="showDeleteDialog = true"
         >
           Delete Integration
         </UiButton>
       </div>
     </UiCard>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeleteDialog"
+    title="Delete Integration"
+    message="Are you sure you want to delete this integration? This cannot be undone."
+    confirm-text="Delete"
+    variant="danger"
+    :loading="deleting"
+    @confirm="deleteIntegration"
+    @cancel="showDeleteDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -291,6 +302,7 @@ const showApiKey = ref(false)
 const saving = ref(false)
 const testing = ref(false)
 const deleting = ref(false)
+const showDeleteDialog = ref(false)
 const testResult = ref<{ success: boolean, error?: string } | null>(null)
 
 // Sync state
@@ -500,7 +512,6 @@ async function runOptOutSync() {
 
 async function deleteIntegration() {
   if (!integration.value?.id) return
-  if (!confirm('Are you sure you want to delete this integration? This cannot be undone.')) return
 
   deleting.value = true
   try {
@@ -509,6 +520,7 @@ async function deleteIntegration() {
     })
     integration.value = null
     apiKey.value = ''
+    showDeleteDialog.value = false
     toast.success('Integration deleted')
   }
   catch (error: any) {

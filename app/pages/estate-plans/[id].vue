@@ -1,16 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Back navigation -->
-    <div class="flex items-center gap-4">
-      <NuxtLink
-        to="/estate-plans"
-        class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft class="w-4 h-4 mr-1" />
-        Back to Estate Plans
-      </NuxtLink>
-    </div>
-
     <!-- Loading state -->
     <div
       v-if="loading"
@@ -41,59 +30,77 @@
 
     <!-- Plan Content -->
     <template v-else>
-      <!-- Header with actions -->
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-4">
-          <div
-            :class="[
-              'w-14 h-14 rounded-lg flex items-center justify-center',
-              plan.planType === 'TRUST_BASED' ? 'bg-blue-100' : 'bg-purple-100'
-            ]"
-          >
-            <component
-              :is="plan.planType === 'TRUST_BASED' ? Landmark : FileText"
+      <!-- Sticky Header -->
+      <div class="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm -mx-8 px-8 pb-4 border-b border-gray-200">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-4">
+            <NuxtLink
+              to="/estate-plans"
+              class="text-gray-600 hover:text-gray-900 shrink-0"
+            >
+              <ArrowLeft class="w-5 h-5" />
+            </NuxtLink>
+            <div
               :class="[
-                'w-7 h-7',
-                plan.planType === 'TRUST_BASED' ? 'text-blue-600' : 'text-purple-600'
+                'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
+                plan.planType === 'TRUST_BASED' ? 'bg-blue-100' : 'bg-purple-100'
               ]"
-            />
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-              {{ plan.planName }}
-            </h1>
-            <div class="flex items-center gap-2 mt-1">
-              <EstatePlanStatusBadge
-                :status="plan.status"
-                show-icon
+            >
+              <component
+                :is="plan.planType === 'TRUST_BASED' ? Landmark : FileText"
+                :class="[
+                  'w-5 h-5',
+                  plan.planType === 'TRUST_BASED' ? 'text-blue-600' : 'text-purple-600'
+                ]"
               />
-              <span class="text-gray-500">Version {{ plan.currentVersion }}</span>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">
+                {{ plan.planName }}
+              </h1>
+              <div class="flex items-center gap-2 mt-1">
+                <EstatePlanStatusBadge
+                  :status="plan.status"
+                  show-icon
+                />
+                <span class="text-sm text-gray-500">
+                  {{ plan.planType === 'TRUST_BASED' ? 'Trust-Based' : 'Will-Based' }}
+                </span>
+                <span
+                  v-if="plan.grantor2"
+                  class="text-sm text-gray-500 flex items-center gap-1"
+                >
+                  <Users class="w-3.5 h-3.5" />
+                  Joint
+                </span>
+                <span class="text-gray-500 text-sm">v{{ plan.currentVersion }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="flex gap-3">
-          <UiButton
-            variant="outline"
-            @click="showAddEventModal = true"
-          >
-            <Plus class="w-4 h-4 mr-2" />
-            Add Event
-          </UiButton>
-          <UiButton variant="outline">
-            <Edit class="w-4 h-4 mr-2" />
-            Edit Plan
-          </UiButton>
-          <!-- Delete button - only visible to admin level 2+ -->
-          <UiButton
-            v-if="isAdmin2"
-            variant="outline"
-            class="text-red-600 hover:bg-red-50 border-red-200"
-            @click="showDeleteModal = true"
-          >
-            <Trash2 class="w-4 h-4 mr-2" />
-            Delete
-          </UiButton>
+          <div class="flex gap-3">
+            <UiButton
+              variant="outline"
+              @click="showAddEventModal = true"
+            >
+              <Plus class="w-4 h-4 mr-2" />
+              Add Event
+            </UiButton>
+            <UiButton variant="outline">
+              <Edit class="w-4 h-4 mr-2" />
+              Edit Plan
+            </UiButton>
+            <!-- Delete button - only visible to admin level 2+ -->
+            <UiButton
+              v-if="isAdmin2"
+              variant="outline"
+              class="text-red-600 hover:bg-red-50 border-red-200"
+              @click="showDeleteModal = true"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete
+            </UiButton>
+          </div>
         </div>
       </div>
 

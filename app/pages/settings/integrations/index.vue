@@ -237,6 +237,18 @@
       </UiCard>
     </div>
 
+    <!-- Resend Delete Confirm Dialog -->
+    <UiConfirmDialog
+      v-model="showDeleteResendDialog"
+      title="Delete Integration"
+      message="Are you sure you want to delete this integration?"
+      confirm-text="Delete"
+      variant="danger"
+      :loading="resendDeleting"
+      @confirm="deleteResendIntegration"
+      @cancel="showDeleteResendDialog = false"
+    />
+
     <!-- Resend Configuration Modal -->
     <UiModal
       v-model="showResendModal"
@@ -326,8 +338,7 @@
           <UiButton
             v-if="resendIntegration?.id"
             variant="danger"
-            :is-loading="resendDeleting"
-            @click="deleteResendIntegration"
+            @click="showDeleteResendDialog = true"
           >
             Delete
           </UiButton>
@@ -397,6 +408,7 @@ const showResendApiKey = ref(false)
 const resendSaving = ref(false)
 const resendTesting = ref(false)
 const resendDeleting = ref(false)
+const showDeleteResendDialog = ref(false)
 const resendTestResult = ref<{ success: boolean, error?: string, details?: { domainCount?: number } } | null>(null)
 
 // Fetch integration status
@@ -529,7 +541,6 @@ async function testResendConnection() {
 
 async function deleteResendIntegration() {
   if (!resendIntegration.value?.id) return
-  if (!confirm('Are you sure you want to delete this integration?')) return
 
   resendDeleting.value = true
   try {
@@ -541,6 +552,7 @@ async function deleteResendIntegration() {
     resendStatus.value = 'not_configured'
     resendLastTested.value = null
     resendTestResult.value = null
+    showDeleteResendDialog.value = false
     showResendModal.value = false
     toast.success('Integration deleted')
   }

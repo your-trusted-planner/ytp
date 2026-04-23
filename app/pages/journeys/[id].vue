@@ -576,6 +576,37 @@
       @save="handleActionItemSaved"
     />
   </div>
+
+  <UiConfirmDialog
+    v-model="showFinalStepWarningDialog"
+    title="Mark as Final Step"
+    :message="finalStepWarningMessage"
+    confirm-text="Continue Anyway"
+    variant="danger"
+    :loading="savingStep"
+    @confirm="confirmSaveStep"
+    @cancel="showFinalStepWarningDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showDeleteStepDialog"
+    title="Delete Step"
+    message="Are you sure you want to delete this step?"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="confirmDeleteStep"
+    @cancel="showDeleteStepDialog = false"
+  />
+
+  <UiConfirmDialog
+    v-model="showDeleteActionItemDialog"
+    title="Delete Action Item"
+    message="Are you sure you want to delete this action item?"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="confirmDeleteActionItem"
+    @cancel="showDeleteActionItemDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -615,6 +646,13 @@ const expandedSteps = ref<Set<string>>(new Set())
 const showActionItemModal = ref(false)
 const editingActionItem = ref(null)
 const currentStep = ref(null)
+const showFinalStepWarningDialog = ref(false)
+const finalStepWarningMessage = ref('')
+const showDeleteStepDialog = ref(false)
+const deletingStepId = ref<string | null>(null)
+const showDeleteActionItemDialog = ref(false)
+const deletingActionItemId = ref<string | null>(null)
+const deletingActionItemStepId = ref<string | null>(null)
 
 // Validation state
 const validationWarnings = ref<string[]>([])
@@ -714,18 +752,23 @@ function editStep(step: any) {
 }
 
 // Save step
-async function saveStep() {
+async function confirmSaveStep() {
+  showFinalStepWarningDialog.value = false
+  await saveStep(true)
+}
+
+async function saveStep(skipFinalStepCheck = false) {
   savingStep.value = true
   try {
     if (editingStep.value) {
       // When marking a step as final, check if there are steps after it
-      if (stepForm.value.isFinalStep && !editingStep.value.is_final_step) {
+      if (!skipFinalStepCheck && stepForm.value.isFinalStep && !editingStep.value.is_final_step) {
         const stepsAfter = steps.value.filter(s => s.step_order > editingStep.value.step_order)
         if (stepsAfter.length > 0) {
-          if (!confirm(`There are ${stepsAfter.length} step(s) after this one. Marking this as the final step means those steps should be removed or moved before this step. Continue anyway?`)) {
-            savingStep.value = false
-            return
-          }
+          savingStep.value = false
+          finalStepWarningMessage.value = `There are ${stepsAfter.length} step(s) after this one. Marking this as the final step means those steps should be removed or moved before this step. Continue anyway?`
+          showFinalStepWarningDialog.value = true
+          return
         }
       }
 
@@ -783,11 +826,17 @@ async function saveStep() {
 }
 
 // Delete step
-async function deleteStep(stepId: string) {
-  if (!confirm('Are you sure you want to delete this step?')) return
+function deleteStep(stepId: string) {
+  deletingStepId.value = stepId
+  showDeleteStepDialog.value = true
+}
 
+async function confirmDeleteStep() {
+  if (!deletingStepId.value) return
   try {
-    await $fetch(`/api/journey-steps/${stepId}`, { method: 'DELETE' })
+    await $fetch(`/api/journey-steps/${deletingStepId.value}`, { method: 'DELETE' })
+    showDeleteStepDialog.value = false
+    deletingStepId.value = null
     await fetchJourney()
   }
   catch (error) {
@@ -899,12 +948,20 @@ function editActionItem(step: any, actionItem: any) {
   showActionItemModal.value = true
 }
 
-async function deleteActionItem(actionItemId: string, stepId: string) {
-  if (!confirm('Are you sure you want to delete this action item?')) return
+function deleteActionItem(actionItemId: string, stepId: string) {
+  deletingActionItemId.value = actionItemId
+  deletingActionItemStepId.value = stepId
+  showDeleteActionItemDialog.value = true
+}
 
+async function confirmDeleteActionItem() {
+  if (!deletingActionItemId.value || !deletingActionItemStepId.value) return
   try {
-    await $fetch(`/api/action-items/${actionItemId}`, { method: 'DELETE' })
-    await fetchActionItemsForStep(stepId)
+    await $fetch(`/api/action-items/${deletingActionItemId.value}`, { method: 'DELETE' })
+    showDeleteActionItemDialog.value = false
+    await fetchActionItemsForStep(deletingActionItemStepId.value)
+    deletingActionItemId.value = null
+    deletingActionItemStepId.value = null
     // Revalidate after deleting action item
     await validateJourney()
   }

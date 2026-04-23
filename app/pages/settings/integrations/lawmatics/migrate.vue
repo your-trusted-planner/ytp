@@ -24,7 +24,7 @@
       :run="currentRun"
       @pause="pauseMigration"
       @resume="resumeMigration"
-      @cancel="cancelMigration"
+      @cancel="showCancelDialog = true"
       @view-errors="viewErrors(currentRun)"
     />
 
@@ -213,6 +213,16 @@
       @close="showErrorsModal = false"
     />
   </div>
+
+  <UiConfirmDialog
+    v-model="showCancelDialog"
+    title="Cancel Migration"
+    message="Are you sure you want to cancel this migration?"
+    confirm-text="Cancel Migration"
+    variant="danger"
+    @confirm="cancelMigration"
+    @cancel="showCancelDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -258,6 +268,7 @@ const loadingRuns = ref(true)
 const pagination = ref({ page: 1, totalPages: 1 })
 
 const showErrorsModal = ref(false)
+const showCancelDialog = ref(false)
 const selectedRunId = ref<string | null>(null)
 
 let pollInterval: ReturnType<typeof setInterval> | null = null
@@ -390,10 +401,10 @@ async function resumeMigration() {
 
 async function cancelMigration() {
   if (!currentRun.value) return
-  if (!confirm('Are you sure you want to cancel this migration?')) return
 
   try {
     await $fetch(`/api/admin/migrations/${currentRun.value.id}/cancel`, { method: 'POST' })
+    showCancelDialog.value = false
     await loadRuns()
   }
   catch (error: any) {

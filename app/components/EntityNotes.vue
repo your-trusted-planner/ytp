@@ -109,7 +109,7 @@
                 v-if="canDelete(note)"
                 class="p-1 text-gray-400 hover:text-red-500"
                 title="Delete note"
-                @click="deleteNote(note.id)"
+                @click="promptDeleteNote(note.id)"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -128,6 +128,17 @@
       </div>
     </div>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeleteNoteDialog"
+    title="Delete Note"
+    message="Are you sure you want to delete this note?"
+    confirm-text="Delete"
+    variant="danger"
+    :loading="deletingNoteConfirm"
+    @confirm="deleteNote"
+    @cancel="showDeleteNoteDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -161,6 +172,9 @@ const saving = ref(false)
 const editingNoteId = ref<string | null>(null)
 const editContent = ref('')
 const editSaving = ref(false)
+const showDeleteNoteDialog = ref(false)
+const deletingNoteId = ref<string | null>(null)
+const deletingNoteConfirm = ref(false)
 
 // Get current user ID from session for delete permission check
 const { data: sessionData } = await useFetch('/api/auth/session')
@@ -213,18 +227,29 @@ async function addNote() {
   }
 }
 
-async function deleteNote(noteId: string) {
-  if (!confirm('Are you sure you want to delete this note?')) return
+function promptDeleteNote(noteId: string) {
+  deletingNoteId.value = noteId
+  showDeleteNoteDialog.value = true
+}
 
+async function deleteNote() {
+  if (!deletingNoteId.value) return
+
+  deletingNoteConfirm.value = true
   try {
-    await $fetch(`/api/notes/${noteId}`, {
+    await $fetch(`/api/notes/${deletingNoteId.value}`, {
       method: 'DELETE'
     })
-    notes.value = notes.value.filter(n => n.id !== noteId)
-    emit('note-deleted', noteId)
+    notes.value = notes.value.filter(n => n.id !== deletingNoteId.value)
+    emit('note-deleted', deletingNoteId.value)
+    showDeleteNoteDialog.value = false
+    deletingNoteId.value = null
   }
   catch (error) {
     console.error('Failed to delete note:', error)
+  }
+  finally {
+    deletingNoteConfirm.value = false
   }
 }
 

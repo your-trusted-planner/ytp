@@ -1,30 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Plan Header -->
-    <div class="flex items-start justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900">
-          {{ plan.planName }}
-        </h2>
-        <div class="mt-2 flex items-center gap-3">
-          <EstatePlanStatusBadge
-            :status="plan.status"
-            show-icon
-          />
-          <span class="text-sm text-gray-500">
-            {{ plan.planType === 'TRUST_BASED' ? 'Trust-Based Plan' : 'Will-Based Plan' }}
-          </span>
-          <span
-            v-if="isJointPlan"
-            class="text-sm text-gray-500"
-          >
-            <Users class="w-4 h-4 inline mr-1" />
-            Joint Plan
-          </span>
-        </div>
-      </div>
-    </div>
-
     <!-- Key Info Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Grantor 1 -->

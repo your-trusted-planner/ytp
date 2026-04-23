@@ -142,7 +142,7 @@
           v-if="!seeding && !seedResult"
           :disabled="cleaning"
           class="px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
-          @click="cleanupWydapt"
+          @click="showCleanupDialog = true"
         >
           {{ cleaning ? 'Cleaning...' : 'Clean Up Partial Data' }}
         </button>
@@ -254,6 +254,17 @@
       </div>
     </div>
   </div>
+
+  <UiConfirmDialog
+    v-model="showCleanupDialog"
+    title="Clean Up WYDAPT Data"
+    message="This will delete the WYDAPT matter, journey, steps, and templates. Continue?"
+    confirm-text="Clean Up"
+    variant="danger"
+    :loading="cleaning"
+    @confirm="cleanupWydapt"
+    @cancel="showCleanupDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -275,6 +286,7 @@ const seeding = ref(false)
 const seedResult = ref<any>(null)
 
 const cleaning = ref(false)
+const showCleanupDialog = ref(false)
 
 function onFilesSelected(event: Event) {
   const target = event.target as HTMLInputElement
@@ -343,15 +355,12 @@ async function seedDocuments() {
 }
 
 async function cleanupWydapt() {
-  if (!confirm('This will delete the WYDAPT matter, journey, steps, and templates. Continue?')) {
-    return
-  }
-
   cleaning.value = true
   try {
     const response = await $fetch('/api/admin/cleanup-wydapt', {
       method: 'POST'
     })
+    showCleanupDialog.value = false
     toast.success('Cleanup successful! Check console for details.')
     console.log('Cleanup log:', response.log)
   }

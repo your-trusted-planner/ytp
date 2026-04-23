@@ -165,7 +165,7 @@
                 </button>
                 <button
                   class="text-red-600 hover:text-red-900"
-                  @click.stop="deletePerson(person)"
+                  @click.stop="promptDeletePerson(person)"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
@@ -306,6 +306,16 @@
       </form>
     </UiModal>
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeletePersonDialog"
+    title="Delete Person"
+    :message="deletePersonMessage"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="confirmDeletePerson"
+    @cancel="showDeletePersonDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -361,6 +371,9 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const editingPerson = ref<Person | null>(null)
 const savingPerson = ref(false)
+const showDeletePersonDialog = ref(false)
+const deletingPerson = ref<Person | null>(null)
+const deletePersonMessage = ref('')
 
 // Pagination state
 const pagination = ref<PaginationMeta | null>(null)
@@ -667,11 +680,19 @@ async function savePerson() {
   }
 }
 
-async function deletePerson(person: Person) {
-  if (!confirm(`Are you sure you want to delete ${person.fullName}? This will also remove all relationships with this person.`)) return
+function promptDeletePerson(person: Person) {
+  deletingPerson.value = person
+  deletePersonMessage.value = `Are you sure you want to delete ${person.fullName}? This will also remove all relationships with this person.`
+  showDeletePersonDialog.value = true
+}
 
+async function confirmDeletePerson() {
+  if (!deletingPerson.value) return
+  const person = deletingPerson.value
   try {
     await $fetch(`/api/people/${person.id}`, { method: 'DELETE' })
+    showDeletePersonDialog.value = false
+    deletingPerson.value = null
     await fetchPeople()
   }
   catch (error: any) {

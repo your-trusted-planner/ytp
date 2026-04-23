@@ -1,49 +1,62 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <button
-          class="text-gray-600 hover:text-gray-900"
-          @click="$router.back()"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </button>
-        <div>
-          <h1
-            v-if="matter"
-            class="text-2xl font-bold text-gray-900"
+    <div class="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm -mx-8 px-8 pb-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <button
+            class="text-gray-600 hover:text-gray-900"
+            @click="$router.back()"
           >
-            {{ matter.title }}
-          </h1>
-          <div
-            v-if="matter"
-            class="flex items-center space-x-3 mt-1"
-          >
-            <span class="text-gray-600">Matter #: {{ matter.matterNumber }}</span>
-            <UiBadge :variant="getStatusVariant(matter.status)">
-              {{ matter.status }}
-            </UiBadge>
-            <DriveStatusBadge
-              v-if="isDriveConfigured"
-              :status="matter.googleDriveSyncStatus"
-              :folder-url="matter.googleDriveFolderUrl"
-              :show-label="true"
-            />
-            <UiSyncStatusBadge
-              v-if="matter.importMetadata"
-              :import-metadata="matter.importMetadata"
-            />
+            <ArrowLeft class="w-5 h-5" />
+          </button>
+          <div>
+            <h1
+              v-if="matter"
+              class="text-2xl font-bold text-gray-900"
+            >
+              {{ matter.title }}
+            </h1>
+            <div
+              v-if="matter"
+              class="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1"
+            >
+              <NuxtLink
+                v-if="matter.clientTableId"
+                :to="`/clients/${matter.clientTableId}`"
+                class="text-sm font-medium text-burgundy-600 hover:text-burgundy-800 hover:underline"
+              >
+                {{ matterStore.clientName }}
+              </NuxtLink>
+              <span
+                v-if="matter.clientTableId"
+                class="text-gray-300"
+              >·</span>
+              <span class="text-gray-500 text-sm">Matter #{{ matter.matterNumber }}</span>
+              <UiBadge :variant="getStatusVariant(matter.status)">
+                {{ matter.status }}
+              </UiBadge>
+              <DriveStatusBadge
+                v-if="isDriveConfigured"
+                :status="matter.googleDriveSyncStatus"
+                :folder-url="matter.googleDriveFolderUrl"
+                :show-label="true"
+              />
+              <UiSyncStatusBadge
+                v-if="matter.importMetadata"
+                :import-metadata="matter.importMetadata"
+              />
+            </div>
           </div>
         </div>
+        <UiButton
+          v-if="matter"
+          variant="outline"
+          @click="showEditModal = true"
+        >
+          Edit Matter
+        </UiButton>
       </div>
-      <UiButton
-        v-if="matter"
-        variant="outline"
-        @click="showEditModal = true"
-      >
-        Edit Matter
-      </UiButton>
     </div>
 
     <!-- Loading -->
@@ -608,6 +621,7 @@
           Cancel
         </UiButton>
         <UiButton
+          type="button"
           :is-loading="addingService"
           @click="handleAddService"
         >
@@ -659,6 +673,16 @@
       @updated="handleTimeEntrySaved"
     />
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeleteTimeEntryDialog"
+    title="Delete Time Entry"
+    message="Are you sure you want to delete this time entry?"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="confirmDeleteTimeEntry"
+    @cancel="showDeleteTimeEntryDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -711,6 +735,8 @@ const showTrustDepositModal = ref(false)
 // Time entries state
 const showTimeEntryModal = ref(false)
 const editingTimeEntry = ref<any>(null)
+const showDeleteTimeEntryDialog = ref(false)
+const deletingTimeEntry = ref<any>(null)
 
 // Computed billing data from store
 const clientTrustBalance = computed(() => matterStore.clientTrustBalance)
@@ -978,11 +1004,18 @@ function handleEditTimeEntry(entry: any) {
 }
 
 // Handle delete time entry (receives full entry object from table)
-async function handleDeleteTimeEntry(entry: any) {
-  if (!confirm('Are you sure you want to delete this time entry?')) return
+function handleDeleteTimeEntry(entry: any) {
+  deletingTimeEntry.value = entry
+  showDeleteTimeEntryDialog.value = true
+}
+
+async function confirmDeleteTimeEntry() {
+  if (!deletingTimeEntry.value) return
   try {
-    await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
+    await $fetch(`/api/time-entries/${deletingTimeEntry.value.id}`, { method: 'DELETE' })
     toast.success('Time entry deleted')
+    showDeleteTimeEntryDialog.value = false
+    deletingTimeEntry.value = null
     await refreshTimeEntries()
   }
   catch (error: any) {

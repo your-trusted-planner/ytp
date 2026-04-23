@@ -223,6 +223,16 @@
       @billed="handleBulled"
     />
   </div>
+
+  <UiConfirmDialog
+    v-model="showDeleteEntryDialog"
+    title="Delete Time Entry"
+    :message="deleteEntryMessage"
+    confirm-text="Delete"
+    variant="danger"
+    @confirm="confirmDeleteEntry"
+    @cancel="showDeleteEntryDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -280,6 +290,9 @@ const selectedIds = ref<string[]>([])
 const showCreateModal = ref(false)
 const showBulkBillModal = ref(false)
 const editingEntry = ref<TimeEntry | null>(null)
+const showDeleteEntryDialog = ref(false)
+const deletingEntry = ref<TimeEntry | null>(null)
+const deleteEntryMessage = ref('')
 
 // Tab configuration
 const tabs = computed(() => [
@@ -383,14 +396,19 @@ function handleEdit(entry: TimeEntry) {
   editingEntry.value = entry
 }
 
-async function handleDelete(entry: TimeEntry) {
-  if (!confirm(`Are you sure you want to delete this time entry for ${entry.hours} hours?`)) {
-    return
-  }
+function handleDelete(entry: TimeEntry) {
+  deletingEntry.value = entry
+  deleteEntryMessage.value = `Are you sure you want to delete this time entry for ${entry.hours} hours?`
+  showDeleteEntryDialog.value = true
+}
 
+async function confirmDeleteEntry() {
+  if (!deletingEntry.value) return
   try {
-    await $fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
+    await $fetch(`/api/time-entries/${deletingEntry.value.id}`, { method: 'DELETE' })
     toast.success('Time entry deleted')
+    showDeleteEntryDialog.value = false
+    deletingEntry.value = null
     refreshAll()
   }
   catch (error: any) {
