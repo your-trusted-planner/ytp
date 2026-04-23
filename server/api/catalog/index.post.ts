@@ -64,7 +64,22 @@ export default defineEventHandler(async (event) => {
 
   // Real database
   const { useDrizzle, schema } = await import('../../db')
+  const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
+
+  // Prevent duplicate service names
+  const existing = await db.select({ id: schema.serviceCatalog.id })
+    .from(schema.serviceCatalog)
+    .where(eq(schema.serviceCatalog.name, rest.name))
+    .get()
+
+  if (existing) {
+    throw createError({
+      statusCode: 409,
+      message: `A service named "${rest.name}" already exists`
+    })
+  }
+
   await db.insert(schema.serviceCatalog).values(newItem)
 
   return { success: true, item: newItem }

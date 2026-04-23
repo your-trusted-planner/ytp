@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const { useDrizzle, schema } = await import('../../db')
-  const { eq, and, like } = await import('drizzle-orm')
+  const { eq, and, or, like } = await import('drizzle-orm')
   const db = useDrizzle()
   const renderer = useTemplateRenderer()
 
@@ -69,24 +69,32 @@ export default defineEventHandler(async (event) => {
     last_name: clientUser.lastName
   }
 
-  // Get spouse information from relationships system
+  // Get spouse information from unified relationships table
   let spouse: any = null
-  const spouseRelationship = await db.select()
-    .from(schema.people)
-    .innerJoin(
-      schema.clientRelationships,
-      eq(schema.people.id, schema.clientRelationships.personId)
-    )
-    .where(and(
-      eq(schema.clientRelationships.clientId, clientJourney.client_id),
-      eq(schema.clientRelationships.relationshipType, 'SPOUSE')
-    ))
-    .orderBy(schema.clientRelationships.ordinal)
-    .limit(1)
-    .get()
+  const clientPersonId = clientUser.personId
+  if (clientPersonId) {
+    const spouseRel = await db.select()
+      .from(schema.relationships)
+      .where(and(
+        or(
+          eq(schema.relationships.fromPersonId, clientPersonId),
+          eq(schema.relationships.toPersonId, clientPersonId)
+        ),
+        eq(schema.relationships.relationshipType, 'SPOUSE')
+      ))
+      .orderBy(schema.relationships.ordinal)
+      .limit(1)
+      .get()
 
-  if (spouseRelationship) {
-    spouse = spouseRelationship.people
+    if (spouseRel) {
+      const spousePersonId = spouseRel.fromPersonId === clientPersonId
+        ? spouseRel.toPersonId
+        : spouseRel.fromPersonId
+      spouse = await db.select()
+        .from(schema.people)
+        .where(eq(schema.people.id, spousePersonId))
+        .get() || null
+    }
   }
 
   // Get step info to find related templates

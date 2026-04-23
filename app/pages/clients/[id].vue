@@ -285,9 +285,12 @@
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
-                  <div class="font-medium text-gray-900">
+                  <NuxtLink
+                    :to="`/people/${rel.person.id}`"
+                    class="font-medium text-burgundy-600 hover:text-burgundy-800 hover:underline"
+                  >
                     {{ rel.person.fullName }}
-                  </div>
+                  </NuxtLink>
                   <div class="text-sm text-burgundy-600 mt-1">
                     {{ formatRelationshipType(rel.relationshipType) }}
                     <span
@@ -624,188 +627,25 @@
     />
 
     <!-- Add Relationship Modal -->
-    <UiModal
+    <RelationshipsAddRelationshipModal
       v-model="showAddRelationshipModal"
-      title="Add Person & Relationship"
-      size="lg"
-    >
-      <form
-        class="space-y-4"
-        @submit.prevent="addRelationship"
-      >
-        <!-- Choose existing person or create new -->
-        <div class="border-b pb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Person
-          </label>
-          <div class="space-y-2">
-            <label class="flex items-center">
-              <input
-                v-model="relationshipForm.mode"
-                type="radio"
-                value="existing"
-                class="mr-2"
-              >
-              Select existing person
-            </label>
-            <label class="flex items-center">
-              <input
-                v-model="relationshipForm.mode"
-                type="radio"
-                value="new"
-                class="mr-2"
-              >
-              Create new person
-            </label>
-          </div>
-        </div>
+      :subject-name="`${client?.first_name || ''} ${client?.last_name || ''}`.trim()"
+      :exclude-person-id="client?.personId"
+      :allow-create-person="true"
+      :on-save="addRelationship"
+      @saved="fetchClient"
+    />
 
-        <!-- Select existing person -->
-        <div v-if="relationshipForm.mode === 'existing'">
-          <UiSelect
-            v-model="relationshipForm.personId"
-            label="Select Person"
-            required
-          >
-            <option value="">
-              -- Select a person --
-            </option>
-            <option
-              v-for="person in availablePeople"
-              :key="person.id"
-              :value="person.id"
-            >
-              {{ person.fullName }} <span v-if="person.email">({{ person.email }})</span>
-            </option>
-          </UiSelect>
-        </div>
-
-        <!-- Create new person -->
-        <div
-          v-if="relationshipForm.mode === 'new'"
-          class="space-y-4"
-        >
-          <div class="grid grid-cols-2 gap-4">
-            <UiInput
-              v-model="relationshipForm.newPerson.firstName"
-              label="First Name"
-              required
-            />
-            <UiInput
-              v-model="relationshipForm.newPerson.lastName"
-              label="Last Name"
-              required
-            />
-          </div>
-
-          <UiInput
-            v-model="relationshipForm.newPerson.email"
-            label="Email"
-            type="email"
-          />
-
-          <UiPhoneInput
-            v-model="relationshipForm.newPerson.phone"
-            label="Phone"
-          />
-        </div>
-
-        <!-- Relationship details -->
-        <div class="border-t pt-4 space-y-4">
-          <h4 class="font-semibold text-gray-900">
-            Relationship Details
-          </h4>
-
-          <UiSelect
-            v-model="relationshipForm.relationshipType"
-            label="Relationship Type"
-            required
-          >
-            <option value="">
-              -- Select type --
-            </option>
-            <optgroup label="Family">
-              <option value="SPOUSE">
-                Spouse
-              </option>
-              <option value="EX_SPOUSE">
-                Ex-Spouse
-              </option>
-              <option value="PARTNER">
-                Partner
-              </option>
-              <option value="CHILD">
-                Child
-              </option>
-              <option value="STEPCHILD">
-                Stepchild
-              </option>
-              <option value="GRANDCHILD">
-                Grandchild
-              </option>
-              <option value="PARENT">
-                Parent
-              </option>
-              <option value="SIBLING">
-                Sibling
-              </option>
-            </optgroup>
-            <optgroup label="Professional">
-              <option value="FINANCIAL_ADVISOR">
-                Financial Advisor
-              </option>
-              <option value="ACCOUNTANT">
-                Accountant
-              </option>
-              <option value="INSURANCE_AGENT">
-                Insurance Agent
-              </option>
-              <option value="ATTORNEY">
-                Attorney
-              </option>
-            </optgroup>
-            <optgroup label="Business">
-              <option value="BUSINESS_PARTNER">
-                Business Partner
-              </option>
-              <option value="BUSINESS_ASSOCIATE">
-                Business Associate
-              </option>
-            </optgroup>
-          </UiSelect>
-
-          <UiInput
-            v-if="['CHILD', 'STEPCHILD', 'SIBLING'].includes(relationshipForm.relationshipType)"
-            v-model.number="relationshipForm.ordinal"
-            label="Order (e.g., 1 for first child, 2 for second child)"
-            type="number"
-            min="0"
-          />
-
-          <UiTextarea
-            v-model="relationshipForm.notes"
-            label="Notes (optional)"
-            :rows="2"
-          />
-        </div>
-
-        <div class="flex justify-end space-x-3 pt-4">
-          <UiButton
-            type="button"
-            variant="ghost"
-            @click="showAddRelationshipModal = false"
-          >
-            Cancel
-          </UiButton>
-          <UiButton
-            type="submit"
-            :loading="savingRelationship"
-          >
-            Add Relationship
-          </UiButton>
-        </div>
-      </form>
-    </UiModal>
+    <!-- Remove Relationship Confirmation -->
+    <UiConfirmDialog
+      v-model="showRemoveRelationshipDialog"
+      title="Remove Relationship"
+      message="Are you sure you want to remove this relationship?"
+      confirm-text="Remove"
+      variant="danger"
+      :loading="removingRelationship"
+      @confirm="confirmRemoveRelationship"
+    />
 
     <!-- Start Engagement Journey Modal -->
     <UiModal
@@ -873,9 +713,12 @@ const isDriveConfigured = computed(() => appConfigStore.isDriveConfigured)
 
 const loading = ref(true)
 const savingClient = ref(false)
-const savingRelationship = ref(false)
+
 const showEditModal = ref(false)
 const showAddRelationshipModal = ref(false)
+const showRemoveRelationshipDialog = ref(false)
+const removingRelationshipId = ref<string | null>(null)
+const removingRelationship = ref(false)
 
 const client = ref<any>(null)
 const clientProfile = ref<any>(null)
@@ -883,7 +726,7 @@ const matters = ref<any[]>([])
 const journeys = ref<any[]>([])
 const documents = ref<any[]>([])
 const relationships = ref<any[]>([])
-const availablePeople = ref<any[]>([])
+
 
 // Impersonation state
 const clientUserId = ref<string | null>(null)
@@ -901,19 +744,6 @@ const outstandingInvoices = ref<any[]>([])
 const showTrustDepositModal = ref(false)
 const showPaymentModal = ref(false)
 
-const relationshipForm = reactive({
-  mode: 'existing',
-  personId: '',
-  relationshipType: '',
-  ordinal: 0,
-  notes: '',
-  newPerson: {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: ''
-  }
-})
 
 const editForm = reactive({
   first_name: '',
@@ -957,19 +787,6 @@ async function fetchClient() {
     loading.value = false
   }
 }
-
-// Lazy load people list when the "Add Relationship" modal opens
-watch(showAddRelationshipModal, async (isOpen) => {
-  if (isOpen && availablePeople.value.length === 0) {
-    try {
-      const peopleData = await $fetch('/api/people')
-      availablePeople.value = (peopleData as any).people || []
-    }
-    catch {
-      availablePeople.value = []
-    }
-  }
-})
 
 // View journey
 function viewJourney(journeyId: string) {
@@ -1027,73 +844,64 @@ async function saveClientChanges() {
   }
 }
 
-// Add relationship
-async function addRelationship() {
-  savingRelationship.value = true
-  try {
-    let personId = relationshipForm.personId
+// Add relationship — called by AddRelationshipModal component
+async function addRelationship(data: {
+  personId: string
+  relationshipType: string
+  ordinal: number
+  notes: string
+  newPerson?: { firstName: string, lastName: string, email: string, phone: string }
+}) {
+  let personId = data.personId
 
-    // Create new person if needed
-    if (relationshipForm.mode === 'new') {
-      const newPersonResponse = await $fetch('/api/people', {
-        method: 'POST',
-        body: {
-          firstName: relationshipForm.newPerson.firstName,
-          lastName: relationshipForm.newPerson.lastName,
-          email: relationshipForm.newPerson.email,
-          phone: relationshipForm.newPerson.phone
-        }
-      })
-      personId = newPersonResponse.person.id
-    }
-
-    // Create relationship
-    await $fetch(`/api/clients/${clientId}/relationships`, {
+  // Create new person if needed
+  if (data.newPerson) {
+    const newPersonResponse = await $fetch('/api/people', {
       method: 'POST',
       body: {
-        personId,
-        relationshipType: relationshipForm.relationshipType,
-        ordinal: relationshipForm.ordinal || 0,
-        notes: relationshipForm.notes
+        firstName: data.newPerson.firstName,
+        lastName: data.newPerson.lastName,
+        email: data.newPerson.email,
+        phone: data.newPerson.phone
       }
-    })
+    }) as any
+    personId = newPersonResponse.person.id
+  }
 
-    // Reset form and close modal
-    showAddRelationshipModal.value = false
-    relationshipForm.mode = 'existing'
-    relationshipForm.personId = ''
-    relationshipForm.relationshipType = ''
-    relationshipForm.ordinal = 0
-    relationshipForm.notes = ''
-    relationshipForm.newPerson = { firstName: '', lastName: '', email: '', phone: '' }
-
-    // Refresh data
-    await fetchClient()
-  }
-  catch (error) {
-    console.error('Error adding relationship:', error)
-    toast.error(error.message || 'Failed to add relationship')
-  }
-  finally {
-    savingRelationship.value = false
-  }
+  await $fetch(`/api/clients/${clientId}/relationships`, {
+    method: 'POST',
+    body: {
+      personId,
+      relationshipType: data.relationshipType,
+      ordinal: data.ordinal || 0,
+      notes: data.notes
+    }
+  })
 }
 
 // Remove relationship
-async function removeRelationship(relationshipId: string) {
-  if (!confirm('Are you sure you want to remove this relationship?')) return
+function removeRelationship(relationshipId: string) {
+  removingRelationshipId.value = relationshipId
+  showRemoveRelationshipDialog.value = true
+}
 
+async function confirmRemoveRelationship() {
+  if (!removingRelationshipId.value) return
+  removingRelationship.value = true
   try {
-    await $fetch(`/api/clients/${clientId}/relationships/${relationshipId}`, {
+    await $fetch(`/api/clients/${clientId}/relationships/${removingRelationshipId.value}`, {
       method: 'DELETE'
     })
-
-    // Refresh data
+    showRemoveRelationshipDialog.value = false
+    removingRelationshipId.value = null
     await fetchClient()
   }
   catch (error) {
     console.error('Error removing relationship:', error)
     toast.error(error.message || 'Failed to remove relationship')
+  }
+  finally {
+    removingRelationship.value = false
   }
 }
 

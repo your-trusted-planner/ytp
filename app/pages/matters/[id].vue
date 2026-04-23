@@ -1018,7 +1018,7 @@ async function handleApproveTimeEntry(entry: any) {
 function formatInvoiceDate(date: number | string | Date | null): string {
   if (!date) return 'N/A'
   const d = typeof date === 'number' ? new Date(date * 1000) : new Date(date)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 }
 
 // Get invoice status badge variant

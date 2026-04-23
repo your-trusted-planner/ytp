@@ -385,7 +385,8 @@ function formatDate(date: number | string | Date | undefined | null): string {
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'UTC'
   })
 }
 

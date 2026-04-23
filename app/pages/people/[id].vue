@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { ArrowLeft, Edit, Trash2, User, Building2, Landmark, Loader, Mail, Phone, MapPin, Calendar, Lock, Link2, Users } from 'lucide-vue-next'
+import { ArrowLeft, Edit, Trash2, User, Building2, Landmark, Loader, Mail, Phone, MapPin, Calendar, Lock, Link2, Users, Plus } from 'lucide-vue-next'
 import type { AddressValue } from '~/components/ui/AddressInput.vue'
 import type { PersonFormData } from '~/components/people/PersonFormFields.vue'
 
@@ -61,6 +61,15 @@ const person = ref<PersonDetail | null>(null)
 const loading = ref(true)
 const showEditModal = ref(false)
 const savingPerson = ref(false)
+
+// Add relationship modal state
+const showAddRelationshipModal = ref(false)
+
+// Remove relationship dialog state
+const showRemoveRelationshipDialog = ref(false)
+const removingRelationshipId = ref<string | null>(null)
+const removingRelationship = ref<Relationship | null>(null)
+const removingRelationshipConfirm = ref(false)
 
 // Inline notes editing
 const editingNotes = ref(false)
@@ -220,6 +229,12 @@ function formatDate(timestamp?: number) {
   return new Date(timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// For calendar dates (DOB) — always render in UTC so the stored date is never shifted by the local timezone
+function formatDateOnly(timestamp?: number) {
+  if (!timestamp) return 'N/A'
+  return new Date(timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
+}
+
 function formatRelationshipType(type: string): string {
   const typeMap: Record<string, string> = {
     SPOUSE: 'Spouse', EX_SPOUSE: 'Ex-Spouse', PARTNER: 'Partner',
@@ -355,6 +370,49 @@ async function deletePerson() {
   }
 }
 
+// Called by AddRelationshipModal component
+async function addRelationship(data: {
+  personId: string
+  relationshipType: string
+  ordinal: number
+  notes: string
+}) {
+  await $fetch(`/api/people/${personId}/relationships`, {
+    method: 'POST',
+    body: {
+      toPersonId: data.personId,
+      relationshipType: data.relationshipType,
+      ordinal: data.ordinal || 0,
+      notes: data.notes || undefined
+    }
+  })
+}
+
+function removeRelationship(rel: Relationship) {
+  removingRelationshipId.value = rel.id
+  removingRelationship.value = rel
+  showRemoveRelationshipDialog.value = true
+}
+
+async function confirmRemoveRelationship() {
+  if (!removingRelationshipId.value) return
+  removingRelationshipConfirm.value = true
+  try {
+    await $fetch(`/api/people/${personId}/relationships/${removingRelationshipId.value}`, { method: 'DELETE' })
+    showRemoveRelationshipDialog.value = false
+    toast.success('Relationship removed')
+    await fetchPerson()
+  }
+  catch (error: any) {
+    toast.error(error?.data?.message || 'Failed to remove relationship')
+  }
+  finally {
+    removingRelationshipConfirm.value = false
+    removingRelationshipId.value = null
+    removingRelationship.value = null
+  }
+}
+
 onMounted(() => fetchPerson())
 </script>
 
@@ -477,7 +535,7 @@ onMounted(() => fetchPerson())
               <div>
                 <span class="text-gray-600">Date of Birth</span>
                 <div class="font-medium">
-                  {{ formatDate(person.dateOfBirth) }}
+                  {{ formatDateOnly(person.dateOfBirth) }}
                 </div>
               </div>
             </div>
@@ -719,6 +777,14 @@ onMounted(() => fetchPerson())
               <Users class="w-5 h-5 mr-2" />
               Relationships
             </h3>
+            <UiButton
+              size="sm"
+              variant="outline"
+              @click="showAddRelationshipModal = true"
+            >
+              <Plus class="w-4 h-4 mr-1" />
+              Add
+            </UiButton>
           </div>
           <div
             v-if="person.relationships.length === 0"
@@ -744,6 +810,7 @@ onMounted(() => fetchPerson())
                 <th class="pb-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Notes
                 </th>
+                <th class="pb-2" />
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -770,7 +837,7 @@ onMounted(() => fetchPerson())
                 <td class="py-3 pr-4">
                   <span class="text-sm text-gray-600">{{ formatContext(rel.context) }}</span>
                 </td>
-                <td class="py-3">
+                <td class="py-3 pr-4">
                   <span
                     v-if="rel.notes"
                     class="text-sm text-gray-600"
@@ -780,12 +847,43 @@ onMounted(() => fetchPerson())
                     class="text-sm text-gray-400"
                   >-</span>
                 </td>
+                <td class="py-3 text-right">
+                  <button
+                    class="text-gray-400 hover:text-red-600 transition-colors"
+                    title="Remove relationship"
+                    @click="removeRelationship(rel)"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+
+    <!-- Add Relationship Modal -->
+    <RelationshipsAddRelationshipModal
+      v-model="showAddRelationshipModal"
+      :subject-name="person?.fullName || ''"
+      :exclude-person-id="personId"
+      :show-fiduciary="true"
+      :on-save="addRelationship"
+      @saved="fetchPerson"
+    />
+
+    <!-- Remove Relationship Confirm Dialog -->
+    <UiConfirmDialog
+      v-model="showRemoveRelationshipDialog"
+      title="Remove Relationship"
+      :message="removingRelationship ? `Remove ${formatRelationshipType(removingRelationship.relationshipType)} relationship with ${removingRelationship.otherPersonName}?` : 'Remove this relationship?'"
+      confirm-text="Remove"
+      variant="danger"
+      :loading="removingRelationshipConfirm"
+      @confirm="confirmRemoveRelationship"
+      @cancel="showRemoveRelationshipDialog = false"
+    />
 
     <!-- Edit Person Modal (uses shared component) -->
     <UiModal

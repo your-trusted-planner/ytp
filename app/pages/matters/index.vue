@@ -453,12 +453,13 @@ const getStatusVariant = (status: string) => {
   }
 }
 
+const { formatCalendarDate } = useFormatDate()
+
 const formatDate = (dateInput: string | Date | number) => {
   // Handle Unix timestamp (number), ISO string, or Date object
-  const date = typeof dateInput === 'number' ?
-      new Date(dateInput * 1000) : // Convert Unix timestamp to ms
-      new Date(dateInput)
-  return date.toLocaleDateString()
+  // Note: number values here are seconds (legacy), not milliseconds
+  const ms = typeof dateInput === 'number' ? dateInput * 1000 : new Date(dateInput).getTime()
+  return formatCalendarDate(ms)
 }
 
 const editMatter = async (matter: any) => {

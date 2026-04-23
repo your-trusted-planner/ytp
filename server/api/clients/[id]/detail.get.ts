@@ -83,11 +83,14 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(schema.documents.createdAt))
       .all(),
 
-    // 5. Relationships with person details
+    // 5. Relationships — unified relationships table
     db.select()
-      .from(schema.clientRelationships)
-      .where(or(...allIds.map(id => eq(schema.clientRelationships.clientId, id))))
-      .orderBy(schema.clientRelationships.relationshipType, schema.clientRelationships.ordinal)
+      .from(schema.relationships)
+      .where(or(
+        eq(schema.relationships.fromPersonId, clientRecord.personId),
+        eq(schema.relationships.toPersonId, clientRecord.personId)
+      ))
+      .orderBy(schema.relationships.relationshipType, schema.relationships.ordinal)
       .all(),
 
     // 6. Trust balance
@@ -132,8 +135,11 @@ export default defineEventHandler(async (event) => {
   const activeJourneys = clientJourneyRows.filter(cj => cj.status !== 'CANCELLED')
   const enrichedJourneys = await enrichJourneys(db, schema, activeJourneys)
 
-  // Post-process relationships: enrich with person details
-  const enrichedRelationships = await enrichRelationships(db, schema, relationshipRows)
+  // Post-process relationships: normalize bidirectional view, then enrich with person details
+  const { normalizeRelationshipsForPerson } = await import('../../../utils/relationships')
+  const normalizedRelationships = normalizeRelationshipsForPerson(relationshipRows, clientRecord.personId)
+    .map(r => ({ ...r, clientId }))
+  const enrichedRelationships = await enrichRelationships(db, schema, normalizedRelationships)
 
   // Build response preserving backward-compatible shapes
   return {
@@ -451,21 +457,27 @@ async function enrichRelationships(db: any, schema: any, relationships: any[]) {
       id: cr.id,
       client_id: cr.clientId,
       person_id: cr.personId,
+      // camelCase (for template access)
+      relationshipType: cr.relationshipType,
+      // snake_case (legacy compat)
       relationship_type: cr.relationshipType,
       ordinal: cr.ordinal,
       notes: cr.notes,
       created_at: cr.createdAt instanceof Date ? cr.createdAt.getTime() : cr.createdAt,
       updated_at: cr.updatedAt instanceof Date ? cr.updatedAt.getTime() : cr.updatedAt,
-      person: person ?
-          {
+      person: person
+        ? {
             id: person.id,
+            // camelCase (for template access)
+            fullName: person.fullName,
+            // snake_case (legacy compat)
             first_name: person.firstName,
             last_name: person.lastName,
             full_name: person.fullName,
             email: person.email,
             phone: person.phone
-          } :
-        null
+          }
+        : null
     }
   })
 }

@@ -100,18 +100,6 @@ export const relationships = sqliteTable('relationships', {
   typeIdx: index('idx_relationships_type').on(table.relationshipType)
 }))
 
-// Client Relationships - Links clients to people (DEPRECATED: use relationships table)
-export const clientRelationships = sqliteTable('client_relationships', {
-  id: text('id').primaryKey(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
-  relationshipType: text('relationship_type').notNull(), // SPOUSE, CHILD, PARENT, etc.
-  ordinal: integer('ordinal').notNull().default(0),
-  notes: text('notes'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
-})
-
 // Matter Relationships - Links matters to people (DEPRECATED: use relationships table)
 export const matterRelationships = sqliteTable('matter_relationships', {
   id: text('id').primaryKey(),

@@ -1,6 +1,6 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-03-25
+**Last Updated**: 2026-04-22
 
 ## 📍 Where We Are Now
 
@@ -1327,6 +1327,91 @@ Document (N) ──→ Matter (1)
     - Later, a dedicated UI collects full child records and clears/replaces the boolean
   - **Key insight**: The boolean isn't wrong at intake - it's the right level of detail for that moment. The problem is treating it as the permanent source of truth rather than a temporary placeholder
 
+### 11. UX Polish Backlog (from 2026-04-22 Review Session)
+- **Status**: Planned
+- A collection of UX improvements identified during review with Chris. None require schema changes; all are frontend/layout adjustments.
+
+| Item | Description |
+|------|-------------|
+| Journey progress indicators | Add a visual completion percentage/progress bar to journey cards on the client and staff dashboards. |
+| Client dashboard: pending actions above the fold | Surface pending journey action items prominently on the client's initial dashboard view (not buried in journey sub-pages). Anything the firm is waiting on the client for should be visible at first login. |
+| Action items prominence on matter detail | Matter info currently dominates the `/matters/[id]` page. Action items panel should move up / be given higher visual weight. |
+| Client name + link in matter header | Matter detail page header should show the client name as a clickable link back to the client record. |
+| Form field pre-population | When a journey/action item form has fields mapped to a person record (e.g., email, phone), pre-populate from the existing DB value. Decide: read-only with edit button, or always editable. |
+| Form completions on record pages | Form submission responses should be surfaced in the related record's UI (a "Forms" tab or section on matter, client, or person pages) — not only accessible via the form builder admin. |
+| Google Drive button gated by email domain | Admin configures a list of allowed email domains. Only users whose email matches see the "Open in Google Drive" button. Prevents confusing the button for clients. |
+| Signatures in client nav + matter overview | Add "Signatures" to the client portal sidebar. Also add a quick-link or status badge to the matter Overview tab. |
+| Journey completion view audit | Audit what the client sees vs. what staff sees when a journey is completed. Ensure clients get a clear confirmation/summary and staff can see what was submitted. |
+| My Companies view | Client portal page (`/my-companies`) listing entity records (trusts, LLCs, etc.) associated with the client. Depends on entity schema (item 14 below). |
+| Relationship affirmation prompts | Periodic prompt (journey step or scheduled message) asking clients to confirm their current relationships are still accurate. "Still married? Any new children since your last review?" |
+
+### 12. Joint Representation / Couple Intake
+- **Status**: Planned (requires data model design)
+- **Problem**: The current "New Client" flow adds one person as a client. Married couples receiving a joint estate plan are two co-clients on a single matter. There is no intake path or data model for this.
+- **Open Questions**:
+  - Does the `matters` table get a second `clientId`, or do we introduce a `matterClients` junction table?
+  - How does the client portal handle a matter shared by two people?
+  - How does billing work for joint matters (one invoice, two trust ledgers)?
+- **Scope**:
+  - Data model decision: `matterClients` junction vs. expanded `matters` row
+  - "Add a Couple" intake path: create two people, link as spouses via `relationships`, associate both as clients on the matter
+  - UI: matter header shows both client names; client portal shows the shared matter for both users
+  - Conflict-check implications: both people must pass conflict check before matter is opened
+
+### 13. Entity Schema — Trusts, LLCs, Corporations
+- **Status**: Partially designed, not implemented
+- **Context**: CLAUDE.md describes a plan to represent non-person entities (trusts, LLCs, corporations, partnerships) as `people` records with `personType='entity'`. This exists in the schema definition but there is no intake UI, no entity-specific metadata, and no dedicated views.
+- **Scope**:
+  - Schema: confirm `personType='entity'` is the right approach vs. a separate `entities` table; add entity-specific fields (jurisdiction, formation date, EIN via TIN pattern, registered agent)
+  - Intake UI: "Add Entity" form with type selector (trust, LLC, corporation, partnership, etc.)
+  - Trust bridge table: trust-specific metadata (trust type, governing law, revocable/irrevocable) that doesn't fit `people`
+  - Relationships: link entities to people (e.g., member of LLC, trustee of trust) via the existing `relationships` table
+  - My Companies view (client portal): list entities associated with the logged-in client (see UX Backlog above)
+- **Note**: This is partially described in `CLAUDE.md` and the entity schema memory. The `personType` field already exists in the `people` table.
+
+### 14. Invite Person to Portal
+- **Status**: Planned
+- **Problem**: To give a person access to the client portal, staff must navigate to User Management and create a user account manually. There is no "Invite" flow from the Person record itself.
+- **Scope**:
+  - "Invite to Portal" button on the person detail page and as a row action on the people list
+  - Checks if the person already has a `users` record (prevent duplicate)
+  - Creates the user record (role=CLIENT) and sends an email with a set-password link
+  - Invite email copy TBD — should reflect the firm and the nature of the portal
+  - Open question: should the user's profile in the portal reflect their relationship type (e.g., "You are listed as the spouse of Jane Smith")?
+
+### 15. LawPay Integration, Recurring Billing & Client Portal Payments
+- **Status**: Planned (feature cluster — can be phased)
+- **Why**: The billing/trust accounting system is built but uses only internal payment recording. Clients cannot pay online, and there is no subscription/recurring billing support.
+- **Phase A — LawPay Integration**:
+  - Connect LawPay account via admin settings (API key / OAuth)
+  - Payment links on invoices (clients click → LawPay hosted page)
+  - Webhook to mark invoices paid and record trust deposits automatically
+  - LawPay is widely used in legal (compliant with IOLTA rules)
+- **Phase B — Client Portal Payments**:
+  - Client portal page: view open invoices, pay via LawPay
+  - Trust balance visible to client (read-only)
+  - Payment confirmation / receipt email
+- **Phase C — Recurring Charges**:
+  - Maintenance plan subscriptions: monthly/annual billing for ongoing services (document review, Q&A, etc.)
+  - Auto-generates invoices on schedule
+  - Subscription status tracking (active, paused, cancelled)
+- **Phase D — State Entity Compliance Subscription**:
+  - Track state filing deadlines (annual reports, registered agent renewals) for clients with business entities
+  - Could be a recurring service type or a standalone compliance calendar module
+  - Alerts/reminders when deadlines approach
+
+### 16. Engagement Letter as a Top-Level Concept
+- **Status**: Planned (requires design)
+- **Problem**: Engagement letters are currently treated as generic documents. There is no dedicated send flow, no status tracking (sent / signed / active), and no enforcement that a matter has a signed engagement letter before work begins.
+- **Scope**:
+  - Engagement letter as a distinct document subtype or first-class record (`engagementLetters` table or `documentType='ENGAGEMENT'`)
+  - Send flow from the matter: select template → generate → send for signature in one action
+  - Status: Draft → Sent → Signed → Active
+  - Matter overview shows engagement letter status badge
+  - Optional: block matter from OPEN status until engagement letter is signed (configurable gate)
+  - Engagement letter history: all versions for a client over time
+- **Note**: This surfaced because "Send a document for signature" from a matter just navigates to `/documents` with no context — fixing that UX (bug #5 above) is a prerequisite.
+
 ### 10. US Address Validation API
 - **Status**: Planned
 - **Problem**: Address fields are currently free-form text with no validation
@@ -1347,6 +1432,26 @@ Document (N) ──→ Matter (1)
   - Optional address autocomplete component
   - Store both entered and standardized address versions
 - **Database Consideration**: May want to add `addressStandardized` field or expand address to structured format (street1, street2, city, state, zip, plus4)
+
+### 17. Reusable Modal Form Audit
+- **Status**: Planned (code quality / DX)
+- **Problem**: Several pages contain large inline modal forms with duplicated markup and logic (search state, submit handling, reset on close). The `AddRelationshipModal` refactor (April 2026) revealed this pattern; others likely exist.
+- **Scope**: Scan all `pages/` and `components/` for `<UiModal>` blocks that contain non-trivial forms. For each, evaluate whether the form appears in more than one place or is complex enough to warrant extraction. Candidates likely include: matter creation, note creation, document upload, appointment booking, trust/entity creation.
+- **Goal**: Each extracted component should own its own state, loading, and error handling (via `onSave` prop or `save` emit) so the parent only provides context and a callback.
+
+### 19. Replace native confirm() dialogs with UiConfirmDialog
+- **Status**: Planned (UX / in progress)
+- **Problem**: ~20 uses of native browser `confirm()` across `app/pages/`. These block the thread, can't be styled, and look inconsistent with the app's design.
+- **Component**: `app/components/ui/ConfirmDialog.vue` — already built. Props: `title`, `message`, `confirmText`, `cancelText`, `variant` (`danger` | `default`), `loading`.
+- **Pattern**: Replace `if (!confirm('...')) return` with a `showXxxDialog` boolean + `confirmXxx()` async handler wired to `@confirm`. The dialog manages its own loading state while the delete is in flight.
+- **First replacement done**: Remove Relationship on `clients/[id].vue` (April 2026).
+- **Remaining**: `billing/time-entries.vue`, `matters/[id].vue`, `journeys/[id].vue` (×3), `people/[id].vue`, `people/index.vue`, `invoices/[id].vue` (×2), `profile/index.vue` (×4), `settings/integrations/` (×5).
+
+### 18. Search-Instead-of-Select Audit
+- **Status**: Planned (UX)
+- **Problem**: Several `<select>` dropdowns load full lists that grow unwieldy as data accumulates (people, clients, services, templates, etc.). The Add Relationship modal was the most recent example — a 300+ person dropdown replaced with a debounced search.
+- **Scope**: Scan all `<UiSelect>` / `<select>` elements whose options are populated from an API call. For each, check if the list is bounded (e.g., US states, a fixed enum) or unbounded (people, clients, matters, services). Unbounded lists should become search-as-you-type inputs.
+- **Pattern to apply**: Text input → debounced (300ms) → API call with `?search=X&limit=10` → inline dropdown results → selected value displayed below input. Reference implementation: `app/components/relationships/AddRelationshipModal.vue`.
 
 ---
 
@@ -1463,7 +1568,15 @@ Document (N) ──→ Matter (1)
 
 1. ~~**No Payment Management UI**~~: ✅ RESOLVED - Full billing & trust accounting system implemented (2026-01-28)
 
-2. **Google Drive E2E Test Failures**: Several Google Drive-related E2E tests are failing due to configuration/mock issues:
+2. **Date of Birth Off By One Day**: DOB displays one day earlier than stored, likely a timezone issue. JS `Date` parses a date-only string (e.g., `1975-04-15`) as UTC midnight, which rolls back a day in Mountain Time. Fix: parse DOB as a local date, not UTC.
+
+3. **Reciprocal Relationships Not Displaying**: When a relationship is added in the New Client flow, the reciprocal side (e.g., if A is the spouse of B, B should show A as spouse) does not appear. Suspected data issue — the relationship may only be written in one direction. The unified `relationships` table should store or infer both directions. Needs investigation.
+
+4. **Ghost Duplicate Services on Matter**: When adding a service to a matter, duplicate entries appear in the list. Likely a double-insert on the `matters_to_services` junction table (e.g., optimistic UI + server response both appending). Needs investigation of the add-service endpoint and frontend handler.
+
+5. **"Send for Signature" Links to Documents Page Instead of Matter Flow**: From the matter detail page, "Send a document for signature" navigates to `/documents` with no pre-selected context. Should instead open a targeted send-for-signature modal pre-scoped to the current matter.
+
+6. **Google Drive E2E Test Failures**: Several Google Drive-related E2E tests are failing due to configuration/mock issues:
    - Tests in `tests/e2e/auth.spec.ts` that involve Google Drive sync status
    - Tests expecting Drive folder creation during matter creation
    - **Root Cause**: E2E tests don't have proper Google Drive API mocking or test credentials configured

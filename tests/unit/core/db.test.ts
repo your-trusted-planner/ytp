@@ -197,12 +197,12 @@ describe('Database Schema', () => {
       expect(columns).toContain('middleNames')
     })
 
-    it('should have clientRelationships table', () => {
-      const columns = Object.keys(schema.clientRelationships)
+    it('should have unified relationships table', () => {
+      const columns = Object.keys(schema.relationships)
 
       expect(columns).toContain('id')
-      expect(columns).toContain('clientId')
-      expect(columns).toContain('personId')
+      expect(columns).toContain('fromPersonId')
+      expect(columns).toContain('toPersonId')
       expect(columns).toContain('relationshipType')
     })
 
@@ -296,7 +296,7 @@ describe('Schema Relationships', () => {
 
     // People and relationships
     expect(schema.people).toBeDefined()
-    expect(schema.clientRelationships).toBeDefined()
+    expect(schema.relationships).toBeDefined()
     expect(schema.matterRelationships).toBeDefined()
   })
 })

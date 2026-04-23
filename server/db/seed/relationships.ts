@@ -13,13 +13,12 @@ export interface SeedPersonIds {
 export async function seedRelationships(
   db: SeedDb,
   dates: SeedDates,
-  userIds: SeedUserIds,
+  _userIds: SeedUserIds,
   matterIds: SeedMatterIds
 ): Promise<SeedPersonIds> {
   console.log('Seeding people & relationships...')
 
   const { twoMonthsAgo } = dates
-  const { client1Id } = userIds
   const { matter1Id } = matterIds
   const peopleIds = SEED_IDS.people
   const clientRelIds = SEED_IDS.clientRelationships
@@ -73,48 +72,49 @@ export async function seedRelationships(
 
   console.log('  Created 4 people records')
 
-  // Client Relationships for Jane Doe
-  await db.insert(schema.clientRelationships).values({
+  // Relationships for Jane Doe (using unified relationships table)
+  // Jane's personId is peopleIds.janeDoe
+  await db.insert(schema.relationships).values({
     id: clientRelIds.jane_robert,
-    clientId: client1Id,
-    personId: peopleIds.robertDoe,
+    fromPersonId: peopleIds.janeDoe,
+    toPersonId: peopleIds.robertDoe,
     relationshipType: 'SPOUSE',
     ordinal: 1,
     createdAt: twoMonthsAgo,
     updatedAt: twoMonthsAgo
   }).onConflictDoNothing()
 
-  await db.insert(schema.clientRelationships).values({
+  await db.insert(schema.relationships).values({
     id: clientRelIds.jane_emily,
-    clientId: client1Id,
-    personId: peopleIds.emilyDoe,
+    fromPersonId: peopleIds.janeDoe,
+    toPersonId: peopleIds.emilyDoe,
     relationshipType: 'CHILD',
     ordinal: 1,
     createdAt: twoMonthsAgo,
     updatedAt: twoMonthsAgo
   }).onConflictDoNothing()
 
-  await db.insert(schema.clientRelationships).values({
+  await db.insert(schema.relationships).values({
     id: clientRelIds.jane_james,
-    clientId: client1Id,
-    personId: peopleIds.jamesDoe,
+    fromPersonId: peopleIds.janeDoe,
+    toPersonId: peopleIds.jamesDoe,
     relationshipType: 'CHILD',
     ordinal: 2,
     createdAt: twoMonthsAgo,
     updatedAt: twoMonthsAgo
   }).onConflictDoNothing()
 
-  await db.insert(schema.clientRelationships).values({
+  await db.insert(schema.relationships).values({
     id: clientRelIds.jane_margaret,
-    clientId: client1Id,
-    personId: peopleIds.margaretSmith,
+    fromPersonId: peopleIds.janeDoe,
+    toPersonId: peopleIds.margaretSmith,
     relationshipType: 'PARENT',
     ordinal: 1,
     createdAt: twoMonthsAgo,
     updatedAt: twoMonthsAgo
   }).onConflictDoNothing()
 
-  console.log('  Created 4 client relationships')
+  console.log('  Created 4 relationships')
 
   // Create a person record for Jane herself (for matter roles)
   await db.insert(schema.people).values({

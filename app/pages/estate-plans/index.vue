@@ -263,12 +263,11 @@ function countRoles(plan: EstatePlanListItem, category: string): number {
   return plan.roleCounts[category] || 0
 }
 
-function formatDate(dateStr: string | null): string {
+const { formatCalendarDate } = useFormatDate()
+
+function formatDate(dateStr: string | number | null): string {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+  const ts = typeof dateStr === 'number' ? dateStr : new Date(dateStr).getTime()
+  return formatCalendarDate(ts)
 }
 </script>

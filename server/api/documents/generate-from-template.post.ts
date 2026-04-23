@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const { useDrizzle, schema } = await import('../../db')
-  const { eq, and } = await import('drizzle-orm')
+  const { eq, and, or } = await import('drizzle-orm')
   const db = useDrizzle()
   const renderer = useTemplateRenderer()
 
@@ -98,26 +98,39 @@ export default defineEventHandler(async (event) => {
     business_type: clientData.businessType
   }
 
-  // Get spouse information from relationships system
+  // Get spouse information from unified relationships table
   let spouse: any = null
-  const spouseData = await db.select()
-    .from(schema.people)
-    .innerJoin(schema.clientRelationships, eq(schema.people.id, schema.clientRelationships.personId))
-    .where(and(
-      eq(schema.clientRelationships.clientId, legacyClientId),
-      eq(schema.clientRelationships.relationshipType, 'SPOUSE')
-    ))
-    .orderBy(schema.clientRelationships.ordinal)
-    .limit(1)
-    .get()
+  if (resolved?.personId) {
+    const spouseRel = await db.select()
+      .from(schema.relationships)
+      .where(and(
+        or(
+          eq(schema.relationships.fromPersonId, resolved.personId),
+          eq(schema.relationships.toPersonId, resolved.personId)
+        ),
+        eq(schema.relationships.relationshipType, 'SPOUSE')
+      ))
+      .orderBy(schema.relationships.ordinal)
+      .limit(1)
+      .get()
 
-  if (spouseData) {
-    spouse = {
-      id: spouseData.people.id,
-      first_name: spouseData.people.firstName,
-      last_name: spouseData.people.lastName,
-      email: spouseData.people.email,
-      phone: spouseData.people.phone
+    if (spouseRel) {
+      const spousePersonId = spouseRel.fromPersonId === resolved.personId
+        ? spouseRel.toPersonId
+        : spouseRel.fromPersonId
+      const spousePerson = await db.select()
+        .from(schema.people)
+        .where(eq(schema.people.id, spousePersonId))
+        .get()
+      if (spousePerson) {
+        spouse = {
+          id: spousePerson.id,
+          first_name: spousePerson.firstName,
+          last_name: spousePerson.lastName,
+          email: spousePerson.email,
+          phone: spousePerson.phone
+        }
+      }
     }
   }
 

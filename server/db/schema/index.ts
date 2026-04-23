@@ -5,7 +5,7 @@
 export { jsonArray } from './common'
 
 // Core identity tables (Belly Button Principle)
-export { people, entities, relationships, clientRelationships, matterRelationships } from './people'
+export { people, entities, relationships, matterRelationships } from './people'
 
 // Authentication
 export { oauthProviders, users, passwordResetTokens, lawpayConnections } from './auth'

@@ -205,15 +205,13 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
+const { formatCalendarDate } = useFormatDate()
+
 function formatDate(date: string | Date | undefined | null): string {
   if (!date) return '-'
   const d = date instanceof Date ? date : new Date(date)
   if (isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  })
+  return formatCalendarDate(d.getTime(), { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 // Helper to get aging value from client (handles nested aging object from API)

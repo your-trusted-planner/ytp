@@ -2,10 +2,7 @@
 export default defineEventHandler(async (event) => {
   const clientId = getRouterParam(event, 'id')
   if (!clientId) {
-    throw createError({
-      statusCode: 400,
-      message: 'Client ID required'
-    })
+    throw createError({ statusCode: 400, message: 'Client ID required' })
   }
 
   // Authorization: lawyers/admins can view any client's relationships, clients only their own
@@ -13,62 +10,67 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle, schema } = await import('../../../../db')
   const { eq, or, inArray } = await import('drizzle-orm')
-  const { getLegacyClientIds } = await import('../../../../utils/client-ids')
+  const { resolveClientIds } = await import('../../../../utils/client-ids')
+  const { normalizeRelationshipsForPerson } = await import('../../../../utils/relationships')
   const db = useDrizzle()
 
-  // clientRelationships.clientId references users.id, but URL param is clients.id
-  const allIds = await getLegacyClientIds(clientId)
+  const resolved = await resolveClientIds(clientId)
+  if (!resolved) {
+    throw createError({ statusCode: 404, message: 'Client not found' })
+  }
 
-  // Get all relationships for this client
-  const clientRelationships = await db.select()
-    .from(schema.clientRelationships)
-    .where(or(...allIds.map(id => eq(schema.clientRelationships.clientId, id))))
-    .orderBy(
-      schema.clientRelationships.relationshipType,
-      schema.clientRelationships.ordinal
-    )
+  const rawRows = await db.select()
+    .from(schema.relationships)
+    .where(or(
+      eq(schema.relationships.fromPersonId, resolved.personId),
+      eq(schema.relationships.toPersonId, resolved.personId)
+    ))
+    .orderBy(schema.relationships.relationshipType, schema.relationships.ordinal)
     .all()
 
-  if (clientRelationships.length === 0) {
+  const normalized = normalizeRelationshipsForPerson(rawRows, resolved.personId)
+
+  if (normalized.length === 0) {
     return { relationships: [] }
   }
 
-  // Get all people involved
-  const personIds = [...new Set(clientRelationships.map(cr => cr.personId))]
+  const personIds = [...new Set(normalized.map(r => r.personId))]
   const people = await db.select()
     .from(schema.people)
     .where(inArray(schema.people.id, personIds))
     .all()
 
-  // Create person lookup map
   const personMap = new Map(people.map(p => [p.id, p]))
 
-  // Enrich relationships with person details and convert to snake_case
-  const enrichedRelationships = clientRelationships.map((cr) => {
-    const person = personMap.get(cr.personId)
+  const enriched = normalized.map((r) => {
+    const person = personMap.get(r.personId)
     return {
-      id: cr.id,
-      client_id: cr.clientId,
-      person_id: cr.personId,
-      relationship_type: cr.relationshipType,
-      ordinal: cr.ordinal,
-      notes: cr.notes,
-      created_at: cr.createdAt instanceof Date ? cr.createdAt.getTime() : cr.createdAt,
-      updated_at: cr.updatedAt instanceof Date ? cr.updatedAt.getTime() : cr.updatedAt,
-      person: person ?
-          {
+      id: r.id,
+      client_id: clientId,
+      person_id: r.personId,
+      // camelCase (for template access)
+      relationshipType: r.relationshipType,
+      // snake_case (legacy compat)
+      relationship_type: r.relationshipType,
+      ordinal: r.ordinal,
+      notes: r.notes,
+      created_at: r.createdAt instanceof Date ? r.createdAt.getTime() : r.createdAt,
+      updated_at: r.updatedAt instanceof Date ? r.updatedAt.getTime() : r.updatedAt,
+      person: person
+        ? {
             id: person.id,
+            // camelCase
+            fullName: person.fullName,
+            // snake_case (legacy compat)
             first_name: person.firstName,
             last_name: person.lastName,
             full_name: person.fullName,
             email: person.email,
             phone: person.phone
-          } :
-        null
+          }
+        : null
     }
   })
 
-  return {
-    relationships: enrichedRelationships
-  }
+  return { relationships: enriched }
 })

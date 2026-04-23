@@ -1,6 +1,7 @@
 import { eq, or } from 'drizzle-orm'
 import { useDrizzle, schema } from '../../db'
 import { formatSensitiveDisplay } from '../../utils/sensitive-fields'
+import { invertRelationshipType } from '../../utils/relationships'
 
 // Get a specific person by ID
 export default defineEventHandler(async (event) => {
@@ -84,22 +85,44 @@ export default defineEventHandler(async (event) => {
 
   const peopleMap = new Map(otherPeople.map(p => [p.id, p]))
 
-  const relationships = rawRelationships.map((r) => {
-    const otherPersonId = r.fromPersonId === personId ? r.toPersonId : r.fromPersonId
+  const relationships = rawRelationships.flatMap((r) => {
+    const isOutgoing = r.fromPersonId === personId
+    const otherPersonId = isOutgoing ? r.toPersonId : r.fromPersonId
     const otherPerson = peopleMap.get(otherPersonId)
-    return {
-      id: r.id,
-      relationshipType: r.relationshipType,
-      context: r.context,
-      contextId: r.contextId,
-      ordinal: r.ordinal,
-      notes: r.notes,
-      otherPersonId,
-      otherPersonName: otherPerson?.fullName
-        || (otherPerson?.firstName && otherPerson?.lastName
-          ? `${otherPerson.firstName} ${otherPerson.lastName}`
-          : 'Unknown'),
-      direction: r.fromPersonId === personId ? 'outgoing' : 'incoming'
+    const otherPersonName = otherPerson?.fullName
+      || (otherPerson?.firstName && otherPerson?.lastName
+        ? `${otherPerson.firstName} ${otherPerson.lastName}`
+        : 'Unknown')
+
+    if (isOutgoing) {
+      // Viewer initiated — show as stored
+      return [{
+        id: r.id,
+        relationshipType: r.relationshipType,
+        context: r.context,
+        contextId: r.contextId,
+        ordinal: r.ordinal,
+        notes: r.notes,
+        otherPersonId,
+        otherPersonName,
+        direction: 'outgoing' as const
+      }]
+    }
+    else {
+      // Viewer is the recipient — invert if symmetric; omit if asymmetric
+      const inverse = invertRelationshipType(r.relationshipType)
+      if (!inverse) return []
+      return [{
+        id: r.id,
+        relationshipType: inverse,
+        context: r.context,
+        contextId: r.contextId,
+        ordinal: r.ordinal,
+        notes: r.notes,
+        otherPersonId,
+        otherPersonName,
+        direction: 'incoming' as const
+      }]
     }
   })
 

@@ -11,41 +11,36 @@ export default defineEventHandler(async (event) => {
   const relationshipId = pathParts[relationshipIdIndex]
 
   if (!clientId || !relationshipId) {
-    throw createError({
-      statusCode: 400,
-      message: 'Client ID and relationship ID required'
-    })
+    throw createError({ statusCode: 400, message: 'Client ID and relationship ID required' })
   }
 
   const { useDrizzle, schema } = await import('../../../../db')
   const { eq, and, or } = await import('drizzle-orm')
-  const { getLegacyClientIds } = await import('../../../../utils/client-ids')
+  const { resolveClientIds } = await import('../../../../utils/client-ids')
   const db = useDrizzle()
 
-  // clientRelationships.clientId references users.id, but URL param is clients.id
-  const allIds = await getLegacyClientIds(clientId)
+  const resolved = await resolveClientIds(clientId)
+  if (!resolved) {
+    throw createError({ statusCode: 404, message: 'Client not found' })
+  }
 
-  // Verify relationship exists and belongs to this client
-  const existing = await db.select({ id: schema.clientRelationships.id })
-    .from(schema.clientRelationships)
+  const match = await db.select({ id: schema.relationships.id })
+    .from(schema.relationships)
     .where(and(
-      eq(schema.clientRelationships.id, relationshipId),
-      or(...allIds.map(id => eq(schema.clientRelationships.clientId, id)))
+      eq(schema.relationships.id, relationshipId),
+      or(
+        eq(schema.relationships.fromPersonId, resolved.personId),
+        eq(schema.relationships.toPersonId, resolved.personId)
+      )
     ))
     .get()
 
-  if (!existing) {
-    throw createError({
-      statusCode: 404,
-      message: 'Relationship not found'
-    })
+  if (!match) {
+    throw createError({ statusCode: 404, message: 'Relationship not found' })
   }
 
-  await db.delete(schema.clientRelationships)
-    .where(eq(schema.clientRelationships.id, relationshipId))
+  await db.delete(schema.relationships)
+    .where(eq(schema.relationships.id, relationshipId))
 
-  return {
-    success: true,
-    message: 'Relationship deleted successfully'
-  }
+  return { success: true, message: 'Relationship deleted successfully' }
 })

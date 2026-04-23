@@ -15,6 +15,14 @@ This file tracks:
 
 **Always check CURRENT_STATUS.md** before starting work to understand the current state of the project.
 
+## E-Sign System
+
+- Electronic signature feature with STANDARD and ENHANCED identity verification tiers
+- Public signing at `/sign/[token]`, attorney dashboard at `/signatures`
+- Server utils in `server/utils/signature-certificate.ts`, `signed-pdf-generator.ts`, `identity-verification.ts`
+- DB schema: `signatureSessions` table in `server/db/schema/signatures.ts`
+- **Planned extraction**: Shared utilities (tokens, certificates, PDF generation, signature canvas) will move to `../esign-layer` Nuxt Layer — see that repo's README.md for the architecture plan and extraction checklist
+
 ## Data Model
 
 ### Belly Button Principle Architecture

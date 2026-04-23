@@ -45,7 +45,6 @@ export default defineEventHandler(async (event) => {
   if (result.cleanedUp.wills > 0) cleanedUpItems.push(`${result.cleanedUp.wills} will(s)`)
   if (result.cleanedUp.ancillaryDocuments > 0) cleanedUpItems.push(`${result.cleanedUp.ancillaryDocuments} ancillary document(s)`)
   if (result.cleanedUp.relationships > 0) cleanedUpItems.push(`${result.cleanedUp.relationships} relationship(s)`)
-  if (result.cleanedUp.clientRelationships > 0) cleanedUpItems.push(`${result.cleanedUp.clientRelationships} client relationship(s)`)
   if (result.cleanedUp.matterRelationships > 0) cleanedUpItems.push(`${result.cleanedUp.matterRelationships} matter relationship(s)`)
   if (result.cleanedUp.importDuplicates > 0) cleanedUpItems.push(`${result.cleanedUp.importDuplicates} import duplicate(s)`)
 

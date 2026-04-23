@@ -180,13 +180,13 @@ function formatCurrency(cents: number | undefined): string {
   }).format(cents / 100)
 }
 
+const { formatCalendarDate } = useFormatDate()
+
 function formatDate(date: number | Date | string | undefined | null): string {
   if (!date) return '-'
-  // Handle number (timestamp), string (ISO date), or Date object
   const d = date instanceof Date ? date : new Date(date)
-  // Check for invalid date
   if (isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString('en-US', {
+  return formatCalendarDate(d.getTime(), {
     month: 'short',
     day: 'numeric',
     year: 'numeric'

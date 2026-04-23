@@ -20,7 +20,6 @@ export interface PersonDeleteResult {
     wills: number
     ancillaryDocuments: number
     relationships: number
-    clientRelationships: number
     matterRelationships: number
     importDuplicates: number
   }
@@ -55,7 +54,6 @@ export async function safeDeletePerson(personId: string): Promise<PersonDeleteRe
       wills: 0,
       ancillaryDocuments: 0,
       relationships: 0,
-      clientRelationships: 0,
       matterRelationships: 0,
       importDuplicates: 0
     }
@@ -108,17 +106,12 @@ export async function safeDeletePerson(personId: string): Promise<PersonDeleteRe
       .where(eq(schema.relationships.toPersonId, personId))
     result.cleanedUp.relationships = (relFromDeleted.rowsAffected || 0) + (relToDeleted.rowsAffected || 0)
 
-    // 8. Delete client relationships (has cascade)
-    const clientRelDeleted = await db.delete(schema.clientRelationships)
-      .where(eq(schema.clientRelationships.personId, personId))
-    result.cleanedUp.clientRelationships = clientRelDeleted.rowsAffected || 0
-
-    // 9. Delete matter relationships (has cascade)
+    // 8. Delete matter relationships (has cascade)
     const matterRelDeleted = await db.delete(schema.matterRelationships)
       .where(eq(schema.matterRelationships.personId, personId))
     result.cleanedUp.matterRelationships = matterRelDeleted.rowsAffected || 0
 
-    // 10. Delete import duplicates referencing this person
+    // 9. Delete import duplicates referencing this person
     const importDupsDeleted = await db.delete(schema.importDuplicates)
       .where(eq(schema.importDuplicates.existingPersonId, personId))
     result.cleanedUp.importDuplicates = importDupsDeleted.rowsAffected || 0

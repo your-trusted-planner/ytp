@@ -23,18 +23,23 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle, schema } = await import('../../../../db')
   const { eq, and, or } = await import('drizzle-orm')
-  const { getLegacyClientIds } = await import('../../../../utils/client-ids')
+  const { resolveClientIds } = await import('../../../../utils/client-ids')
   const db = useDrizzle()
 
-  // clientRelationships.clientId references users.id, but URL param is clients.id
-  const allIds = await getLegacyClientIds(clientId)
+  const resolved = await resolveClientIds(clientId)
+  if (!resolved) {
+    throw createError({ statusCode: 404, message: 'Client not found' })
+  }
 
   // Verify relationship exists and belongs to this client
-  const existing = await db.select({ id: schema.clientRelationships.id })
-    .from(schema.clientRelationships)
+  const existing = await db.select({ id: schema.relationships.id })
+    .from(schema.relationships)
     .where(and(
-      eq(schema.clientRelationships.id, relationshipId),
-      or(...allIds.map(id => eq(schema.clientRelationships.clientId, id)))
+      eq(schema.relationships.id, relationshipId),
+      or(
+        eq(schema.relationships.fromPersonId, resolved.personId),
+        eq(schema.relationships.toPersonId, resolved.personId)
+      )
     ))
     .get()
 
@@ -47,14 +52,14 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
 
-  await db.update(schema.clientRelationships)
+  await db.update(schema.relationships)
     .set({
       relationshipType,
       ordinal: ordinal !== undefined ? ordinal : 0,
       notes: notes || null,
       updatedAt: now
     })
-    .where(eq(schema.clientRelationships.id, relationshipId))
+    .where(eq(schema.relationships.id, relationshipId))
 
   return {
     success: true,
