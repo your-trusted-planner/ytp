@@ -1,0 +1,1 @@
+ALTER TABLE `documents` ADD `unsigned_pdf_blob_key` text;
