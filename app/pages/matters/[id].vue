@@ -517,16 +517,27 @@
                 Google Drive
               </button>
             </div>
-            <UiButton
+            <div
               v-if="documentView === 'local'"
-              size="sm"
-              variant="outline"
-              :is-loading="matterStore.loadingDocuments"
-              @click="matterStore.fetchDocuments()"
+              class="flex items-center gap-2"
             >
-              <RefreshCw class="w-4 h-4 mr-1" />
-              Refresh
-            </UiButton>
+              <UiButton
+                size="sm"
+                variant="outline"
+                :is-loading="matterStore.loadingDocuments"
+                @click="matterStore.fetchDocuments()"
+              >
+                <RefreshCw class="w-4 h-4 mr-1" />
+                Refresh
+              </UiButton>
+              <UiButton
+                size="sm"
+                @click="showGenerateDocumentModal = true"
+              >
+                <FilePlus class="w-4 h-4 mr-1" />
+                Generate Document
+              </UiButton>
+            </div>
           </div>
 
           <!-- Local Documents View -->
@@ -544,6 +555,8 @@
               @download="handleDownloadDocument"
               @view="handleViewDocument"
               @download-upload="handleDownloadUpload"
+              @prepare="handlePrepareDocument"
+              @sign="handleSignDocument"
             />
           </UiCard>
 
@@ -584,6 +597,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Generate Document Modal -->
+    <DocumentsGenerateDocumentModal
+      v-model="showGenerateDocumentModal"
+      :default-client-id="matter?.clientId"
+      :default-client-name="matterStore.clientName"
+      :default-matter-id="matterId"
+      :default-matter-name="matter?.title"
+      @generated="handleDocumentGenerated"
+    />
+
+    <!-- Send for Signing Modal -->
+    <DocumentsSendForSigningModal
+      v-if="signingDoc"
+      v-model="showSendForSigningModal"
+      :document="signingDoc"
+      @sent="matterStore.fetchDocuments()"
+    />
 
     <!-- Add Service Modal -->
     <UiModal
@@ -686,7 +717,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX, DollarSign, FileText, Wallet, Clock } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Database, RefreshCw, FolderX, DollarSign, FileText, FilePlus, Wallet, Clock } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 import { useMatterStore } from '~/stores/useMatterStore'
 import { usePreferencesStore } from '~/stores/usePreferencesStore'
@@ -932,6 +963,26 @@ function handleViewDocument(docId: string) {
 
 function handleDownloadUpload(uploadId: string) {
   window.open(`/api/document-uploads/${uploadId}/download`, '_blank')
+}
+
+// Generate document modal
+const showGenerateDocumentModal = ref(false)
+
+// Send for signing modal
+const showSendForSigningModal = ref(false)
+const signingDoc = ref<any>(null)
+
+function handlePrepareDocument(docId: string) {
+  router.push(`/documents/${docId}/prepare`)
+}
+
+function handleSignDocument(doc: any) {
+  signingDoc.value = doc
+  showSendForSigningModal.value = true
+}
+
+function handleDocumentGenerated() {
+  matterStore.fetchDocuments()
 }
 
 // Handle Drive synced - update store

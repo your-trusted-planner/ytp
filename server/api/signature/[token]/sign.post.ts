@@ -18,19 +18,28 @@ import {
   sha256,
   CURRENT_TERMS_VERSION
 } from '../../../utils/signature-certificate'
-import { generateSignedPdf } from '../../../utils/signed-pdf-generator'
+import {
+  generateSignedPdf,
+  appendSignaturePages,
+  stampFieldsAndSign,
+} from '../../../utils/signed-pdf-generator'
 import { captureRequestContext } from '../../../utils/request-context'
 import { logActivity } from '../../../utils/activity-logger'
 import { triggerSignatureComplete } from '../../../utils/message-triggers'
 
 const signRequestSchema = z.object({
-  signatureData: z.string().min(100), // Base64 PNG should be substantial
-  agreedToTerms: z.boolean().refine(val => val === true, {
-    message: 'You must agree to the terms to sign'
-  }),
-  termsVersion: z.string().optional().default(CURRENT_TERMS_VERSION),
-  // Track if signature was from stored image or drawn
-  signatureSource: z.enum(['stored', 'drawn']).optional().default('drawn')
+  signatureData: z.string().min(100),
+  agreedToTerms: z.boolean().refine(
+    val => val === true,
+    { message: 'You must agree to the terms' },
+  ),
+  termsVersion: z.string().optional()
+    .default(CURRENT_TERMS_VERSION),
+  signatureSource: z.enum(['stored', 'drawn'])
+    .optional().default('drawn'),
+  // Field values for placed fields
+  fieldValues: z.record(z.string(), z.string())
+    .optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -54,7 +63,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { signatureData, termsVersion } = parseResult.data
+  const {
+    signatureData, termsVersion, fieldValues,
+  } = parseResult.data
 
   if (!isDatabaseAvailable()) {
     throw createError({
@@ -189,79 +200,251 @@ export default defineEventHandler(async (event) => {
       signatureData,
       signatureHash,
       signedAt: now,
-      signatureCertificate: JSON.stringify(certificate),
+      fieldValues: fieldValues
+        ? JSON.stringify(fieldValues) : null,
+      signatureCertificate:
+        JSON.stringify(certificate),
       termsAcceptedAt: now,
       termsVersion,
       ipAddress: requestContext.ipAddress,
       userAgent: requestContext.userAgent,
-      geolocation: requestContext.country ?
-          JSON.stringify({
-            country: requestContext.country,
-            region: requestContext.region,
-            city: requestContext.city
-          }) :
-        null,
-      updatedAt: now
+      geolocation: requestContext.country
+        ? JSON.stringify({
+          country: requestContext.country,
+          region: requestContext.region,
+          city: requestContext.city,
+        })
+        : null,
+      updatedAt: now,
     })
-    .where(eq(schema.signatureSessions.id, session.id))
+    .where(
+      eq(schema.signatureSessions.id, session.id),
+    )
 
-  // Generate signed PDF with signature block and audit trail
-  const signerName = `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || signer.email
+  // Check if ALL signers have now signed
+  const { and, ne } = await import('drizzle-orm')
+  const allSessions = await db.select({
+    id: schema.signatureSessions.id,
+    status: schema.signatureSessions.status,
+    signerRole:
+      schema.signatureSessions.signerRole,
+    signatureData:
+      schema.signatureSessions.signatureData,
+    signedAt: schema.signatureSessions.signedAt,
+    signerId: schema.signatureSessions.signerId,
+    signatureCertificate:
+      schema.signatureSessions
+        .signatureCertificate,
+  })
+    .from(schema.signatureSessions)
+    .where(and(
+      eq(
+        schema.signatureSessions.documentId,
+        document.id,
+      ),
+      ne(
+        schema.signatureSessions.status,
+        'REVOKED',
+      ),
+      ne(
+        schema.signatureSessions.status,
+        'EXPIRED',
+      ),
+    ))
+    .all()
+
+  const allSigned = allSessions.length
+    >= document.signerCount
+    && allSessions.every(
+      s => s.status === 'SIGNED',
+    )
+
+  const signerName
+    = `${signer.firstName || ''} `
+    + `${signer.lastName || ''}`.trim()
+    || signer.email
   let signedPdfBlobKey: string | null = null
 
-  try {
-    const pdfBytes = await generateSignedPdf({
-      document: {
-        id: document.id,
-        title: document.title,
-        description: document.description || undefined,
-        content: document.content
-      },
-      signature: {
-        imageData: signatureData,
-        signerName,
-        signerEmail: signer.email,
-        signedAt: now
-      },
-      certificate: {
-        id: certificate.certificateId,
-        documentHash: certificate.documentHash,
-        signatureHash: certificate.signature.dataHash,
-        certificateHash: certificate.certificateHash,
-        tier: session.signatureTier as 'STANDARD' | 'ENHANCED',
-        ipAddress: requestContext.ipAddress
+  // Only generate final PDF when all signed
+  if (allSigned) {
+    try {
+      let pdfBytes: Uint8Array
+
+      // Build session data for all signers
+      const signerSessions = await Promise.all(
+        allSessions.map(async (s) => {
+          const u = await db.select({
+            email: schema.users.email,
+            firstName: schema.users.firstName,
+            lastName: schema.users.lastName,
+          })
+            .from(schema.users)
+            .where(eq(schema.users.id, s.signerId))
+            .get()
+          return {
+            signerName:
+              `${u?.firstName || ''} `
+              + `${u?.lastName || ''}`.trim()
+              || u?.email || '',
+            signerEmail: u?.email || '',
+            signatureData: s.signatureData,
+            signedAt: s.signedAt || now,
+            signerRole: s.signerRole,
+            signatureCertificate:
+              s.signatureCertificate,
+            fieldValues: s.fieldValues,
+          }
+        }),
+      )
+
+      // Parse field placements if they exist
+      let placements: any[] = []
+      if (document.fieldPlacements) {
+        try {
+          placements = JSON.parse(
+            document.fieldPlacements,
+          )
+        }
+        catch { /* ignore */ }
       }
-    })
 
-    // Store signed PDF in blob storage
-    signedPdfBlobKey = `documents/${document.id}/signed-${Date.now()}.pdf`
-    await blob.put(signedPdfBlobKey, pdfBytes, {
-      contentType: 'application/pdf',
-      customMetadata: {
-        documentId: document.id,
-        certificateId: certificate.certificateId,
-        signedAt: now.toISOString()
+      if (document.unsignedPdfBlobKey) {
+        const unsignedBlob = await blob.get(
+          document.unsignedPdfBlobKey,
+        )
+        if (unsignedBlob) {
+          const unsignedBytes = new Uint8Array(
+            await unsignedBlob.arrayBuffer(),
+          )
+
+          // Use stampFieldsAndSign when
+          // field placements exist
+          if (placements.length > 0) {
+            pdfBytes = await stampFieldsAndSign(
+              unsignedBytes,
+              placements,
+              signerSessions,
+            )
+          }
+          else {
+            pdfBytes
+              = await appendSignaturePages(
+                unsignedBytes,
+                signerSessions,
+              )
+          }
+        }
+        else {
+          pdfBytes = await generateSignedPdf({
+            document: {
+              id: document.id,
+              title: document.title,
+              description:
+                document.description
+                || undefined,
+              content: document.content,
+            },
+            signature: {
+              imageData: signatureData,
+              signerName,
+              signerEmail: signer.email,
+              signedAt: now,
+            },
+            certificate: {
+              id: certificate.certificateId,
+              documentHash:
+                certificate.documentHash,
+              signatureHash:
+                certificate.signature.dataHash,
+              certificateHash:
+                certificate.certificateHash,
+              tier: session.signatureTier as
+                'STANDARD' | 'ENHANCED',
+              ipAddress:
+                requestContext.ipAddress,
+            },
+          })
+        }
       }
-    })
+      else {
+        pdfBytes = await generateSignedPdf({
+          document: {
+            id: document.id,
+            title: document.title,
+            description:
+              document.description || undefined,
+            content: document.content,
+          },
+          signature: {
+            imageData: signatureData,
+            signerName,
+            signerEmail: signer.email,
+            signedAt: now,
+          },
+          certificate: {
+            id: certificate.certificateId,
+            documentHash:
+              certificate.documentHash,
+            signatureHash:
+              certificate.signature.dataHash,
+            certificateHash:
+              certificate.certificateHash,
+            tier: session.signatureTier as
+              'STANDARD' | 'ENHANCED',
+            ipAddress: requestContext.ipAddress,
+          },
+        })
+      }
 
-    console.log('[Signature] Generated and stored signed PDF:', signedPdfBlobKey)
-  }
-  catch (pdfError) {
-    // Log error but don't fail the signature - PDF is a nice-to-have
-    console.error('[Signature] Failed to generate signed PDF:', pdfError)
+      signedPdfBlobKey
+        = `documents/${document.id}`
+        + `/signed-${Date.now()}.pdf`
+      await blob.put(
+        signedPdfBlobKey, pdfBytes, {
+          contentType: 'application/pdf',
+          customMetadata: {
+            documentId: document.id,
+            certificateId:
+              certificate.certificateId,
+            signedAt: now.toISOString(),
+          },
+        },
+      )
+
+      console.log(
+        '[Signature] Generated signed PDF:',
+        signedPdfBlobKey,
+      )
+    }
+    catch (pdfError) {
+      console.error(
+        '[Signature] Failed to generate PDF:',
+        pdfError,
+      )
+    }
   }
 
-  // Update document
+  // Update document status
+  const docUpdate: Record<string, any> = {
+    updatedAt: now,
+  }
+
+  if (allSigned) {
+    docUpdate.status = 'SIGNED'
+    docUpdate.signatureData = signatureData
+    docUpdate.signedAt = now
+    if (signedPdfBlobKey) {
+      docUpdate.signedPdfBlobKey
+        = signedPdfBlobKey
+    }
+  }
+
   await db
     .update(schema.documents)
-    .set({
-      status: 'SIGNED',
-      signatureData,
-      signedAt: now,
-      signedPdfBlobKey,
-      updatedAt: now
-    })
-    .where(eq(schema.documents.id, document.id))
+    .set(docUpdate)
+    .where(
+      eq(schema.documents.id, document.id),
+    )
 
   // Log signing activity
   await logActivity({

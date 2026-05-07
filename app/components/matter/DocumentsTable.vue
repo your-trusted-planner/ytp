@@ -103,6 +103,22 @@
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button
+                    v-if="!['SIGNED', 'COMPLETED'].includes(doc.status)"
+                    class="text-gray-500 hover:text-gray-900 p-1"
+                    title="Prepare fields"
+                    @click="$emit('prepare', doc.id)"
+                  >
+                    <Settings2 class="w-4 h-4" />
+                  </button>
+                  <button
+                    v-if="doc.readyForSignature && !['SIGNED', 'COMPLETED'].includes(doc.status)"
+                    class="text-burgundy-600 hover:text-burgundy-800 p-1"
+                    title="Send for signing"
+                    @click="$emit('sign', doc)"
+                  >
+                    <Send class="w-4 h-4" />
+                  </button>
+                  <button
                     class="text-gray-600 hover:text-gray-900 p-1"
                     title="Download"
                     @click="$emit('download', doc.id)"
@@ -249,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileText, File, Image, FileSpreadsheet, Download, Eye, ExternalLink } from 'lucide-vue-next'
+import { FileText, File, Image, FileSpreadsheet, Download, Eye, ExternalLink, Settings2, Send } from 'lucide-vue-next'
 
 interface Document {
   id: string
@@ -293,6 +309,8 @@ defineEmits<{
   (e: 'download', id: string): void
   (e: 'view', id: string): void
   (e: 'downloadUpload', id: string): void
+  (e: 'prepare', id: string): void
+  (e: 'sign', doc: Document): void
 }>()
 
 function formatDate(timestamp: number | null | undefined): string {

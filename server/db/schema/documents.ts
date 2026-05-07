@@ -51,7 +51,10 @@ export const documents = sqliteTable('documents', {
   mimeType: text('mime_type'),
   variableValues: text('variable_values'), // JSON string
   docxBlobKey: text('docx_blob_key'), // Path to generated DOCX file in blob storage
+  unsignedPdfBlobKey: text('unsigned_pdf_blob_key'), // Path to unsigned PDF (pre-signing) in blob storage
   signedPdfBlobKey: text('signed_pdf_blob_key'), // Path to signed PDF with signature in blob storage
+  fieldPlacements: text('field_placements'), // JSON: [{id, page, x, y, width, height, type, signerRole, label}]
+  signerCount: integer('signer_count').notNull().default(1), // Number of signers required (1-6)
   notarizationStatus: text('notarization_status'), // Notarization status (e.g., PENDING, SCHEDULED, COMPLETED, NOT_REQUIRED)
   pandadocRequestId: text('pandadoc_request_id'), // PandaDoc request ID for tracking
   requiresNotary: integer('requires_notary', { mode: 'boolean' }).notNull().default(false), // Track for meat-space coordination

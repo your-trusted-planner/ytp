@@ -80,7 +80,12 @@ export default defineNuxtConfig({
     // Master encryption key for API credentials (local dev only - use Secrets Store in production)
     ytpMasterKey: process.env.YTP_MASTER_KEY || '',
     // Radar address autocomplete
-    radarApiKey: process.env.RADAR_API_KEY || ''
+    radarApiKey: process.env.RADAR_API_KEY || '',
+    // DOCX-to-PDF converter service (shared with ohlaw)
+    docxConverter: {
+      url: process.env.DOCX_CONVERTER_URL || '',
+      key: process.env.DOCX_CONVERTER_KEY || ''
+    }
   },
   compatibilityDate: '2026-01-02',
 
@@ -128,7 +133,8 @@ export default defineNuxtConfig({
         'tailwind-merge',
         'libphonenumber-js',
         'date-fns',
-        'maska/vue'
+        'maska/vue',
+        'pdfjs-dist'
       ]
     }
   }

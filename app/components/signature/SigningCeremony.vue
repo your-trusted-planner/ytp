@@ -13,7 +13,7 @@
           </p>
         </div>
         <div
-          class="h-0.5 w-12 bg-slate-300"
+          class="h-0.5 w-12 bg-slate-300 transition-colors duration-300"
           :class="{ 'bg-[#C41E3A]': currentStep > 1 }"
         />
       </template>
@@ -27,7 +27,7 @@
         </p>
       </div>
       <div
-        class="h-0.5 w-12 bg-slate-300"
+        class="h-0.5 w-12 bg-slate-300 transition-colors duration-300"
         :class="{ 'bg-[#C41E3A]': currentStep > reviewStep }"
       />
       <div :class="stepClass(signStep)">
@@ -39,7 +39,7 @@
         </p>
       </div>
       <div
-        class="h-0.5 w-12 bg-slate-300"
+        class="h-0.5 w-12 bg-slate-300 transition-colors duration-300"
         :class="{ 'bg-[#C41E3A]': currentStep > signStep }"
       />
       <div :class="stepClass(completeStep)">
@@ -94,8 +94,126 @@
           </p>
         </div>
 
-        <!-- Document Preview -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <!-- Document Preview: PDF or HTML -->
+        <div
+          v-if="hasPdf"
+          ref="pdfContainerRef"
+          class="p-4 max-h-[70vh] overflow-y-auto
+            bg-slate-100"
+        >
+          <div
+            v-if="pdfLoading"
+            class="text-center py-12
+              text-slate-400"
+          >
+            Loading document...
+          </div>
+          <div
+            class="flex flex-col items-center
+              gap-4"
+          >
+            <div
+              v-for="pageNum in pdfPages"
+              :key="pageNum"
+              class="relative"
+            >
+              <canvas
+                :data-page="pageNum"
+                class="shadow-md bg-white"
+                style="max-width: 100%"
+              />
+
+              <!-- Field overlays -->
+              <template
+                v-if="hasFieldPlacements"
+              >
+                <div
+                  v-for="field in
+                    document.fieldPlacements
+                      ?.filter(
+                        f => f.page === pageNum
+                      )"
+                  :key="field.id"
+                  :style="fieldOverlayStyle(
+                    field)"
+                  class="absolute border-2
+                    border-blue-400 bg-blue-50/60
+                    rounded flex items-center
+                    justify-center"
+                >
+                  <!-- Signature/initials -->
+                  <button
+                    v-if="field.type
+                      === 'signature'
+                      || field.type
+                      === 'initials'"
+                    class="w-full h-full
+                      text-[10px] text-blue-600
+                      hover:bg-blue-100/80
+                      transition-colors"
+                    @click="
+                      fieldValues[field.id]
+                        = 'pending'"
+                  >
+                    {{ fieldValues[field.id]
+                      ? 'Signed'
+                      : field.label }}
+                  </button>
+
+                  <!-- Auto-filled readonly -->
+                  <span
+                    v-else-if="
+                      field.type === 'name'
+                      || field.type
+                        === 'date_signed'"
+                    class="text-[10px]
+                      text-slate-600 px-1
+                      truncate w-full"
+                  >
+                    {{ field.type === 'name'
+                      ? signer.name
+                      : new Date()
+                        .toLocaleDateString() }}
+                  </span>
+
+                  <!-- Text input -->
+                  <input
+                    v-else-if="
+                      field.type === 'text'
+                      || field.type === 'date'"
+                    v-model="
+                      fieldValues[field.id]"
+                    :type="field.type === 'date'
+                      ? 'date' : 'text'"
+                    :placeholder="field.label"
+                    class="w-full h-full
+                      text-[10px] px-1
+                      bg-transparent border-0
+                      focus:outline-none
+                      focus:bg-white/80"
+                  >
+
+                  <!-- Checkbox -->
+                  <input
+                    v-else-if="
+                      field.type === 'checkbox'"
+                    v-model="
+                      fieldValues[field.id]"
+                    type="checkbox"
+                    class="w-3 h-3"
+                  >
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback: HTML preview -->
+        <div
+          v-else
+          class="p-6 max-h-[60vh]
+            overflow-y-auto"
+        >
           <div
             class="prose prose-slate max-w-none"
             v-html="sanitizedDocumentContent"
@@ -160,9 +278,22 @@
         </div>
       </div>
 
-      <div class="flex justify-end">
+      <div class="flex items-center justify-end gap-3">
+        <p
+          v-if="hasPdf && !canProceedToSign"
+          class="text-sm text-slate-500"
+        >
+          Please scroll to the bottom of the
+          document to continue
+        </p>
         <button
-          class="px-6 py-3 bg-[#C41E3A] text-white rounded-lg font-semibold hover:bg-[#a31830] transition-colors"
+          :disabled="!canProceedToSign"
+          class="px-6 py-3 bg-[#C41E3A]
+            text-white rounded-lg font-semibold
+            hover:bg-[#a31830]
+            disabled:opacity-50
+            disabled:cursor-not-allowed
+            transition-all duration-300"
           @click="proceedToSign"
         >
           I've Reviewed - Proceed to Sign
@@ -231,6 +362,30 @@
             </button>
             <button
               type="button"
+              class="flex-1 px-4 py-3 text-sm
+                font-medium transition-colors"
+              :class="signatureMethod === 'type'
+                ? 'bg-[#0A2540] text-white'
+                : 'bg-white text-slate-700 hover:bg-slate-50'"
+              @click="signatureMethod = 'type'"
+            >
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Type
+            </button>
+            <button
+              type="button"
               class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
               :class="signatureMethod === 'upload'
                 ? 'bg-[#0A2540] text-white'
@@ -291,6 +446,75 @@
             @update:signature="handleSignatureUpdate"
             @change="handleSignatureChange"
           />
+        </div>
+
+        <!-- Type Signature -->
+        <div
+          v-else-if="signatureMethod === 'type'"
+          class="mb-6"
+        >
+          <label
+            class="block text-sm font-medium
+              text-slate-700 mb-2"
+          >
+            Type your full legal name:
+          </label>
+          <input
+            v-model="typedName"
+            type="text"
+            :placeholder="signer.name"
+            class="w-full px-4 py-3 border
+              border-slate-300 rounded-lg
+              text-lg focus:ring-2
+              focus:ring-[#C41E3A]
+              focus:border-transparent"
+            :class="{ 'border-red-500':
+              signatureError
+              && signatureMethod === 'type'
+              && !typedName }"
+          >
+          <!-- Preview -->
+          <div
+            v-if="typedName"
+            class="mt-4 border border-slate-200
+              rounded-lg p-4 bg-white"
+          >
+            <p class="text-xs text-slate-500
+              mb-2">
+              Signature preview:
+            </p>
+            <canvas
+              ref="typeCanvasRef"
+              class="w-full"
+              :width="500"
+              :height="80"
+            />
+          </div>
+          <!-- Adoption checkbox -->
+          <div
+            v-if="typedName"
+            class="mt-4"
+          >
+            <label
+              class="flex items-start gap-3
+                cursor-pointer"
+            >
+              <input
+                v-model="typedSignatureAdopted"
+                type="checkbox"
+                class="mt-1 w-4 h-4
+                  text-[#C41E3A]
+                  focus:ring-[#C41E3A]
+                  rounded"
+              >
+              <span class="text-sm
+                text-slate-700">
+                I adopt this typed
+                representation as my legal
+                electronic signature.
+              </span>
+            </label>
+          </div>
         </div>
 
         <!-- Upload Signature -->
@@ -965,18 +1189,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import {
+  ref, computed, watch, nextTick,
+} from 'vue'
 import SignatureCanvas from './SignatureCanvas.vue'
 import IdentityVerification from './IdentityVerification.vue'
 import { useSanitizedHtml } from '~/composables/useSanitizedHtml'
 
 const toast = useToast()
 
+interface FieldPlacement {
+  id: string
+  page: number
+  x: number
+  y: number
+  width: number
+  height: number
+  type: string
+  signerRole: number
+  label?: string
+}
+
 interface DocumentInfo {
   id: string
   title: string
   description?: string
   content: string
+  hasUnsignedPdf?: boolean
+  fieldPlacements?: FieldPlacement[]
 }
 
 interface SignerInfo {
@@ -1067,11 +1307,131 @@ const isDownloading = ref(false)
 const hasSigned = ref(false) // Track if signature was successfully submitted
 const alreadySignedError = ref(false) // Track if document was already signed
 
-// Signature method: draw, upload, or stored
-const signatureMethod = ref<'draw' | 'upload' | 'stored'>(
-  props.storedSignature ? 'stored' : 'draw'
+// PDF viewer for documents with unsigned PDFs
+const pdfContainerRef
+  = ref<HTMLElement | null>(null)
+const pdfPageDims = ref<Record<number, {
+  width: number
+  height: number
+  displayWidth: number
+  displayHeight: number
+}>>({})
+
+const hasPdf = computed(
+  () => !!props.document.hasUnsignedPdf,
 )
+
+const pdfUrl = computed(
+  () => hasPdf.value
+    ? `/api/esign/document-pdf/${props.token}`
+    : null,
+)
+
+const {
+  pages: pdfPages,
+  loading: pdfLoading,
+  scrolledToBottom,
+  render: renderPdf,
+} = usePdfViewer(pdfContainerRef, pdfUrl)
+
+// Render PDF when review step is reached
+watch(
+  () => currentStep.value === reviewStep.value
+    && hasPdf.value,
+  async (shouldRender) => {
+    if (!shouldRender) return
+    await nextTick()
+    await renderPdf()
+    await nextTick()
+    capturePdfDims()
+  },
+)
+
+const capturePdfDims = () => {
+  const container = pdfContainerRef.value
+  if (!container) return
+  container.querySelectorAll(
+    'canvas[data-page]',
+  ).forEach((canvas) => {
+    const el = canvas as HTMLCanvasElement
+    const pg = parseInt(el.dataset.page!, 10)
+    pdfPageDims.value[pg] = {
+      width: el.width,
+      height: el.height,
+      displayWidth: el.offsetWidth,
+      displayHeight: el.offsetHeight,
+    }
+  })
+}
+
+// Field overlay positioning
+const fieldOverlayStyle = (
+  field: FieldPlacement,
+) => {
+  const dims = pdfPageDims.value[field.page]
+  if (!dims) return { display: 'none' }
+
+  const scaleX
+    = dims.displayWidth / dims.width
+  const scaleY
+    = dims.displayHeight / dims.height
+
+  return {
+    position: 'absolute' as const,
+    left: `${field.x * scaleX}px`,
+    top: `${(dims.height - field.y) * scaleY}px`,
+    width: `${field.width * scaleX}px`,
+    height: `${field.height * scaleY}px`,
+  }
+}
+
+// Field values for placed fields
+const fieldValues = ref<Record<string, string>>(
+  {},
+)
+
+const hasFieldPlacements = computed(
+  () => (props.document.fieldPlacements?.length
+    ?? 0) > 0,
+)
+
+// Signature method
+const signatureMethod = ref<
+  'draw' | 'type' | 'upload' | 'stored'
+>(props.storedSignature ? 'stored' : 'draw')
 const storedSignatureAdopted = ref(false)
+
+// Type-to-sign state
+const typedName = ref('')
+const typedSignatureAdopted = ref(false)
+const typeCanvasRef
+  = ref<HTMLCanvasElement | null>(null)
+
+// Render typed name as cursive on canvas
+watch(
+  [typedName, typeCanvasRef],
+  ([name, canvas]) => {
+    if (!canvas || !name) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(
+      0, 0, canvas.width, canvas.height,
+    )
+    ctx.font = 'italic 36px "Georgia", serif'
+    ctx.fillStyle = '#1a1a1a'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(name, 16, canvas.height / 2)
+  },
+  { flush: 'post' },
+)
+
+// Convert typed canvas to data URL
+const getTypedSignatureData = (): string
+  | null => {
+  const canvas = typeCanvasRef.value
+  if (!canvas || !typedName.value) return null
+  return canvas.toDataURL('image/png')
+}
 
 // Upload signature state
 const uploadedSignature = ref<string | null>(null)
@@ -1092,11 +1452,18 @@ const stepClass = (step: number) => {
 }
 
 const stepCircleClass = (step: number) => {
-  const base = 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold'
-  return currentStep.value >= step ?
-    `${base} bg-[#C41E3A] text-white` :
-    `${base} bg-slate-200 text-slate-500`
+  const base
+    = 'w-8 h-8 rounded-full flex items-center'
+    + ' justify-center text-sm font-bold'
+    + ' transition-all duration-300'
+  return currentStep.value >= step
+    ? `${base} bg-[#C41E3A] text-white scale-110`
+    : `${base} bg-slate-200 text-slate-500`
 }
+
+const canProceedToSign = computed(
+  () => !hasPdf.value || scrolledToBottom.value,
+)
 
 const proceedToSign = () => {
   currentStep.value = signStep.value
@@ -1187,18 +1554,15 @@ const submitSignature = async () => {
   signatureError.value = false
   termsError.value = false
 
-  // Determine which signature to use based on method
+  // Determine signature based on method
   let finalSignatureData: string | null = null
-  let signatureSource: 'stored' | 'drawn' | 'uploaded' = 'drawn'
+  let signatureSource:
+    'stored' | 'drawn' | 'uploaded' = 'drawn'
 
   switch (signatureMethod.value) {
     case 'stored':
-      // Using stored signature - must be adopted
-      if (!props.storedSignature) {
-        signatureError.value = true
-        return
-      }
-      if (!storedSignatureAdopted.value) {
+      if (!props.storedSignature
+        || !storedSignatureAdopted.value) {
         signatureError.value = true
         return
       }
@@ -1206,23 +1570,34 @@ const submitSignature = async () => {
       signatureSource = 'stored'
       break
 
+    case 'type':
+      if (!typedName.value
+        || !typedSignatureAdopted.value) {
+        signatureError.value = true
+        return
+      }
+      finalSignatureData
+        = getTypedSignatureData()
+      if (!finalSignatureData) {
+        signatureError.value = true
+        return
+      }
+      signatureSource = 'drawn'
+      break
+
     case 'upload':
-      // Using uploaded signature - must be uploaded and adopted
-      if (!uploadedSignature.value) {
+      if (!uploadedSignature.value
+        || !uploadedSignatureAdopted.value) {
         signatureError.value = true
         return
       }
-      if (!uploadedSignatureAdopted.value) {
-        signatureError.value = true
-        return
-      }
-      finalSignatureData = uploadedSignature.value
+      finalSignatureData
+        = uploadedSignature.value
       signatureSource = 'uploaded'
       break
 
     case 'draw':
     default:
-      // Using drawn signature
       if (!signatureData.value) {
         signatureError.value = true
         return
@@ -1251,8 +1626,10 @@ const submitSignature = async () => {
         signatureData: finalSignatureData,
         agreedToTerms: true,
         termsVersion: '2024.1',
-        // Include metadata about signature source (backend accepts 'stored' or 'drawn')
-        signatureSource: signatureSource === 'uploaded' ? 'drawn' : signatureSource
+        signatureSource: signatureSource === 'uploaded' ? 'drawn' : signatureSource,
+        ...(hasFieldPlacements.value
+          ? { fieldValues: fieldValues.value }
+          : {}),
       }
     })
 

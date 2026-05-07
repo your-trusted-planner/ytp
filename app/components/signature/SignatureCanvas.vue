@@ -119,7 +119,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  width: 500,
+  width: 600,
   height: 200,
   lineWidth: 2,
   lineColor: '#000000',
@@ -166,9 +166,18 @@ onMounted(() => {
 const updateCanvasSize = () => {
   const container = canvasRef.value?.parentElement
   if (container) {
-    const containerWidth = container.clientWidth - 4 // Account for border
-    canvasWidth.value = Math.min(containerWidth, props.width)
-    canvasHeight.value = props.height
+    const containerWidth
+      = container.clientWidth - 4
+    canvasWidth.value = Math.min(
+      containerWidth, props.width,
+    )
+    // Responsive height: shorter on mobile
+    const isMobile = window.innerWidth < 640
+    canvasHeight.value = isMobile
+      ? Math.min(180, Math.round(
+        window.innerHeight * 0.22,
+      ))
+      : props.height
   }
 }
 

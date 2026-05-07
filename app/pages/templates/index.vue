@@ -331,11 +331,13 @@
                   <option value="">
                     Not Mapped (Manual Entry)
                   </option>
-                  <option value="client">
-                    Client Data
-                  </option>
-                  <option value="matter">
-                    Matter Data
+                  <option
+                    v-for="(src, key) in
+                      varSources"
+                    :key="key"
+                    :value="key"
+                  >
+                    {{ src.label }}
                   </option>
                 </select>
               </div>
@@ -349,58 +351,20 @@
                   <option value="">
                     -- Select Field --
                   </option>
-                  <optgroup
-                    v-if="variableMappings[variable].source === 'client'"
-                    label="Client Fields"
+                  <option
+                    v-for="(fld, fKey) in
+                      varSources[
+                        variableMappings[
+                          variable
+                        ].source
+                      ]?.fields ?? {}"
+                    :key="fKey"
+                    :value="fKey"
                   >
-                    <option value="firstName">
-                      First Name
-                    </option>
-                    <option value="lastName">
-                      Last Name
-                    </option>
-                    <option value="fullName">
-                      Full Name
-                    </option>
-                    <option value="email">
-                      Email
-                    </option>
-                    <option value="phone">
-                      Phone
-                    </option>
-                    <option value="address">
-                      Address
-                    </option>
-                    <option value="city">
-                      City
-                    </option>
-                    <option value="state">
-                      State
-                    </option>
-                    <option value="zipCode">
-                      ZIP Code
-                    </option>
-                  </optgroup>
-                  <optgroup
-                    v-if="variableMappings[variable].source === 'matter'"
-                    label="Matter Fields"
-                  >
-                    <option value="title">
-                      Matter Title
-                    </option>
-                    <option value="matterNumber">
-                      Matter Number
-                    </option>
-                    <option value="status">
-                      Status
-                    </option>
-                    <option value="contractDate">
-                      Contract Date
-                    </option>
-                    <option value="description">
-                      Description
-                    </option>
-                  </optgroup>
+                    {{ fld.label }}
+                    {{ fld.sensitive
+                      ? '\u26A0' : '' }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -641,11 +605,13 @@
                   <option value="">
                     Not Mapped (Manual Entry)
                   </option>
-                  <option value="client">
-                    Client Data
-                  </option>
-                  <option value="matter">
-                    Matter Data
+                  <option
+                    v-for="(src, key) in
+                      varSources"
+                    :key="key"
+                    :value="key"
+                  >
+                    {{ src.label }}
                   </option>
                 </select>
               </div>
@@ -659,58 +625,20 @@
                   <option value="">
                     -- Select Field --
                   </option>
-                  <optgroup
-                    v-if="variableMappings[variable].source === 'client'"
-                    label="Client Fields"
+                  <option
+                    v-for="(fld, fKey) in
+                      varSources[
+                        variableMappings[
+                          variable
+                        ].source
+                      ]?.fields ?? {}"
+                    :key="fKey"
+                    :value="fKey"
                   >
-                    <option value="firstName">
-                      First Name
-                    </option>
-                    <option value="lastName">
-                      Last Name
-                    </option>
-                    <option value="fullName">
-                      Full Name
-                    </option>
-                    <option value="email">
-                      Email
-                    </option>
-                    <option value="phone">
-                      Phone
-                    </option>
-                    <option value="address">
-                      Address
-                    </option>
-                    <option value="city">
-                      City
-                    </option>
-                    <option value="state">
-                      State
-                    </option>
-                    <option value="zipCode">
-                      ZIP Code
-                    </option>
-                  </optgroup>
-                  <optgroup
-                    v-if="variableMappings[variable].source === 'matter'"
-                    label="Matter Fields"
-                  >
-                    <option value="title">
-                      Matter Title
-                    </option>
-                    <option value="matterNumber">
-                      Matter Number
-                    </option>
-                    <option value="status">
-                      Status
-                    </option>
-                    <option value="contractDate">
-                      Contract Date
-                    </option>
-                    <option value="description">
-                      Description
-                    </option>
-                  </optgroup>
+                    {{ fld.label }}
+                    {{ fld.sensitive
+                      ? '\u26A0' : '' }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -920,6 +848,16 @@ const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadResult = ref<any>(null)
 const variableMappings = ref<Record<string, { source: string, field: string }>>({})
+
+// Fetch available variable sources for the
+// mapping UI from the registry
+const { data: sourceRegistry } = useFetch(
+  '/api/admin/variable-sources',
+  { default: () => ({ sources: {} }) },
+)
+const varSources = computed(
+  () => sourceRegistry.value?.sources ?? {},
+)
 const deletingTemplate = ref(false)
 const reactivatingTemplate = ref(false)
 const forceHardDelete = ref(false)

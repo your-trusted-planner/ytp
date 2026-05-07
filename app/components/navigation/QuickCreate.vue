@@ -58,12 +58,18 @@
       :catalog="matterData.catalog"
       @save="onModalDone"
     />
+
+    <!-- Generate Document Modal -->
+    <DocumentsGenerateDocumentModal
+      v-model="showDocumentModal"
+      @generated="onModalDone"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  Plus, Calendar, UserPlus, Users, Briefcase, Clock, Receipt
+  Plus, Calendar, UserPlus, Users, Briefcase, Clock, Receipt, FileText
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -73,6 +79,7 @@ const buttonRef = ref<HTMLElement | null>(null)
 const showAppointmentModal = ref(false)
 const showTimeEntryModal = ref(false)
 const showMatterModal = ref(false)
+const showDocumentModal = ref(false)
 
 // Matter modal data — lazy-loaded on first open
 const matterDataLoaded = ref(false)
@@ -114,6 +121,7 @@ const createItems = [
   { label: 'New Person', icon: UserPlus, action: 'navigate', path: '/people?add=true' },
   { label: 'New Client', icon: Users, action: 'navigate', path: '/clients/new' },
   { label: 'New Matter', icon: Briefcase, action: 'matter' },
+  { label: 'New Document', icon: FileText, action: 'document' },
   { label: 'New Time Entry', icon: Clock, action: 'timeEntry' },
   { label: 'New Expense', icon: Receipt, action: 'navigate', path: '/billing/expenses/new' }
 ]
@@ -128,6 +136,9 @@ async function handleAction(item: typeof createItems[number]) {
     case 'matter':
       await loadMatterData()
       showMatterModal.value = true
+      break
+    case 'document':
+      showDocumentModal.value = true
       break
     case 'timeEntry':
       showTimeEntryModal.value = true

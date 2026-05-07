@@ -39,6 +39,10 @@ export const signatureSessions = sqliteTable('signature_sessions', {
   userAgent: text('user_agent'),
   geolocation: text('geolocation'), // JSON: {country, region, city}
 
+  // Multi-signer support
+  signerRole: integer('signer_role').notNull().default(1), // Which signer (1-6)
+  fieldValues: text('field_values'), // JSON: {fieldId: value} for placed fields
+
   // Signature capture
   signatureData: text('signature_data'), // Base64 PNG
   signatureHash: text('signature_hash'), // SHA-256 of signature data

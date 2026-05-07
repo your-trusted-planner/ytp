@@ -1,3 +1,27 @@
+/**
+ * useMatterStore — current-matter context for matter detail views
+ *
+ * Scope: Owns the "currently viewed matter" and all data that hangs off it
+ * (services, journeys, payments, documents, billing). Single-matter focused;
+ * not a list/index store.
+ *
+ * Key actions:
+ * - fetchMatter(id): composite load via /api/matters/[id]/detail (matter +
+ *   services + journeys + payments + billing in one call). Idempotent —
+ *   skips reload if id already current.
+ * - refreshMatter(): reload only the matter record, preserving related data
+ * - fetchServices/Journeys/Payments/Documents: granular reload of one slice
+ * - clearCurrentMatter(): reset on navigation away
+ *
+ * Cross-store dependencies: None. Client name fields come denormalized on
+ * the matter payload (clientFirstName, leadAttorneyFirstName) — do NOT
+ * reach into useClientStore from here. If you need richer client data,
+ * extend the /detail endpoint rather than coupling stores.
+ *
+ * Not in scope: matter creation/listing (separate endpoints, no store
+ * needed yet); document signing flow (lives in document-specific code).
+ */
+
 import { defineStore } from 'pinia'
 import type {
   Matter,

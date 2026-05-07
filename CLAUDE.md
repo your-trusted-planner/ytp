@@ -17,11 +17,50 @@ This file tracks:
 
 ## E-Sign System
 
-- Electronic signature feature with STANDARD and ENHANCED identity verification tiers
-- Public signing at `/sign/[token]`, attorney dashboard at `/signatures`
-- Server utils in `server/utils/signature-certificate.ts`, `signed-pdf-generator.ts`, `identity-verification.ts`
-- DB schema: `signatureSessions` table in `server/db/schema/signatures.ts`
-- **Planned extraction**: Shared utilities (tokens, certificates, PDF generation, signature canvas) will move to `../esign-layer` Nuxt Layer — see that repo's README.md for the architecture plan and extraction checklist
+Electronic signature system with STANDARD and ENHANCED identity verification tiers, multi-signer support (up to 6), field placement editor, and DOCX-to-PDF pipeline.
+
+### Key Paths
+- **Public signing**: `/sign/[token]` (token-gated, no auth)
+- **Attorney dashboard**: `/signatures`
+- **Field placement editor**: `/documents/[id]/prepare` (drag-drop fields onto PDF pages)
+
+### Server Components
+| File | Purpose |
+|------|---------|
+| `server/utils/signature-certificate.ts` | Token generation, SHA-256 hashing, tamper-evident certificates |
+| `server/utils/signed-pdf-generator.ts` | Three PDF paths: `generateSignedPdf()` (HTML fallback), `appendSignaturePages()` (append to existing PDF), `stampFieldsAndSign()` (stamp fields at coordinates + append sig pages) |
+| `server/utils/identity-verification.ts` | ENHANCED tier identity verification |
+| `server/utils/pdf-converter.ts` | DOCX-to-PDF conversion via shared Render service |
+| `server/utils/variable-resolver.ts` | Centralized template variable resolution against `people` table |
+| `server/config/variable-sources.ts` | Registry of 10 mapping sources (person, spouse, matter, attorney, estate plan, trust, plan roles, service, system, legacy client) |
+
+### DB Schema
+- `signatureSessions` in `server/db/schema/signatures.ts` — includes `signerRole` (1-6) and `fieldValues` (JSON) for multi-signer
+- `documents` in `server/db/schema/documents.ts` — includes `unsignedPdfBlobKey`, `fieldPlacements` (JSON), `signerCount`
+
+### Client Components
+| File | Purpose |
+|------|---------|
+| `app/components/signature/SignatureCanvas.vue` | Canvas-based signature capture with undo |
+| `app/components/signature/SigningCeremony.vue` | Full signing ceremony with PDF viewer, field overlays, scroll gate, type-your-name |
+| `app/composables/usePdfViewer.ts` | pdfjs-dist rendering + scroll tracking (ported from ohlaw) |
+| `app/pages/documents/[id]/prepare.vue` | Drag-drop field placement editor with multi-signer color coding |
+
+### Multi-Signer Flow
+1. Attorney sets signer count on document (1-6)
+2. Attorney places fields per signer in the field placement editor (`/documents/[id]/prepare`)
+3. Attorney creates a signature session per signer role (`POST /api/documents/[id]/signature-session` with `signerRole` and optional `signerId`)
+4. Each signer completes their signing ceremony independently
+5. Final PDF is generated only after all signers have signed — field values are stamped at placed coordinates, then signature pages are appended
+
+### Environment Variables
+| Variable | Purpose |
+|----------|---------|
+| `DOCX_CONVERTER_URL` | URL of the shared DOCX-to-PDF Render service |
+| `DOCX_CONVERTER_KEY` | API key for the converter service |
+
+### Planned extraction
+Shared primitives (tokens, certificates, crypto, PDF generation, signature canvas, PDF viewer) will move to `../esign-layer` Nuxt Layer — shared with ohlaw-www-2025 and ytp-ra. See that repo's README.md for the architecture plan. Routes, session management, and DB schema stay project-specific.
 
 ## Data Model
 
@@ -192,65 +231,8 @@ The `planRoles` table stores all role assignments for a plan. Each row is one pe
 - `ordinal`: position in succession chain (1 = primary, 2 = first successor, etc.)
 - `roleType`: includes both primary and alternate types (e.g., `TRUSTEE`, `CO_TRUSTEE`, `SUCCESSOR_TRUSTEE`)
 
-**Planned schema additions — fiduciary acting model and minimum count:**
 
-The current schema implies acting model through role types (`TRUSTEE` vs `CO_TRUSTEE`) but does not capture it explicitly. Two new fields are needed on `planRoles` (or on a new `fiduciaryConfigs` junction table — TBD):
 
-```
-actingModel: text('acting_model', {
-  enum: ['SOLE', 'JOINTLY', 'INDEPENDENTLY', 'MAJORITY']
-})
-
-minimumCount: integer('minimum_count')
-```
-
-**`actingModel`** — How co-fiduciaries exercise their authority:
-- `SOLE`: Single fiduciary acting alone (default when only one person in the position)
-- `JOINTLY`: All co-fiduciaries must agree and act together
-- `INDEPENDENTLY`: Any co-fiduciary may act alone without the others' consent
-- `MAJORITY`: Majority of co-fiduciaries must agree
-
-**`minimumCount`** — Minimum number of fiduciaries that must be serving at all times. When set:
-- Successors **fill individual vacancies** rather than replacing the entire group
-- Example: Husband and Wife are co-trustees (min 2). Husband dies → first successor fills the vacancy and serves alongside Wife
-- When NOT set (or = 1): successors **replace the predecessor entirely** (simple succession model)
-
-**Succession models these fields enable:**
-
-| Model | actingModel | minimumCount | Behavior |
-|-------|-------------|--------------|----------|
-| Single + sequential successors | SOLE | null | Alice → Bob → Carol (replacement) |
-| Co-fiduciaries, jointly | JOINTLY | null | Alice + Bob act together. If both unable → Carol |
-| Co-fiduciaries, independently | INDEPENDENTLY | null | Alice or Bob can act alone. If both unable → Carol |
-| Vacancy filling | INDEPENDENTLY | 2 | Alice + Bob. If Alice dies → Carol joins Bob. Always 2 serving. |
-
-**Data source for document generation:** The YADT template authoring system (separate project) defines prose patterns for fiduciary designations. At generation time, the template engine receives a `FiduciaryConfig` object assembled from `planRoles`:
-
-```typescript
-interface FiduciaryConfig {
-  roleType: string             // 'agent', 'trustee', 'executor', etc.
-  roleLabel: string            // 'Agent', 'Trustee' (from the template, not the plan)
-  actingModel: 'sole' | 'jointly' | 'independently' | 'majority'
-  minimumCount?: number
-  primary: FiduciaryPerson[]   // 1+ people at the primary position
-  successors: FiduciaryPerson[] // flat ordered list (bench of replacements)
-}
-
-interface FiduciaryPerson {
-  id: string
-  fullName: string
-  firstName: string
-  lastName: string
-  address?: string
-  cityStateZip?: string
-  phone?: string
-  email?: string
-}
-```
-
-**Design reference:** See `FIDUCIARY_DESIGNATION_DESIGN.md` in the YADT project (orange-book-parser) for the template-side design of fiduciary designation blocks.
-
----
 
 ## Database & ORM
 
@@ -390,7 +372,8 @@ The server middleware (`server/middleware/auth.ts`) automatically protects API r
 |--------------|------------|----------|
 | `/api/admin/*` | Requires `adminLevel >= 2` | Admin-only features (integrations, migrations, system settings) |
 | `/api/public/*` | No auth required | Public endpoints (landing pages, public forms) |
-| `/api/signature/*` | Token-based auth | E-signature flows (handled by endpoint) |
+| `/api/signature/*` | Token-based auth | E-signature signing flows (session lookup, sign submission) |
+| `/api/esign/*` | Token-based auth | E-signature support (token-gated PDF serving for signing page) |
 | `/api/auth/*` | Mixed | Login/logout/session endpoints |
 | `/api/*` (other) | Requires valid session | Standard authenticated endpoints |
 
@@ -531,6 +514,12 @@ Key utilities in `server/utils/`:
 | `rbac.ts` | Role-based access control helpers |
 | `email.ts` | Email sending via Resend |
 | `pdf.ts` | PDF generation |
+| `pdf-converter.ts` | DOCX-to-PDF conversion via external Render service |
+| `signed-pdf-generator.ts` | Signed PDF generation with three paths (HTML, append, stamp+sign) |
+| `signature-certificate.ts` | Signing tokens, SHA-256, tamper-evident certificates |
+| `identity-verification.ts` | ENHANCED tier identity verification |
+| `variable-resolver.ts` | Centralized template variable resolution against `people` table |
+| `request-context.ts` | IP/UA/geo capture from Cloudflare headers |
 | `google-drive.ts` | Google Drive integration |
 | `document-renderer.ts` | Document template rendering |
 | `validation.ts` | Common validation schemas |

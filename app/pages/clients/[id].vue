@@ -489,9 +489,19 @@
 
         <!-- Recent Documents -->
         <div class="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Recent Documents
-          </h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Recent Documents
+            </h3>
+            <UiButton
+              size="sm"
+              variant="outline"
+              @click="showGenerateDocumentModal = true"
+            >
+              <FilePlus class="w-4 h-4 mr-1" />
+              Generate
+            </UiButton>
+          </div>
           <div
             v-if="documents.length === 0"
             class="text-center py-8 text-gray-500"
@@ -529,6 +539,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Generate Document Modal -->
+    <DocumentsGenerateDocumentModal
+      v-model="showGenerateDocumentModal"
+      :default-client-id="clientId"
+      :default-client-name="client ? `${client.first_name} ${client.last_name}` : ''"
+      @generated="(res) => { if (res?.document) documents = [res.document, ...documents] }"
+    />
 
     <!-- Edit Client Modal -->
     <UiModal
@@ -695,7 +713,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, DollarSign, Eye } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Loader, Edit, X, FolderSync, Wallet, FileText, FilePlus, DollarSign, Eye } from 'lucide-vue-next'
 import { formatCurrency } from '~/utils/format'
 
 const toast = useToast()
@@ -717,6 +735,7 @@ const loading = ref(true)
 const savingClient = ref(false)
 
 const showEditModal = ref(false)
+const showGenerateDocumentModal = ref(false)
 const showAddRelationshipModal = ref(false)
 const showRemoveRelationshipDialog = ref(false)
 const removingRelationshipId = ref<string | null>(null)

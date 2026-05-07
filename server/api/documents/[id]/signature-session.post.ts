@@ -27,7 +27,13 @@ const createSessionSchema = z.object({
   sendEmail: z.boolean().optional().default(false),
   message: z.string().optional(),
   // Optional link to an ESIGN action item (for journey integration)
-  actionItemId: z.string().optional()
+  actionItemId: z.string().optional(),
+  // Multi-signer: which signer role (1-6)
+  signerRole: z.number().int().min(1).max(6)
+    .optional().default(1),
+  // Override signer (for multi-signer with
+  // different users per role)
+  signerId: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -54,7 +60,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { tier, expiresIn, sendEmail, message, actionItemId } = parseResult.data
+  const {
+    tier, expiresIn, sendEmail, message,
+    actionItemId, signerRole, signerId: overrideSignerId,
+  } = parseResult.data
 
   // Database not available in mock mode
   if (!isDatabaseAvailable()) {
@@ -89,32 +98,58 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check for existing active session
-  const existingSession = await db
-    .select()
-    .from(schema.signatureSessions)
-    .where(eq(schema.signatureSessions.documentId, documentId))
-    .get()
-
-  if (existingSession && !['SIGNED', 'EXPIRED', 'REVOKED'].includes(existingSession.status)) {
+  // Validate signer role doesn't exceed count
+  if (signerRole > document.signerCount) {
     throw createError({
-      statusCode: 409,
-      message: 'An active signature session already exists for this document',
-      data: { sessionId: existingSession.id, status: existingSession.status }
+      statusCode: 400,
+      message:
+        `Signer role ${signerRole} exceeds`
+        + ` document signer count`
+        + ` (${document.signerCount})`,
     })
   }
 
-  // Get signer (document's client)
+  // Check for existing active session for role
+  const { and } = await import('drizzle-orm')
+  const existingSession = await db
+    .select()
+    .from(schema.signatureSessions)
+    .where(and(
+      eq(schema.signatureSessions.documentId,
+        documentId),
+      eq(schema.signatureSessions.signerRole,
+        signerRole),
+    ))
+    .get()
+
+  if (existingSession
+    && !['SIGNED', 'EXPIRED', 'REVOKED']
+      .includes(existingSession.status)) {
+    throw createError({
+      statusCode: 409,
+      message:
+        'An active session already exists'
+        + ` for signer role ${signerRole}`,
+      data: {
+        sessionId: existingSession.id,
+        status: existingSession.status,
+      },
+    })
+  }
+
+  // Get signer — use override or document client
+  const targetSignerId
+    = overrideSignerId || document.clientId
   const signer = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, document.clientId))
+    .where(eq(schema.users.id, targetSignerId))
     .get()
 
   if (!signer) {
     throw createError({
       statusCode: 400,
-      message: 'Document client not found'
+      message: 'Signer not found',
     })
   }
 
@@ -162,7 +197,8 @@ export default defineEventHandler(async (event) => {
   await db.insert(schema.signatureSessions).values({
     id: sessionId,
     documentId,
-    signerId: document.clientId,
+    signerId: targetSignerId,
+    signerRole,
     actionItemId: actionItemId || null,
     signatureTier: tier,
     status: initialStatus,

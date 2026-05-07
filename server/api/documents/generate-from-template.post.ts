@@ -146,38 +146,21 @@ export default defineEventHandler(async (event) => {
   // Build context for template rendering
   const clientFullName = `${client.first_name || ''} ${client.last_name || ''}`.trim()
 
-  // Start with mapped variables
-  const context: any = {}
+  // Resolve mapped variables via centralized
+  // resolver (uses people table, not deprecated
+  // clientProfiles)
+  const resolvedMappings
+    = Object.keys(variableMappings).length > 0
+      ? await resolveVariableMappings(
+        variableMappings,
+        {
+          clientId: body.clientId,
+          matterId: body.matterId || null,
+        },
+      )
+      : {}
 
-  // Apply variable mappings
-  Object.entries(variableMappings).forEach(([variable, mapping]) => {
-    if (mapping.source === 'client') {
-      // Map client fields
-      const fieldMap: Record<string, any> = {
-        firstName: client.first_name || '',
-        lastName: client.last_name || '',
-        fullName: clientFullName,
-        email: client.email || '',
-        phone: client.phone || '',
-        address: client.address || '',
-        city: client.city || '',
-        state: client.state || '',
-        zipCode: client.zip_code || ''
-      }
-      context[variable] = fieldMap[mapping.field] || ''
-    }
-    else if (mapping.source === 'matter' && matter) {
-      // Map matter fields
-      const fieldMap: Record<string, any> = {
-        title: matter.title || '',
-        matterNumber: matter.matter_number || '',
-        status: matter.status || '',
-        contractDate: matter.contract_date ? new Date(matter.contract_date * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
-        description: matter.description || ''
-      }
-      context[variable] = fieldMap[mapping.field] || ''
-    }
-  })
+  const context: any = { ...resolvedMappings }
 
   // Add default context (for backward compatibility and unmapped variables)
   Object.assign(context, {
@@ -232,6 +215,7 @@ export default defineEventHandler(async (event) => {
 
   // Generate DOCX if template has a blob key
   let docxBlobKey = null
+  let unsignedPdfBlobKey = null
   if (template.docxBlobKey) {
     try {
       // Load template DOCX from blob storage
@@ -253,6 +237,26 @@ export default defineEventHandler(async (event) => {
 
         // Use the generated document ID
         var finalDocumentId = documentId
+
+        // Convert DOCX to PDF for pre-signing preview
+        try {
+          const pdfBytes = await convertDocxToPdf(
+            generatedDocx,
+          )
+          unsignedPdfBlobKey
+            = `documents/${documentId}/unsigned.pdf`
+          await blob.put(
+            unsignedPdfBlobKey,
+            pdfBytes,
+          )
+        }
+        catch (pdfError) {
+          console.error(
+            'DOCX-to-PDF conversion failed,',
+            'continuing without unsigned PDF:',
+            pdfError,
+          )
+        }
       }
       else {
         console.warn('Template DOCX not found in blob storage, generating HTML only')
@@ -277,6 +281,7 @@ export default defineEventHandler(async (event) => {
     matterId: body.matterId || null,
     content: renderedContent,
     docxBlobKey: docxBlobKey,
+    unsignedPdfBlobKey: unsignedPdfBlobKey,
     filePath: null,
     fileSize: null,
     mimeType: 'text/html',
@@ -340,6 +345,7 @@ export default defineEventHandler(async (event) => {
       matter_id: body.matterId || null,
       content: renderedContent,
       docx_blob_key: docxBlobKey,
+      unsigned_pdf_blob_key: unsignedPdfBlobKey,
       file_path: null,
       file_size: null,
       mime_type: 'text/html',

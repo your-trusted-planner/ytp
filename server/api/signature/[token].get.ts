@@ -132,28 +132,54 @@ export default defineEventHandler(async (event) => {
   const requiresIdentityVerification = session.signatureTier === 'ENHANCED'
   const verificationMode = requiresIdentityVerification ? getVerificationMode() : undefined
 
+  // Parse and filter field placements for this
+  // signer's role
+  let fieldPlacements: any[] = []
+  if (document.fieldPlacements) {
+    try {
+      const all = JSON.parse(
+        document.fieldPlacements,
+      )
+      fieldPlacements = all.filter(
+        (p: { signerRole: number }) =>
+          p.signerRole === session.signerRole,
+      )
+    }
+    catch { /* ignore parse errors */ }
+  }
+
   return {
     document: {
       id: document.id,
       title: document.title,
       description: document.description,
-      content: document.content // HTML content for preview
+      content: document.content,
+      hasUnsignedPdf:
+        !!document.unsignedPdfBlobKey,
+      fieldPlacements,
     },
     session: {
       id: session.id,
       status: session.status,
       tier: session.signatureTier,
-      expiresAt: session.tokenExpiresAt?.toISOString() ?? null,
-      identityVerified: session.identityVerified ?? false,
+      signerRole: session.signerRole,
+      expiresAt:
+        session.tokenExpiresAt?.toISOString()
+        ?? null,
+      identityVerified:
+        session.identityVerified ?? false,
       requiresIdentityVerification,
       verificationMode,
-      canSign
+      canSign,
     },
     signer: {
-      name: `${signer.firstName || ''} ${signer.lastName || ''}`.trim() || signer.email,
+      name:
+        `${signer.firstName || ''} `
+        + `${signer.lastName || ''}`.trim()
+        || signer.email,
       email: signer.email,
-      // Include stored signature if available for adoption during signing
-      storedSignature: signer.signatureImage || null
-    }
+      storedSignature:
+        signer.signatureImage || null,
+    },
   }
 })

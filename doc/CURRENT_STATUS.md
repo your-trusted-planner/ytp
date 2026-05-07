@@ -1,6 +1,6 @@
 # Current Status - YTP Estate Planning Platform
 
-**Last Updated**: 2026-04-22
+**Last Updated**: 2026-04-24
 
 ## 📍 Where We Are Now
 
@@ -13,6 +13,15 @@
   - **Phase G**: Journey integration — wire FORM action items to FormRenderer, form picker in ActionItemModal
   - **Phase H**: Legacy questionnaire migration utility
 
+#### E-Sign Uplevel — Testing & Deployment
+- **Status**: Built, not yet tested or deployed
+- **What was built**: Major esign uplevel across 5 phases (uncommitted on `stage`)
+- **Remaining work**:
+  - Test all 5 phases locally (DOCX-to-PDF, field placement editor, multi-signer, signing ceremony UX, variable resolver)
+  - Apply migrations 0045 + 0046 to preview and production
+  - Set `DOCX_CONVERTER_URL` and `DOCX_CONVERTER_KEY` env vars / secrets
+  - Commit and deploy to preview for testing
+
 #### Google Calendar Integration — Refinements
 - **Status**: Core complete, minor refinements remaining
 - **Remaining work**:
@@ -20,6 +29,55 @@
   - Profile page calendar management buttons (Set Primary, Deactivate, Delete) are still disabled/TODO
 
 ### Recently Completed ✅
+
+#### E-Sign Uplevel (2026-04-24)
+- **Status**: Built ✅ (pending testing & deployment)
+- **What**: Five-phase uplevel of the e-signature system — DOCX-to-PDF pipeline, improved PDF output, field placement editor with multi-signer, signing ceremony UX polish, and centralized variable resolver.
+
+**Phase 0 — DOCX-to-PDF Pipeline**:
+  - `server/utils/pdf-converter.ts` — Converts DOCX to PDF via shared Render service (`DOCX_CONVERTER_URL`)
+  - `generate-from-template.post.ts` auto-converts DOCX to PDF at creation, stores as `unsignedPdfBlobKey`
+  - `server/api/documents/[id]/preview-pdf.get.ts` — Serves unsigned/signed PDFs for staff preview
+
+**Phase 1 — Better PDF Output**:
+  - `signed-pdf-generator.ts` now has three functions: `generateSignedPdf()` (HTML-only fallback), `appendSignaturePages()` (append to existing PDF preserving formatting), `stampFieldsAndSign()` (stamp field values at coordinates + append signature pages)
+
+**Phase 2 — Field Placement Editor + Multi-Signer (up to 6)**:
+  - Schema: `fieldPlacements`, `signerCount` on documents; `signerRole`, `fieldValues` on signatureSessions
+  - `app/pages/documents/[id]/prepare.vue` — Full drag-drop field placement editor with color-coded signers
+  - `server/api/documents/[id]/placements.put.ts` — Save field placements
+  - `server/api/documents/[id]/signer-count.put.ts` — Update signer count
+  - `server/api/esign/document-pdf/[token].get.ts` — Token-gated unsigned PDF serving for public signing page
+  - `app/composables/usePdfViewer.ts` — PDF rendering + scroll tracking (ported from ohlaw)
+  - `signature-session.post.ts` updated for multi-signer (role-based sessions, override signer)
+  - `sign.post.ts` waits for all signers before generating final PDF
+
+**Phase 3 — Signing Ceremony UX Polish**:
+  - Scroll-to-bottom gate before "Proceed to Sign"
+  - Type-your-name signature (4th method with canvas preview + adoption checkbox)
+  - Responsive signature canvas sizing for mobile
+  - Skeleton loading state (replaces spinner)
+  - Error states with firm contact info
+  - Step indicator animations
+  - Pending review auto-polling (15s interval via `useIntervalFn`)
+  - `SigningCeremony.vue` now renders PDF with interactive field overlays in review step
+
+**Phase 4 — Field Mapping with System Fields**:
+  - `server/config/variable-sources.ts` — Registry of 10 mapping sources (person, spouse, matter, attorney, estate plan, trust, plan roles, service, system, legacy client)
+  - `server/utils/variable-resolver.ts` — Centralized resolver using `people` table (replaces inline client field mapping)
+  - `server/api/admin/variable-sources.get.ts` — Source registry endpoint for UI
+  - `generate-from-template.post.ts` refactored to use `resolveVariableMappings()`
+  - `templates/index.vue` mapping dropdowns now dynamically populated from the registry
+
+**New Files** (12):
+  - `app/composables/usePdfViewer.ts`, `app/pages/documents/[id]/prepare.vue`
+  - `server/api/admin/variable-sources.get.ts`, `server/api/documents/[id]/placements.put.ts`, `server/api/documents/[id]/preview-pdf.get.ts`, `server/api/documents/[id]/signer-count.put.ts`, `server/api/esign/document-pdf/[token].get.ts`
+  - `server/config/variable-sources.ts`, `server/utils/pdf-converter.ts`, `server/utils/variable-resolver.ts`
+  - `server/db/migrations/0045_add_unsigned_pdf.sql`, `server/db/migrations/0046_add_field_placements_multisigner.sql`
+
+**New Dependencies**: `pdfjs-dist ^5.6.205`
+
+**New Environment Variables**: `DOCX_CONVERTER_URL`, `DOCX_CONVERTER_KEY`
 
 #### Form Builder System (2026-03-24 / 2026-03-25)
 - **Status**: Complete ✅ (core system — standalone forms, journey integration, and migration utility are remaining phases)
@@ -741,7 +799,7 @@
   - ✅ Phase 2: Standard signature UI
   - ✅ Phase 3: Attorney workflow integration
   - ⏳ Phase 4: Enhanced signature (KYC integration) - Future
-  - ⏳ Phase 5: ESIGN action item integration - Future
+  - ✅ Phase 5: ESIGN action item integration - Auto-completion wired in `sign.post.ts` (2026-04-24 uplevel)
 
 #### RBAC Testing Infrastructure & Page Restructuring (2026-01-10)
 - **Status**: Complete ✅
@@ -1572,7 +1630,7 @@ Document (N) ──→ Matter (1)
 
 3. **Reciprocal Relationships Not Displaying**: When a relationship is added in the New Client flow, the reciprocal side (e.g., if A is the spouse of B, B should show A as spouse) does not appear. Suspected data issue — the relationship may only be written in one direction. The unified `relationships` table should store or infer both directions. Needs investigation.
 
-4. **Ghost Duplicate Services on Matter**: When adding a service to a matter, duplicate entries appear in the list. Likely a double-insert on the `matters_to_services` junction table (e.g., optimistic UI + server response both appending). Needs investigation of the add-service endpoint and frontend handler.
+4. ~~**Ghost Duplicate Services on Matter**~~: ✅ NOT A BUG — confirmed to be a testing artifact in preview environment (2026-04-24). Single service creation works correctly.
 
 5. **"Send for Signature" Links to Documents Page Instead of Matter Flow**: From the matter detail page, "Send a document for signature" navigates to `/documents` with no pre-selected context. Should instead open a targeted send-for-signature modal pre-scoped to the current matter.
 

@@ -34,15 +34,32 @@
 
     <!-- Main Content -->
     <div class="max-w-4xl mx-auto px-4 py-8">
-      <!-- Loading State -->
+      <!-- Loading Skeleton -->
       <div
         v-if="pending"
-        class="bg-white rounded-lg shadow-lg p-12 text-center"
+        class="bg-white rounded-lg shadow-lg p-8"
       >
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C41E3A] mx-auto mb-4" />
-        <p class="text-slate-600">
-          Loading document...
-        </p>
+        <!-- Step indicator skeleton -->
+        <div class="flex items-center justify-center mb-8">
+          <div class="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+          <div class="w-12 h-0.5 bg-slate-200 animate-pulse" />
+          <div class="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+          <div class="w-12 h-0.5 bg-slate-200 animate-pulse" />
+          <div class="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+        </div>
+        <!-- Title skeleton -->
+        <div class="h-6 w-2/3 bg-slate-200 rounded animate-pulse mb-3" />
+        <div class="h-4 w-1/3 bg-slate-200 rounded animate-pulse mb-6" />
+        <!-- Content skeleton -->
+        <div class="space-y-3">
+          <div class="h-3 w-full bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-full bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-5/6 bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-full bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-3/4 bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-full bg-slate-100 rounded animate-pulse" />
+          <div class="h-3 w-4/5 bg-slate-100 rounded animate-pulse" />
+        </div>
       </div>
 
       <!-- Error State -->
@@ -72,7 +89,14 @@
           {{ errorMessage }}
         </p>
         <p class="text-sm text-slate-500">
-          If you believe this is an error, please contact the sender.
+          If you believe this is an error,
+          please contact our office:
+        </p>
+        <p class="text-sm text-slate-600 mt-2 font-medium">
+          {{ contactEmail }}
+          <span v-if="contactPhone">
+            &middot; {{ contactPhone }}
+          </span>
         </p>
       </div>
 
@@ -102,8 +126,18 @@
         <p class="text-slate-600 mb-6">
           Your ID has been submitted for review. You'll receive an email once it's approved and you can proceed with signing.
         </p>
-        <p class="text-sm text-slate-500">
-          Please check your email for updates.
+        <p class="text-sm text-slate-500 mt-4">
+          <span
+            v-if="pollChecking"
+            class="inline-flex items-center gap-1"
+          >
+            <span class="animate-spin w-3 h-3 border border-amber-400 border-t-transparent rounded-full inline-block" />
+            Checking status...
+          </span>
+          <span v-else>
+            We'll check automatically &mdash;
+            or reload the page.
+          </span>
         </p>
       </div>
 
@@ -135,55 +169,96 @@
 </template>
 
 <script setup lang="ts">
+import { useIntervalFn } from '@vueuse/core'
+
 definePageMeta({
-  layout: false // Public page, no auth required
+  layout: false,
 })
 
 const route = useRoute()
-const token = computed(() => route.params.token as string)
+const token = computed(
+  () => route.params.token as string,
+)
 
-// Fetch session data
-const { data: sessionData, pending, error, status } = await useFetch(`/api/signature/${token.value}`, {
-  key: `signature-session-${token.value}`
-})
+const {
+  data: sessionData,
+  pending,
+  error,
+  refresh,
+} = await useFetch(
+  `/api/signature/${token.value}`,
+  { key: `signature-session-${token.value}` },
+)
 
-// Compute error details
+// Contact info from runtime config
+const config = useRuntimeConfig()
+const contactEmail = computed(
+  () => (config.public as any).contactEmail
+    || 'support@yourtrustedplanner.com',
+)
+const contactPhone = computed(
+  () => (config.public as any).contactPhone
+    || '',
+)
+
 const errorTitle = computed(() => {
   if (!error.value) return ''
-  const status = error.value.statusCode
-  switch (status) {
-    case 404:
-      return 'Session Not Found'
-    case 410:
-      return 'Session Expired or Completed'
-    default:
-      return 'Unable to Load Document'
-  }
+  const code = error.value.statusCode
+  if (code === 404) return 'Session Not Found'
+  if (code === 410)
+    return 'Session Expired or Completed'
+  return 'Unable to Load Document'
 })
 
 const errorMessage = computed(() => {
   if (!error.value) return ''
-  return error.value.data?.message || error.value.message || 'An unexpected error occurred.'
+  return error.value.data?.message
+    || error.value.message
+    || 'An unexpected error occurred.'
 })
 
-// State for pending manual review
+// Pending review state + auto-polling
 const pendingReview = ref(false)
+const pollChecking = ref(false)
+
+const { pause: pausePoll } = useIntervalFn(
+  async () => {
+    if (!pendingReview.value) return
+    pollChecking.value = true
+    try {
+      await refresh()
+      if (
+        sessionData.value
+        ?.session?.identityVerified
+      ) {
+        pendingReview.value = false
+        pausePoll()
+      }
+    }
+    catch { /* ignore poll errors */ }
+    finally {
+      pollChecking.value = false
+    }
+  },
+  15_000,
+  { immediate: false },
+)
 
 const handleSigned = (certificate: any) => {
-  console.log('Document signed successfully:', certificate)
+  console.log('Signed:', certificate)
 }
 
 const handleError = (message: string) => {
   console.error('Signing error:', message)
 }
 
-const handleIdentityVerified = (data: { method: string, verifiedAt: string }) => {
+const handleIdentityVerified = (
+  data: { method: string, verifiedAt: string },
+) => {
   console.log('Identity verified:', data)
-  // Session data will update automatically through the signing flow
 }
 
 const handlePendingReview = () => {
-  console.log('Identity verification pending review')
   pendingReview.value = true
 }
 </script>
