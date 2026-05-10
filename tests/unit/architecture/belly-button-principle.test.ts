@@ -24,6 +24,8 @@ import {
   createClientWithoutPortalAccess,
   createStaffUser
 } from '../../utils/mock-repository'
+import { canAccessClient } from '../../../server/utils/rbac'
+import { asUserId, asClientId, asPersonId } from '../../../server/db/types/ids'
 
 describe('Belly Button Principle', () => {
   let repo: MockRepository
@@ -465,3 +467,64 @@ describe('Client Creation Order', () => {
     }).toThrow(BellyButtonViolationError)
   })
 })
+
+/**
+ * Authorization invariants under the Belly Button Principle.
+ *
+ * Catches the bug class where authentication identity (users.id) is
+ * compared to client business identity (clients.id). These are TWO
+ * DIFFERENT IDs and must never be conflated.
+ *
+ * If a future change reverts `canAccessClient` to compare `user.id`
+ * against the clientId parameter, these tests will fail. Combined
+ * with the branded ID types in `server/db/types/ids.ts`, the wrong
+ * pattern is rejected by both the type checker (at compile time) and
+ * the test suite (at run time).
+ */
+describe('Belly Button Principle — authorization invariants', () => {
+  const makeEvent = (user: any) => ({ context: { user } } as any)
+
+  it('CLIENT authorization compares user.clientId, never user.id', () => {
+    // A CLIENT user whose auth id and client id are intentionally different.
+    // This is the production state: users.id and clients.id are separate IDs
+    // that happen to be strings — never the same value.
+    const clientUser = {
+      id: asUserId('user-7'),
+      personId: asPersonId('person-7'),
+      clientId: asClientId('client-7'),
+      role: 'CLIENT',
+      adminLevel: 0,
+      email: 'c@x'
+    }
+
+    // Allowed: caller passes the matching clients.id
+    expect(canAccessClient(makeEvent(clientUser), asClientId('client-7'))).toBe(true)
+
+    // Denied: caller passes the user's auth id (NOT a client id semantically).
+    // Pre-migration this returned true — the bug we are eliminating.
+    expect(canAccessClient(makeEvent(clientUser), asClientId('user-7'))).toBe(false)
+
+    // Denied: caller passes some other client's id
+    expect(canAccessClient(makeEvent(clientUser), asClientId('client-99'))).toBe(false)
+  })
+
+  it('CLIENT with no resolved clientId cannot access any client (no fallback to user.id)', () => {
+    // A CLIENT user whose middleware lookup didn't find a clients row
+    // (e.g., during migration, or stale session). Must NOT fall back
+    // to user.id matching — that would re-introduce the bug.
+    const orphanClient = {
+      id: asUserId('user-orphan'),
+      personId: asPersonId('person-orphan'),
+      clientId: null,
+      role: 'CLIENT',
+      adminLevel: 0,
+      email: 'o@x'
+    }
+
+    // Even if the caller's clientId string equals the user's auth id,
+    // access must be denied.
+    expect(canAccessClient(makeEvent(orphanClient), asClientId('user-orphan'))).toBe(false)
+    expect(canAccessClient(makeEvent(orphanClient), asClientId('client-7'))).toBe(false)
+  })
+})
+

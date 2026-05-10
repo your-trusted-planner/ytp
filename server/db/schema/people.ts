@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm'
 import { jsonArray } from './common'
 import { users } from './auth'
 import { matters } from './matters'
+import type { PersonId } from '../types/ids'
 
 // People - Separates identity from authentication
 // Every human AND legal entity in the system is a person (Belly Button Principle)
@@ -12,7 +13,7 @@ import { matters } from './matters'
 // Detail tables: trusts (estate-plans.ts) for trust-specific data,
 //                entities (below) for state-formed entity data
 export const people = sqliteTable('people', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$type<PersonId>(),
   personType: text('person_type', { enum: ['individual', 'trust', 'entity'] }).notNull().default('individual'),
   // Personal Information (individuals only — null for trusts/entities)
   firstName: text('first_name'),

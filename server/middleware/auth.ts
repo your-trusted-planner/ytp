@@ -32,11 +32,27 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // Helper to attach user context from a DB user record
-  const attachUserContext = (dbUser: any) => {
+  // Helper to attach user context from a DB user record.
+  // For CLIENT users, resolves clients.id from personId so authorization
+  // checks compare against the client identity (NOT users.id).
+  const attachUserContext = async (dbUser: any) => {
+    let clientId: string | null = null
+    if (dbUser.role === 'CLIENT' && dbUser.personId) {
+      const { useDrizzle, schema } = await import('../db')
+      const { eq } = await import('drizzle-orm')
+      const db = useDrizzle()
+      const clientRecord = await db
+        .select({ id: schema.clients.id })
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, dbUser.personId))
+        .get()
+      clientId = clientRecord?.id ?? null
+    }
+
     const user = {
       id: dbUser.id,
       personId: dbUser.personId || null,
+      clientId,
       email: dbUser.email,
       role: dbUser.role,
       adminLevel: dbUser.adminLevel ?? 0,
@@ -81,7 +97,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    attachUserContext(dbUser)
+    await attachUserContext(dbUser)
     return
   }
 
@@ -118,7 +134,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    attachUserContext(dbUser)
+    await attachUserContext(dbUser)
 
     // Handle impersonation: swap user context to the impersonated client
     // Skip for /api/admin/* routes so staff can still stop impersonating
@@ -127,18 +143,34 @@ export default defineEventHandler(async (event) => {
       const impersonated = session.impersonating as any
       event.context.realUser = { ...event.context.user }
       event.context.isImpersonating = true
+
+      const impersonatedRole = impersonated.role || 'CLIENT'
+      let impersonatedClientId: string | null = null
+      if (impersonatedRole === 'CLIENT' && impersonated.personId) {
+        const { useDrizzle, schema } = await import('../db')
+        const { eq } = await import('drizzle-orm')
+        const db = useDrizzle()
+        const clientRecord = await db
+          .select({ id: schema.clients.id })
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, impersonated.personId))
+          .get()
+        impersonatedClientId = clientRecord?.id ?? null
+      }
+
       event.context.user = {
         id: impersonated.userId,
         personId: impersonated.personId || null,
+        clientId: impersonatedClientId,
         email: impersonated.email,
-        role: impersonated.role || 'CLIENT',
+        role: impersonatedRole,
         adminLevel: 0,
         firstName: impersonated.firstName,
         lastName: impersonated.lastName
       }
       event.context.userId = impersonated.userId
       event.context.personId = impersonated.personId || null
-      event.context.userRole = impersonated.role || 'CLIENT'
+      event.context.userRole = impersonatedRole
       event.context.adminLevel = 0
     }
   }

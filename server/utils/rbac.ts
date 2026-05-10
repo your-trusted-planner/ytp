@@ -4,14 +4,20 @@
  */
 
 import type { H3Event } from 'h3'
+import type { UserId, ClientId, PersonId } from '../db/types/ids'
 
 export interface AuthenticatedUser {
-  id: string
+  id: UserId
   email: string
   role: 'ADMIN' | 'LAWYER' | 'STAFF' | 'CLIENT' | 'ADVISOR' | 'LEAD' | 'PROSPECT'
   adminLevel: number // 0=none, 1=basic admin, 2=full admin, 3+=super admin
   firstName?: string
   lastName?: string
+  personId?: PersonId | null
+  // Resolved clients.id for CLIENT users (null for staff/admin/lawyer).
+  // Always compare against this — NEVER against `id` — when checking
+  // "does this user own this client record." See Belly Button Principle.
+  clientId?: ClientId | null
 }
 
 /**
@@ -102,9 +108,14 @@ export function isLawyerOrAdmin(event: H3Event): boolean {
 }
 
 /**
- * Check if user is the specified client or a firm member (lawyer/staff/admin)
+ * Check if user is the specified client or a firm member (lawyer/staff/admin).
+ *
+ * Belly Button Principle: a CLIENT user is identified by their `clientId`
+ * (resolved from `personId` at auth-middleware time), NOT by their `users.id`.
+ * Comparing `user.id === clientId` is the legacy bug we are eliminating —
+ * it conflates the authentication identity with the client business identity.
  */
-export function canAccessClient(event: H3Event, clientId: string): boolean {
+export function canAccessClient(event: H3Event, clientId: ClientId): boolean {
   const user = getAuthUser(event)
 
   // Firm members have access to all clients
@@ -112,8 +123,9 @@ export function canAccessClient(event: H3Event, clientId: string): boolean {
     return true
   }
 
-  // Clients can only access their own records
-  if (user.role === 'CLIENT' && user.id === clientId) {
+  // Clients can only access their own client record.
+  // Must compare against user.clientId (the resolved clients.id) — never user.id.
+  if (user.role === 'CLIENT' && user.clientId != null && user.clientId === clientId) {
     return true
   }
 
@@ -126,7 +138,7 @@ export function canAccessClient(event: H3Event, clientId: string): boolean {
 /**
  * Require user to be the specified client or a lawyer/admin
  */
-export function requireClientAccess(event: H3Event, clientId: string) {
+export function requireClientAccess(event: H3Event, clientId: ClientId) {
   if (!canAccessClient(event, clientId)) {
     throw createError({
       statusCode: 403,

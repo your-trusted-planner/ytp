@@ -16,6 +16,7 @@ import {
   requireClientAccess,
   type AuthenticatedUser
 } from '../../../server/utils/rbac'
+import { asUserId, asClientId, asPersonId } from '../../../server/db/types/ids'
 
 // Helper to create mock H3 events
 function createMockEvent(user?: AuthenticatedUser): H3Event {
@@ -26,59 +27,73 @@ function createMockEvent(user?: AuthenticatedUser): H3Event {
   } as unknown as H3Event
 }
 
-// Test users
+// Test users. Note: for CLIENT users, `id` (UserId) and `clientId` (ClientId)
+// are intentionally DIFFERENT — they are different identities under the Belly
+// Button Principle. Authorization must compare against `clientId`, never `id`.
 const adminUser: AuthenticatedUser = {
-  id: 'admin-1',
+  id: asUserId('admin-1'),
   email: 'admin@test.com',
   role: 'ADMIN',
   adminLevel: 2,
   firstName: 'Admin',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-admin-1'),
+  clientId: null
 }
 
 const lawyerUser: AuthenticatedUser = {
-  id: 'lawyer-1',
+  id: asUserId('lawyer-1'),
   email: 'lawyer@test.com',
   role: 'LAWYER',
   adminLevel: 0,
   firstName: 'Lawyer',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-lawyer-1'),
+  clientId: null
 }
 
 const clientUser: AuthenticatedUser = {
-  id: 'client-1',
+  id: asUserId('user-for-client-1'),
   email: 'client@test.com',
   role: 'CLIENT',
   adminLevel: 0,
   firstName: 'Client',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-client-1'),
+  clientId: asClientId('client-1')
 }
 
 const advisorUser: AuthenticatedUser = {
-  id: 'advisor-1',
+  id: asUserId('advisor-1'),
   email: 'advisor@test.com',
   role: 'ADVISOR',
   adminLevel: 0,
   firstName: 'Advisor',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-advisor-1'),
+  clientId: null
 }
 
 const staffUser: AuthenticatedUser = {
-  id: 'staff-1',
+  id: asUserId('staff-1'),
   email: 'staff@test.com',
   role: 'STAFF',
   adminLevel: 0,
   firstName: 'Staff',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-staff-1'),
+  clientId: null
 }
 
 const lawyerWithAdminLevel: AuthenticatedUser = {
-  id: 'lawyer-admin-1',
+  id: asUserId('lawyer-admin-1'),
   email: 'lawyeradmin@test.com',
   role: 'LAWYER',
   adminLevel: 1,
   firstName: 'LawyerAdmin',
-  lastName: 'User'
+  lastName: 'User',
+  personId: asPersonId('person-lawyer-admin-1'),
+  clientId: null
 }
 
 describe('RBAC Utilities', () => {
@@ -253,18 +268,19 @@ describe('RBAC Utilities', () => {
   })
 
   describe('canAccessClient', () => {
-    const targetClientId = 'client-1'
+    const targetClientId = asClientId('client-1')
+    const otherClientId = asClientId('other-client')
 
     it('should allow LAWYER to access any client', () => {
       const event = createMockEvent(lawyerUser)
       expect(canAccessClient(event, targetClientId)).toBe(true)
-      expect(canAccessClient(event, 'other-client')).toBe(true)
+      expect(canAccessClient(event, otherClientId)).toBe(true)
     })
 
     it('should allow ADMIN to access any client', () => {
       const event = createMockEvent(adminUser)
       expect(canAccessClient(event, targetClientId)).toBe(true)
-      expect(canAccessClient(event, 'other-client')).toBe(true)
+      expect(canAccessClient(event, otherClientId)).toBe(true)
     })
 
     it('should allow user with adminLevel to access any client', () => {
@@ -272,14 +288,33 @@ describe('RBAC Utilities', () => {
       expect(canAccessClient(event, targetClientId)).toBe(true)
     })
 
-    it('should allow CLIENT to access their own data', () => {
-      const event = createMockEvent(clientUser) // id: 'client-1'
-      expect(canAccessClient(event, 'client-1')).toBe(true)
+    it('should allow CLIENT to access their own client record (matched by user.clientId, NOT user.id)', () => {
+      // clientUser.id = 'user-for-client-1', clientUser.clientId = 'client-1'.
+      // Authorization must succeed because clientId matches — never because the
+      // user's auth id happens to equal the client id.
+      const event = createMockEvent(clientUser)
+      expect(canAccessClient(event, asClientId('client-1'))).toBe(true)
+    })
+
+    it('should deny CLIENT access when their auth id happens to match (regression guard for old user.id===clientId bug)', () => {
+      // A clientId equal to the user's auth id is NOT the user's client record.
+      // Under the old buggy comparison this returned true; it must be false.
+      const event = createMockEvent(clientUser)
+      expect(canAccessClient(event, asClientId('user-for-client-1'))).toBe(false)
     })
 
     it('should deny CLIENT access to other client data', () => {
       const event = createMockEvent(clientUser)
-      expect(canAccessClient(event, 'other-client')).toBe(false)
+      expect(canAccessClient(event, otherClientId)).toBe(false)
+    })
+
+    it('should deny CLIENT access when they have no clientId attached (e.g., user with no client record)', () => {
+      const orphanClientUser: AuthenticatedUser = {
+        ...clientUser,
+        clientId: null
+      }
+      const event = createMockEvent(orphanClientUser)
+      expect(canAccessClient(event, targetClientId)).toBe(false)
     })
 
     it('should deny ADVISOR access to client data (external third-party)', () => {
@@ -290,21 +325,21 @@ describe('RBAC Utilities', () => {
     it('should allow STAFF to access any client (firm member)', () => {
       const event = createMockEvent(staffUser)
       expect(canAccessClient(event, targetClientId)).toBe(true)
-      expect(canAccessClient(event, 'other-client')).toBe(true)
+      expect(canAccessClient(event, otherClientId)).toBe(true)
     })
   })
 
   describe('requireClientAccess', () => {
     it('should return user when access is granted', () => {
       const event = createMockEvent(lawyerUser)
-      const user = requireClientAccess(event, 'any-client')
+      const user = requireClientAccess(event, asClientId('any-client'))
 
       expect(user).toEqual(lawyerUser)
     })
 
-    it('should return user when client accesses own data', () => {
+    it('should return user when client accesses own data (via clientId, not auth id)', () => {
       const event = createMockEvent(clientUser)
-      const user = requireClientAccess(event, 'client-1')
+      const user = requireClientAccess(event, asClientId('client-1'))
 
       expect(user).toEqual(clientUser)
     })
@@ -312,9 +347,9 @@ describe('RBAC Utilities', () => {
     it('should throw 403 when client tries to access other client data', () => {
       const event = createMockEvent(clientUser)
 
-      expect(() => requireClientAccess(event, 'other-client')).toThrow()
+      expect(() => requireClientAccess(event, asClientId('other-client'))).toThrow()
       try {
-        requireClientAccess(event, 'other-client')
+        requireClientAccess(event, asClientId('other-client'))
       }
       catch (error: any) {
         expect(error.statusCode).toBe(403)

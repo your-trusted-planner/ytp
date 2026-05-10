@@ -2,6 +2,7 @@
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { people } from './people'
+import type { UserId, PersonId } from '../types/ids'
 
 // OAuth Providers table - stores enabled authentication providers
 export const oauthProviders = sqliteTable('oauth_providers', {
@@ -19,9 +20,9 @@ export const oauthProviders = sqliteTable('oauth_providers', {
 // Users table - Authentication/authorization accounts
 // Links to people table for identity (Belly Button Principle)
 export const users = sqliteTable('users', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$type<UserId>(),
   // Link to person identity - every user is a person
-  personId: text('person_id').references(() => people.id),
+  personId: text('person_id').$type<PersonId>().references(() => people.id),
   email: text('email').unique(), // Nullable for imported records without email
   password: text('password'), // Nullable for OAuth-only users
   firebaseUid: text('firebase_uid').unique(), // Firebase user ID for OAuth users

@@ -1,41 +1,42 @@
 // Fixed seed IDs for idempotent seeding
 // These IDs are deterministic so re-running seed updates existing records
 // instead of creating duplicates
+import { asUserId, asPersonId, asClientId } from '../types/ids'
 
 export const SEED_IDS = {
   // System user (for anonymous/automated activity logging)
-  systemUser: 'system',
-  systemPerson: 'system_person',
+  systemUser: asUserId('system'),
+  systemPerson: asPersonId('system_person'),
 
   // Users
   users: {
-    admin: 'seed_user_admin',
-    lawyer: 'seed_user_lawyer',
-    lawyer2: 'seed_user_lawyer2',
-    staff: 'seed_user_staff',
-    advisor: 'seed_user_advisor',
-    client1: 'seed_user_client1',
-    client2: 'seed_user_client2',
-    client3: 'seed_user_client3'
+    admin: asUserId('seed_user_admin'),
+    lawyer: asUserId('seed_user_lawyer'),
+    lawyer2: asUserId('seed_user_lawyer2'),
+    staff: asUserId('seed_user_staff'),
+    advisor: asUserId('seed_user_advisor'),
+    client1: asUserId('seed_user_client1'),
+    client2: asUserId('seed_user_client2'),
+    client3: asUserId('seed_user_client3')
   },
 
   // People (Belly Button Principle)
   people: {
-    janeDoe: 'seed_person_jane_doe',
-    michaelJohnson: 'seed_person_michael_johnson',
-    sarahWilliams: 'seed_person_sarah_williams',
-    robertDoe: 'seed_person_robert_doe',
-    emilyDoe: 'seed_person_emily_doe',
-    jamesDoe: 'seed_person_james_doe',
-    margaretSmith: 'seed_person_margaret_smith',
-    janeDoeMatter: 'seed_person_jane_doe_matter' // For matter roles
+    janeDoe: asPersonId('seed_person_jane_doe'),
+    michaelJohnson: asPersonId('seed_person_michael_johnson'),
+    sarahWilliams: asPersonId('seed_person_sarah_williams'),
+    robertDoe: asPersonId('seed_person_robert_doe'),
+    emilyDoe: asPersonId('seed_person_emily_doe'),
+    jamesDoe: asPersonId('seed_person_james_doe'),
+    margaretSmith: asPersonId('seed_person_margaret_smith'),
+    janeDoeMatter: asPersonId('seed_person_jane_doe_matter') // For matter roles
   },
 
   // Clients
   clients: {
-    jane: 'seed_client_jane',
-    michael: 'seed_client_michael',
-    sarah: 'seed_client_sarah'
+    jane: asClientId('seed_client_jane'),
+    michael: asClientId('seed_client_michael'),
+    sarah: asClientId('seed_client_sarah')
   },
 
   // Client Profiles (legacy)

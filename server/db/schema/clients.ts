@@ -5,13 +5,14 @@ import { sql } from 'drizzle-orm'
 import { people } from './people'
 import { users } from './auth'
 import { marketingSources } from './marketing'
+import type { ClientId, PersonId } from '../types/ids'
 
 // Clients - Client-specific data (Belly Button Principle)
 // Every client is a person, but not every person is a client
 // A client may or may not have a user account for portal access
 export const clients = sqliteTable('clients', {
-  id: text('id').primaryKey(),
-  personId: text('person_id').notNull().references(() => people.id).unique(),
+  id: text('id').primaryKey().$type<ClientId>(),
+  personId: text('person_id').notNull().$type<PersonId>().references(() => people.id).unique(),
   status: text('status', { enum: ['PROSPECTIVE', 'ACTIVE', 'FORMER'] }).notNull().default('PROSPECTIVE'),
 
   // Estate planning (migrated from clientProfiles)
