@@ -16,6 +16,8 @@ export interface TemplateUploadOptions {
   folderId?: string
   /** Skip variable validation (for templates with complex syntax) */
   skipVariableValidation?: boolean
+  /** If provided, use this ID and upsert (refresh content on re-run) instead of generating a new ID */
+  existingId?: string
 }
 
 export interface TemplateUploadResult {
@@ -134,7 +136,7 @@ export async function processTemplateUpload(
   schema: any,
   blob: any
 ): Promise<TemplateUploadResult> {
-  const { buffer, filename, name, description, category, folderId, skipVariableValidation } = options
+  const { buffer, filename, name, description, category, folderId, skipVariableValidation, existingId } = options
 
   // Validate file extension
   const extension = filename.split('.').pop()?.toLowerCase() || ''
@@ -167,8 +169,8 @@ export async function processTemplateUpload(
   // Use provided name or filename without extension
   const templateName = name || filename.replace('.docx', '')
 
-  // Generate template ID
-  const templateId = nanoid()
+  // Use provided ID for idempotent re-seed, otherwise generate
+  const templateId = existingId || nanoid()
 
   // Store original DOCX file in blob storage
   const blobKey = `templates/${templateId}/${filename}`
@@ -188,8 +190,7 @@ export async function processTemplateUpload(
 
   const now = new Date()
 
-  // Create database record
-  await db.insert(schema.documentTemplates).values({
+  const insertValues = {
     id: templateId,
     name: templateName,
     description: description || `Imported from ${filename}`,
@@ -205,7 +206,21 @@ export async function processTemplateUpload(
     docxBlobKey: blobKey,
     createdAt: now,
     updatedAt: now
-  })
+  }
+
+  if (existingId) {
+    // Refresh content on re-seed: upsert by id
+    const { id: _id, createdAt: _createdAt, ...refreshable } = insertValues
+    await db.insert(schema.documentTemplates)
+      .values(insertValues)
+      .onConflictDoUpdate({
+        target: schema.documentTemplates.id,
+        set: refreshable
+      })
+  }
+  else {
+    await db.insert(schema.documentTemplates).values(insertValues)
+  }
 
   return {
     id: templateId,

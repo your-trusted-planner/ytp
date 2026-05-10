@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm'
 import { schema } from '../index'
 import { SEED_IDS } from './constants'
 import type { SeedDb, SeedDates, SeedUserIds, SeedMatterIds, SeedServiceIds, SeedJourneyIds } from './types'
@@ -42,13 +41,12 @@ export async function seedJourneys(
     updatedAt: threeMonthsAgo
   }).onConflictDoNothing()
 
-  // For junction table with composite key, delete then insert
-  await db.delete(schema.journeysToCatalog).where(eq(schema.journeysToCatalog.journeyId, journeyId))
+  // Junction table with composite PK — upsert (delete+insert would break any FK referencing this pair).
   await db.insert(schema.journeysToCatalog).values({
     journeyId,
     catalogId: service1Id,
     createdAt: threeMonthsAgo
-  })
+  }).onConflictDoNothing()
 
   // Journey Steps
   await db.insert(schema.journeySteps).values({

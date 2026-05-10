@@ -1,5 +1,4 @@
 import { schema } from '../index'
-import { eq, and } from 'drizzle-orm'
 import { SEED_IDS } from './constants'
 import type { SeedDb, SeedDates, SeedUserIds, SeedServiceIds, SeedMatterIds } from './types'
 
@@ -51,29 +50,27 @@ export async function seedMatters(
 
   console.log('  Created 3 matters')
 
-  // Matter-Service relationships (use composite key - delete and reinsert for idempotency)
-  await db.delete(schema.mattersToServices).where(
-    and(
-      eq(schema.mattersToServices.matterId, matterIds.janeDoe),
-      eq(schema.mattersToServices.catalogId, service1Id)
-    )
-  )
-  await db.insert(schema.mattersToServices).values({
+  // Matter-Service relationships — upsert on composite PK so we don't violate
+  // the FK from clientJourneys(matterId, catalogId) on re-seed.
+  const janeService = {
     matterId: matterIds.janeDoe,
     catalogId: service1Id,
     engagedAt: twoMonthsAgo,
     assignedAttorneyId: lawyerId,
     status: 'ACTIVE',
     startDate: twoMonthsAgo
+  }
+  await db.insert(schema.mattersToServices).values(janeService).onConflictDoUpdate({
+    target: [schema.mattersToServices.matterId, schema.mattersToServices.catalogId],
+    set: {
+      engagedAt: janeService.engagedAt,
+      assignedAttorneyId: janeService.assignedAttorneyId,
+      status: janeService.status,
+      startDate: janeService.startDate
+    }
   })
 
-  await db.delete(schema.mattersToServices).where(
-    and(
-      eq(schema.mattersToServices.matterId, matterIds.sarahWilliams),
-      eq(schema.mattersToServices.catalogId, service1Id)
-    )
-  )
-  await db.insert(schema.mattersToServices).values({
+  const sarahService = {
     matterId: matterIds.sarahWilliams,
     catalogId: service1Id,
     engagedAt: threeMonthsAgo,
@@ -81,6 +78,16 @@ export async function seedMatters(
     status: 'COMPLETED',
     startDate: threeMonthsAgo,
     endDate: oneMonthAgo
+  }
+  await db.insert(schema.mattersToServices).values(sarahService).onConflictDoUpdate({
+    target: [schema.mattersToServices.matterId, schema.mattersToServices.catalogId],
+    set: {
+      engagedAt: sarahService.engagedAt,
+      assignedAttorneyId: sarahService.assignedAttorneyId,
+      status: sarahService.status,
+      startDate: sarahService.startDate,
+      endDate: sarahService.endDate
+    }
   })
 
   console.log('  Created 2 matter-service relationships')
