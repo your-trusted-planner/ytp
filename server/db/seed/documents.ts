@@ -1,12 +1,13 @@
 import { schema } from '../index'
 import { useTemplateRenderer } from '../../utils/template-renderer'
 import { SEED_IDS } from './constants'
-import type { SeedDb, SeedDates, SeedUserIds, SeedMatterIds, SeedTemplateIds } from './types'
+import type { SeedDb, SeedDates, SeedUserIds, SeedClientIds, SeedMatterIds, SeedTemplateIds } from './types'
 
 export async function seedDocuments(
   db: SeedDb,
   dates: SeedDates,
-  userIds: SeedUserIds,
+  _userIds: SeedUserIds,
+  clientIds: SeedClientIds,
   matterIds: SeedMatterIds,
   templateIds: SeedTemplateIds,
   blob?: any
@@ -14,7 +15,7 @@ export async function seedDocuments(
   console.log('Seeding documents...')
 
   const { oneMonthAgo, twoMonthsAgo, threeMonthsAgo } = dates
-  const { client1Id, client3Id } = userIds
+  const { janeClientId, sarahClientId } = clientIds
   const { matter1Id, matter3Id } = matterIds
   const { template2Id, template3Id, engagementHtml, trustHtml, engagementDocxBuffer, trustDocxBuffer } = templateIds
 
@@ -153,7 +154,7 @@ export async function seedDocuments(
       matterId: matter1Id,
       content: janeEngagementContent,
       variableValues: janeEngagementVars,
-      clientId: client1Id,
+      clientId: janeClientId,
       status: 'SIGNED',
       sentAt: twoMonthsAgo,
       viewedAt: twoMonthsAgo,
@@ -175,7 +176,7 @@ export async function seedDocuments(
       matterId: matter1Id,
       content: janeTrustContent,
       variableValues: janeTrustVars,
-      clientId: client1Id,
+      clientId: janeClientId,
       status: 'DRAFT'
     },
     trustDocxBuffer,
@@ -192,7 +193,7 @@ export async function seedDocuments(
       matterId: matter3Id,
       content: sarahEngagementContent,
       variableValues: sarahEngagementVars,
-      clientId: client3Id,
+      clientId: sarahClientId,
       status: 'COMPLETED',
       sentAt: threeMonthsAgo,
       viewedAt: threeMonthsAgo,
@@ -214,7 +215,7 @@ export async function seedDocuments(
       matterId: matter3Id,
       content: sarahTrustContent,
       variableValues: sarahTrustVars,
-      clientId: client3Id,
+      clientId: sarahClientId,
       status: 'COMPLETED',
       sentAt: twoMonthsAgo,
       viewedAt: twoMonthsAgo,

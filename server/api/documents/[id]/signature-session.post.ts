@@ -137,14 +137,30 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get signer — use override or document client
-  const targetSignerId
-    = overrideSignerId || document.clientId
-  const signer = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, targetSignerId))
-    .get()
+  // Get signer — use override (a users.id) or derive from the document's client
+  // (documents.clientId is a clients.id, which we resolve to its primary user via personId)
+  let signer = overrideSignerId
+    ? await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, overrideSignerId))
+        .get()
+    : null
+
+  if (!signer && document.clientId) {
+    const clientRecord = await db
+      .select({ personId: schema.clients.personId })
+      .from(schema.clients)
+      .where(eq(schema.clients.id, document.clientId))
+      .get()
+    if (clientRecord) {
+      signer = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.personId, clientRecord.personId))
+        .get() ?? null
+    }
+  }
 
   if (!signer) {
     throw createError({
@@ -197,7 +213,7 @@ export default defineEventHandler(async (event) => {
   await db.insert(schema.signatureSessions).values({
     id: sessionId,
     documentId,
-    signerId: targetSignerId,
+    signerId: signer.id,
     signerRole,
     actionItemId: actionItemId || null,
     signatureTier: tier,

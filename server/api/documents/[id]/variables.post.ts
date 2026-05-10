@@ -40,11 +40,20 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can update any document, clients only their own
-  if (user.role === 'CLIENT' && document.clientId !== user.id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
+  // documents.clientId references clients.id — resolve from caller's personId
+  if (user.role === 'CLIENT') {
+    const callerClient = user.personId
+      ? await db.select({ id: schema.clients.id })
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, user.personId))
+          .get()
+      : null
+    if (!callerClient || document.clientId !== callerClient.id) {
+      throw createError({
+        statusCode: 403,
+        message: 'Unauthorized'
+      })
+    }
   }
 
   // Get the template to re-render

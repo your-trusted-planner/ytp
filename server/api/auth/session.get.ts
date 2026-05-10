@@ -65,6 +65,18 @@ export default defineEventHandler(async (event) => {
     await setUserSession(event, { user: session.user, loggedInAt: session.loggedInAt })
   }
 
+  // Resolve clients.id for CLIENT users so the frontend can compare ownership
+  // against documents/journeys/etc. that now reference clients.id
+  let clientId: string | null = null
+  if (dbUser.role === 'CLIENT' && dbUser.personId) {
+    const clientRecord = await db
+      .select({ id: schema.clients.id })
+      .from(schema.clients)
+      .where(eq(schema.clients.personId, dbUser.personId))
+      .get()
+    clientId = clientRecord?.id ?? null
+  }
+
   // Return current user data from database
   return {
     user: {
@@ -77,7 +89,9 @@ export default defineEventHandler(async (event) => {
       avatar: dbUser.avatar,
       status: dbUser.status,
       hasPassword: !!dbUser.password,
-      hasFirebaseAuth: !!dbUser.firebaseUid
+      hasFirebaseAuth: !!dbUser.firebaseUid,
+      personId: dbUser.personId ?? null,
+      clientId
     }
   }
 })

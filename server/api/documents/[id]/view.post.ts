@@ -44,7 +44,16 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.documents.id, id))
     .get()
 
-  if (!document || document.clientId !== user.id) {
+  // documents.clientId references clients.id — resolve from caller's personId
+  const ctxUser = event.context.user as any
+  const callerClient = ctxUser?.personId
+    ? await db.select({ id: schema.clients.id })
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, ctxUser.personId))
+        .get()
+    : null
+
+  if (!document || !callerClient || document.clientId !== callerClient.id) {
     throw createError({
       statusCode: 404,
       message: 'Document not found'

@@ -768,7 +768,7 @@ const canDelete = computed(() => {
   }
 
   // Creator (client) can delete their own DRAFT documents
-  if (user.value.role === 'CLIENT' && document.value.clientId === user.value.id && document.value.status === 'DRAFT') {
+  if (user.value.role === 'CLIENT' && document.value.clientId === (user.value as any).clientId && document.value.status === 'DRAFT') {
     return true
   }
 
@@ -781,7 +781,7 @@ const { user } = useUserSession()
 const isClientSigningOwnDocument = computed(() => {
   if (!document.value || !user.value) return false
   // Only show for CLIENT role viewing their own document
-  return user.value.role === 'CLIENT' && document.value.clientId === user.value.id
+  return user.value.role === 'CLIENT' && document.value.clientId === (user.value as any).clientId
 })
 
 // Get variable mappings from template

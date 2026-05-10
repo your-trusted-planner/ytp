@@ -28,11 +28,20 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can view any document, clients only their own
-  if (user.role === 'CLIENT' && document.clientId !== user.id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Unauthorized'
-    })
+  // documents.clientId references clients.id — resolve the caller's client record
+  if (user.role === 'CLIENT') {
+    const callerClient = user.personId
+      ? await db.select({ id: schema.clients.id })
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, user.personId))
+          .get()
+      : null
+    if (!callerClient || document.clientId !== callerClient.id) {
+      throw createError({
+        statusCode: 403,
+        message: 'Unauthorized'
+      })
+    }
   }
 
   // Get template info if document has a template
@@ -44,17 +53,18 @@ export default defineEventHandler(async (event) => {
       .get()
   }
 
-  // Get client info
-  let clientInfo = null
+  // Get client info — join clients → people for display
+  let clientInfo: { firstName: string | null, lastName: string | null, email: string | null } | null = null
   if (document.clientId) {
     clientInfo = await db.select({
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      email: schema.users.email
+      firstName: schema.people.firstName,
+      lastName: schema.people.lastName,
+      email: schema.people.email
     })
-      .from(schema.users)
-      .where(eq(schema.users.id, document.clientId))
-      .get()
+      .from(schema.clients)
+      .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+      .where(eq(schema.clients.id, document.clientId))
+      .get() ?? null
   }
 
   // Parse template variables if they exist

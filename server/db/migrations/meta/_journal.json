@@ -330,6 +330,13 @@
       "when": 1777047245916,
       "tag": "0046_add_field_placements_multisigner",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1778450469944,
+      "tag": "0047_robust_blur",
+      "breakpoints": true
     }
   ]
 }

@@ -32,8 +32,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // For CLIENT role, resolve their clients.id so we can compare ownership
+  let userClientId: string | null = null
+  if (user.role === 'CLIENT' && user.personId) {
+    const clientRecord = await db.select({ id: schema.clients.id })
+      .from(schema.clients)
+      .where(eq(schema.clients.personId, user.personId))
+      .get()
+    userClientId = clientRecord?.id ?? null
+  }
+
   // Authorization check
-  const canDelete = checkDeleteAuthorization(user, document)
+  const canDelete = checkDeleteAuthorization(user, document, userClientId)
   if (!canDelete) {
     throw createError({
       statusCode: 403,
@@ -137,7 +147,7 @@ export default defineEventHandler(async (event) => {
 /**
  * Check if user is authorized to delete this document
  */
-function checkDeleteAuthorization(user: any, document: any): boolean {
+function checkDeleteAuthorization(user: any, document: any, userClientId: string | null): boolean {
   // Admin level 2+ can delete anything
   if (user.adminLevel >= 2 || user.role === 'ADMIN') {
     return true
@@ -159,7 +169,7 @@ function checkDeleteAuthorization(user: any, document: any): boolean {
   }
 
   // Creator (client) can delete their own DRAFT documents
-  if (user.role === 'CLIENT' && document.clientId === user.id && document.status === 'DRAFT') {
+  if (user.role === 'CLIENT' && userClientId && document.clientId === userClientId && document.status === 'DRAFT') {
     return true
   }
 

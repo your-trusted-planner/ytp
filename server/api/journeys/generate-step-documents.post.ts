@@ -59,12 +59,28 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.clientProfiles.userId, clientUser.id))
     .get()
 
+  // documents.clientId references clients.id — derive from the client's user.personId.
+  // clientJourneys.clientId is still a users.id (different table, not migrated).
+  const clientRecord = clientUser.personId
+    ? await db.select({ id: schema.clients.id })
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, clientUser.personId))
+        .get()
+    : null
+
+  if (!clientRecord) {
+    throw createError({
+      statusCode: 400,
+      message: 'No client record found for this user — cannot generate documents'
+    })
+  }
+
   // Merge client data for compatibility
   const clientJourney = {
     ...clientJourneyRecord,
     ...clientUser,
     ...(clientProfile || {}),
-    client_id: clientJourneyRecord.clientId,
+    client_id: clientRecord.id, // clients.id for documents.clientId writes
     first_name: clientUser.firstName,
     last_name: clientUser.lastName
   }

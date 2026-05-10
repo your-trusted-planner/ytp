@@ -13,7 +13,14 @@ export default defineEventHandler(async (event) => {
     .from(schema.documents)
 
   if (user.role === 'CLIENT') {
-    documentsQuery = documentsQuery.where(eq(schema.documents.clientId, user.id))
+    // documents.clientId now references clients.id — resolve from the user's personId
+    if (!user.personId) return []
+    const clientRecord = await db.select({ id: schema.clients.id })
+      .from(schema.clients)
+      .where(eq(schema.clients.personId, user.personId))
+      .get()
+    if (!clientRecord) return []
+    documentsQuery = documentsQuery.where(eq(schema.documents.clientId, clientRecord.id))
   }
 
   documentsQuery = documentsQuery.orderBy(desc(schema.documents.createdAt))
@@ -28,27 +35,28 @@ export default defineEventHandler(async (event) => {
   const clientIds = [...new Set(docs.map(d => d.clientId).filter(Boolean) as string[])]
   const templateIds = [...new Set(docs.map(d => d.templateId).filter(Boolean) as string[])]
 
-  // Fetch clients and templates in parallel
+  // Fetch clients (joined to people for names) and templates in parallel
   const [clients, templates] = await Promise.all([
-    clientIds.length > 0 ?
-        db.select({
-          id: schema.users.id,
-          firstName: schema.users.firstName,
-          lastName: schema.users.lastName
+    clientIds.length > 0
+      ? db.select({
+          id: schema.clients.id,
+          firstName: schema.people.firstName,
+          lastName: schema.people.lastName
         })
-          .from(schema.users)
-          .where(inArray(schema.users.id, clientIds))
-          .all() :
-        [],
-    templateIds.length > 0 ?
-        db.select({
+          .from(schema.clients)
+          .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+          .where(inArray(schema.clients.id, clientIds))
+          .all()
+      : [],
+    templateIds.length > 0
+      ? db.select({
           id: schema.documentTemplates.id,
           name: schema.documentTemplates.name
         })
           .from(schema.documentTemplates)
           .where(inArray(schema.documentTemplates.id, templateIds))
-          .all() :
-        []
+          .all()
+      : []
   ])
 
   // Create lookup maps

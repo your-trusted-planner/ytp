@@ -2,6 +2,7 @@
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
+import { clients } from './clients'
 import { matters } from './matters'
 import { clientJourneys, actionItems } from './journeys'
 
@@ -63,7 +64,7 @@ export const documents = sqliteTable('documents', {
   attorneyApprovedBy: text('attorney_approved_by').references(() => users.id),
   readyForSignature: integer('ready_for_signature', { mode: 'boolean' }).notNull().default(false),
   readyForSignatureAt: integer('ready_for_signature_at', { mode: 'timestamp' }),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  clientId: text('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
   signedAt: integer('signed_at', { mode: 'timestamp' }),
   signatureData: text('signature_data'),
   viewedAt: integer('viewed_at', { mode: 'timestamp' }),

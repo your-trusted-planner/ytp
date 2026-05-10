@@ -6,12 +6,20 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   const now = new Date()
 
-  // Get all documents for this client
-  const documents = await db
-    .select()
-    .from(schema.documents)
-    .where(eq(schema.documents.clientId, user.id))
-    .all()
+  // Get all documents for this client — documents.clientId references clients.id
+  const clientRecord = user.personId
+    ? await db.select({ id: schema.clients.id })
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, user.personId))
+        .get()
+    : null
+  const documents = clientRecord
+    ? await db
+        .select()
+        .from(schema.documents)
+        .where(eq(schema.documents.clientId, clientRecord.id))
+        .all()
+    : []
 
   const pendingDocuments = documents.filter(d =>
     d.status === 'SENT' || d.status === 'VIEWED'

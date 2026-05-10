@@ -52,17 +52,20 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
   // Phase 7: People & Relationships
   await seedRelationships(db, dates, userIds, matterIds)
 
-  // Phase 8: Documents
-  await seedDocuments(db, dates, userIds, matterIds, templateIds, blob)
-
-  // Phase 9: Clients & Billing (Belly Button Principle)
+  // Phase 8: Clients (Belly Button Principle) — must come before documents now that
+  // documents.clientId references clients.id
   const clientIds = await seedClients(db, dates, userIds)
+
+  // Phase 9: Documents
+  await seedDocuments(db, dates, userIds, clientIds, matterIds, templateIds, blob)
+
+  // Phase 10: Billing (depends on clientIds)
   await seedBilling(db, dates, userIds, clientIds, matterIds, serviceIds)
 
-  // Phase 10: Questionnaires
+  // Phase 11: Questionnaires
   await seedQuestionnaires(db)
 
-  // Phase 11: Message Templates
+  // Phase 12: Message Templates
   await seedMessageTemplates(db as any)
 
   // Summary

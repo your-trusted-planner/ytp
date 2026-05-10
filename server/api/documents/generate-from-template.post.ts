@@ -44,58 +44,52 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // body.clientId may be clients.id — resolve to users.id for legacy table queries
+  // Resolve client identity via the Belly Button (people) table
   const { resolveClientIds } = await import('../../utils/client-ids')
   const resolved = await resolveClientIds(body.clientId)
-  const legacyClientId = resolved?.userIds[0] || body.clientId
 
-  // Get client data
-  const clientData = await db.select({
-    // User fields
-    id: schema.users.id,
-    email: schema.users.email,
-    firstName: schema.users.firstName,
-    lastName: schema.users.lastName,
-    phone: schema.users.phone,
-    // Client profile fields
-    dateOfBirth: schema.clientProfiles.dateOfBirth,
-    address: schema.clientProfiles.address,
-    city: schema.clientProfiles.city,
-    state: schema.clientProfiles.state,
-    zipCode: schema.clientProfiles.zipCode,
-    hasMinorChildren: schema.clientProfiles.hasMinorChildren,
-    childrenInfo: schema.clientProfiles.childrenInfo,
-    businessName: schema.clientProfiles.businessName,
-    businessType: schema.clientProfiles.businessType
-  })
-    .from(schema.users)
-    .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
-    .where(eq(schema.users.id, legacyClientId))
-    .get()
-
-  if (!clientData) {
+  if (!resolved || !resolved.clientTableId) {
     throw createError({
       statusCode: 404,
       message: 'Client not found'
     })
   }
 
-  // Map to snake_case for compatibility with existing code
+  const clientTableId = resolved.clientTableId
+
+  // Get client identity (people + client-specific fields)
+  const person = await db.select()
+    .from(schema.people)
+    .where(eq(schema.people.id, resolved.personId))
+    .get()
+
+  if (!person) {
+    throw createError({
+      statusCode: 404,
+      message: 'Client person record not found'
+    })
+  }
+
+  const clientRow = await db.select()
+    .from(schema.clients)
+    .where(eq(schema.clients.id, clientTableId))
+    .get()
+
   const client = {
-    id: clientData.id,
-    email: clientData.email,
-    first_name: clientData.firstName,
-    last_name: clientData.lastName,
-    phone: clientData.phone,
-    date_of_birth: clientData.dateOfBirth,
-    address: clientData.address,
-    city: clientData.city,
-    state: clientData.state,
-    zip_code: clientData.zipCode,
-    has_minor_children: clientData.hasMinorChildren,
-    children_info: clientData.childrenInfo,
-    business_name: clientData.businessName,
-    business_type: clientData.businessType
+    id: clientTableId,
+    email: person.email,
+    first_name: person.firstName,
+    last_name: person.lastName,
+    phone: person.phone,
+    date_of_birth: person.dateOfBirth,
+    address: person.address,
+    city: person.city,
+    state: person.state,
+    zip_code: person.zipCode,
+    has_minor_children: clientRow?.hasMinorChildren ?? false,
+    children_info: clientRow?.childrenInfo ?? null,
+    business_name: clientRow?.businessName ?? null,
+    business_type: clientRow?.businessType ?? null
   }
 
   // Get spouse information from unified relationships table
@@ -154,7 +148,7 @@ export default defineEventHandler(async (event) => {
       ? await resolveVariableMappings(
         variableMappings,
         {
-          clientId: body.clientId,
+          clientId: clientTableId,
           matterId: body.matterId || null,
         },
       )
@@ -287,7 +281,7 @@ export default defineEventHandler(async (event) => {
     mimeType: 'text/html',
     variableValues: JSON.stringify(context),
     requiresNotary: template.requiresNotary,
-    clientId: body.clientId,
+    clientId: clientTableId,
     signedAt: null,
     signatureData: null,
     viewedAt: null,
@@ -304,7 +298,7 @@ export default defineEventHandler(async (event) => {
     userRole: user.role,
     target: { type: 'document', id: documentId, name: documentTitle },
     relatedEntities: [
-      { type: 'client', id: body.clientId, name: clientFullName },
+      { type: 'client', id: clientTableId, name: clientFullName },
       { type: 'template', id: template.id, name: template.name }
     ],
     matterId: body.matterId || undefined,
@@ -351,7 +345,7 @@ export default defineEventHandler(async (event) => {
       mime_type: 'text/html',
       variable_values: JSON.stringify(context),
       requires_notary: template.requiresNotary,
-      client_id: body.clientId,
+      client_id: clientTableId,
       signed_at: null,
       signature_data: null,
       viewed_at: null,

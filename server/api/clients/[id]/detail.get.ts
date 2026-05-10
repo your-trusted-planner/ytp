@@ -76,10 +76,10 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(schema.clientJourneys.priority), desc(schema.clientJourneys.createdAt))
       .all(),
 
-    // 4. Documents
+    // 4. Documents — clientId now references clients.id directly
     db.select()
       .from(schema.documents)
-      .where(or(...allIds.map(id => eq(schema.documents.clientId, id))))
+      .where(eq(schema.documents.clientId, clientId))
       .orderBy(desc(schema.documents.createdAt))
       .all(),
 
