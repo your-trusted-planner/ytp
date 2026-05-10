@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
 
-  // Update person record (source of truth for identity data)
+  // Update person record (source of truth for identity data, including address).
   await db.update(schema.people)
     .set({
       firstName: first_name,
@@ -53,6 +53,10 @@ export default defineEventHandler(async (event) => {
       fullName: `${first_name} ${last_name}`,
       email,
       phone: phone || null,
+      address: address ?? null,
+      city: city ?? null,
+      state: state ?? null,
+      zipCode: zip_code ?? null,
       updatedAt: now
     })
     .where(eq(schema.people.id, resolved.personId))
@@ -96,35 +100,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Update client profile (address data)
-    const existingProfile = await db.select({ userId: schema.clientProfiles.userId })
-      .from(schema.clientProfiles)
-      .where(eq(schema.clientProfiles.userId, legacyUserId))
-      .get()
-
-    if (existingProfile) {
-      await db.update(schema.clientProfiles)
-        .set({
-          address: address || null,
-          city: city || null,
-          state: state || null,
-          zipCode: zip_code || null,
-          updatedAt: now
-        })
-        .where(eq(schema.clientProfiles.userId, legacyUserId))
-    }
-    else {
-      await db.insert(schema.clientProfiles).values({
-        id: crypto.randomUUID(),
-        userId: legacyUserId,
-        address: address || null,
-        city: city || null,
-        state: state || null,
-        zipCode: zip_code || null,
-        createdAt: now,
-        updatedAt: now
-      })
-    }
   }
 
   // Note: client status is now derived from matters via the clients_with_status view
@@ -136,16 +111,16 @@ export default defineEventHandler(async (event) => {
     .where(eq(schema.people.id, resolved.personId))
     .get()
 
-  const updatedProfile = legacyUserId ?
-      await db.select()
-        .from(schema.clientProfiles)
-        .where(eq(schema.clientProfiles.userId, legacyUserId))
-        .get() :
-    null
-
   return {
     success: true,
     client: updatedPerson,
-    profile: updatedProfile || null
+    profile: updatedPerson
+      ? {
+          address: updatedPerson.address ?? null,
+          city: updatedPerson.city ?? null,
+          state: updatedPerson.state ?? null,
+          zipCode: updatedPerson.zipCode ?? null
+        }
+      : null
   }
 })

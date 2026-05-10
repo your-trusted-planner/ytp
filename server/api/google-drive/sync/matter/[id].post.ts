@@ -96,14 +96,16 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.matters.id, matterId))
   }
 
-  // Get client profile to find parent folder
-  const clientProfile = await db
-    .select()
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, matter.clientId))
+  // Get client folder ID. matter.clientId is still users.id today (will become
+  // clients.id once matters is migrated); join through people for now.
+  const clientRow = await db
+    .select({ googleDriveFolderId: schema.clients.googleDriveFolderId })
+    .from(schema.users)
+    .innerJoin(schema.clients, eq(schema.clients.personId, schema.users.personId))
+    .where(eq(schema.users.id, matter.clientId))
     .get()
 
-  if (!clientProfile?.googleDriveFolderId) {
+  if (!clientRow?.googleDriveFolderId) {
     throw createError({
       statusCode: 400,
       message: 'Client does not have a Google Drive folder. Please sync the client first.'
@@ -112,7 +114,7 @@ export default defineEventHandler(async (event) => {
 
   // Verify the client folder is still accessible
   try {
-    await getFile(clientProfile.googleDriveFolderId)
+    await getFile(clientRow.googleDriveFolderId)
   }
   catch (error) {
     throw createError({
@@ -126,7 +128,7 @@ export default defineEventHandler(async (event) => {
       matterId,
       matter.title,
       matter.matterNumber || 'NO-NUMBER',
-      clientProfile.googleDriveFolderId
+      clientRow.googleDriveFolderId
     )
 
     return {

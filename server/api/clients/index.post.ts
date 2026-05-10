@@ -157,27 +157,6 @@ export default defineEventHandler(async (event) => {
     referralNotes: data.referralNotes || null
   })
 
-  // Also create legacy client profile for backward compatibility
-  // TODO: Remove after full migration to clients table
-  await db.insert(schema.clientProfiles).values({
-    id: generateId(),
-    userId,
-    dateOfBirth: dateOfBirth || null,
-    address: data.address || null,
-    city: data.city || null,
-    state: data.state || null,
-    zipCode: data.zipCode || null,
-    hasMinorChildren: data.hasMinorChildren,
-    childrenInfo: data.childrenInfo || null,
-    businessName: data.businessName || null,
-    businessType: data.businessType || null,
-    hasWill: data.hasWill,
-    hasTrust: data.hasTrust,
-    referralType: data.referralType || null,
-    referredByPartnerId: data.referredByPartnerId || null,
-    referralNotes: data.referralNotes || null
-  })
-
   // Log activity
   const clientName = `${data.firstName} ${data.lastName}`
   await logActivity({

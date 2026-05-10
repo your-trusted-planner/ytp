@@ -401,15 +401,17 @@ export async function upsertClient(
       })
       .where(eq(schema.users.id, existing.id))
 
-    // Update or create profile if provided
+    // Update profile fields on `people` (source of truth) instead of the
+    // deprecated `client_profiles` table. Requires the user to have a linked
+    // person; if missing the legacy importer didn't create one — skip with a
+    // warning rather than create silent drift.
     if (transformed.profile) {
-      const existingProfile = await db.select()
-        .from(schema.clientProfiles)
-        .where(eq(schema.clientProfiles.userId, existing.id))
+      const userRow = await db.select({ personId: schema.users.personId })
+        .from(schema.users)
+        .where(eq(schema.users.id, existing.id))
         .get()
 
-      if (existingProfile) {
-        // Apply field-level protection to profile fields too
+      if (userRow?.personId) {
         const incomingProfileFields: Record<string, any> = {
           dateOfBirth: transformed.profile.dateOfBirth,
           address: transformed.profile.address,
@@ -419,34 +421,45 @@ export async function upsertClient(
         }
         const { filteredData: filteredProfileData } = filterLocallyModifiedFields(incomingProfileFields, existingMeta)
 
-        await db.update(schema.clientProfiles)
+        await db.update(schema.people)
           .set({
             ...filteredProfileData,
             updatedAt: new Date()
           })
-          .where(eq(schema.clientProfiles.id, existingProfile.id))
+          .where(eq(schema.people.id, userRow.personId))
       }
       else {
-        await db.insert(schema.clientProfiles).values({
-          id: transformed.profile.id,
-          userId: existing.id,
-          dateOfBirth: transformed.profile.dateOfBirth,
-          address: transformed.profile.address,
-          city: transformed.profile.city,
-          state: transformed.profile.state,
-          zipCode: transformed.profile.zipCode,
-          createdAt: transformed.profile.createdAt,
-          updatedAt: transformed.profile.updatedAt
-        })
+        console.warn(`[lawmatics] Skipping profile fields for user ${existing.id}: no linked person record (Belly Button Principle)`)
       }
     }
 
     return { action: 'updated', id: existing.id, externalId }
   }
 
-  // Insert new user
+  // Insert new user with a backing person record (Belly Button Principle).
+  // The person carries identity + address; the user is just auth metadata.
+  const newPersonId = `person_${transformed.user.id}`
+
+  await db.insert(schema.people).values({
+    id: newPersonId,
+    personType: 'individual',
+    firstName: transformed.user.firstName ?? null,
+    lastName: transformed.user.lastName ?? null,
+    fullName: [transformed.user.firstName, transformed.user.lastName].filter(Boolean).join(' ') || null,
+    email: transformed.user.email,
+    phone: transformed.user.phone ?? null,
+    address: transformed.profile?.address ?? null,
+    city: transformed.profile?.city ?? null,
+    state: transformed.profile?.state ?? null,
+    zipCode: transformed.profile?.zipCode ?? null,
+    dateOfBirth: transformed.profile?.dateOfBirth ?? null,
+    createdAt: transformed.user.createdAt,
+    updatedAt: transformed.user.updatedAt
+  }).onConflictDoNothing()
+
   await db.insert(schema.users).values({
     id: transformed.user.id,
+    personId: newPersonId,
     email: transformed.user.email,
     firstName: transformed.user.firstName,
     lastName: transformed.user.lastName,
@@ -457,21 +470,6 @@ export async function upsertClient(
     createdAt: transformed.user.createdAt,
     updatedAt: transformed.user.updatedAt
   })
-
-  // Insert profile if provided
-  if (transformed.profile) {
-    await db.insert(schema.clientProfiles).values({
-      id: transformed.profile.id,
-      userId: transformed.user.id,
-      dateOfBirth: transformed.profile.dateOfBirth,
-      address: transformed.profile.address,
-      city: transformed.profile.city,
-      state: transformed.profile.state,
-      zipCode: transformed.profile.zipCode,
-      createdAt: transformed.profile.createdAt,
-      updatedAt: transformed.profile.updatedAt
-    })
-  }
 
   return { action: 'created', id: transformed.user.id, externalId }
 }

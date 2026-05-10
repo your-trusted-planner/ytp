@@ -1,4 +1,6 @@
 // Get all journeys for a specific client
+import { asClientId } from '../../../db/types/ids'
+
 export default defineEventHandler(async (event) => {
   const clientId = getRouterParam(event, 'clientId')
 
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Clients can only view their own journeys
-  requireClientAccess(event, clientId)
+  requireClientAccess(event, asClientId(clientId))
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, or, desc, sql } = await import('drizzle-orm')

@@ -118,24 +118,30 @@ export default defineEventHandler(async (event) => {
     if (driveEnabled) {
       googleDrive.enabled = true
 
-      // Get client info for folder creation
-      const clientUser = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, legacyClientId))
-        .get()
+      // Drive folder state lives on `clients`; client name comes from `people`.
+      const clientRow = resolved?.clientTableId
+        ? await db
+            .select({
+              id: schema.clients.id,
+              firstName: schema.people.firstName,
+              lastName: schema.people.lastName,
+              googleDriveFolderId: schema.clients.googleDriveFolderId
+            })
+            .from(schema.clients)
+            .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+            .where(eq(schema.clients.id, resolved.clientTableId))
+            .get()
+        : null
 
-      // Get client profile to check for existing Drive folder
-      const clientProfile = await db
-        .select()
-        .from(schema.clientProfiles)
-        .where(eq(schema.clientProfiles.userId, legacyClientId))
-        .get()
+      // Some downstream calls (e.g., createClientFolder) still operate on the
+      // legacy users.id key; keep a reference for them.
+      const clientUser = clientRow
+        ? { firstName: clientRow.firstName, lastName: clientRow.lastName }
+        : null
 
-      console.log('[Matter Create] Client profile found:', !!clientProfile)
-      console.log('[Matter Create] Client googleDriveFolderId:', clientProfile?.googleDriveFolderId)
+      console.log('[Matter Create] Client folder found:', !!clientRow?.googleDriveFolderId)
 
-      let clientFolderId = clientProfile?.googleDriveFolderId
+      let clientFolderId: string | null | undefined = clientRow?.googleDriveFolderId
 
       // If client has a folder ID, verify it's still accessible
       if (clientFolderId) {
@@ -157,11 +163,11 @@ export default defineEventHandler(async (event) => {
         console.log('[Matter Create] Creating client folder automatically...')
         googleDrive.clientHasFolder = false
 
-        if (clientUser) {
+        if (clientUser && resolved?.clientTableId) {
           try {
             const clientName = `${clientUser.lastName || ''}, ${clientUser.firstName || ''}`.trim() || 'Unknown Client'
             console.log('[Matter Create] Creating client folder for:', clientName)
-            const clientFolder = await createClientFolder(legacyClientId, clientName)
+            const clientFolder = await createClientFolder(resolved.clientTableId, clientName)
             clientFolderId = clientFolder.id
             googleDrive.clientHasFolder = true
             console.log('[Matter Create] Client folder created:', clientFolderId)

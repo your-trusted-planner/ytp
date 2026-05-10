@@ -1,4 +1,6 @@
 // Get all relationships for a client
+import { asClientId } from '../../../../db/types/ids'
+
 export default defineEventHandler(async (event) => {
   const clientId = getRouterParam(event, 'id')
   if (!clientId) {
@@ -6,7 +8,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can view any client's relationships, clients only their own
-  requireClientAccess(event, clientId)
+  requireClientAccess(event, asClientId(clientId))
 
   const { useDrizzle, schema } = await import('../../../../db')
   const { eq, or, inArray } = await import('drizzle-orm')

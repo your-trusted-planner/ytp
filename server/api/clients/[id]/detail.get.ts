@@ -3,6 +3,7 @@
 // Replaces: /api/clients/:id, /api/clients/:id/matters, /api/client-journeys/client/:id,
 //           /api/clients/:id/documents, /api/clients/:id/relationships,
 //           /api/trust/clients/:id/balance, /api/invoices?clientId=:id&status=outstanding
+import { asClientId } from '../../../db/types/ids'
 
 export default defineEventHandler(async (event) => {
   const clientId = getRouterParam(event, 'id')
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can view any client, clients can only view themselves
-  requireClientAccess(event, clientId)
+  requireClientAccess(event, asClientId(clientId))
 
   const { useDrizzle, schema } = await import('../../../db')
   const { eq, or, desc, inArray, and, sql } = await import('drizzle-orm')

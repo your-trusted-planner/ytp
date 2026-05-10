@@ -1,4 +1,6 @@
 // Get all matters for a client with aggregated stats
+import { asClientId } from '../../../db/types/ids'
+
 export default defineEventHandler(async (event) => {
   const clientId = getRouterParam(event, 'id')
 
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Authorization: lawyers/admins can view any client, clients can only view themselves
-  requireClientAccess(event, clientId)
+  requireClientAccess(event, asClientId(clientId))
 
   const { useDrizzle } = await import('../../../db')
   const { sql } = await import('drizzle-orm')

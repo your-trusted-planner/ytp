@@ -53,11 +53,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get client profile if exists
-  const clientProfile = await db.select()
-    .from(schema.clientProfiles)
-    .where(eq(schema.clientProfiles.userId, clientUser.id))
-    .get()
+  // Get client identity (address/city/state/zipCode) from `people` — the
+  // source of truth under the Belly Button Principle. Optional client row
+  // for business fields (hasMinorChildren etc., not used here today).
+  const person = clientUser.personId
+    ? await db.select()
+        .from(schema.people)
+        .where(eq(schema.people.id, clientUser.personId))
+        .get()
+    : null
 
   // documents.clientId references clients.id — derive from the client's user.personId.
   // clientJourneys.clientId is still a users.id (different table, not migrated).
@@ -79,7 +83,7 @@ export default defineEventHandler(async (event) => {
   const clientJourney = {
     ...clientJourneyRecord,
     ...clientUser,
-    ...(clientProfile || {}),
+    ...(person || {}),
     client_id: clientRecord.id, // clients.id for documents.clientId writes
     first_name: clientUser.firstName,
     last_name: clientUser.lastName

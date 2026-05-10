@@ -2,13 +2,15 @@
  * POST /api/google-drive/sync/client/[id]
  * Manually trigger Google Drive folder creation for a client
  *
+ * URL param `id` is a clients.id (Belly Button Principle).
+ *
  * Query params:
  *   - force=true: Clear existing folder reference and create new folder in current configured drive
  */
 
 import { eq } from 'drizzle-orm'
 import { requireRole } from '../../../../utils/rbac'
-import { isDriveEnabled, createClientFolder, getFile, getDriveConfig } from '../../../../utils/google-drive'
+import { isDriveEnabled, createClientFolder, getFile } from '../../../../utils/google-drive'
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, ['ADMIN', 'LAWYER'])
@@ -35,18 +37,18 @@ export default defineEventHandler(async (event) => {
   const { useDrizzle, schema } = await import('../../../../db')
   const db = useDrizzle()
 
-  // Get client info
+  // Drive folder state lives on `clients`; client identity lives on `people`.
   const client = await db
     .select({
-      id: schema.users.id,
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      googleDriveFolderId: schema.clientProfiles.googleDriveFolderId,
-      googleDriveFolderUrl: schema.clientProfiles.googleDriveFolderUrl
+      id: schema.clients.id,
+      firstName: schema.people.firstName,
+      lastName: schema.people.lastName,
+      googleDriveFolderId: schema.clients.googleDriveFolderId,
+      googleDriveFolderUrl: schema.clients.googleDriveFolderUrl
     })
-    .from(schema.users)
-    .leftJoin(schema.clientProfiles, eq(schema.users.id, schema.clientProfiles.userId))
-    .where(eq(schema.users.id, clientId))
+    .from(schema.clients)
+    .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+    .where(eq(schema.clients.id, clientId))
     .get()
 
   if (!client) {
@@ -59,10 +61,7 @@ export default defineEventHandler(async (event) => {
   // If folder exists and not forcing resync, verify it's still accessible
   if (client.googleDriveFolderId && !forceResync) {
     try {
-      // Try to access the existing folder
       const existingFolder = await getFile(client.googleDriveFolderId)
-
-      // Folder exists and is accessible
       return {
         success: true,
         message: 'Client already has a Google Drive folder',
@@ -72,12 +71,9 @@ export default defineEventHandler(async (event) => {
       }
     }
     catch (error) {
-      // Folder is not accessible - it may have been deleted or is in a different drive
-      // We'll fall through to create a new one
       console.warn(`Existing folder ${client.googleDriveFolderId} not accessible, will create new folder:`, error)
 
-      // Clear the old folder reference
-      await db.update(schema.clientProfiles)
+      await db.update(schema.clients)
         .set({
           googleDriveFolderId: null,
           googleDriveFolderUrl: null,
@@ -85,13 +81,13 @@ export default defineEventHandler(async (event) => {
           googleDriveSyncError: null,
           updatedAt: new Date()
         })
-        .where(eq(schema.clientProfiles.userId, clientId))
+        .where(eq(schema.clients.id, clientId))
     }
   }
 
   // If forcing resync, clear existing folder reference first
   if (forceResync && client.googleDriveFolderId) {
-    await db.update(schema.clientProfiles)
+    await db.update(schema.clients)
       .set({
         googleDriveFolderId: null,
         googleDriveFolderUrl: null,
@@ -99,7 +95,7 @@ export default defineEventHandler(async (event) => {
         googleDriveSyncError: null,
         updatedAt: new Date()
       })
-      .where(eq(schema.clientProfiles.userId, clientId))
+      .where(eq(schema.clients.id, clientId))
   }
 
   try {
@@ -114,14 +110,13 @@ export default defineEventHandler(async (event) => {
     }
   }
   catch (error) {
-    // Update status to ERROR
-    await db.update(schema.clientProfiles)
+    await db.update(schema.clients)
       .set({
         googleDriveSyncStatus: 'ERROR',
         googleDriveSyncError: error instanceof Error ? error.message : 'Unknown error',
         updatedAt: new Date()
       })
-      .where(eq(schema.clientProfiles.userId, clientId))
+      .where(eq(schema.clients.id, clientId))
 
     throw createError({
       statusCode: 500,

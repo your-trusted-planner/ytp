@@ -595,7 +595,7 @@ export async function createClientFolder(
   const { useDrizzle, schema } = await import('../db')
   const db = useDrizzle()
 
-  await db.update(schema.clientProfiles)
+  await db.update(schema.clients)
     .set({
       googleDriveFolderId: folder.id,
       googleDriveFolderUrl: folder.webViewLink,
@@ -604,7 +604,7 @@ export async function createClientFolder(
       googleDriveLastSyncAt: new Date(),
       updatedAt: new Date()
     })
-    .where(eq(schema.clientProfiles.userId, clientId))
+    .where(eq(schema.clients.id, clientId))
 
   return folder
 }
