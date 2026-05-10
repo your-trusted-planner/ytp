@@ -62,14 +62,14 @@ export default defineEventHandler(async (event) => {
       // Document info
       documentTitle: schema.documents.title,
       documentStatus: schema.documents.status,
-      // Signer info
-      signerEmail: schema.users.email,
-      signerFirstName: schema.users.firstName,
-      signerLastName: schema.users.lastName
+      // Signer info — joins people now (signer is a person, not a user).
+      signerEmail: schema.people.email,
+      signerFirstName: schema.people.firstName,
+      signerLastName: schema.people.lastName
     })
     .from(schema.signatureSessions)
     .leftJoin(schema.documents, eq(schema.signatureSessions.documentId, schema.documents.id))
-    .leftJoin(schema.users, eq(schema.signatureSessions.signerId, schema.users.id))
+    .leftJoin(schema.people, eq(schema.signatureSessions.signerId, schema.people.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(schema.signatureSessions.createdAt))
     .limit(limit)

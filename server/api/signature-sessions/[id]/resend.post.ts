@@ -93,8 +93,8 @@ export default defineEventHandler(async (event) => {
 
   const signer = await db
     .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, session.signerId))
+    .from(schema.people)
+    .where(eq(schema.people.id, session.signerId))
     .get()
 
   if (!signer) {
@@ -138,16 +138,16 @@ export default defineEventHandler(async (event) => {
     timeZoneName: 'short'
   })
 
-  if (!signer.personId) {
+  if (!signer.email) {
     throw createError({
       statusCode: 400,
-      message: 'Signer has no linked person record — cannot send email'
+      message: 'Signer has no email address — cannot send reminder'
     })
   }
 
   await sendTemplatedMessage({
     templateSlug: 'signature-request',
-    recipientPersonId: signer.personId,
+    recipientPersonId: signer.id,
     variables: {
       documentTitle: document.title,
       senderName,

@@ -31,8 +31,9 @@ const createSessionSchema = z.object({
   // Multi-signer: which signer role (1-6)
   signerRole: z.number().int().min(1).max(6)
     .optional().default(1),
-  // Override signer (for multi-signer with
-  // different users per role)
+  // Override signer (people.id) for multi-signer flows.
+  // The signer is a person identity, so this can be a spouse/fiduciary/
+  // witness without a portal user account.
   signerId: z.string().optional()
 })
 
@@ -62,8 +63,11 @@ export default defineEventHandler(async (event) => {
 
   const {
     tier, expiresIn, sendEmail, message,
-    actionItemId, signerRole, signerId: overrideSignerId,
+    actionItemId, signerRole, signerId: overrideSignerIdRaw,
   } = parseResult.data
+  // Boundary cast: incoming string is treated as a people.id.
+  const { asPersonId } = await import('../../../db/types/ids')
+  const overrideSignerId = overrideSignerIdRaw ? asPersonId(overrideSignerIdRaw) : undefined
 
   // Database not available in mock mode
   if (!isDatabaseAvailable()) {
@@ -137,13 +141,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Get signer — use override (a users.id) or derive from the document's client
-  // (documents.clientId is a clients.id, which we resolve to its primary user via personId)
+  // Get signer — signers are *persons* (not users) so non-portal signers
+  // like spouses, fiduciaries, and witnesses can sign too.
+  // - overrideSignerId is a people.id (caller specifies a person directly).
+  // - Otherwise derive from document.clientId → clients.personId.
   let signer = overrideSignerId
     ? await db
         .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, overrideSignerId))
+        .from(schema.people)
+        .where(eq(schema.people.id, overrideSignerId))
         .get()
     : null
 
@@ -156,8 +162,8 @@ export default defineEventHandler(async (event) => {
     if (clientRecord) {
       signer = await db
         .select()
-        .from(schema.users)
-        .where(eq(schema.users.personId, clientRecord.personId))
+        .from(schema.people)
+        .where(eq(schema.people.id, clientRecord.personId))
         .get() ?? null
     }
   }
@@ -256,14 +262,14 @@ export default defineEventHandler(async (event) => {
       timeZoneName: 'short'
     })
 
-    if (!signer.personId) {
-      console.warn('[Signature Session] Signer has no personId, cannot send templated email:', signer.email)
+    if (!signer.email) {
+      console.warn('[Signature Session] Signer has no email, cannot send templated message:', signer.id)
     }
     else {
       try {
         await sendTemplatedMessage({
           templateSlug: 'signature-request',
-          recipientPersonId: signer.personId,
+          recipientPersonId: signer.id,
           variables: {
             documentTitle: document.title,
             senderName,

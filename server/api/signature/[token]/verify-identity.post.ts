@@ -146,11 +146,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Fetch signer info
+  // Fetch signer info from people (signer is a person identity).
   const signer = await db
     .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, session.signerId))
+    .from(schema.people)
+    .where(eq(schema.people.id, session.signerId))
     .get()
 
   if (!signer) {
@@ -179,17 +179,10 @@ export default defineEventHandler(async (event) => {
       break
 
     case 'kba':
-      // Get stored data for KBA verification
-      // Look up person record linked to user if available
-      const person = await db
-        .select()
-        .from(schema.people)
-        .where(eq(schema.people.userId, signer.id))
-        .get()
-
+      // KBA pulls from the signer's people row directly (signer IS the person).
       verificationResult = await verifyByKba(request, {
-        dateOfBirth: person?.dateOfBirth?.toString() || signer.dateOfBirth?.toString(),
-        lastFourSsn: person?.ssnLastFour || undefined
+        dateOfBirth: signer.dateOfBirth?.toString(),
+        lastFourSsn: signer.tinLast4 || undefined
       })
       break
 
@@ -212,13 +205,16 @@ export default defineEventHandler(async (event) => {
     description: verificationResult.success ?
       `Identity verified via ${request.mode} for "${document?.title || 'document'}"` :
       `Identity verification failed via ${request.mode} for "${document?.title || 'document'}"`,
-    userId: signer.id,
-    userRole: signer.role,
+    // The signer is a person, not necessarily an authenticated user. Log
+    // as the system actor and put signer identity in details for audit.
+    userRole: 'SYSTEM',
     target: document ? { type: 'document', id: document.id, name: document.title } : undefined,
     matterId: document?.matterId || undefined,
     event,
     details: {
       signatureSessionId: session.id,
+      signerPersonId: signer.id,
+      signerName,
       verificationMode: request.mode,
       verificationSuccess: verificationResult.success,
       ipAddress: requestContext.ipAddress,

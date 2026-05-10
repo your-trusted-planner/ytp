@@ -91,25 +91,34 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Fetch the signer info including stored signature
-  const signer = await db
+  // Signer identity comes from people; signatureImage (legacy user-specific
+  // convenience for repeat portal signers) is optional and only present when
+  // the signer also has a user account.
+  const person = await db
     .select({
-      id: schema.users.id,
-      email: schema.users.email,
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      signatureImage: schema.users.signatureImage
+      id: schema.people.id,
+      email: schema.people.email,
+      firstName: schema.people.firstName,
+      lastName: schema.people.lastName
     })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.signerId))
+    .from(schema.people)
+    .where(eq(schema.people.id, session.signerId))
     .get()
 
-  if (!signer) {
+  if (!person) {
     throw createError({
       statusCode: 404,
       message: 'Signer not found'
     })
   }
+
+  const userRow = await db
+    .select({ signatureImage: schema.users.signatureImage })
+    .from(schema.users)
+    .where(eq(schema.users.personId, person.id))
+    .get()
+
+  const signer = { ...person, signatureImage: userRow?.signatureImage ?? null }
 
   // Update document status to VIEWED if not already
   if (document.status === 'SENT') {

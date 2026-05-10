@@ -1,15 +1,18 @@
 // E-Signature System tables
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
-import { users } from './auth'
+import { people } from './people'
 import { documents } from './documents'
 import { actionItems } from './journeys'
+import type { PersonId } from '../types/ids'
 
-// Signature Sessions - Track signing ceremonies with audit trail
+// Signature Sessions - Track signing ceremonies with audit trail.
+// signerId references people.id so signers can be persons without a user
+// account (spouses, fiduciaries, witnesses in multi-signer flows).
 export const signatureSessions = sqliteTable('signature_sessions', {
   id: text('id').primaryKey(),
   documentId: text('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
-  signerId: text('signer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  signerId: text('signer_id').notNull().$type<PersonId>().references(() => people.id, { onDelete: 'cascade' }),
 
   // Link to action item (for ESIGN action items in journeys)
   // When set, completing signature will auto-complete the action item

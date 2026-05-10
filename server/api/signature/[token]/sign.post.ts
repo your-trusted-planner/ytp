@@ -140,11 +140,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Fetch the signer
+  // Fetch the signer from people (signer is a person identity).
   const signer = await db
     .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, session.signerId))
+    .from(schema.people)
+    .where(eq(schema.people.id, session.signerId))
     .get()
 
   if (!signer) {
@@ -270,16 +270,16 @@ export default defineEventHandler(async (event) => {
     try {
       let pdfBytes: Uint8Array
 
-      // Build session data for all signers
+      // Build session data for all signers. Identity comes from people now.
       const signerSessions = await Promise.all(
         allSessions.map(async (s) => {
           const u = await db.select({
-            email: schema.users.email,
-            firstName: schema.users.firstName,
-            lastName: schema.users.lastName,
+            email: schema.people.email,
+            firstName: schema.people.firstName,
+            lastName: schema.people.lastName,
           })
-            .from(schema.users)
-            .where(eq(schema.users.id, s.signerId))
+            .from(schema.people)
+            .where(eq(schema.people.id, s.signerId))
             .get()
           return {
             signerName:
