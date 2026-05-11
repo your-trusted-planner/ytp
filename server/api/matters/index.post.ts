@@ -44,9 +44,17 @@ export default defineEventHandler(async (event) => {
   const { resolveClientIds } = await import('../../utils/client-ids')
   const db = useDrizzle()
 
-  // matters.clientId references users.id, but request may send clients.id
+  // matters.clientId now references clients.id directly. We still resolve
+  // through client-ids in case the caller passes a legacy users.id, but the
+  // canonical value to write is the clients.id (resolved.clientTableId).
   const resolved = await resolveClientIds(result.data.clientId)
-  const legacyClientId = resolved?.userIds[0] || result.data.clientId
+  if (!resolved || !resolved.clientTableId) {
+    throw createError({
+      statusCode: 404,
+      message: 'Client not found'
+    })
+  }
+  const matterClientId = resolved.clientTableId
 
   // Auto-generate matter number: YYYY-NNN format
   const currentYear = new Date().getFullYear()
@@ -66,7 +74,7 @@ export default defineEventHandler(async (event) => {
   const newMatter = {
     id: generateId(),
     title: result.data.title,
-    clientId: legacyClientId,
+    clientId: matterClientId,
     description: result.data.description,
     status: result.data.status,
     matterNumber,

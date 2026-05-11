@@ -63,17 +63,14 @@ export const clientsWithStatus = sqliteView('clients_with_status').as(qb =>
     status: sql<string>`CASE
       WHEN EXISTS (
         SELECT 1 FROM matters m
-        INNER JOIN users u ON m.client_id = u.id
-        WHERE u.person_id = "clients"."person_id" AND m.status = 'OPEN'
+        WHERE m.client_id = "clients"."id" AND m.status = 'OPEN'
       ) THEN 'ACTIVE'
       WHEN EXISTS (
         SELECT 1 FROM matters m
-        INNER JOIN users u ON m.client_id = u.id
-        WHERE u.person_id = "clients"."person_id"
+        WHERE m.client_id = "clients"."id"
       ) AND NOT EXISTS (
         SELECT 1 FROM matters m
-        INNER JOIN users u ON m.client_id = u.id
-        WHERE u.person_id = "clients"."person_id" AND m.status != 'CLOSED'
+        WHERE m.client_id = "clients"."id" AND m.status != 'CLOSED'
       ) THEN 'FORMER'
       ELSE 'PROSPECTIVE'
     END`.as('status'),

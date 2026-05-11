@@ -72,11 +72,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Matter not found' })
   }
 
-  // invoices.clientId references clients.id, but matters.clientId stores users.id
-  // Resolve to get the correct clients table ID
-  const { resolveClientIds } = await import('../../utils/client-ids')
-  const resolved = await resolveClientIds(matter.clientId)
-  const invoiceClientId = resolved?.clientTableId || matter.clientId
+  // matters.clientId and invoices.clientId both reference clients.id now.
+  const invoiceClientId = matter.clientId
 
   // Generate invoice number
   const invoiceNumber = await generateInvoiceNumber()

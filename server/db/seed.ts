@@ -45,7 +45,7 @@ export async function seedDatabase(db: DrizzleD1Database<typeof schema>, blob?: 
   const serviceIds = await seedServices(db, templateIds.template2Id)
 
   // Phase 5: Matters
-  const matterIds = await seedMatters(db, dates, userIds, serviceIds)
+  const matterIds = await seedMatters(db, dates, userIds, clientIds, serviceIds)
 
   // Phase 6: Journeys & Progress
   const journeyIds = await seedJourneys(db, dates, userIds, clientIds, matterIds, serviceIds)

@@ -26,38 +26,30 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Authorization: lawyers/admins can view any matter, clients can only view their own
+  // Authorization: lawyers/admins can view any matter, clients can only view their own.
+  // matter.clientId is now a clients.id (Belly Button Principle).
   requireClientAccess(event, matter.clientId)
 
-  // Get client info if exists
+  // Get client display info — join clients -> people for the identity fields.
   let clientInfo = null
   if (matter.clientId) {
     const client = await db.select({
-      firstName: schema.users.firstName,
-      lastName: schema.users.lastName,
-      email: schema.users.email,
-      personId: schema.users.personId
+      firstName: schema.people.firstName,
+      lastName: schema.people.lastName,
+      email: schema.people.email,
+      clientTableId: schema.clients.id
     })
-      .from(schema.users)
-      .where(eq(schema.users.id, matter.clientId))
+      .from(schema.clients)
+      .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+      .where(eq(schema.clients.id, matter.clientId))
       .get()
 
     if (client) {
-      // Resolve the clients table ID for linking (URL uses clients.id, not users.id)
-      let clientTableId: string | null = null
-      if (client.personId) {
-        const clientRecord = await db.select({ id: schema.clients.id })
-          .from(schema.clients)
-          .where(eq(schema.clients.personId, client.personId))
-          .get()
-        clientTableId = clientRecord?.id || null
-      }
-
       clientInfo = {
         client_first_name: client.firstName,
         client_last_name: client.lastName,
         client_email: client.email,
-        client_table_id: clientTableId
+        client_table_id: client.clientTableId
       }
     }
   }

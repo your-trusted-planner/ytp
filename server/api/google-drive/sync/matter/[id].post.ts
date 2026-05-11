@@ -96,13 +96,11 @@ export default defineEventHandler(async (event) => {
       .where(eq(schema.matters.id, matterId))
   }
 
-  // Get client folder ID. matter.clientId is still users.id today (will become
-  // clients.id once matters is migrated); join through people for now.
+  // Get client folder ID. matter.clientId is clients.id (post-migration).
   const clientRow = await db
     .select({ googleDriveFolderId: schema.clients.googleDriveFolderId })
-    .from(schema.users)
-    .innerJoin(schema.clients, eq(schema.clients.personId, schema.users.personId))
-    .where(eq(schema.users.id, matter.clientId))
+    .from(schema.clients)
+    .where(eq(schema.clients.id, matter.clientId))
     .get()
 
   if (!clientRow?.googleDriveFolderId) {

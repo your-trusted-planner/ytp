@@ -16,22 +16,16 @@ export default defineEventHandler(async (event) => {
 
   const { useDrizzle } = await import('../../../db')
   const { sql } = await import('drizzle-orm')
-  const { getLegacyClientIds } = await import('../../../utils/client-ids')
   const db = useDrizzle()
 
-  // matters.clientId references users.id, but URL param is clients.id
-  const allIds = await getLegacyClientIds(clientId)
-
-  // Single query with correlated subqueries for aggregated stats
-  // Replaces the previous N+1 pattern (4 queries per matter)
-  const inList = sql.join(allIds.map(id => sql`${id}`), sql`, `)
+  // matters.clientId references clients.id directly; URL param is clients.id.
   const matters = await db.all<any>(sql`
     SELECT m.*,
       (SELECT COUNT(*) FROM matters_to_services WHERE matter_id = m.id) as services_count,
       (SELECT COUNT(*) FROM client_journeys WHERE matter_id = m.id AND status = 'IN_PROGRESS') as active_journeys_count,
       (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE matter_id = m.id AND status = 'COMPLETED') as total_paid
     FROM matters m
-    WHERE m.client_id IN (${inList})
+    WHERE m.client_id = ${clientId}
   `)
 
   // Sort matters by status priority and creation date

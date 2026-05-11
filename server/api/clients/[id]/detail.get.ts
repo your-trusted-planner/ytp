@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
       .get(),
 
     // 2. Matters with aggregated stats (Phase 1 pattern - 2 queries collapsed into raw SQL)
-    fetchMattersWithStats(db, allIds),
+    fetchMattersWithStats(db, clientId),
 
     // 3. Client journeys (non-cancelled) — clientId now references clients.id
     db.select()
@@ -225,20 +225,17 @@ export default defineEventHandler(async (event) => {
  * Fetch matters with aggregated stats using raw SQL (Phase 1 pattern)
  * Returns matters with services_count, active_journeys_count, total_paid, total_expected
  */
-async function fetchMattersWithStats(db: any, allIds: string[]) {
-  if (allIds.length === 0) return []
-
+async function fetchMattersWithStats(db: any, clientId: string) {
   const { sql } = await import('drizzle-orm')
 
-  // Single query with correlated subqueries
-  const inList = sql.join(allIds.map(id => sql`${id}`), sql`, `)
+  // matters.clientId references clients.id directly.
   const matters = await db.all<any>(sql`
     SELECT m.*,
       (SELECT COUNT(*) FROM matters_to_services WHERE matter_id = m.id) as services_count,
       (SELECT COUNT(*) FROM client_journeys WHERE matter_id = m.id AND status = 'IN_PROGRESS') as active_journeys_count,
       (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE matter_id = m.id AND status = 'COMPLETED') as total_paid
     FROM matters m
-    WHERE m.client_id IN (${inList})
+    WHERE m.client_id = ${clientId}
   `)
 
   // Sort by status priority then creation date

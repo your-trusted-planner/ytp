@@ -117,24 +117,11 @@ export async function resolveHourlyRate(context: RateContext): Promise<ResolvedR
     return resolveFromCatalog(db, schema, context, rateCategory, userDefaultRate)
   }
 
-  // 3. Check client-level rates
-  let actualClientId = matter.clientId
-
-  // Try to find a client record
-  const [client] = await db
-    .select({ id: schema.clients.id })
-    .from(schema.clients)
-    .where(eq(schema.clients.id, matter.clientId))
-    .limit(1)
-
-  if (client) {
-    actualClientId = client.id
-  }
-
+  // 3. Check client-level rates. matter.clientId is clients.id directly now.
   const [clientRate] = await db
     .select()
     .from(schema.clientBillingRates)
-    .where(eq(schema.clientBillingRates.clientId, actualClientId))
+    .where(eq(schema.clientBillingRates.clientId, matter.clientId))
     .limit(1)
 
   if (clientRate) {

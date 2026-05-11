@@ -2,13 +2,16 @@
 import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
+import { clients } from './clients'
 import { serviceCatalog } from './catalog'
 import { clientJourneys } from './journeys'
+import type { ClientId } from '../types/ids'
 
 // Matters (Client Cases - grouping entity)
 export const matters = sqliteTable('matters', {
   id: text('id').primaryKey(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // clients.id reference (Belly Button Principle).
+  clientId: text('client_id').notNull().$type<ClientId>().references(() => clients.id, { onDelete: 'cascade' }),
   title: text('title').notNull(), // e.g., "Smith Family Trust 2024"
   matterNumber: text('matter_number'),
   description: text('description'),

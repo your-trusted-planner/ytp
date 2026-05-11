@@ -14,7 +14,15 @@ export default defineEventHandler(async (event) => {
   const { eq } = await import('drizzle-orm')
   const db = useDrizzle()
 
-  // matters.clientId references users.id, so query with user.id directly
+  // matters.clientId references clients.id — resolve the CLIENT caller's
+  // clients.id from personId. No client record -> no matters.
+  if (!user.personId) return { matters: [] }
+  const clientRecord = await db.select({ id: schema.clients.id })
+    .from(schema.clients)
+    .where(eq(schema.clients.personId, user.personId))
+    .get()
+  if (!clientRecord) return { matters: [] }
+
   const matters = await db.select({
     id: schema.matters.id,
     title: schema.matters.title,
@@ -26,7 +34,7 @@ export default defineEventHandler(async (event) => {
     updatedAt: schema.matters.updatedAt
   })
     .from(schema.matters)
-    .where(eq(schema.matters.clientId, user.id))
+    .where(eq(schema.matters.clientId, clientRecord.id))
     .all()
 
   // Convert to snake_case for frontend compatibility

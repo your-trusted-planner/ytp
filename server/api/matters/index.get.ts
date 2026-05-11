@@ -42,14 +42,14 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  // Get total count for pagination
+  // Get total count for pagination. matters.clientId -> clients.id -> people for names.
   let totalCount = 0
   if (usePagination) {
     let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(schema.matters)
-      .leftJoin(schema.users, eq(schema.matters.clientId, schema.users.id))
-      .leftJoin(schema.people, eq(schema.users.personId, schema.people.id))
+      .leftJoin(schema.clients, eq(schema.matters.clientId, schema.clients.id))
+      .leftJoin(schema.people, eq(schema.clients.personId, schema.people.id))
     if (conditions.length > 0) {
       countQuery = countQuery.where(and(...conditions)) as typeof countQuery
     }
@@ -70,9 +70,7 @@ export default defineEventHandler(async (event) => {
             schema.matters.updatedAt :
             schema.matters.createdAt // default sort
 
-  // Note: matters.clientId references users.id (legacy), not clients.id
-  // Join through users -> people to get client name
-  // Use selectDistinct to avoid duplicates from JOINs
+  // matters.clientId references clients.id; join clients -> people for names.
   let mattersQuery = db
     .selectDistinct({
       id: schema.matters.id,
@@ -85,14 +83,14 @@ export default defineEventHandler(async (event) => {
       engagementJourneyId: schema.matters.engagementJourneyId,
       createdAt: schema.matters.createdAt,
       updatedAt: schema.matters.updatedAt,
-      // Client name from users -> people join
+      // Client name from clients -> people join
       clientFirstName: schema.people.firstName,
       clientLastName: schema.people.lastName,
       clientFullName: schema.people.fullName
     })
     .from(schema.matters)
-    .leftJoin(schema.users, eq(schema.matters.clientId, schema.users.id))
-    .leftJoin(schema.people, eq(schema.users.personId, schema.people.id))
+    .leftJoin(schema.clients, eq(schema.matters.clientId, schema.clients.id))
+    .leftJoin(schema.people, eq(schema.clients.personId, schema.people.id))
 
   // Apply filters
   if (conditions.length > 0) {

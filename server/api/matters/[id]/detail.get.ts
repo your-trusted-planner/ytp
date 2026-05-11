@@ -161,35 +161,27 @@ async function fetchClientInfo(db: any, schema: any, clientId: string | null) {
 
   const { eq } = await import('drizzle-orm')
 
+  // matters.clientId is a clients.id; join people for identity fields.
   const client = await db.select({
-    firstName: schema.users.firstName,
-    lastName: schema.users.lastName,
-    email: schema.users.email,
-    personId: schema.users.personId
+    firstName: schema.people.firstName,
+    lastName: schema.people.lastName,
+    email: schema.people.email,
+    clientTableId: schema.clients.id
   })
-    .from(schema.users)
-    .where(eq(schema.users.id, clientId))
+    .from(schema.clients)
+    .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
+    .where(eq(schema.clients.id, clientId))
     .get()
 
   if (!client) return null
-
-  // Resolve the clients table ID for linking
-  let clientTableId: string | null = null
-  if (client.personId) {
-    const clientRecord = await db.select({ id: schema.clients.id })
-      .from(schema.clients)
-      .where(eq(schema.clients.personId, client.personId))
-      .get()
-    clientTableId = clientRecord?.id || null
-  }
 
   return {
     client_first_name: client.firstName,
     client_last_name: client.lastName,
     client_email: client.email,
-    client_table_id: clientTableId,
+    client_table_id: client.clientTableId,
     // Internal: resolved client ID for trust balance lookup
-    resolvedClientId: clientTableId
+    resolvedClientId: client.clientTableId
   }
 }
 

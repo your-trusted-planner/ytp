@@ -73,25 +73,24 @@ export default defineEventHandler(async (event) => {
     .limit(limit)
     .offset(offset)
 
-  // Get client names — matters.clientId stores users.id, so look up via users → people
+  // Get client names — matters.clientId is now clients.id, join clients → people.
   const matterClientIds = [...new Set(payments.map(p => p.clientId))]
   const clientNames: Record<string, string> = {}
 
   if (matterClientIds.length > 0) {
-    // matters.clientId references users.id, so join users → people for names
-    const users = await db
+    const clientRows = await db
       .select({
-        id: schema.users.id,
+        id: schema.clients.id,
         firstName: schema.people.firstName,
         lastName: schema.people.lastName,
         fullName: schema.people.fullName
       })
-      .from(schema.users)
-      .innerJoin(schema.people, eq(schema.users.personId, schema.people.id))
+      .from(schema.clients)
+      .innerJoin(schema.people, eq(schema.clients.personId, schema.people.id))
 
-    for (const u of users) {
-      if (matterClientIds.includes(u.id)) {
-        clientNames[u.id] = u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown'
+    for (const c of clientRows) {
+      if (matterClientIds.includes(c.id)) {
+        clientNames[c.id] = c.fullName || `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unknown'
       }
     }
   }
