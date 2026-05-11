@@ -1,18 +1,21 @@
 import { schema } from '../index'
 import { SEED_IDS } from './constants'
-import type { SeedDb, SeedDates, SeedUserIds, SeedMatterIds, SeedServiceIds, SeedJourneyIds } from './types'
+import type { SeedDb, SeedDates, SeedUserIds, SeedClientIds, SeedMatterIds, SeedServiceIds, SeedJourneyIds } from './types'
 
 export async function seedJourneys(
   db: SeedDb,
   dates: SeedDates,
   userIds: SeedUserIds,
+  clientIds: SeedClientIds,
   matterIds: SeedMatterIds,
   serviceIds: SeedServiceIds
 ): Promise<SeedJourneyIds> {
   console.log('Seeding journeys...')
 
   const { now, oneWeekAgo, oneMonthAgo, twoMonthsAgo, threeMonthsAgo } = dates
-  const { client1Id, client2Id, client3Id, lawyerId } = userIds
+  const { lawyerId } = userIds
+  // clientJourneys.clientId references clients.id (Belly Button Principle)
+  const { janeClientId, michaelClientId, sarahClientId } = clientIds
   const { matter1Id, matter2Id, matter3Id } = matterIds
   const { service1Id } = serviceIds
 
@@ -149,7 +152,7 @@ export async function seedJourneys(
   // Client Journeys
   await db.insert(schema.clientJourneys).values({
     id: clientJourney1Id,
-    clientId: client1Id,
+    clientId: janeClientId,
     matterId: matter1Id,
     catalogId: service1Id,
     journeyId,
@@ -163,7 +166,7 @@ export async function seedJourneys(
 
   await db.insert(schema.clientJourneys).values({
     id: clientJourney2Id,
-    clientId: client3Id,
+    clientId: sarahClientId,
     matterId: matter3Id,
     catalogId: service1Id,
     journeyId,
@@ -178,7 +181,7 @@ export async function seedJourneys(
 
   await db.insert(schema.clientJourneys).values({
     id: clientJourney3Id,
-    clientId: client2Id,
+    clientId: michaelClientId,
     matterId: matter2Id,
     catalogId: null,
     journeyId,

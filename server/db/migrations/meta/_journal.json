@@ -358,6 +358,13 @@
       "when": 1778458673126,
       "tag": "0050_sudden_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1778459305334,
+      "tag": "0051_parched_paibok",
+      "breakpoints": true
     }
   ]
 }

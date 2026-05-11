@@ -2,8 +2,10 @@
 import { sqliteTable, text, integer, primaryKey, foreignKey } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
+import { clients } from './clients'
 import { serviceCatalog } from './catalog'
 import { mattersToServices } from './matters'
+import type { ClientId } from '../types/ids'
 
 // Journeys - The overall journey/workflow (replaces "pipeline" concept)
 export const journeys = sqliteTable('journeys', {
@@ -53,7 +55,9 @@ export const journeySteps = sqliteTable('journey_steps', {
 // Client Journeys - Tracks which clients are on which journeys
 export const clientJourneys = sqliteTable('client_journeys', {
   id: text('id').primaryKey(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // clients.id reference — the engagement journey captures the Rule 1.18
+  // consultation and may exist before the client has a user account.
+  clientId: text('client_id').notNull().$type<ClientId>().references(() => clients.id, { onDelete: 'cascade' }),
   matterId: text('matter_id'), // Links to the specific matter (engagement)
   catalogId: text('catalog_id'), // Links to the service catalog item (for SERVICE journeys)
   journeyId: text('journey_id').notNull().references(() => journeys.id),

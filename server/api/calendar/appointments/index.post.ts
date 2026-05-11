@@ -290,35 +290,24 @@ export default defineEventHandler(async (event) => {
   }
 
   // Auto-link to MEETING action items on active client journeys.
-  // clientJourneys.clientId is still a users.id (migration #5), so translate
-  // data.clientId (clients.id) -> users.id via people for the join. Clients
-  // without a user account simply have no journeys to link, which is fine.
+  // Both appointments.clientId and clientJourneys.clientId are clients.id now.
   if (data.clientId && data.appointmentTypeId) {
     try {
       const { and, inArray } = await import('drizzle-orm')
 
-      const clientUserRow = await db.select({ id: schema.users.id })
-        .from(schema.users)
-        .innerJoin(schema.clients, eq(schema.clients.personId, schema.users.personId))
-        .where(eq(schema.clients.id, data.clientId))
-        .get()
-
-      // If client has no user account, skip journey auto-link (no journeys exist).
-      const pendingMeetingItems = clientUserRow
-        ? await db.select({
-            id: schema.actionItems.id,
-            config: schema.actionItems.config
-          })
-            .from(schema.actionItems)
-            .innerJoin(schema.clientJourneys, eq(schema.actionItems.clientJourneyId, schema.clientJourneys.id))
-            .where(and(
-              eq(schema.clientJourneys.clientId, clientUserRow.id),
-              eq(schema.actionItems.actionType, 'MEETING'),
-              inArray(schema.actionItems.status, ['PENDING', 'IN_PROGRESS']),
-              inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
-            ))
-            .all()
-        : []
+      const pendingMeetingItems = await db.select({
+        id: schema.actionItems.id,
+        config: schema.actionItems.config
+      })
+        .from(schema.actionItems)
+        .innerJoin(schema.clientJourneys, eq(schema.actionItems.clientJourneyId, schema.clientJourneys.id))
+        .where(and(
+          eq(schema.clientJourneys.clientId, data.clientId),
+          eq(schema.actionItems.actionType, 'MEETING'),
+          inArray(schema.actionItems.status, ['PENDING', 'IN_PROGRESS']),
+          inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
+        ))
+        .all()
 
       // Filter by matching appointmentTypeId in config and no existing link
       const now = new Date()

@@ -51,12 +51,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check authorization
+  // Check authorization. upload.client_id is the clients.id (clientJourneys
+  // now FKs to clients), so compare against user.clientId rather than user.id.
+  const callerClientId = (user as any).clientId
   const canAccess =
     user.role === 'LAWYER' ||
     user.role === 'ADMIN' ||
     user.id === upload.uploadedByUserId ||
-    user.id === upload.client_id
+    (!!callerClientId && callerClientId === upload.client_id)
 
   if (!canAccess) {
     throw createError({

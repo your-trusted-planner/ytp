@@ -46,7 +46,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const isClient = user.id === snapshot.client_id
+  // clientJourneys.clientId now references clients.id — compare against
+  // the caller's clients.id (resolved by auth middleware), never user.id.
+  const isClient = !!(user as any).clientId && (user as any).clientId === snapshot.client_id
   const isAttorney = user.role === 'LAWYER' || user.role === 'ADMIN'
 
   if (!isClient && !isAttorney) {

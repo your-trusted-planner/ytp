@@ -70,10 +70,10 @@ export default defineEventHandler(async (event) => {
     // 2. Matters with aggregated stats (Phase 1 pattern - 2 queries collapsed into raw SQL)
     fetchMattersWithStats(db, allIds),
 
-    // 3. Client journeys (non-cancelled)
+    // 3. Client journeys (non-cancelled) — clientId now references clients.id
     db.select()
       .from(schema.clientJourneys)
-      .where(or(...allIds.map(id => eq(schema.clientJourneys.clientId, id))))
+      .where(eq(schema.clientJourneys.clientId, clientId))
       .orderBy(desc(schema.clientJourneys.priority), desc(schema.clientJourneys.createdAt))
       .all(),
 

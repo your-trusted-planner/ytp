@@ -46,8 +46,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if user has permission
-  const isClient = user.id === snapshot.client_id
+  // Check if user has permission. clientJourneys.clientId references clients.id,
+  // so compare against user.clientId (resolved by auth middleware).
+  const isClient = !!(user as any).clientId && (user as any).clientId === snapshot.client_id
   const isAttorney = user.role === 'LAWYER' || user.role === 'ADMIN'
 
   if (!isClient && !isAttorney) {

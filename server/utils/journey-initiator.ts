@@ -139,11 +139,12 @@ export async function initiateEngagementJourney(options: InitiateOptions): Promi
     created.client = true
   }
 
-  // 5. Check for duplicate journey — don't start a second one of the same template
+  // 5. Check for duplicate journey — don't start a second one of the same template.
+  // clientJourneys.clientId now references clients.id (Belly Button Principle).
   const existingJourney = await db.select({ id: schema.clientJourneys.id })
     .from(schema.clientJourneys)
     .where(and(
-      eq(schema.clientJourneys.clientId, userId),
+      eq(schema.clientJourneys.clientId, clientId),
       eq(schema.clientJourneys.journeyId, options.journeyTemplateId),
       inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
     ))
@@ -169,11 +170,11 @@ export async function initiateEngagementJourney(options: InitiateOptions): Promi
 
   const firstStep = steps[0] || null
 
-  // 7. Create clientJourney
+  // 7. Create clientJourney — attaches to the client business identity
   const clientJourneyId = nanoid()
   await db.insert(schema.clientJourneys).values({
     id: clientJourneyId,
-    clientId: userId,
+    clientId,
     matterId: options.matterId || null,
     catalogId: null, // Engagement journeys are not tied to a specific service
     journeyId: options.journeyTemplateId,

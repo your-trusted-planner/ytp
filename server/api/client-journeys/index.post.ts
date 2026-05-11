@@ -61,6 +61,7 @@ export default defineEventHandler(async (event) => {
   const clientJourneyId = nanoid()
   const now = new Date()
 
+  // body.clientId is a clients.id (Belly Button Principle).
   await db.insert(schema.clientJourneys).values({
     id: clientJourneyId,
     clientId: body.clientId,
