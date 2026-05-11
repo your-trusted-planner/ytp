@@ -144,7 +144,8 @@ export const clientProfiles = sqliteTable('client_profiles', {
 // Client Marketing Attribution - Track individual client sources
 export const clientMarketingAttribution = sqliteTable('client_marketing_attribution', {
   id: text('id').primaryKey(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
+  // clients.id reference (Belly Button Principle).
+  clientId: text('client_id').notNull().$type<ClientId>().references(() => clients.id, { onDelete: 'cascade' }).unique(),
   marketingSourceId: text('marketing_source_id').references(() => marketingSources.id),
   utmSource: text('utm_source'),
   utmMedium: text('utm_medium'),

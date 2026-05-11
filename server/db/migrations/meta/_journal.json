@@ -379,6 +379,13 @@
       "when": 1778459900128,
       "tag": "0053_restore_clients_with_status_view",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1778460898583,
+      "tag": "0054_thick_charles_xavier",
+      "breakpoints": true
     }
   ]
 }
