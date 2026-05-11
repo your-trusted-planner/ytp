@@ -372,6 +372,13 @@
       "when": 1778459900127,
       "tag": "0052_magenta_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1778459900128,
+      "tag": "0053_restore_clients_with_status_view",
+      "breakpoints": true
     }
   ]
 }

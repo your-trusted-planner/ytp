@@ -46,7 +46,7 @@ PRAGMA foreign_keys=ON;--> statement-breakpoint
 CREATE INDEX `idx_matters_client_id` ON `matters` (`client_id`);--> statement-breakpoint
 CREATE INDEX `idx_matters_status` ON `matters` (`status`);--> statement-breakpoint
 CREATE INDEX `idx_matters_created_at` ON `matters` (`created_at`);--> statement-breakpoint
-DROP VIEW `clients_with_status`;--> statement-breakpoint
+DROP VIEW IF EXISTS `clients_with_status`;--> statement-breakpoint
 CREATE VIEW `clients_with_status` AS select "id", "person_id", CASE
       WHEN EXISTS (
         SELECT 1 FROM matters m
