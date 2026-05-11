@@ -37,7 +37,9 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   const appointmentId = generateId()
 
-  // Resolve clientId from invitees for client-facing appointment types
+  // Resolve clientId from invitees for client-facing appointment types.
+  // appointments.clientId references clients.id directly under the Belly Button
+  // Principle — we no longer need to fabricate a user account.
   if (data.appointmentTypeId && !data.clientId && data.inviteeIds.length > 0) {
     const apptType = await db.select({ isClientFacing: schema.appointmentTypes.isClientFacing })
       .from(schema.appointmentTypes)
@@ -45,19 +47,19 @@ export default defineEventHandler(async (event) => {
       .get()
 
     if (apptType?.isClientFacing) {
-      // First invitee is the client — resolve their person ID to a user ID
+      // First invitee is the client — resolve their person ID to a clients.id,
+      // creating the clients row if missing.
       const personId = data.inviteeIds[0]
 
-      // Check if person has a user account
-      const existingUser = await db.select({ id: schema.users.id })
-        .from(schema.users)
-        .where(eq(schema.users.personId, personId))
+      const existingClient = await db.select({ id: schema.clients.id })
+        .from(schema.clients)
+        .where(eq(schema.clients.personId, personId))
         .get()
 
-      if (existingUser) {
-        data.clientId = existingUser.id
-      } else {
-        // Create user + client records via the journey initiator's pattern
+      if (existingClient) {
+        data.clientId = existingClient.id
+      }
+      else {
         const person = await db.select()
           .from(schema.people)
           .where(eq(schema.people.id, personId))
@@ -65,40 +67,15 @@ export default defineEventHandler(async (event) => {
 
         if (person) {
           const { nanoid } = await import('nanoid')
-          const { hashPassword } = await import('../../../utils/auth')
-          const userId = nanoid()
-          const hashedPw = await hashPassword(nanoid(32))
-
-          await db.insert(schema.users).values({
-            id: userId,
+          const newClientId = nanoid()
+          await db.insert(schema.clients).values({
+            id: newClientId,
             personId,
-            email: person.email || `${userId}@placeholder.internal`,
-            firstName: person.firstName || '',
-            lastName: person.lastName || '',
-            phone: person.phone || null,
-            password: hashedPw,
-            role: 'CLIENT',
-            status: 'ACTIVE',
-            adminLevel: 0
+            status: 'PROSPECTIVE',
+            createdAt: new Date(),
+            updatedAt: new Date()
           })
-
-          // Ensure client record exists
-          const existingClient = await db.select({ id: schema.clients.id })
-            .from(schema.clients)
-            .where(eq(schema.clients.personId, personId))
-            .get()
-
-          if (!existingClient) {
-            await db.insert(schema.clients).values({
-              id: nanoid(),
-              personId,
-              status: 'PROSPECTIVE',
-              createdAt: new Date(),
-              updatedAt: new Date()
-            })
-          }
-
-          data.clientId = userId
+          data.clientId = newClientId
         }
       }
     }
@@ -312,26 +289,36 @@ export default defineEventHandler(async (event) => {
     catch { /* ignore parse errors */ }
   }
 
-  // Auto-link to MEETING action items on active client journeys
+  // Auto-link to MEETING action items on active client journeys.
+  // clientJourneys.clientId is still a users.id (migration #5), so translate
+  // data.clientId (clients.id) -> users.id via people for the join. Clients
+  // without a user account simply have no journeys to link, which is fine.
   if (data.clientId && data.appointmentTypeId) {
     try {
       const { and, inArray } = await import('drizzle-orm')
 
-      // Find pending MEETING action items on this client's active journeys
-      // that reference the same appointment type
-      const pendingMeetingItems = await db.select({
-        id: schema.actionItems.id,
-        config: schema.actionItems.config
-      })
-        .from(schema.actionItems)
-        .innerJoin(schema.clientJourneys, eq(schema.actionItems.clientJourneyId, schema.clientJourneys.id))
-        .where(and(
-          eq(schema.clientJourneys.clientId, data.clientId),
-          eq(schema.actionItems.actionType, 'MEETING'),
-          inArray(schema.actionItems.status, ['PENDING', 'IN_PROGRESS']),
-          inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
-        ))
-        .all()
+      const clientUserRow = await db.select({ id: schema.users.id })
+        .from(schema.users)
+        .innerJoin(schema.clients, eq(schema.clients.personId, schema.users.personId))
+        .where(eq(schema.clients.id, data.clientId))
+        .get()
+
+      // If client has no user account, skip journey auto-link (no journeys exist).
+      const pendingMeetingItems = clientUserRow
+        ? await db.select({
+            id: schema.actionItems.id,
+            config: schema.actionItems.config
+          })
+            .from(schema.actionItems)
+            .innerJoin(schema.clientJourneys, eq(schema.actionItems.clientJourneyId, schema.clientJourneys.id))
+            .where(and(
+              eq(schema.clientJourneys.clientId, clientUserRow.id),
+              eq(schema.actionItems.actionType, 'MEETING'),
+              inArray(schema.actionItems.status, ['PENDING', 'IN_PROGRESS']),
+              inArray(schema.clientJourneys.status, ['NOT_STARTED', 'IN_PROGRESS'])
+            ))
+            .all()
+        : []
 
       // Filter by matching appointmentTypeId in config and no existing link
       const now = new Date()
@@ -379,14 +366,14 @@ export default defineEventHandler(async (event) => {
         .get()
 
       if (appointmentType?.journeyTemplateId) {
-        // Determine personId from clientId
+        // Determine personId from clientId (now a clients.id)
         let personId: string | null = null
         if (data.clientId) {
-          const clientUser = await db.select({ personId: schema.users.personId })
-            .from(schema.users)
-            .where(eq(schema.users.id, data.clientId))
+          const clientRow = await db.select({ personId: schema.clients.personId })
+            .from(schema.clients)
+            .where(eq(schema.clients.id, data.clientId))
             .get()
-          personId = clientUser?.personId || null
+          personId = clientRow?.personId || null
         }
 
         if (personId) {

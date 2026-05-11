@@ -148,6 +148,20 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // appointments.clientId now references clients.id. Translate booking.userId
+  // (legacy users.id) -> clients.id via the shared personId; null if no client
+  // record exists for this booking yet.
+  let appointmentClientId: string | null = null
+  if (booking.userId) {
+    const clientRow = await db
+      .select({ id: schema.clients.id })
+      .from(schema.users)
+      .innerJoin(schema.clients, eq(schema.clients.personId, schema.users.personId))
+      .where(eq(schema.users.id, booking.userId))
+      .get()
+    appointmentClientId = clientRow?.id ?? null
+  }
+
   await db.insert(schema.appointments).values({
     id: appointmentId,
     title: `${typeName}: ${clientName}`,
@@ -160,7 +174,7 @@ export default defineEventHandler(async (event) => {
     status: 'CONFIRMED',
     appointmentType: legacyType,
     appointmentTypeId: booking.appointmentTypeId || null,
-    clientId: booking.userId || null,
+    clientId: appointmentClientId,
     createdById: booking.attorneyId || null
   })
 

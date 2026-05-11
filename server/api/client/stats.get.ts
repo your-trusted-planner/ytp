@@ -29,17 +29,19 @@ export default defineEventHandler(async (event) => {
     d.status === 'SIGNED' || d.status === 'COMPLETED'
   ).length
 
-  // Get upcoming appointments
-  const upcomingAppointments = await db
-    .select()
-    .from(schema.appointments)
-    .where(
-      and(
-        eq(schema.appointments.clientId, user.id),
-        gte(schema.appointments.startTime, now)
-      )
-    )
-    .all()
+  // Get upcoming appointments — appointments.clientId references clients.id
+  const upcomingAppointments = clientRecord
+    ? await db
+        .select()
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.clientId, clientRecord.id),
+            gte(schema.appointments.startTime, now)
+          )
+        )
+        .all()
+    : []
 
   return {
     totalDocuments: documents.length,

@@ -2,8 +2,10 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { users } from './auth'
+import { clients } from './clients'
 import { matters } from './matters'
 import { questionnaires, serviceCatalog } from './catalog'
+import type { ClientId } from '../types/ids'
 
 // Rooms — physical conference rooms / meeting spaces
 export const rooms = sqliteTable('rooms', {
@@ -64,7 +66,9 @@ export const appointments = sqliteTable('appointments', {
   preCallNotes: text('pre_call_notes'), // Attorney notes before the call
   callNotes: text('call_notes'), // Attorney notes during/after the call
   callNotesUpdatedAt: integer('call_notes_updated_at', { mode: 'timestamp' }),
-  clientId: text('client_id').references(() => users.id, { onDelete: 'cascade' }),
+  // clients.id reference (Belly Button Principle) — appointments can be for
+  // clients without a user account (e.g., public booking flow).
+  clientId: text('client_id').$type<ClientId>().references(() => clients.id, { onDelete: 'cascade' }),
   // Google Calendar integration
   googleCalendarEventId: text('google_calendar_event_id'),
   googleCalendarEmail: text('google_calendar_email'),

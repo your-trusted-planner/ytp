@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6cbae756-84f3-4c99-94c5-ee77335e962a",
-  "prevId": "6683fea4-cdff-435e-acdf-aa947eab9925",
+  "id": "ffb8b2ae-60cf-4cf1-954d-4ab3a1e64be2",
+  "prevId": "6cbae756-84f3-4c99-94c5-ee77335e962a",
   "tables": {
     "action_items": {
       "name": "action_items",
@@ -941,10 +941,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "appointments_client_id_users_id_fk": {
-          "name": "appointments_client_id_users_id_fk",
+        "appointments_client_id_clients_id_fk": {
+          "name": "appointments_client_id_clients_id_fk",
           "tableFrom": "appointments",
-          "tableTo": "users",
+          "tableTo": "clients",
           "columnsFrom": [
             "client_id"
           ],

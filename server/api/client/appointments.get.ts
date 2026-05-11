@@ -9,7 +9,16 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   const now = new Date()
 
-  const conditions = [eq(schema.appointments.clientId, user.id)]
+  // appointments.clientId now references clients.id — resolve the CLIENT
+  // caller's client record from their personId.
+  if (!user.personId) return []
+  const clientRecord = await db.select({ id: schema.clients.id })
+    .from(schema.clients)
+    .where(eq(schema.clients.personId, user.personId))
+    .get()
+  if (!clientRecord) return []
+
+  const conditions = [eq(schema.appointments.clientId, clientRecord.id)]
   if (upcoming) {
     conditions.push(gte(schema.appointments.startTime, now))
   }

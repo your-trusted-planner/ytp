@@ -5,7 +5,8 @@ export default defineEventHandler(async (event) => {
   const user = getAuthUser(event)
   const db = useDrizzle()
 
-  // If lawyer/admin, get all appointments. If client, get only their appointments
+  // If lawyer/admin, get all appointments. If client, get only their appointments.
+  // appointments.clientId now references clients.id — resolve via personId.
   let appointments
   if (user.role === 'LAWYER' || user.role === 'ADMIN') {
     appointments = await db
@@ -15,12 +16,20 @@ export default defineEventHandler(async (event) => {
       .all()
   }
   else {
-    appointments = await db
-      .select()
-      .from(schema.appointments)
-      .where(eq(schema.appointments.clientId, user.id))
-      .orderBy(desc(schema.appointments.startTime))
-      .all()
+    const clientRecord = user.personId
+      ? await db.select({ id: schema.clients.id })
+          .from(schema.clients)
+          .where(eq(schema.clients.personId, user.personId))
+          .get()
+      : null
+    appointments = clientRecord
+      ? await db
+          .select()
+          .from(schema.appointments)
+          .where(eq(schema.appointments.clientId, clientRecord.id))
+          .orderBy(desc(schema.appointments.startTime))
+          .all()
+      : []
   }
 
   // Convert to snake_case for API compatibility
