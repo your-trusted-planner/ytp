@@ -46,7 +46,7 @@
     "lucide-vue-next": "^0.468.0",
     "marked": "^17.0.4",
     "nanoid": "^5.1.6",
-    "nuxt": "^4.3.1",
+    "nuxt": "^4.4.6",
     "nuxt-auth-utils": "^0.5.29",
     "pdf-lib": "^1.17.1",
     "pinia": "^3.0.4",
